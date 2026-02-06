@@ -9,8 +9,7 @@
 > A local-only AI agent orchestration system with automatic hardware detection and optimization.
 
 This is an experimental layer built between AI / and software. 
-- THIS IS NOT SUITABLE FOR PRODUCTION - 
-- USE AT OWN RISK 
+- THIS IS NOT SUITABLE FOR PRODUCTION THIS PROJECT IS ENTIRELY "VIBE-CODED" 
 
 ## Features
 
