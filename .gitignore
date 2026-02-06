@@ -74,8 +74,10 @@ slate_memory/
 vscode_errors.json
 nul
 
-# Claude
+# Claude (ignore except skills)
 .claude/
+!.claude/skills/
+!.claude/skills/*.md
 
 # Secrets (NEVER commit)
 .env
