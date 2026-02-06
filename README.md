@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/slate-logo.svg" alt="SLATE Logo" width="200" height="200">
+  <img src="https://raw.githubusercontent.com/SynchronizedLivingArchitecture/S.L.A.T.E./001-data-viz-dashboard/docs/assets/slate-logo.svg" alt="SLATE Logo" width="200" height="200">
 </p>
 
 <h1 align="center">S.L.A.T.E.</h1>
@@ -149,13 +149,13 @@ Copilot automatically loads SLATE context when the workspace is open:
 
 ```bash
 # Verify tools are registered
-python aurora_core/slate_mcp_server.py --verify
+python slate/slate_mcp_server.py --verify
 
 # stdio mode (Copilot / Claude)
-python aurora_core/slate_mcp_server.py
+python slate/slate_mcp_server.py
 
 # SSE mode (web clients)
-python aurora_core/slate_mcp_server.py --sse --port 6274
+python slate/slate_mcp_server.py --sse --port 6274
 ```
 
 Available tools: `slate_get_status`, `slate_run_check`, `slate_list_tasks`,
@@ -167,7 +167,7 @@ Available tools: `slate_get_status`, `slate_run_check`, `slate_list_tasks`,
 | Integration | Config |
 |-------------|--------|
 | Actions (17 workflows) | `.github/workflows/` |
-| Self-Hosted Runner (2x GPU) | `aurora_core/slate_runner_manager.py` |
+| Self-Hosted Runner (2x GPU) | `slate/slate_runner_manager.py` |
 | Projects (3 templates) | `.github/projects.json` |
 | Issue Templates (3) | `.github/ISSUE_TEMPLATE/` |
 | PR Template | `.github/PULL_REQUEST_TEMPLATE.md` |
@@ -181,7 +181,7 @@ Available tools: `slate_get_status`, `slate_run_check`, `slate_list_tasks`,
 | Wiki (14 pages) | `docs/wiki/` |
 | Copilot Agent | `.github/copilot-instructions.md` |
 | Claude Plugin | `CLAUDE.md` + `.claude/skills/` |
-| MCP Server | `aurora_core/slate_mcp_server.py` |
+| MCP Server | `slate/slate_mcp_server.py` |
 
 ## Contributing
 
