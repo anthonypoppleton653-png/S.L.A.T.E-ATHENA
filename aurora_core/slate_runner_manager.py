@@ -39,7 +39,7 @@ logger = logging.getLogger("aurora.runner_manager")
 # Author: Claude | Created: 2026-02-06T22:00:00Z
 # ═══════════════════════════════════════════════════════════════════════════════
 
-RUNNER_VERSION = "2.321.0"
+RUNNER_VERSION = "2.331.0"
 RUNNER_BASE_URL = "https://github.com/actions/runner/releases/download"
 
 SLATE_REPOS = [
@@ -536,13 +536,13 @@ Examples:
         if args.json_output:
             print(json.dumps(status, indent=2))
         else:
-            print("\n📊 SLATE Runner Status")
+            print("\n[SLATE Runner Status]")
             print("=" * 50)
-            print(f"  Installed:    {'✅' if status['installed'] else '❌'}")
-            print(f"  Configured:   {'✅' if status['configured'] else '❌'}")
+            print(f"  Installed:    {'YES' if status['installed'] else 'NO'}")
+            print(f"  Configured:   {'YES' if status['configured'] else 'NO'}")
             print(f"  Directory:    {status['runner_dir']}")
             print(f"  System:       {status['system']}")
-            print(f"  GPU:          {'✅' if status['gpu']['has_gpu'] else '❌'} ({status['gpu']['gpu_count']} GPUs)")
+            print(f"  GPU:          {'YES' if status['gpu']['has_gpu'] else 'NO'} ({status['gpu']['gpu_count']} GPUs)")
             if status['gpu']['gpu_names']:
                 for name in status['gpu']['gpu_names']:
                     print(f"                - {name}")
@@ -555,9 +555,9 @@ Examples:
     elif args.download:
         success = manager.download_runner()
         if success:
-            print("✅ Runner downloaded successfully")
+            print("[OK] Runner downloaded successfully")
         else:
-            print("❌ Failed to download runner")
+            print("[ERROR] Failed to download runner")
             sys.exit(1)
 
     elif args.configure:
@@ -576,28 +576,28 @@ Examples:
             print(json.dumps(result, indent=2))
         else:
             if result["success"]:
-                print("✅ Runner configured successfully")
+                print("[OK] Runner configured successfully")
                 for step in result["steps"]:
-                    print(f"  • {step}")
+                    print(f"  - {step}")
             else:
-                print("❌ Configuration failed")
+                print("[ERROR] Configuration failed")
                 for error in result["errors"]:
-                    print(f"  • {error}")
+                    print(f"  - {error}")
 
     elif args.start:
         result = manager.start_runner(as_service=args.service)
         if not result["success"]:
             for error in result["errors"]:
-                print(f"❌ {error}")
+                print(f"[ERROR] {error}")
             sys.exit(1)
 
     elif args.stop:
         result = manager.stop_service()
         if result["success"]:
-            print("✅ Service stopped")
+            print("[OK] Service stopped")
         else:
             for error in result["errors"]:
-                print(f"❌ {error}")
+                print(f"[ERROR] {error}")
 
     elif args.setup_script:
         script = manager.generate_setup_script()
