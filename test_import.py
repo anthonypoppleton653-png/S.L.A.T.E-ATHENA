@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test aurora_core import to find blocking issue."""
+"""Test slate import to find blocking issue."""
 import sys
 sys.path.insert(0, '.')
 
@@ -9,15 +9,15 @@ import json
 import logging
 print("Step 1: OK")
 
-# Test each aurora_core submodule individually
+# Test each slate submodule individually
 submodules = [
     'torch_config',
     'message_broker', 
     'rag_memory',
     'gpu_scheduler',
-    'aurora_agent_v2',
+    'slate_agent_v2',
     'file_lock',
-    'aurora_orchestrator',
+    'slate_orchestrator',
     'llm_cache',
     'shared_knowledge',
     'proactive_tasks',
@@ -25,9 +25,9 @@ submodules = [
 ]
 
 for mod in submodules:
-    print(f"Testing aurora_core.{mod}...", flush=True)
+    print(f"Testing slate.{mod}...", flush=True)
     try:
-        __import__(f'aurora_core.{mod}')
+        __import__(f'slate.{mod}')
         print(f"  {mod}: OK")
     except Exception as e:
         print(f"  {mod}: FAIL - {e}")

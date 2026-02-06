@@ -20,9 +20,9 @@ assignees: ''
 
 ## Affected Components
 <!-- Check all that apply -->
-- [ ] aurora_core (SDK / runtime)
+- [ ] slate (SDK / runtime)
 - [ ] agents (dashboard / agent system)
-- [ ] aurora_slate (templates / static assets)
+- [ ] slate_web (templates / static assets)
 - [ ] GitHub Actions / CI/CD
 - [ ] CLI tools
 - [ ] Documentation / Wiki

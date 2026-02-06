@@ -1,62 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
   <!-- Background circle -->
-  <circle cx="200" cy="200" r="190" fill="#0a0b0f" stroke="#1e1e2e" stroke-width="2"/>
+  <circle cx="200" cy="200" r="190" fill="#1a1b26"/>
 
-  <!-- Outer orbit ring -->
-  <circle cx="200" cy="200" r="145" fill="none" stroke="#a78bfa" stroke-width="1.5" opacity="0.2"/>
+  <!-- Stacked layers - SLATE concept -->
+  <!-- Bottom layer -->
+  <g transform="translate(200, 240)">
+    <polygon points="-80,0 0,-40 80,0 0,40" fill="#3b4261" stroke="#565f89" stroke-width="2"/>
+    <polygon points="0,40 80,0 80,20 0,60" fill="#24283b" stroke="#565f89" stroke-width="1"/>
+    <polygon points="0,40 -80,0 -80,20 0,60" fill="#1f2335" stroke="#565f89" stroke-width="1"/>
+  </g>
 
-  <!-- Middle orbit ring -->
-  <circle cx="200" cy="200" r="110" fill="none" stroke="#818cf8" stroke-width="1" opacity="0.15"/>
+  <!-- Middle layer -->
+  <g transform="translate(200, 200)">
+    <polygon points="-80,0 0,-40 80,0 0,40" fill="#7aa2f7" stroke="#89b4fa" stroke-width="2"/>
+    <polygon points="0,40 80,0 80,20 0,60" fill="#5d7dcf" stroke="#7aa2f7" stroke-width="1"/>
+    <polygon points="0,40 -80,0 -80,20 0,60" fill="#4d6db8" stroke="#7aa2f7" stroke-width="1"/>
+  </g>
 
-  <!-- Inner orbit ring -->
-  <circle cx="200" cy="200" r="75" fill="none" stroke="#6366f1" stroke-width="1" opacity="0.1"/>
+  <!-- Top layer -->
+  <g transform="translate(200, 160)">
+    <polygon points="-80,0 0,-40 80,0 0,40" fill="#c0caf5" stroke="#ffffff" stroke-width="2"/>
+    <polygon points="0,40 80,0 80,20 0,60" fill="#a9b1d6" stroke="#c0caf5" stroke-width="1"/>
+    <polygon points="0,40 -80,0 -80,20 0,60" fill="#9aa5ce" stroke="#c0caf5" stroke-width="1"/>
+  </g>
 
-  <!-- Connection lines from core to agent nodes -->
-  <line x1="200" y1="200" x2="200" y2="55" stroke="#a78bfa" stroke-width="1.5" opacity="0.3"/>
-  <line x1="200" y1="200" x2="338" y2="138" stroke="#818cf8" stroke-width="1.5" opacity="0.3"/>
-  <line x1="200" y1="200" x2="338" y2="262" stroke="#6366f1" stroke-width="1.5" opacity="0.3"/>
-  <line x1="200" y1="200" x2="200" y2="345" stroke="#a78bfa" stroke-width="1.5" opacity="0.3"/>
-  <line x1="200" y1="200" x2="62" y2="262" stroke="#818cf8" stroke-width="1.5" opacity="0.3"/>
-  <line x1="200" y1="200" x2="62" y2="138" stroke="#6366f1" stroke-width="1.5" opacity="0.3"/>
+  <!-- Glow effect behind layers -->
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
 
-  <!-- Central core glow ring -->
-  <circle cx="200" cy="200" r="46" fill="#a78bfa" opacity="0.15"/>
-  <circle cx="200" cy="200" r="42" fill="#c4b5fd" opacity="0.25"/>
-  <circle cx="200" cy="200" r="38" fill="#0a0b0f" opacity="0.7"/>
-
-  <!-- S.L.A.T.E. text in core -->
-  <text x="200" y="196" text-anchor="middle" font-family="Segoe UI,system-ui,sans-serif" font-size="14" font-weight="700" fill="#e2e8f0" letter-spacing="1.5">S.L.A.T.E.</text>
-  <text x="200" y="212" text-anchor="middle" font-family="Segoe UI,system-ui,sans-serif" font-size="6.5" fill="#94a3b8" letter-spacing="0.5">SYNCHRONIZED LIVING</text>
-
-  <!-- Agent node: ALPHA (top) -->
-  <circle cx="200" cy="55" r="18" fill="#1a1a2e" stroke="#a78bfa" stroke-width="2"/>
-  <text x="200" y="59" text-anchor="middle" font-family="Segoe UI,system-ui,sans-serif" font-size="10" font-weight="600" fill="#a78bfa">&#945;</text>
-
-  <!-- Agent node: BETA (top-right) -->
-  <circle cx="338" cy="138" r="18" fill="#1a1a2e" stroke="#818cf8" stroke-width="2"/>
-  <text x="338" y="142" text-anchor="middle" font-family="Segoe UI,system-ui,sans-serif" font-size="10" font-weight="600" fill="#818cf8">&#946;</text>
-
-  <!-- Agent node: GAMMA (bottom-right) -->
-  <circle cx="338" cy="262" r="18" fill="#1a1a2e" stroke="#6366f1" stroke-width="2"/>
-  <text x="338" y="266" text-anchor="middle" font-family="Segoe UI,system-ui,sans-serif" font-size="10" font-weight="600" fill="#6366f1">&#947;</text>
-
-  <!-- Agent node: DELTA (bottom) -->
-  <circle cx="200" cy="345" r="18" fill="#1a1a2e" stroke="#a78bfa" stroke-width="2"/>
-  <text x="200" y="349" text-anchor="middle" font-family="Segoe UI,system-ui,sans-serif" font-size="10" font-weight="600" fill="#a78bfa">&#948;</text>
-
-  <!-- GPU node (bottom-left) -->
-  <circle cx="62" cy="262" r="14" fill="#0f1a0f" stroke="#22c55e" stroke-width="2"/>
-  <text x="62" y="266" text-anchor="middle" font-family="Segoe UI,system-ui,sans-serif" font-size="7" font-weight="600" fill="#22c55e">GPU</text>
-
-  <!-- ML node (top-left) -->
-  <circle cx="62" cy="138" r="14" fill="#0f1a0f" stroke="#22c55e" stroke-width="2"/>
-  <text x="62" y="142" text-anchor="middle" font-family="Segoe UI,system-ui,sans-serif" font-size="7" font-weight="600" fill="#22c55e">ML</text>
-
-  <!-- Orbital accent dots -->
-  <circle cx="280" cy="72" r="3" fill="#a78bfa" opacity="0.6"/>
-  <circle cx="120" cy="328" r="2.5" fill="#818cf8" opacity="0.5"/>
-  <circle cx="310" cy="310" r="2" fill="#6366f1" opacity="0.4"/>
-  <circle cx="90" cy="90" r="2" fill="#a78bfa" opacity="0.35"/>
-  <circle cx="320" cy="200" r="2.5" fill="#818cf8" opacity="0.3"/>
-  <circle cx="80" cy="200" r="2" fill="#6366f1" opacity="0.3"/>
+  <!-- Accent dots -->
+  <circle cx="280" cy="120" r="4" fill="#7aa2f7" opacity="0.6"/>
+  <circle cx="120" cy="280" r="3" fill="#7aa2f7" opacity="0.4"/>
+  <circle cx="300" cy="260" r="3" fill="#c0caf5" opacity="0.5"/>
+  <circle cx="100" cy="160" r="3" fill="#c0caf5" opacity="0.4"/>
 </svg>

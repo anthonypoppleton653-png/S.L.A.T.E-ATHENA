@@ -9,14 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - GPU tests workflow for self-hosted runners
-- Self-hosted GitHub Actions runner manager (`aurora_core/slate_runner_manager.py`)
+- Self-hosted GitHub Actions runner manager (`slate/slate_runner_manager.py`)
 - Self-Hosted-Runners wiki documentation
 
 ## [2.4.0] - 2026-02-06
 
 ### Added
 - **GitHub Packages Integration**: Automated package publishing via `publish-package.yml`
-- **SLATE Package Manager**: CLI tool for managing packages, releases, and versioning (`aurora_core/slate_package_manager.py`)
+- **SLATE Package Manager**: CLI tool for managing packages, releases, and versioning (`slate/slate_package_manager.py`)
 - **CHANGELOG.md**: Structured changelog following Keep a Changelog format
 - **Release Automation**: Enhanced release workflow with changelog generation and package assets
 - SVG logo assets (orbital agent diagram and banner)
@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.2.0] - 2026-01-20
 
 ### Added
-- Dashboard server framework (`agents/aurora_dashboard_server.py`)
+- Dashboard server framework (`agents/slate_dashboard_server.py`)
 - Data visualization dashboard branch (`001-data-viz-dashboard`)
 - Subagent visual monitoring system
 - ML orchestrator for model training pipelines
@@ -72,7 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.0] - 2026-01-10
 
 ### Added
-- Complete rewrite with `aurora_core` SDK
+- Complete rewrite with `slate` SDK
 - Hardware detection and GPU optimization (Blackwell/Ada/Ampere/Turing)
 - PyTorch 2.7+ CUDA integration
 - CLI tools: `slate-status`, `slate-runtime`, `slate-benchmark`, `slate-hardware`

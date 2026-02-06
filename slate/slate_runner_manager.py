@@ -43,7 +43,7 @@ WORKSPACE_ROOT = Path(__file__).parent.parent
 if str(WORKSPACE_ROOT) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_ROOT))
 
-logger = logging.getLogger("aurora.runner_manager")
+logger = logging.getLogger("slate.runner_manager")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CELL: constants [python]
@@ -537,14 +537,14 @@ class SlateRunnerManager:
         try:
             proc = subprocess.run(
                 [str(python_exe), "-c",
-                 "import aurora_core; print(aurora_core.__version__)"],
+                 "import slate; print(slate.__version__)"],
                 capture_output=True, text=True, timeout=15,
                 cwd=str(ws),
             )
             if proc.returncode == 0:
-                result["steps"].append(f"SDK: aurora_core v{proc.stdout.strip()}")
+                result["steps"].append(f"SDK: slate v{proc.stdout.strip()}")
             else:
-                result["steps"].append("SDK: aurora_core import failed (non-fatal)")
+                result["steps"].append("SDK: slate import failed (non-fatal)")
         except Exception:
             result["steps"].append("SDK validation skipped")
 
@@ -635,7 +635,7 @@ Write-Host "  CUDA devs:  $env:CUDA_VISIBLE_DEVICES"
             script += '''
 # Verify SLATE SDK is importable
 try {
-    $sdkVer = & python -c "import aurora_core; print(aurora_core.__version__)" 2>$null
+    $sdkVer = & python -c "import slate; print(slate.__version__)" 2>$null
     Write-Host "  SLATE SDK:  v$sdkVer"
 } catch {
     Write-Host "  SLATE SDK:  not available"
@@ -643,7 +643,7 @@ try {
 
 # Run SLATE status (non-blocking health check)
 try {
-    & python aurora_core/slate_status.py --quick 2>$null | Out-Null
+    & python slate/slate_status.py --quick 2>$null | Out-Null
     Write-Host "  SLATE:      systems initialized"
 } catch {
     Write-Host "  SLATE:      status check skipped"
@@ -686,10 +686,10 @@ echo "  CUDA devs:  $CUDA_VISIBLE_DEVICES"
 
             script += '''
 # Verify SLATE SDK
-python -c "import aurora_core; print(f'  SLATE SDK:  v{aurora_core.__version__}')" 2>/dev/null || echo "  SLATE SDK:  not available"
+python -c "import slate; print(f'  SLATE SDK:  v{slate.__version__}')" 2>/dev/null || echo "  SLATE SDK:  not available"
 
 # Run SLATE status
-python aurora_core/slate_status.py --quick >/dev/null 2>&1 && echo "  SLATE:      systems initialized" || echo "  SLATE:      status check skipped"
+python slate/slate_status.py --quick >/dev/null 2>&1 && echo "  SLATE:      systems initialized" || echo "  SLATE:      status check skipped"
 '''
         script_path.write_text(script, encoding="utf-8")
         if self.system != "Windows":
@@ -729,7 +729,7 @@ Write-Host "[SLATE] Pre-job hook: {gpu_count} GPU(s), environment configured"
 
 # Quick SLATE system init — ensure SDK is loadable
 try {{
-    & "{venv_path}\\Scripts\\python.exe" -c "import aurora_core" 2>$null
+    & "{venv_path}\\Scripts\\python.exe" -c "import slate" 2>$null
 }} catch {{}}
 '''
         else:
@@ -751,7 +751,7 @@ export PYTHONIOENCODING="utf-8"
 export PATH="{venv_path}/bin:$PATH"
 
 echo "[SLATE] Pre-job hook: {gpu_count} GPU(s), environment configured"
-python -c "import aurora_core" 2>/dev/null || true
+python -c "import slate" 2>/dev/null || true
 '''
         hook_path.write_text(hook, encoding="utf-8")
         if self.system != "Windows":
@@ -792,7 +792,7 @@ if (Test-Path $envScript) {{
 
 # Verify SLATE
 try {{
-    $version = & python -c "import aurora_core; print(aurora_core.__version__)" 2>$null
+    $version = & python -c "import slate; print(slate.__version__)" 2>$null
     Write-Host "  SLATE SDK: v$version"
 }} catch {{
     Write-Host "  SLATE SDK: not available (will install during jobs)"
@@ -818,13 +818,13 @@ try {{
 Write-Host ""
 Write-Host "Initializing SLATE systems..."
 try {{
-    & python aurora_core/slate_status.py --quick 2>$null
+    & python slate/slate_status.py --quick 2>$null
     Write-Host "  [OK] SLATE status: online"
 }} catch {{
     Write-Host "  [--] SLATE status: skipped"
 }}
 try {{
-    & python aurora_core/slate_runtime.py --check-all 2>$null | Out-Null
+    & python slate/slate_runtime.py --check-all 2>$null | Out-Null
     Write-Host "  [OK] SLATE runtime: verified"
 }} catch {{
     Write-Host "  [--] SLATE runtime: skipped"
@@ -861,7 +861,7 @@ if [ -f "$RUNNER_DIR/slate_env.sh" ]; then
 fi
 
 # Verify SLATE
-python -c "import aurora_core; print(f'  SLATE SDK: v{{aurora_core.__version__}}')" 2>/dev/null || echo "  SLATE SDK: not available"
+python -c "import slate; print(f'  SLATE SDK: v{{slate.__version__}}')" 2>/dev/null || echo "  SLATE SDK: not available"
 
 # Check GPUs
 gpu_csv=$(nvidia-smi --query-gpu=index,name,memory.total --format=csv,noheader 2>/dev/null)
@@ -878,8 +878,8 @@ fi
 # Boot SLATE systems
 echo ""
 echo "Initializing SLATE systems..."
-python aurora_core/slate_status.py --quick >/dev/null 2>&1 && echo "  [OK] SLATE status: online" || echo "  [--] SLATE status: skipped"
-python aurora_core/slate_runtime.py --check-all >/dev/null 2>&1 && echo "  [OK] SLATE runtime: verified" || echo "  [--] SLATE runtime: skipped"
+python slate/slate_status.py --quick >/dev/null 2>&1 && echo "  [OK] SLATE status: online" || echo "  [--] SLATE status: skipped"
+python slate/slate_runtime.py --check-all >/dev/null 2>&1 && echo "  [OK] SLATE runtime: verified" || echo "  [--] SLATE runtime: skipped"
 
 echo ""
 echo "Starting runner (SLATE systems active)..."

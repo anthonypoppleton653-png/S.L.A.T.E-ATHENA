@@ -34,7 +34,7 @@ WORKSPACE_ROOT = Path(__file__).parent.parent
 if str(WORKSPACE_ROOT) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_ROOT))
 
-logger = logging.getLogger("aurora.fork_manager")
+logger = logging.getLogger("slate.fork_manager")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CELL: constants [python]
@@ -58,14 +58,14 @@ FORK_STATE_FILE = ".slate_fork/state.json"
 PROTECTED_FILES = [
     ".github/workflows/*",
     ".github/CODEOWNERS",
-    "aurora_core/action_guard.py",
-    "aurora_core/sdk_source_guard.py",
+    "slate/action_guard.py",
+    "slate/sdk_source_guard.py",
 ]
 
 # Required files for valid SLATE installation
 REQUIRED_FILES = [
-    "aurora_core/__init__.py",
-    "aurora_core/slate_status.py",
+    "slate/__init__.py",
+    "slate/slate_status.py",
     "current_tasks.json",
     "pyproject.toml",
     "CLAUDE.md",
@@ -342,18 +342,18 @@ class SlateForkManager:
         # Check 2: Core module imports
         try:
             sys.path.insert(0, str(self.workspace))
-            import aurora_core.slate_status
-            results["checks"].append("PASS: aurora_core.slate_status imports")
+            import slate.slate_status
+            results["checks"].append("PASS: slate.slate_status imports")
         except ImportError as e:
             results["passed"] = False
-            results["errors"].append(f"IMPORT FAIL: aurora_core.slate_status - {e}")
+            results["errors"].append(f"IMPORT FAIL: slate.slate_status - {e}")
 
         try:
-            import aurora_core.action_guard
-            results["checks"].append("PASS: aurora_core.action_guard imports")
+            import slate.action_guard
+            results["checks"].append("PASS: slate.action_guard imports")
         except ImportError as e:
             results["passed"] = False
-            results["errors"].append(f"IMPORT FAIL: aurora_core.action_guard - {e}")
+            results["errors"].append(f"IMPORT FAIL: slate.action_guard - {e}")
 
         # Check 3: pyproject.toml validation
         try:
@@ -393,7 +393,7 @@ class SlateForkManager:
             ("exec(os", "Use of exec with os module"),
         ]
 
-        for py_file in self.workspace.glob("aurora_core/**/*.py"):
+        for py_file in self.workspace.glob("slate/**/*.py"):
             content = py_file.read_text(encoding="utf-8", errors="ignore")
             for pattern, description in dangerous_patterns:
                 if pattern in content:
@@ -462,7 +462,7 @@ class SlateForkManager:
         results["success"] = True
         results["next_steps"] = [
             "Make your changes",
-            "Run: python aurora_core/slate_fork_manager.py --validate",
+            "Run: python slate/slate_fork_manager.py --validate",
             f"Commit: git commit -m '{title}'",
             f"Push: git push fork {safe_branch}",
             "Create PR on GitHub",

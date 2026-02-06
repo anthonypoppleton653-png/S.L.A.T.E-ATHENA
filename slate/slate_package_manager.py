@@ -50,7 +50,7 @@ if sys.platform == "win32":
 
 ROOT = Path(__file__).resolve().parent.parent
 PYPROJECT = ROOT / "pyproject.toml"
-INIT_FILE = ROOT / "aurora_core" / "__init__.py"
+INIT_FILE = ROOT / "slate" / "__init__.py"
 CHANGELOG = ROOT / "CHANGELOG.md"
 DIST_DIR = ROOT / "dist"
 VERSION_FILES = [PYPROJECT, INIT_FILE]
@@ -74,7 +74,7 @@ def get_version_from_pyproject() -> str:
 
 
 def get_version_from_init() -> str:
-    """Extract version from aurora_core/__init__.py."""
+    """Extract version from slate/__init__.py."""
     if not INIT_FILE.exists():
         return "unknown"
     content = INIT_FILE.read_text(encoding="utf-8")
@@ -86,7 +86,7 @@ def versions_consistent() -> tuple[bool, dict[str, str]]:
     """Check if all version files have the same version."""
     versions = {
         "pyproject.toml": get_version_from_pyproject(),
-        "aurora_core/__init__.py": get_version_from_init(),
+        "slate/__init__.py": get_version_from_init(),
     }
     unique = set(v for v in versions.values() if v != "unknown")
     return len(unique) <= 1, versions
@@ -125,7 +125,7 @@ def apply_version(new_version: str) -> list[str]:
             PYPROJECT.write_text(new_content, encoding="utf-8")
             updated.append("pyproject.toml")
 
-    # aurora_core/__init__.py
+    # slate/__init__.py
     if INIT_FILE.exists():
         content = INIT_FILE.read_text(encoding="utf-8")
         new_content = re.sub(
@@ -135,7 +135,7 @@ def apply_version(new_version: str) -> list[str]:
         )
         if new_content != content:
             INIT_FILE.write_text(new_content, encoding="utf-8")
-            updated.append("aurora_core/__init__.py")
+            updated.append("slate/__init__.py")
 
     return updated
 
@@ -500,7 +500,7 @@ def validate_package() -> dict:
     # 7. Package importable
     try:
         proc = subprocess.run(
-            [sys.executable, "-c", "import aurora_core; print(aurora_core.__version__)"],
+            [sys.executable, "-c", "import slate; print(slate.__version__)"],
             cwd=str(ROOT),
             capture_output=True,
             text=True,

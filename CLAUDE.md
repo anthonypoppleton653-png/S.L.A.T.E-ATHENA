@@ -16,10 +16,10 @@ cd S.L.A.T.E.
 python install_slate.py
 
 # Verify installation
-.\.venv\Scripts\python.exe aurora_core/slate_sdk.py --verify
+.\.venv\Scripts\python.exe slate/slate_sdk.py --verify
 
 # Start dashboard
-.\.venv\Scripts\python.exe agents/aurora_dashboard_server.py
+.\.venv\Scripts\python.exe agents/slate_dashboard_server.py
 ```
 
 **With self-hosted runner:**
@@ -37,31 +37,31 @@ The SDK provides unified setup, configuration, and integration. Always use the S
 
 ```powershell
 # Full setup (creates venv, installs deps, configures system)
-python aurora_core/slate_sdk.py --setup
+python slate/slate_sdk.py --setup
 
 # Setup with runner
-python aurora_core/slate_sdk.py --setup --runner --runner-token YOUR_TOKEN
+python slate/slate_sdk.py --setup --runner --runner-token YOUR_TOKEN
 
 # Check status (human-readable)
-python aurora_core/slate_sdk.py --status
+python slate/slate_sdk.py --status
 
 # Check status (JSON for scripts)
-python aurora_core/slate_sdk.py --status --json
+python slate/slate_sdk.py --status --json
 
 # Verify installation
-python aurora_core/slate_sdk.py --verify
+python slate/slate_sdk.py --verify
 
 # Integrate git remotes
-python aurora_core/slate_sdk.py --integrate-git
+python slate/slate_sdk.py --integrate-git
 
 # Integrate runner
-python aurora_core/slate_sdk.py --integrate-runner
+python slate/slate_sdk.py --integrate-runner
 ```
 
 ### Python API
 
 ```python
-from aurora_core.slate_sdk import SlateSDK
+from slate.slate_sdk import SlateSDK
 
 sdk = SlateSDK()
 
@@ -95,12 +95,13 @@ GitHub Repository (S.L.A.T.E.)
    (tests, AI, builds)
 ```
 
-### Dual-Repository Model
+### Single-Repository Model
 
 | Repository | Purpose | Branch |
 |------------|---------|--------|
-| **S.L.A.T.E.** | Main product - stable releases | `main` |
-| **S.L.A.T.E.-BETA** | Development fork - active work | feature branches |
+| **S.L.A.T.E.** | Main product — all development | `main` (stable), feature branches |
+
+> **Note**: S.L.A.T.E.-BETA is deprecated. All work is in the single `S.L.A.T.E.` repository.
 
 ---
 
@@ -126,7 +127,7 @@ GitHub Repository (S.L.A.T.E.)
 ## Project Structure
 
 ```text
-aurora_core/           # Core SLATE modules
+slate/           # Core SLATE modules
   slate_sdk.py         # Unified SDK (setup, status, verify)
   slate_status.py      # System status checker
   slate_runner_manager.py    # GitHub runner management
@@ -137,7 +138,7 @@ aurora_core/           # Core SLATE modules
   action_guard.py            # Security validation
   sdk_source_guard.py        # Package trust verification
 agents/                # Agent implementations
-  aurora_dashboard_server.py  # Dashboard server
+  slate_dashboard_server.py  # Dashboard server
 slate_core/            # Shared infrastructure
 specs/                 # Feature specifications
 tests/                 # Test suite
@@ -152,10 +153,10 @@ tests/                 # Test suite
 
 ```powershell
 # SLATE Status
-.\.venv\Scripts\python.exe aurora_core/slate_status.py --quick
+.\.venv\Scripts\python.exe slate/slate_status.py --quick
 
 # SDK Status
-.\.venv\Scripts\python.exe aurora_core/slate_sdk.py --status
+.\.venv\Scripts\python.exe slate/slate_sdk.py --status
 
 # Run tests
 .\.venv\Scripts\python.exe -m pytest tests/ -v
@@ -164,10 +165,10 @@ tests/                 # Test suite
 ruff check .
 
 # Start dashboard
-.\.venv\Scripts\python.exe agents/aurora_dashboard_server.py
+.\.venv\Scripts\python.exe agents/slate_dashboard_server.py
 
 # Check AI backends
-.\.venv\Scripts\python.exe aurora_core/unified_ai_backend.py --status
+.\.venv\Scripts\python.exe slate/unified_ai_backend.py --status
 ```
 
 ---
@@ -187,16 +188,16 @@ SLATE operations use local GPU runners for CI/CD. **This is standard protocol.**
 
 ```powershell
 # Check status
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --status
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --status
 
 # Start runner
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --start
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --start
 
 # Stop runner
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --stop
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --stop
 
 # Install as Windows service
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --install-service
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --install-service
 ```
 
 ### Get Runner Token
@@ -204,7 +205,7 @@ SLATE operations use local GPU runners for CI/CD. **This is standard protocol.**
 1. Go to https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E./settings/actions/runners
 2. Click "New self-hosted runner"
 3. Copy the token
-4. Run: `python aurora_core/slate_sdk.py --setup --runner --runner-token YOUR_TOKEN`
+4. Run: `python slate/slate_sdk.py --setup --runner --runner-token YOUR_TOKEN`
 
 ### Runner Labels (Auto-Detected)
 
@@ -228,13 +229,13 @@ SLATE syncs tasks to GitHub Projects for planning and tracking.
 
 ```powershell
 # List projects
-.\.venv\Scripts\python.exe aurora_core/slate_project_manager.py --list
+.\.venv\Scripts\python.exe slate/slate_project_manager.py --list
 
 # Create development project
-.\.venv\Scripts\python.exe aurora_core/slate_project_manager.py --create --template development
+.\.venv\Scripts\python.exe slate/slate_project_manager.py --create --template development
 
 # Sync tasks to project
-.\.venv\Scripts\python.exe aurora_core/slate_project_manager.py --sync --project 1
+.\.venv\Scripts\python.exe slate/slate_project_manager.py --sync --project 1
 ```
 
 ### Project Templates
@@ -279,7 +280,7 @@ gh workflow run slate-protocol.yml -f operation=deploy
 
 ```powershell
 # Automatic (recommended)
-python aurora_core/slate_sdk.py --integrate-git
+python slate/slate_sdk.py --integrate-git
 
 # Manual
 git remote set-url origin https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E..git
@@ -357,6 +358,103 @@ All code changes must be accompanied by tests. Target 50%+ coverage.
 - **Wiki**: https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E./wiki
 - **Issues**: https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E./issues
 - **Projects**: https://github.com/orgs/SynchronizedLivingArchitecture/projects
+
+---
+
+## MCP Server Integration (Claude + Copilot)
+
+SLATE provides a Model Context Protocol (MCP) server that exposes system tools to
+AI assistants. The server is at `aurora_core/slate_mcp_server.py`.
+
+### MCP Tools Available
+
+| Tool | Description |
+|------|-------------|
+| `slate_get_status` | System status (GPU, SDK, runner, agents) |
+| `slate_run_check` | Run status/runtime/hardware/SDK checks |
+| `slate_list_tasks` | List tasks from the task queue |
+| `slate_gpu_info` | Detailed GPU information (VRAM, utilization, CUDA) |
+| `slate_agent_status` | Agent system health (all 4 agents) |
+| `slate_runner_status` | Self-hosted GitHub Actions runner status |
+| `slate_search_code` | Search SLATE codebase |
+| `slate_dashboard_url` | Get dashboard URL and running status |
+
+### MCP Resources
+
+| URI | Description |
+|-----|-------------|
+| `slate://status` | Current system status text |
+| `slate://tasks` | Task queue as JSON |
+| `slate://gpu` | nvidia-smi output |
+
+### Running the MCP Server
+
+```powershell
+# stdio mode (for VS Code Copilot / Claude Desktop)
+.\.venv\Scripts\python.exe aurora_core/slate_mcp_server.py
+
+# SSE mode (for web clients)
+.\.venv\Scripts\python.exe aurora_core/slate_mcp_server.py --sse --port 6274
+
+# Verify tools are registered
+.\.venv\Scripts\python.exe aurora_core/slate_mcp_server.py --verify
+```
+
+### Claude Desktop Configuration
+
+Add to `%APPDATA%/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "slate-system": {
+      "command": "C:/path/to/S.L.A.T.E./.venv/Scripts/python.exe",
+      "args": ["C:/path/to/S.L.A.T.E./aurora_core/slate_mcp_server.py"]
+    }
+  }
+}
+```
+
+### VS Code Copilot MCP Configuration
+
+Registered in `.vscode/mcp.json` — Copilot Chat automatically loads the SLATE MCP
+server when the workspace is open.
+
+### Claude Skills (`.claude/skills/`)
+
+| Skill | Purpose |
+|-------|---------|
+| `slate-status` | System health checks and diagnostics |
+| `slate-tasks` | Task queue management |
+| `slate-agents` | Agent system (ALPHA, BETA, GAMMA, DELTA) |
+| `slate-benchmark` | GPU benchmarks and hardware optimization |
+| `slate-traces` | Observability, metrics, and tracing |
+
+---
+
+## GitHub Integration Checklist
+
+SLATE maintains full GitHub integration for project management:
+
+| Integration | Status | Setup |
+|-------------|--------|-------|
+| **GitHub Actions** (17 workflows) | ✅ | `.github/workflows/` |
+| **Self-Hosted Runner** (2x GPU) | ✅ | `install_slate.py --runner` |
+| **GitHub Projects** (3 templates) | ✅ | `.github/projects.json` |
+| **Issue Templates** (3 types) | ✅ | `.github/ISSUE_TEMPLATE/` |
+| **PR Template** | ✅ | `.github/PULL_REQUEST_TEMPLATE.md` |
+| **Dependabot** | ✅ | `.github/dependabot.yml` |
+| **CodeQL Analysis** | ✅ | `.github/workflows/codeql.yml` |
+| **CODEOWNERS** | ✅ | `.github/CODEOWNERS` |
+| **Releases & Packages** | ✅ | `.github/workflows/release.yml` |
+| **Label Sync** | ✅ | `.github/labels.yml` |
+| **Security Advisories** | ✅ | `.github/SECURITY.md` |
+| **Funding** | ✅ | `.github/FUNDING.yml` |
+| **Wiki** (14 pages) | ✅ | `docs/wiki/` |
+| **Copilot Agent** | ✅ | `.github/copilot-instructions.md` |
+| **Copilot MCP Server** | ✅ | `.vscode/mcp.json` |
+| **Claude Skills** | ✅ | `.claude/skills/` |
+| **Claude MCP Config** | ✅ | `aurora_core/slate_mcp_server.py` |
 
 ---
 

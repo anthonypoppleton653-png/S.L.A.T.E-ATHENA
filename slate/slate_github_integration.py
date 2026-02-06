@@ -15,9 +15,9 @@ Unified integration between SLATE and GitHub:
 - CI/CD status tracking
 
 Usage:
-    python aurora_core/slate_github_integration.py --status
-    python aurora_core/slate_github_integration.py --trigger-workflow gpu-tests
-    python aurora_core/slate_github_integration.py --runner-start
+    python slate/slate_github_integration.py --status
+    python slate/slate_github_integration.py --trigger-workflow gpu-tests
+    python slate/slate_github_integration.py --runner-start
 """
 
 import argparse
@@ -36,7 +36,7 @@ WORKSPACE_ROOT = Path(__file__).parent.parent
 if str(WORKSPACE_ROOT) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_ROOT))
 
-logger = logging.getLogger("aurora.github_integration")
+logger = logging.getLogger("slate.github_integration")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CELL: constants [python]

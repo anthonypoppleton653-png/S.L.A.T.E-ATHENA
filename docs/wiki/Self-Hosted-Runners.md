@@ -44,22 +44,22 @@ The installer handles: download → configure → provision SLATE env → startu
 
 ```powershell
 # Check current status
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --status
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --status
 
 # Download the runner
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --download
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --download
 
 # Configure with your token
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --configure --token YOUR_TOKEN
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --configure --token YOUR_TOKEN
 
 # Provision SLATE environment on runner
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --provision
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --provision
 
 # Create startup + auto-start scripts
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --create-startup
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --create-startup
 
 # Start the runner
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --start
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --start
 ```
 
 #### 3. Verify Registration
@@ -84,7 +84,7 @@ The `--provision` command sets up a complete SLATE environment on the runner:
 | 10 | Save provisioning state |
 
 This ensures every GitHub Actions job on the runner has full access to:
-- SLATE SDK (`aurora_core`)
+- SLATE SDK (`slate`)
 - GPU/CUDA drivers
 - All Python dependencies
 - Correct environment variables
@@ -110,7 +110,7 @@ SLATE automatically detects and applies these labels:
 ### Creating Startup Scripts
 
 ```powershell
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --create-startup
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --create-startup
 ```
 
 This creates:
@@ -148,10 +148,10 @@ For persistent background operation without Task Scheduler:
 
 ```powershell
 # Install and start as service (requires Admin)
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --start --service
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --start --service
 
 # Stop the service
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --stop
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --stop
 ```
 
 ## Pre-Job Hooks
@@ -246,15 +246,15 @@ Utility:
 ### Runner Not Appearing
 
 ```powershell
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --status
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --configure --token NEW_TOKEN
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --status
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --configure --token NEW_TOKEN
 ```
 
 ### Provisioning Failed
 
 ```powershell
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --provision
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --status --json
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --provision
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --status --json
 ```
 
 ### GPU Not Detected
@@ -268,7 +268,7 @@ python -c "import torch; print(torch.cuda.is_available())"
 
 ```powershell
 # Run interactively to see errors
-.\.venv\Scripts\python.exe aurora_core/slate_runner_manager.py --start
+.\.venv\Scripts\python.exe slate/slate_runner_manager.py --start
 
 # Check for existing runner process
 Get-Process Runner.Listener -ErrorAction SilentlyContinue

@@ -10,7 +10,7 @@ SLATE development is tracked through GitHub Issues, organized into the following
 
 | Workstream | Label | Description |
 |------------|-------|-------------|
-| **Core SDK** | `aurora-core` | Runtime, hardware optimization, benchmarks |
+| **Core SDK** | `slate` | Runtime, hardware optimization, benchmarks |
 | **Dashboard** | `dashboard` | Web dashboard, data visualization, APIs |
 | **Agent System** | `agents` | ALPHA/BETA/GAMMA/DELTA agent orchestration |
 | **AI Backends** | `ai-backend` | Ollama, Foundry Local, external API integration |
@@ -22,7 +22,7 @@ SLATE development is tracked through GitHub Issues, organized into the following
 ## Roadmap
 
 ### ✅ Phase 1 — Foundation (Complete)
-- [x] Core SDK (`aurora_core`) with status, runtime, benchmark
+- [x] Core SDK (`slate`) with status, runtime, benchmark
 - [x] Hardware detection and GPU optimization
 - [x] Virtual environment management
 - [x] Requirements and pyproject.toml packaging
@@ -106,7 +106,7 @@ SLATE uses a structured label system synced via [label-sync.yml](../../.github/w
 ### Component Labels
 | Label | Color | Description |
 |-------|-------|-------------|
-| `aurora-core` | `#6366f1` | SDK and runtime |
+| `slate` | `#6366f1` | SDK and runtime |
 | `dashboard` | `#a78bfa` | Dashboard server |
 | `agents` | `#818cf8` | Agent system |
 | `github-actions` | `#333333` | CI/CD workflows |
@@ -144,9 +144,9 @@ S.L.A.T.E./
 │   ├── labels.yml             # Label definitions
 │   ├── slate.config.yaml      # SLATE-specific config
 │   └── copilot-instructions.md
-├── aurora_core/               # SDK package
+├── slate/               # SDK package
 ├── agents/                    # Dashboard & agent servers
-├── aurora_slate/              # Static assets & templates
+├── slate_web/              # Static assets & templates
 ├── docs/
 │   ├── wiki/                  # Documentation wiki pages
 │   └── assets/                # Logos, images

@@ -285,14 +285,14 @@ def step_gpu_detect(tracker, args):
 
 
 def step_sdk_validate(tracker, args):
-    """Step 5: Validate aurora_core SDK imports and version."""
+    """Step 5: Validate slate SDK imports and version."""
     tracker.start_step("sdk_validate")
-    tracker.update_progress("sdk_validate", 30, "Importing aurora_core SDK")
+    tracker.update_progress("sdk_validate", 30, "Importing slate SDK")
 
     try:
         result = _run_cmd([
             _get_python_exe(), "-c",
-            "import aurora_core; print(getattr(aurora_core, '__version__', 'unknown'))"
+            "import slate; print(getattr(slate, '__version__', 'unknown'))"
         ], timeout=15)
 
         if result.returncode == 0:
@@ -301,19 +301,19 @@ def step_sdk_validate(tracker, args):
             # Check critical modules
             check = _run_cmd([
                 _get_python_exe(), "-c",
-                "from aurora_core import slate_status; "
-                "from aurora_core import slate_runtime; "
+                "from slate import slate_status; "
+                "from slate import slate_runtime; "
                 "print('all_ok')"
             ], timeout=15)
             if check.returncode == 0 and "all_ok" in check.stdout:
                 tracker.complete_step("sdk_validate", success=True,
-                                      details=f"aurora_core v{version} — all modules OK")
+                                      details=f"slate v{version} — all modules OK")
             else:
                 tracker.complete_step("sdk_validate", success=True, warning=True,
-                                      details=f"aurora_core v{version} — some modules missing")
+                                      details=f"slate v{version} — some modules missing")
         else:
             tracker.complete_step("sdk_validate", success=True, warning=True,
-                                  details="aurora_core not importable (first install)")
+                                  details="slate not importable (first install)")
         return True
 
     except Exception as e:
@@ -327,9 +327,9 @@ def step_dirs_create(tracker, args):
     tracker.start_step("dirs_create")
 
     dirs = [
-        WORKSPACE_ROOT / "aurora_core",
+        WORKSPACE_ROOT / "slate",
         WORKSPACE_ROOT / "agents",
-        WORKSPACE_ROOT / "aurora_slate",
+        WORKSPACE_ROOT / "slate_web",
         WORKSPACE_ROOT / "tests",
         WORKSPACE_ROOT / ".github",
         WORKSPACE_ROOT / ".slate_install",
@@ -346,9 +346,9 @@ def step_dirs_create(tracker, args):
 
     # Ensure __init__.py files exist for Python packages
     init_files = [
-        WORKSPACE_ROOT / "aurora_core" / "__init__.py",
+        WORKSPACE_ROOT / "slate" / "__init__.py",
         WORKSPACE_ROOT / "agents" / "__init__.py",
-        WORKSPACE_ROOT / "aurora_slate" / "__init__.py",
+        WORKSPACE_ROOT / "slate_web" / "__init__.py",
         WORKSPACE_ROOT / "tests" / "__init__.py",
     ]
     for f in init_files:
@@ -403,7 +403,7 @@ def step_benchmark(tracker, args):
     """Step 8: Run system benchmarks."""
     tracker.start_step("benchmark")
 
-    benchmark_script = WORKSPACE_ROOT / "aurora_core" / "slate_benchmark.py"
+    benchmark_script = WORKSPACE_ROOT / "slate" / "slate_benchmark.py"
     if not benchmark_script.exists():
         tracker.skip_step("benchmark", "Benchmark script not found")
         return True
@@ -450,7 +450,7 @@ def step_runner_setup(tracker, args):
 
     tracker.update_progress("runner_setup", 10, "Importing runner manager")
     try:
-        from aurora_core.slate_runner_manager import SlateRunnerManager
+        from slate.slate_runner_manager import SlateRunnerManager
     except ImportError:
         tracker.complete_step("runner_setup", success=True, warning=True,
                               details="Runner manager not available — skipping")
@@ -527,8 +527,119 @@ def step_runner_setup(tracker, args):
     return True
 
 
+def step_ai_agents(tracker, args):
+    """Step 10: Configure AI agent integrations (Copilot + Claude)."""
+    # Modified: 2026-02-06T10:15:00Z | Author: COPILOT | Change: AI agent setup step
+    tracker.start_step("ai_agents")
+    tracker.update_progress("ai_agents", 10, "Checking AI agent configurations")
+
+    configured = []
+    warnings = []
+
+    # 1. Verify MCP server exists
+    mcp_server = WORKSPACE_ROOT / "aurora_core" / "slate_mcp_server.py"
+    if mcp_server.exists():
+        configured.append("MCP server")
+    else:
+        warnings.append("MCP server not found (aurora_core/slate_mcp_server.py)")
+
+    tracker.update_progress("ai_agents", 25, "Checking Copilot agent")
+
+    # 2. Verify Copilot instructions
+    copilot_instructions = WORKSPACE_ROOT / ".github" / "copilot-instructions.md"
+    if copilot_instructions.exists():
+        content = copilot_instructions.read_text(encoding="utf-8", errors="replace")
+        if "S.L.A.T.E." in content and "MCP Server" in content:
+            configured.append("Copilot agent")
+        else:
+            warnings.append("Copilot instructions exist but may be incomplete")
+    else:
+        warnings.append("Copilot instructions missing (.github/copilot-instructions.md)")
+
+    # 3. Verify VS Code MCP config
+    mcp_config = WORKSPACE_ROOT / ".vscode" / "mcp.json"
+    if mcp_config.exists():
+        configured.append("VS Code MCP config")
+    else:
+        warnings.append("VS Code MCP config missing (.vscode/mcp.json)")
+
+    tracker.update_progress("ai_agents", 50, "Checking Claude plugin")
+
+    # 4. Verify CLAUDE.md
+    claude_md = WORKSPACE_ROOT / "CLAUDE.md"
+    if claude_md.exists():
+        content = claude_md.read_text(encoding="utf-8", errors="replace")
+        if "MCP" in content and "slate_mcp_server" in content:
+            configured.append("CLAUDE.md")
+        else:
+            warnings.append("CLAUDE.md exists but missing MCP references")
+    else:
+        warnings.append("CLAUDE.md not found")
+
+    # 5. Verify Claude skills
+    skills_dir = WORKSPACE_ROOT / ".claude" / "skills"
+    if skills_dir.exists():
+        skill_count = sum(1 for d in skills_dir.iterdir() if d.is_dir())
+        if skill_count > 0:
+            configured.append(f"Claude skills ({skill_count})")
+        else:
+            warnings.append("Claude skills directory empty (.claude/skills/)")
+    else:
+        warnings.append("Claude skills not found (.claude/skills/)")
+
+    tracker.update_progress("ai_agents", 75, "Checking MCP dependency")
+
+    # 6. Verify MCP SDK installed
+    python_exe = _get_python_exe()
+    if python_exe.exists():
+        result = _run_cmd([python_exe, "-c", "import mcp; print(mcp.__version__)"], timeout=10)
+        if result.returncode == 0:
+            configured.append(f"MCP SDK v{result.stdout.strip()}")
+        else:
+            # Try to install it
+            tracker.update_progress("ai_agents", 80, "Installing MCP SDK")
+            pip = _get_pip_exe()
+            if pip.exists():
+                install_result = _run_cmd([pip, "install", "mcp", "--quiet"], timeout=60)
+                if install_result.returncode == 0:
+                    configured.append("MCP SDK (just installed)")
+                else:
+                    warnings.append("MCP SDK install failed — run: pip install mcp")
+
+    # 7. Verify GitHub integrations config
+    tracker.update_progress("ai_agents", 90, "Verifying GitHub integrations")
+    github_files = {
+        "Actions workflows": WORKSPACE_ROOT / ".github" / "workflows",
+        "Issue templates": WORKSPACE_ROOT / ".github" / "ISSUE_TEMPLATE",
+        "PR template": WORKSPACE_ROOT / ".github" / "PULL_REQUEST_TEMPLATE.md",
+        "CODEOWNERS": WORKSPACE_ROOT / ".github" / "CODEOWNERS",
+        "Dependabot": WORKSPACE_ROOT / ".github" / "dependabot.yml",
+        "Labels": WORKSPACE_ROOT / ".github" / "labels.yml",
+        "Security": WORKSPACE_ROOT / ".github" / "SECURITY.md",
+        "Funding": WORKSPACE_ROOT / ".github" / "FUNDING.yml",
+    }
+    for name, path in github_files.items():
+        if path.exists():
+            configured.append(name)
+        else:
+            warnings.append(f"{name} missing ({path.relative_to(WORKSPACE_ROOT)})")
+
+    # Build result
+    details = f"{len(configured)} integrations active"
+    if warnings:
+        details += f", {len(warnings)} warnings"
+
+    if warnings:
+        tracker.complete_step("ai_agents", success=True, warning=True,
+                              details=f"{details}: {'; '.join(warnings[:3])}")
+    else:
+        tracker.complete_step("ai_agents", success=True, details=details)
+
+    return True
+
+
 def step_runtime_check(tracker, args):
-    """Step 10: Final runtime verification."""
+    """Step 11: Final runtime verification."""
     tracker.start_step("runtime_check")
     tracker.update_progress("runtime_check", 20, "Running runtime checks")
 
@@ -538,7 +649,7 @@ def step_runtime_check(tracker, args):
 
     # Check 1: slate_status.py exists and runs
     checks_total += 1
-    status_script = WORKSPACE_ROOT / "aurora_core" / "slate_status.py"
+    status_script = WORKSPACE_ROOT / "slate" / "slate_status.py"
     if status_script.exists():
         result = _run_cmd([_get_python_exe(), str(status_script), "--quick"], timeout=30)
         if result.returncode == 0:
@@ -552,7 +663,7 @@ def step_runtime_check(tracker, args):
 
     # Check 2: slate_runtime.py exists and runs
     checks_total += 1
-    runtime_script = WORKSPACE_ROOT / "aurora_core" / "slate_runtime.py"
+    runtime_script = WORKSPACE_ROOT / "slate" / "slate_runtime.py"
     if runtime_script.exists():
         result = _run_cmd([_get_python_exe(), str(runtime_script), "--check-all"], timeout=30)
         if result.returncode == 0:
@@ -566,7 +677,7 @@ def step_runtime_check(tracker, args):
     checks_total += 1
     result = _run_cmd([
         _get_python_exe(), "-c",
-        "from agents.aurora_dashboard_server import app; print('ok')"
+        "from agents.slate_dashboard_server import app; print('ok')"
     ], timeout=15)
     if result.returncode == 0:
         checks_passed += 1
@@ -622,17 +733,17 @@ def print_completion(success: bool, tracker=None):
             print("    1. Activate:  .\\.venv\\Scripts\\activate")
         else:
             print("    1. Activate:  source .venv/bin/activate")
-        print("    2. Status:    python aurora_core/slate_status.py --quick")
-        print("    3. Runtime:   python aurora_core/slate_runtime.py --check-all")
-        print("    4. Dashboard: python agents/aurora_dashboard_server.py")
-        print("    5. Hardware:  python aurora_core/slate_hardware_optimizer.py")
+        print("    2. Status:    python slate/slate_status.py --quick")
+        print("    3. Runtime:   python slate/slate_runtime.py --check-all")
+        print("    4. Dashboard: python agents/slate_dashboard_server.py")
+        print("    5. Hardware:  python slate/slate_hardware_optimizer.py")
         print()
         print("  For GPU support (optional):")
-        print("    python aurora_core/slate_hardware_optimizer.py --install-pytorch")
+        print("    python slate/slate_hardware_optimizer.py --install-pytorch")
         print()
         print("  Self-hosted runner (optional):")
         print("    python install_slate.py --runner --runner-token TOKEN")
-        print("    python aurora_core/slate_runner_manager.py --status")
+        print("    python slate/slate_runner_manager.py --status")
         print()
     else:
         print("  Troubleshooting:")
@@ -686,7 +797,7 @@ def main():
     # Initialize the install tracker
     sys.path.insert(0, str(WORKSPACE_ROOT))
     try:
-        from aurora_core.install_tracker import InstallTracker
+        from slate.install_tracker import InstallTracker
         tracker = InstallTracker()
     except ImportError:
         # InstallTracker not available yet — create a minimal shim
@@ -713,7 +824,7 @@ def main():
     resume_completed = set()
     if args.resume:
         try:
-            from aurora_core.install_tracker import InstallTracker as IT
+            from slate.install_tracker import InstallTracker as IT
             state = IT.load_state()
             if state and state.get("steps"):
                 resume_completed = {
@@ -724,7 +835,7 @@ def main():
         except Exception:
             pass
 
-    # Define all 10 installation steps in canonical order
+    # Define all installation steps in canonical order
     install_steps = [
         ("dashboard_boot", step_dashboard_boot),
         ("python_check",   step_python_check),
@@ -736,6 +847,7 @@ def main():
         ("git_sync",       step_git_sync),
         ("benchmark",      step_benchmark),
         ("runner_setup",   step_runner_setup),
+        ("ai_agents",      step_ai_agents),
         ("runtime_check",  step_runtime_check),
     ]
 

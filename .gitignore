@@ -50,8 +50,8 @@ htmlcov/
 *.log
 
 # SLATE runtime data (not source)
-.aurora_pids/
-.aurora_training/
+.slate_pids/
+.slate_training/
 .slate_analytics/
 .slate_cas/
 .slate_copilot_feedback/
@@ -64,8 +64,8 @@ htmlcov/
 .slate_task_archive/
 .slate_traces/
 .tools/
-aurora_logs/
-aurora_memory/
+slate_logs/
+slate_memory/
 slate_memory/
 
 # Runtime state files

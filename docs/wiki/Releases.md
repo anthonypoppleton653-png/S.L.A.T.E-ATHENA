@@ -25,7 +25,7 @@ slate-package --status
 # Validate package readiness
 slate-package --validate
 
-# Bump version (updates pyproject.toml + aurora_core/__init__.py)
+# Bump version (updates pyproject.toml + slate/__init__.py)
 slate-package --bump minor
 
 # Update CHANGELOG.md with release notes
@@ -127,7 +127,7 @@ SLATE maintains a structured [CHANGELOG.md](https://github.com/SynchronizedLivin
 | **2.3.0** | 2026-01-28 | 14 GitHub Actions workflows, PR templates, labels |
 | **2.2.0** | 2026-01-20 | Dashboard framework, data visualization branch |
 | **2.1.0** | 2026-01-15 | Multi-agent system (ALPHA/BETA/GAMMA/DELTA) |
-| **2.0.0** | 2026-01-10 | Complete rewrite with aurora_core SDK |
+| **2.0.0** | 2026-01-10 | Complete rewrite with slate SDK |
 | **1.0.0** | 2025-11-13 | Initial prototype |
 
 ## GitHub Packages
@@ -144,9 +144,9 @@ pip install slate --index-url https://pypi.pkg.github.com/SynchronizedLivingArch
 
 ```
 slate-2.4.0-py3-none-any.whl
-├── aurora_core/         # Core SDK modules
+├── slate/         # Core SDK modules
 ├── agents/              # Dashboard + API servers
-└── aurora_slate/        # Templates + static assets
+└── slate_web/        # Templates + static assets
 ```
 
 ### Authentication

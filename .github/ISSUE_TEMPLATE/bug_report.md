@@ -24,7 +24,7 @@ assignees: ''
 
 | Field | Value |
 |-------|-------|
-| SLATE Version | `python aurora_core/slate_status.py --quick` output |
+| SLATE Version | `python slate/slate_status.py --quick` output |
 | Python Version | |
 | OS | Windows / Linux / macOS |
 | GPU | (if applicable) |
@@ -45,5 +45,5 @@ assignees: ''
 
 ### Checklist
 - [ ] I've searched existing issues for duplicates
-- [ ] I've run `python aurora_core/slate_runtime.py --check-all` and included output
+- [ ] I've run `python slate/slate_runtime.py --check-all` and included output
 - [ ] I'm using Python 3.11+

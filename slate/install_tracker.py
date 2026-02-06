@@ -12,7 +12,7 @@ Architecture:
                                       → SSE broadcast    ← Dashboard listens
 
 Usage:
-    from aurora_core.install_tracker import InstallTracker
+    from slate.install_tracker import InstallTracker
     tracker = InstallTracker()
     tracker.start_step("python_check", "Checking Python Version")
     tracker.complete_step("python_check", success=True, details="Python 3.11.9")
@@ -135,7 +135,7 @@ class InstallTracker:
         InstallStep("gpu_detect", "Hardware Detection",
                     "Detecting NVIDIA GPUs and compute capability", order=4),
         InstallStep("sdk_validate", "SDK Validation",
-                    "Validating aurora_core SDK imports and version", order=5),
+                    "Validating slate SDK imports and version", order=5),
         InstallStep("dirs_create", "Directory Structure",
                     "Creating workspace directories and init files", order=6),
         InstallStep("git_sync", "Git Synchronization",
@@ -234,7 +234,7 @@ class InstallTracker:
         self.state.status = "in_progress"
         self.state.started_at = datetime.now().isoformat()
         try:
-            from aurora_core import __version__
+            from slate import __version__
             self.state.slate_version = __version__
         except Exception:
             self.state.slate_version = "unknown"

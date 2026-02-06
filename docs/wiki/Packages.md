@@ -8,7 +8,7 @@ S.L.A.T.E. is organized into three core Python packages:
 
 ```
 slate/
-├── aurora_core/          # SDK — runtime, hardware, benchmarks, agents
+├── slate/          # SDK — runtime, hardware, benchmarks, agents
 │   ├── __init__.py       # Version: 2.4.0
 │   ├── slate_status.py   # System status & health checks
 │   ├── slate_runtime.py  # Runtime verification
@@ -19,10 +19,10 @@ slate/
 │   ├── ml_orchestrator.py        # ML pipeline orchestration
 │   └── ...
 ├── agents/               # Dashboard, API servers, agent runners
-│   ├── aurora_dashboard_server.py # FastAPI dashboard
+│   ├── slate_dashboard_server.py # FastAPI dashboard
 │   ├── install_api.py    # Install progress API + SSE endpoints
 │   └── ...
-└── aurora_slate/         # Templates, static assets, HTML
+└── slate_web/         # Templates, static assets, HTML
     └── install.html      # Install progress dashboard
 ```
 
@@ -99,7 +99,7 @@ Adds Tier 3 AI packages for model training and inference.
 
 ### GPU-Accelerated
 ```bash
-python aurora_core/slate_hardware_optimizer.py --install-pytorch
+python slate/slate_hardware_optimizer.py --install-pytorch
 ```
 Installs the correct PyTorch build for your NVIDIA GPU's compute capability:
 - **Blackwell** (CC 12.x): CUDA 12.8+
@@ -118,10 +118,10 @@ version = "2.4.0"
 requires-python = ">=3.11"
 
 [project.scripts]
-slate-status = "aurora_core.slate_status:main"
-slate-runtime = "aurora_core.slate_runtime:main"
-slate-benchmark = "aurora_core.slate_benchmark:main"
-slate-hardware = "aurora_core.slate_hardware_optimizer:main"
+slate-status = "slate.slate_status:main"
+slate-runtime = "slate.slate_runtime:main"
+slate-benchmark = "slate.slate_benchmark:main"
+slate-hardware = "slate.slate_hardware_optimizer:main"
 ```
 
 After `pip install -e .`, these CLI commands become available:
@@ -147,14 +147,14 @@ Configuration: [`.github/dependabot.yml`](../../.github/dependabot.yml)
 ## Module Import Map
 
 ```
-aurora_core.slate_status          → slate-status CLI
-aurora_core.slate_runtime         → slate-runtime CLI
-aurora_core.slate_benchmark       → slate-benchmark CLI
-aurora_core.slate_hardware_optimizer → slate-hardware CLI
-aurora_core.slate_fork_manager    → Git fork management
-aurora_core.install_tracker       → Install progress tracking
-aurora_core.ml_orchestrator       → ML pipeline orchestration
-agents.aurora_dashboard_server    → Dashboard web server
+slate.slate_status          → slate-status CLI
+slate.slate_runtime         → slate-runtime CLI
+slate.slate_benchmark       → slate-benchmark CLI
+slate.slate_hardware_optimizer → slate-hardware CLI
+slate.slate_fork_manager    → Git fork management
+slate.install_tracker       → Install progress tracking
+slate.ml_orchestrator       → ML pipeline orchestration
+agents.slate_dashboard_server    → Dashboard web server
 agents.install_api                → Install API + SSE
 ```
 
@@ -162,7 +162,7 @@ agents.install_api                → Install API + SSE
 
 SLATE version is defined in:
 - `pyproject.toml` → `project.version = "2.4.0"`
-- `aurora_core/__init__.py` → `__version__ = "2.4.0"`
+- `slate/__init__.py` → `__version__ = "2.4.0"`
 
 The CI pipeline validates version consistency across these files.
 

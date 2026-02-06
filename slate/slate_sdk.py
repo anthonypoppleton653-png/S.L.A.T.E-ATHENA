@@ -7,12 +7,12 @@ Provides a unified interface for SLATE setup, configuration, and integration.
 Consolidates all setup operations into a single SDK entry point.
 
 Usage:
-    python aurora_core/slate_sdk.py --setup           # Full SLATE setup
-    python aurora_core/slate_sdk.py --status          # System status
-    python aurora_core/slate_sdk.py --configure       # Interactive configuration
-    python aurora_core/slate_sdk.py --verify          # Verify installation
-    python aurora_core/slate_sdk.py --integrate-git   # Setup git integration
-    python aurora_core/slate_sdk.py --integrate-runner # Setup self-hosted runner
+    python slate/slate_sdk.py --setup           # Full SLATE setup
+    python slate/slate_sdk.py --status          # System status
+    python slate/slate_sdk.py --configure       # Interactive configuration
+    python slate/slate_sdk.py --verify          # Verify installation
+    python slate/slate_sdk.py --integrate-git   # Setup git integration
+    python slate/slate_sdk.py --integrate-runner # Setup self-hosted runner
 """
 
 import argparse
@@ -33,7 +33,7 @@ WORKSPACE_ROOT = Path(__file__).parent.parent
 if str(WORKSPACE_ROOT) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_ROOT))
 
-logger = logging.getLogger("aurora.sdk")
+logger = logging.getLogger("slate.sdk")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CELL: constants
@@ -51,18 +51,18 @@ GITHUB_URL = f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}"
 REQUIRED_PYTHON_VERSION = (3, 11)
 
 CORE_MODULES = [
-    "aurora_core.slate_status",
-    "aurora_core.action_guard",
-    "aurora_core.sdk_source_guard",
-    "aurora_core.unified_ai_backend",
-    "aurora_core.slate_fork_manager",
-    "aurora_core.slate_project_manager",
+    "slate.slate_status",
+    "slate.action_guard",
+    "slate.sdk_source_guard",
+    "slate.unified_ai_backend",
+    "slate.slate_fork_manager",
+    "slate.slate_project_manager",
 ]
 
 OPTIONAL_MODULES = [
-    "aurora_core.slate_runner_manager",
-    "aurora_core.foundry_local",
-    "aurora_core.rag_memory",
+    "slate.slate_runner_manager",
+    "slate.foundry_local",
+    "slate.rag_memory",
 ]
 
 AI_BACKENDS = {
@@ -282,7 +282,7 @@ class SlateSDK:
     def _verify_workspace(self) -> Dict[str, Any]:
         """Verify workspace structure."""
         required_paths = [
-            "aurora_core/__init__.py",
+            "slate/__init__.py",
             "pyproject.toml",
             "requirements.txt",
         ]
@@ -403,7 +403,7 @@ class SlateSDK:
     def _setup_runner(self, token: Optional[str] = None) -> Dict[str, Any]:
         """Setup self-hosted runner."""
         try:
-            from aurora_core.slate_runner_manager import SlateRunnerManager
+            from slate.slate_runner_manager import SlateRunnerManager
             manager = SlateRunnerManager()
             status = manager.get_runner_status()
 
@@ -434,7 +434,7 @@ class SlateSDK:
         # Check runner
         runner_status = "unknown"
         try:
-            from aurora_core.slate_runner_manager import SlateRunnerManager
+            from slate.slate_runner_manager import SlateRunnerManager
             manager = SlateRunnerManager()
             status = manager.get_runner_status()
             runner_status = status.get("status", "unknown")
@@ -554,7 +554,7 @@ class SlateSDK:
     def integrate_runner(self, token: Optional[str] = None) -> Dict[str, Any]:
         """Setup self-hosted runner integration."""
         try:
-            from aurora_core.slate_runner_manager import SlateRunnerManager
+            from slate.slate_runner_manager import SlateRunnerManager
             manager = SlateRunnerManager()
 
             status = manager.get_runner_status()
@@ -573,7 +573,7 @@ class SlateSDK:
                 "instructions": [
                     "1. Get a runner token from GitHub Settings → Actions → Runners",
                     "2. Run: python install_slate.py --runner --runner-token YOUR_TOKEN",
-                    "3. Or manually: python aurora_core/slate_runner_manager.py --install",
+                    "3. Or manually: python slate/slate_runner_manager.py --install",
                 ],
             }
         except Exception as e:

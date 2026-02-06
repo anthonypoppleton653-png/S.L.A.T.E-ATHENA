@@ -7,10 +7,10 @@ Integrates SLATE task system with GitHub Projects for planning and tracking.
 Syncs tasks between current_tasks.json and GitHub Projects.
 
 Usage:
-    python aurora_core/slate_project_manager.py --status
-    python aurora_core/slate_project_manager.py --sync
-    python aurora_core/slate_project_manager.py --create-project "SLATE Development"
-    python aurora_core/slate_project_manager.py --list-projects
+    python slate/slate_project_manager.py --status
+    python slate/slate_project_manager.py --sync
+    python slate/slate_project_manager.py --create-project "SLATE Development"
+    python slate/slate_project_manager.py --list-projects
 """
 
 import argparse
@@ -28,7 +28,7 @@ WORKSPACE_ROOT = Path(__file__).parent.parent
 if str(WORKSPACE_ROOT) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_ROOT))
 
-logger = logging.getLogger("aurora.project_manager")
+logger = logging.getLogger("slate.project_manager")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CELL: constants
