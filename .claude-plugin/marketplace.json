@@ -1,13 +1,14 @@
 {
   "name": "slate-marketplace",
+  "description": "S.L.A.T.E. - Local development plugins for AI-powered orchestration",
   "owner": {
     "name": "SynchronizedLivingArchitecture",
     "email": "slate@github.com"
   },
-  "description": "S.L.A.T.E. - Synchronized Living Architecture for Transformation and Evolution",
   "plugins": [
     {
       "name": "slate-sdk",
+      "version": "1.0.0",
       "source": ".",
       "description": "SLATE orchestration, workflow management, and AI tools for Claude Code"
     }

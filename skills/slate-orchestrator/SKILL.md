@@ -1,3 +1,8 @@
+---
+name: slate-orchestrator
+description: Start, stop, or check the SLATE orchestrator. Use when managing SLATE services, starting/stopping the dashboard, or checking service status.
+---
+
 # /slate
 
 Start, stop, or check the SLATE orchestrator and all services.

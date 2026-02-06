@@ -1,3 +1,8 @@
+---
+name: slate-runner
+description: Manage GitHub Actions self-hosted runner. Use when checking runner status, setting up hooks, or dispatching workflows.
+---
+
 # /slate-runner
 
 Manage the GitHub Actions self-hosted runner for SLATE.

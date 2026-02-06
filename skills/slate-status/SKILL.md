@@ -1,3 +1,8 @@
+---
+name: slate-status
+description: Check SLATE services and system status. Use when checking GPU, services, or environment health.
+---
+
 # /slate-status
 
 Check the status of all SLATE services and system components.

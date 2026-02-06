@@ -1,3 +1,8 @@
+---
+name: slate-workflow
+description: Manage SLATE task workflow queue. Use when checking task status, cleaning up stale tasks, or viewing workflow health.
+---
+
 # /slate-workflow
 
 Manage the SLATE task workflow queue and monitor task health.

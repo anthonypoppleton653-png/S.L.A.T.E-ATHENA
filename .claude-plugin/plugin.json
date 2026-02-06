@@ -1,23 +1,25 @@
 {
   "name": "slate-sdk",
-  "description": "S.L.A.T.E. - Synchronized Living Architecture for Transformation and Evolution. Provides AI-powered development orchestration, workflow management, and agentic task execution.",
+  "description": "S.L.A.T.E. - AI-powered development orchestration, workflow management, and agentic task execution",
   "version": "1.0.0",
   "author": {
     "name": "SynchronizedLivingArchitecture",
-    "email": "slate@github.com"
+    "email": "slate@github.com",
+    "url": "https://github.com/SynchronizedLivingArchitecture"
   },
-  "repository": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.",
+  "repository": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E",
   "license": "MIT",
-  "keywords": [
-    "slate",
-    "ai",
-    "orchestration",
-    "agents",
-    "workflow",
-    "automation"
-  ],
-  "commands": "commands",
-  "skills": "skills",
-  "hooks": "hooks/hooks.json",
-  "mcpServers": ".mcp.json"
+  "keywords": ["slate", "ai", "orchestration", "agents", "workflow", "automation"],
+  "skills": "./skills/",
+  "commands": ["./commands/slate-help.md"],
+  "mcpServers": {
+    "slate": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/.venv/Scripts/python.exe",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/slate/mcp_server.py"],
+      "env": {
+        "SLATE_WORKSPACE": "${CLAUDE_PLUGIN_ROOT}",
+        "PYTHONPATH": "${CLAUDE_PLUGIN_ROOT}"
+      }
+    }
+  }
 }
