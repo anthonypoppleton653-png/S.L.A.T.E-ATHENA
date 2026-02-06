@@ -51,10 +51,21 @@ jobs:
   # Test GitHub Models connection
   test-connection:
     name: Test GitHub Models
-    runs-on: [self-hosted, slate, gpu]
+    runs-on: [self-hosted, slate, gpu, windows]
     if: github.event.inputs.task == 'test-connection' || github.event_name == 'pull_request'
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          $ws = "${{ github.workspace }}"
+          if (-not (Test-Path $ws)) {
+            New-Item -ItemType Directory -Path $ws -Force | Out-Null
+            Write-Host "Created workspace: $ws"
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
 
       - name: Setup Python
         run: |
@@ -85,14 +96,24 @@ jobs:
   # AI Code Review on PRs
   code-review:
     name: AI Code Review
-    runs-on: [self-hosted, slate, gpu]
+    runs-on: [self-hosted, slate, gpu, windows]
     if: |
       github.event.inputs.task == 'code-review' ||
       (github.event_name == 'pull_request' && github.event.action == 'opened')
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          $ws = "${{ github.workspace }}"
+          if (-not (Test-Path $ws)) {
+            New-Item -ItemType Directory -Path $ws -Force | Out-Null
+            Write-Host "Created workspace: $ws"
+          }
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          clean: true
 
       - name: Setup Environment
         run: |
@@ -163,10 +184,21 @@ jobs:
   # Generate Documentation
   generate-docs:
     name: Generate Documentation
-    runs-on: [self-hosted, slate, gpu]
+    runs-on: [self-hosted, slate, gpu, windows]
     if: github.event.inputs.task == 'generate-docs'
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          $ws = "${{ github.workspace }}"
+          if (-not (Test-Path $ws)) {
+            New-Item -ItemType Directory -Path $ws -Force | Out-Null
+            Write-Host "Created workspace: $ws"
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
 
       - name: Setup Environment
         run: |
@@ -216,10 +248,21 @@ jobs:
   # Analyze PR
   analyze-pr:
     name: Analyze PR
-    runs-on: [self-hosted, slate, gpu]
+    runs-on: [self-hosted, slate, gpu, windows]
     if: github.event.inputs.task == 'analyze-pr'
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          $ws = "${{ github.workspace }}"
+          if (-not (Test-Path $ws)) {
+            New-Item -ItemType Directory -Path $ws -Force | Out-Null
+            Write-Host "Created workspace: $ws"
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
 
       - name: Setup Environment
         run: |
@@ -266,7 +309,7 @@ jobs:
   # Summary
   summary:
     name: Workflow Summary
-    runs-on: [self-hosted, slate]
+    runs-on: [self-hosted, slate, windows]
     needs: [test-connection]
     if: always()
     steps:

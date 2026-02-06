@@ -87,6 +87,8 @@ nul
 .env
 *.pem
 *.key
+*.p12
+*.pfx
 secrets/
 
 # Large files

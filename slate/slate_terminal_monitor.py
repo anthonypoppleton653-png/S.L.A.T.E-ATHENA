@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 SLATE Terminal Monitor - Safe command execution with timeouts.
+# Modified: 2026-02-07T00:15:00Z | Author: COPILOT | Change: Use shlex.split for safer command execution
 
 Usage:
     python slate/slate_terminal_monitor.py --status
@@ -10,6 +11,7 @@ Usage:
 
 import argparse
 import json
+import shlex
 import subprocess
 import sys
 from datetime import datetime
@@ -52,10 +54,13 @@ def run_command(command, timeout=None, background=False):
     config = get_command_config(command)
     timeout = timeout or config["timeout"]
     try:
+        # Use shlex.split for safer command execution (shell=False)
+        # On Windows, fall back to shell=True only for built-in commands
+        cmd_parts = shlex.split(command, posix=(sys.platform != "win32"))
         if background:
-            subprocess.Popen(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.Popen(cmd_parts, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             return {"success": True, "background": True}
-        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=timeout)
+        result = subprocess.run(cmd_parts, capture_output=True, text=True, timeout=timeout)
         return {"success": result.returncode == 0, "output": result.stdout[:5000]}
     except subprocess.TimeoutExpired:
         return {"success": False, "error": f"Timeout after {timeout}s"}

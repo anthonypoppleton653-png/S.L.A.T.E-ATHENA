@@ -1,6 +1,6 @@
 ﻿# 
 # Release Workflow
-# Modified: 2026-02-06T18:00:00Z | Author: COPILOT | Change: Full release pipeline with packages, changelog, assets
+# Modified: 2026-02-07T00:25:00Z | Author: COPILOT | Change: Add workspace prep, fix shell for Windows runner
 # Manual release creation with changelog generation, package build, and artifact upload
 # 
 
@@ -42,9 +42,19 @@ jobs:
     outputs:
       changelog: ${{ steps.changelog.outputs.content }}
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          $ws = "${{ github.workspace }}"
+          if (-not (Test-Path $ws)) {
+            New-Item -ItemType Directory -Path $ws -Force | Out-Null
+            Write-Host "Created workspace: $ws"
+          }
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          clean: true
 
       - uses: actions/setup-python@v5
         with:
@@ -52,6 +62,7 @@ jobs:
           cache: 'pip'
 
       - name: Validate version format
+        shell: bash
         run: |
           if [[ ! "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
             echo "::error::Invalid version format. Use semver (e.g., 2.4.0 or 2.4.0-beta.1)"
@@ -59,6 +70,7 @@ jobs:
           fi
 
       - name: Check version not already released
+        shell: bash
         run: |
           if git rev-parse "v${{ inputs.version }}" >/dev/null 2>&1; then
             echo "::error::Tag v${{ inputs.version }} already exists"
@@ -66,6 +78,7 @@ jobs:
           fi
 
       - name: Validate version consistency
+        shell: bash
         run: |
           TOML_VER=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
           INIT_VER=$(python3 -c "
@@ -84,6 +97,7 @@ jobs:
 
       - name: Extract changelog for version
         id: changelog
+        shell: bash
         run: |
           if [ -f CHANGELOG.md ]; then
             CONTENT=$(python3 -c "
@@ -105,6 +119,7 @@ jobs:
           fi
 
       - name: Run tests
+        shell: bash
         run: |
           pip install -e ".[dev]" 2>/dev/null || pip install -r requirements.txt
           pip install pytest
@@ -118,7 +133,18 @@ jobs:
     outputs:
       version: ${{ steps.build.outputs.version }}
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          $ws = "${{ github.workspace }}"
+          if (-not (Test-Path $ws)) {
+            New-Item -ItemType Directory -Path $ws -Force | Out-Null
+            Write-Host "Created workspace: $ws"
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
 
       - uses: actions/setup-python@v5
         with:
@@ -129,6 +155,7 @@ jobs:
 
       - name: Build sdist and wheel
         id: build
+        shell: bash
         run: |
           python -m build
           twine check dist/*
@@ -148,9 +175,19 @@ jobs:
     needs: [validate, build-package]
     runs-on: [self-hosted, slate, windows]
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          $ws = "${{ github.workspace }}"
+          if (-not (Test-Path $ws)) {
+            New-Item -ItemType Directory -Path $ws -Force | Out-Null
+            Write-Host "Created workspace: $ws"
+          }
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          clean: true
 
       - uses: actions/download-artifact@v4
         with:
@@ -158,6 +195,7 @@ jobs:
           path: dist/
 
       - name: Create tag
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -219,9 +257,11 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install twine
+        shell: bash
         run: pip install twine
 
       - name: Publish package
+        shell: bash
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
@@ -235,12 +275,13 @@ jobs:
     if: always()
     steps:
       - name: Summary
+        shell: pwsh
         run: |
-          echo "## 🚀 Release v${{ inputs.version }} Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Validate | ${{ needs.validate.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Build Package | ${{ needs.build-package.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| GitHub Release | ${{ needs.create-release.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Package Publish | ${{ needs.publish-package.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "## Release v${{ inputs.version }} Results" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $env:GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Validate | ${{ needs.validate.result }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Build Package | ${{ needs.build-package.result }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "| GitHub Release | ${{ needs.create-release.result }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Package Publish | ${{ needs.publish-package.result }} |" >> $env:GITHUB_STEP_SUMMARY

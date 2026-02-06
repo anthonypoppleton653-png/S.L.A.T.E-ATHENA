@@ -1,6 +1,6 @@
 ﻿# 
 # Continuous Deployment Workflow
-# Modified: 2026-02-06T18:00:00Z | Author: COPILOT | Change: Add package build + publish to GitHub Packages
+# Modified: 2026-02-07T00:30:00Z | Author: COPILOT | Change: Add workspace prep, fix shell for Windows runner
 # Builds EXE, Docker image, Python package, and publishes releases
 # 
 
@@ -37,17 +37,32 @@ jobs:
       version: ${{ steps.ver.outputs.version }}
       is_tag: ${{ steps.ver.outputs.is_tag }}
     steps:
-      - uses: actions/checkout@v4
-      - id: ver
+      - name: Prepare Workspace
+        shell: pwsh
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-            echo "is_tag=true" >> $GITHUB_OUTPUT
-          else
-            VER=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
-            echo "version=$VER" >> $GITHUB_OUTPUT
-            echo "is_tag=false" >> $GITHUB_OUTPUT
-          fi
+          $ws = "${{ github.workspace }}"
+          if (-not (Test-Path $ws)) {
+            New-Item -ItemType Directory -Path $ws -Force | Out-Null
+            Write-Host "Created workspace: $ws"
+          }
+
+      - uses: actions/checkout@v4
+        with:
+          clean: true
+
+      - id: ver
+        shell: pwsh
+        run: |
+          if ("${{ github.ref }}" -like "refs/tags/v*") {
+            $version = "${{ github.ref }}" -replace '^refs/tags/v', ''
+            echo "version=$version" >> $env:GITHUB_OUTPUT
+            echo "is_tag=true" >> $env:GITHUB_OUTPUT
+          } else {
+            $python = if (Test-Path ".venv\Scripts\python.exe") { ".venv\Scripts\python.exe" } else { "python" }
+            $ver = & $python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])"
+            echo "version=$ver" >> $env:GITHUB_OUTPUT
+            echo "is_tag=false" >> $env:GITHUB_OUTPUT
+          }
 
   build-exe:
     name: Build Windows EXE
@@ -56,7 +71,18 @@ jobs:
     if: ${{ github.event.inputs.build_exe != 'false' }}
     timeout-minutes: 30
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          $ws = "${{ github.workspace }}"
+          if (-not (Test-Path $ws)) {
+            New-Item -ItemType Directory -Path $ws -Force | Out-Null
+            Write-Host "Created workspace: $ws"
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -93,15 +119,26 @@ jobs:
     runs-on: [self-hosted, slate, windows]
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          $ws = "${{ github.workspace }}"
+          if (-not (Test-Path $ws)) {
+            New-Item -ItemType Directory -Path $ws -Force | Out-Null
+            Write-Host "Created workspace: $ws"
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
       - uses: actions/download-artifact@v4
         with:
           name: SLATEPI-exe-${{ needs.version.outputs.version }}
           path: release-artifacts/
       - name: Create release archive
+        shell: pwsh
         run: |
-          cd release-artifacts
-          zip -r ../SLATEPI-${{ needs.version.outputs.version }}-win64.zip .
+          Compress-Archive -Path release-artifacts\* -DestinationPath "SLATEPI-${{ needs.version.outputs.version }}-win64.zip" -Force
       - uses: softprops/action-gh-release@v2
         with:
           name: SLATEPI v${{ needs.version.outputs.version }}
@@ -114,7 +151,18 @@ jobs:
     runs-on: [self-hosted, slate, windows]
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          $ws = "${{ github.workspace }}"
+          if (-not (Test-Path $ws)) {
+            New-Item -ItemType Directory -Path $ws -Force | Out-Null
+            Write-Host "Created workspace: $ws"
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -166,12 +214,13 @@ jobs:
     if: always()
     steps:
       - name: Summary
+        shell: pwsh
         run: |
-          echo "## CD Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Version (${{ needs.version.outputs.version }}) | ${{ needs.version.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Build EXE | ${{ needs.build-exe.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Release | ${{ needs.release.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Build Package | ${{ needs.build-package.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Publish Package | ${{ needs.publish-package.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "## CD Results" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $env:GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Version (${{ needs.version.outputs.version }}) | ${{ needs.version.result }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Build EXE | ${{ needs.build-exe.result }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Release | ${{ needs.release.result }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Build Package | ${{ needs.build-package.result }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Publish Package | ${{ needs.publish-package.result }} |" >> $env:GITHUB_STEP_SUMMARY

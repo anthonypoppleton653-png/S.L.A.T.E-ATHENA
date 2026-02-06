@@ -1,6 +1,6 @@
 # 
 # Publish Package Workflow
-# Modified: 2026-02-06T18:00:00Z | Author: COPILOT | Change: Initial creation
+# Modified: 2026-02-07T00:35:00Z | Author: COPILOT | Change: Add workspace prep, fix shell for Windows runner
 # Builds and publishes SLATE Python package to GitHub Packages (PyPI) and PyPI
 # 
 
@@ -47,9 +47,19 @@ jobs:
       wheel: ${{ steps.meta.outputs.wheel }}
       sdist: ${{ steps.meta.outputs.sdist }}
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          $ws = "${{ github.workspace }}"
+          if (-not (Test-Path $ws)) {
+            New-Item -ItemType Directory -Path $ws -Force | Out-Null
+            Write-Host "Created workspace: $ws"
+          }
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          clean: true
 
       - uses: actions/setup-python@v5
         with:
@@ -63,45 +73,46 @@ jobs:
 
       - name: Extract version
         id: meta
+        shell: pwsh
         run: |
-          VERSION=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "wheel=slate-${VERSION}-py3-none-any.whl" >> $GITHUB_OUTPUT
-          echo "sdist=slate-${VERSION}.tar.gz" >> $GITHUB_OUTPUT
-          echo "📦 Building SLATE v${VERSION}"
+          $python = if (Test-Path ".venv\Scripts\python.exe") { ".venv\Scripts\python.exe" } else { "python" }
+          $ver = & $python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])"
+          echo "version=$ver" >> $env:GITHUB_OUTPUT
+          echo "wheel=slate-${ver}-py3-none-any.whl" >> $env:GITHUB_OUTPUT
+          echo "sdist=slate-${ver}.tar.gz" >> $env:GITHUB_OUTPUT
+          Write-Host "Building SLATE v${ver}"
 
       - name: Validate version consistency
+        shell: pwsh
         run: |
-          TOML_VER=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
-          INIT_VER=$(python3 -c "
-          import re
-          content = open('slate/__init__.py').read()
-          match = re.search(r'__version__\s*=\s*["\\']([^"\\']+')", content)
-          print(match.group(1) if match else 'NOT_FOUND')
-          ")
-          echo "pyproject.toml: $TOML_VER"
-          echo "slate/__init__.py: $INIT_VER"
-          if [ "$TOML_VER" != "$INIT_VER" ]; then
-            echo "::error::Version mismatch: pyproject.toml=$TOML_VER vs __init__.py=$INIT_VER"
+          $python = if (Test-Path ".venv\Scripts\python.exe") { ".venv\Scripts\python.exe" } else { "python" }
+          $tomlVer = & $python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])"
+          $initVer = & $python -c "import re; c=open('slate/__init__.py').read(); m=re.search(r'__version__\s*=\s*[\x22\x27]([^\x22\x27]+)', c); print(m.group(1) if m else 'NOT_FOUND')"
+          Write-Host "pyproject.toml: $tomlVer"
+          Write-Host "slate/__init__.py: $initVer"
+          if ($tomlVer -ne $initVer) {
+            Write-Host "::error::Version mismatch: pyproject.toml=$tomlVer vs __init__.py=$initVer"
             exit 1
-          fi
+          }
 
       - name: Build sdist and wheel
         run: python -m build
 
       - name: Verify package
+        shell: pwsh
         run: |
           twine check dist/*
-          echo "## 📦 Package Build Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| File | Size |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
-          for f in dist/*; do
-            SIZE=$(du -h "$f" | cut -f1)
-            echo "| $(basename $f) | $SIZE |" >> $GITHUB_STEP_SUMMARY
-          done
+          echo "## Package Build Results" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "| File | Size |" >> $env:GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $env:GITHUB_STEP_SUMMARY
+          Get-ChildItem dist/* | ForEach-Object {
+            $size = [math]::Round($_.Length / 1KB, 1)
+            echo "| $($_.Name) | ${size}KB |" >> $env:GITHUB_STEP_SUMMARY
+          }
 
       - name: Run package smoke tests
+        shell: pwsh
         run: |
           pip install dist/*.whl
           python -c "import slate; print(f'SLATE v{slate.__version__} imported OK')"
@@ -184,11 +195,12 @@ jobs:
     if: always()
     steps:
       - name: Summary
+        shell: pwsh
         run: |
-          echo "## 📦 Package Publish Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Build (v${{ needs.build.outputs.version }}) | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| GitHub Packages | ${{ needs.publish-github.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| PyPI | ${{ needs.publish-pypi.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "## Package Publish Results" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $env:GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Build (v${{ needs.build.outputs.version }}) | ${{ needs.build.result }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "| GitHub Packages | ${{ needs.publish-github.result }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "| PyPI | ${{ needs.publish-pypi.result }} |" >> $env:GITHUB_STEP_SUMMARY
