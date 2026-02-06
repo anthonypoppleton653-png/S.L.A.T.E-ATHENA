@@ -1,8 +1,8 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/SynchronizedLivingArchitecture/S.L.A.T.E./001-data-viz-dashboard/docs/assets/slate-logo.svg" alt="SLATE Logo" width="200" height="200">
-</p>
+<h1 align="center">
+  <img src="https://img.shields.io/badge/S.L.A.T.E.-7aa2f7?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTMgMTNoMnYtMkgzdjJ6bTAgNGgydi0ySDN2MnptMC04aDJ2LTJIM3Yyek03IDEzaDEwdi0ySDd2MnptMCA0aDEwdi0ySDd2MnptMC04aDEwdi0ySDd2MnptMTIgMTJoMlYzaC0ydjE4eiIvPjwvc3ZnPg==" alt="SLATE" height="40">
+</h1>
 
-<h1 align="center">S.L.A.T.E.</h1>
+<h3 align="center">Synchronized Living Architecture for Transformation and Evolution</h3>
 
 <p align="center">
   <strong>Synchronized Living Architecture for Transformation and Evolution</strong>
