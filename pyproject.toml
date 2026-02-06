@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "slate"
+version = "2.4.0"
+description = "System Learning Agent for Task Execution"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "SynchronizedLivingArchitecture"}
+]
+keywords = ["ai", "agent", "orchestration", "pytorch", "gpu"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "psutil>=5.9.0",
+    "rich>=13.0.0",
+    "aiohttp>=3.9.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+ai = [
+    "transformers>=4.40.0",
+    "accelerate>=0.30.0",
+    "peft>=0.10.0",
+]
+dev = [
+    "pytest>=8.0.0",
+    "black>=24.0.0",
+    "mypy>=1.8.0",
+]
+
+[project.scripts]
+slate-status = "aurora_core.slate_status:main"
+slate-runtime = "aurora_core.slate_runtime:main"
+slate-benchmark = "aurora_core.slate_benchmark:main"
+slate-hardware = "aurora_core.slate_hardware_optimizer:main"
+
+[project.urls]
+Homepage = "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E."
+Repository = "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E."
+Issues = "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E./issues"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
