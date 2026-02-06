@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # ═══════════════════════════════════════════════════════════════════════════════
-# CELL: slate_status [python]
-# Author: COPILOT | Created: 2026-02-06T00:30:00Z | Modified: 2026-02-06T00:30:00Z
-# Purpose: Quick status check for SLATE system
+# SLATE Status Checker
+# Author: Claude | Modified: 2026-02-06
+# Purpose: Quick status check for SLATE system (GitHub Runner focused)
 # ═══════════════════════════════════════════════════════════════════════════════
 """
 SLATE Status Checker
 ====================
-Quick system status check.
+Quick system status check focused on GitHub Runner integration.
 
 Usage:
     python aurora_core/slate_status.py --quick
@@ -43,7 +43,7 @@ def get_gpu_info():
     """Detect NVIDIA GPUs."""
     try:
         result = subprocess.run(
-            ["nvidia-smi", "--query-gpu=name,compute_cap,memory.total,memory.free", "--format=csv,noheader"],
+            ["nvidia-smi", "--query-gpu=name,memory.total,memory.free", "--format=csv,noheader"],
             capture_output=True,
             text=True,
             timeout=10
@@ -52,12 +52,11 @@ def get_gpu_info():
             gpus = []
             for line in result.stdout.strip().split("\n"):
                 parts = [p.strip() for p in line.split(",")]
-                if len(parts) >= 4:
+                if len(parts) >= 3:
                     gpus.append({
                         "name": parts[0],
-                        "compute_capability": parts[1],
-                        "memory_total": parts[2],
-                        "memory_free": parts[3]
+                        "memory_total": parts[1],
+                        "memory_free": parts[2]
                     })
             return {"available": True, "count": len(gpus), "gpus": gpus}
         return {"available": False, "count": 0, "gpus": []}
@@ -69,10 +68,10 @@ def get_system_info():
     """Get system resource info."""
     if not HAS_PSUTIL:
         return {"available": False}
-    
+
     mem = psutil.virtual_memory()
     disk = psutil.disk_usage(str(Path.cwd()))
-    
+
     return {
         "available": True,
         "cpu_count": psutil.cpu_count(),
@@ -83,40 +82,6 @@ def get_system_info():
         "disk_total_gb": round(disk.total / (1024**3), 1),
         "disk_free_gb": round(disk.free / (1024**3), 1)
     }
-
-
-def get_pytorch_info():
-    """Check PyTorch installation."""
-    try:
-        import torch
-        cuda_available = torch.cuda.is_available()
-        return {
-            "installed": True,
-            "version": torch.__version__,
-            "cuda_available": cuda_available,
-            "cuda_version": torch.version.cuda if cuda_available else None,
-            "device_count": torch.cuda.device_count() if cuda_available else 0
-        }
-    except ImportError:
-        return {"installed": False}
-
-
-def get_ollama_info():
-    """Check Ollama status."""
-    try:
-        result = subprocess.run(
-            ["ollama", "list"],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-        if result.returncode == 0:
-            lines = result.stdout.strip().split("\n")
-            models = [l.split()[0] for l in lines[1:] if l.strip()]
-            return {"available": True, "model_count": len(models), "models": models[:10]}
-        return {"available": False, "model_count": 0}
-    except Exception:
-        return {"available": False, "model_count": 0}
 
 
 def get_runner_info():
@@ -138,7 +103,7 @@ def get_runner_info():
     if HAS_PSUTIL:
         for proc in psutil.process_iter(['name']):
             try:
-                if 'Runner.Listener' in proc.info['name']:
+                if 'Runner.Listener' in proc.info.get('name', ''):
                     info["running"] = True
                     break
             except (psutil.NoSuchProcess, psutil.AccessDenied):
@@ -174,7 +139,6 @@ def get_github_info():
         )
         authenticated = result.returncode == 0
 
-        # Get username if authenticated
         username = None
         if authenticated:
             user_result = subprocess.run(
@@ -204,8 +168,6 @@ def get_status():
         "python": get_python_info(),
         "gpu": get_gpu_info(),
         "system": get_system_info(),
-        "pytorch": get_pytorch_info(),
-        "ollama": get_ollama_info(),
         "runner": get_runner_info(),
         "github": get_github_info()
     }
@@ -215,10 +177,10 @@ def print_quick_status(status: dict):
     """Print quick status summary."""
     print()
     print("=" * 50)
-    print("  S.L.A.T.E. Status")
+    print("  S.L.A.T.E. Status (GitHub Runner)")
     print("=" * 50)
     print()
-    
+
     # Python
     py = status["python"]
     icon = "[OK]" if py["ok"] else "[!!]"
@@ -231,48 +193,35 @@ def print_quick_status(status: dict):
         for g in gpu["gpus"]:
             print(f"            - {g['name']} ({g['memory_total']})")
     else:
-        print("  GPU:      [--] CPU-only mode")
-    
+        print("  GPU:      [--] None detected")
+
     # System
     sys_info = status["system"]
     if sys_info.get("available"):
         print(f"  CPU:      {sys_info['cpu_count']} cores ({sys_info['cpu_percent']}% used)")
         print(f"  Memory:   {sys_info['memory_available_gb']}/{sys_info['memory_total_gb']} GB free")
         print(f"  Disk:     {sys_info['disk_free_gb']}/{sys_info['disk_total_gb']} GB free")
-    
-    # PyTorch
-    pt = status["pytorch"]
-    if pt.get("installed"):
-        cuda_status = f"CUDA {pt['cuda_version']}" if pt.get("cuda_available") else "CPU"
-        print(f"  PyTorch:  [OK] {pt['version']} ({cuda_status})")
-    else:
-        print("  PyTorch:  [--] Not installed")
-    
-    # Ollama
-    ollama = status["ollama"]
-    if ollama.get("available"):
-        print(f"  Ollama:   [OK] {ollama['model_count']} models")
-    else:
-        print("  Ollama:   [--] Not available")
 
-    # GitHub Runner
+    # GitHub Runner (primary)
     runner = status.get("runner", {})
     runner_name = runner.get('name') or 'self-hosted'
     if runner.get("running"):
         print(f"  Runner:   [OK] {runner_name} (listening)")
+        if runner.get("labels"):
+            print(f"            Labels: {', '.join(runner['labels'][:5])}")
     elif runner.get("configured"):
         print(f"  Runner:   [--] {runner_name} (stopped)")
     elif runner.get("installed"):
         print("  Runner:   [--] Installed but not configured")
     else:
-        print("  Runner:   [--] Not installed")
+        print("  Runner:   [!!] Not installed")
 
     # GitHub CLI
     github = status.get("github", {})
     if github.get("authenticated"):
         print(f"  GitHub:   [OK] {github.get('username', 'authenticated')}")
     elif github.get("cli_installed"):
-        print("  GitHub:   [--] CLI installed but not authenticated")
+        print("  GitHub:   [--] CLI installed, not authenticated")
     else:
         print("  GitHub:   [--] CLI not installed")
 
@@ -287,14 +236,14 @@ def main():
     parser.add_argument("--quick", action="store_true", help="Quick status")
     parser.add_argument("--json", action="store_true", help="JSON output")
     args = parser.parse_args()
-    
+
     status = get_status()
-    
+
     if args.json:
         print(json.dumps(status, indent=2))
     else:
         print_quick_status(status)
-    
+
     return 0
 
 

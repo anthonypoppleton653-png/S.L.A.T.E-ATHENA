@@ -9,27 +9,17 @@
 
 ## Core Concepts
 - [Architecture](Architecture)
-- [Agent System](Agents)
-- [Task Management](Agents#task-management)
-
-## AI Integration
-- [AI Backends](AI-Backends)
-- [Ollama Setup](AI-Backends#ollama)
-- [Foundry Local](AI-Backends#foundry-local)
+- [GitHub Runner](Self-Hosted-Runners)
 
 ## Packages & Dependencies
 - [Package Overview](Packages)
 - [Dependency Tiers](Packages#dependency-tiers)
 - [pyproject.toml](Packages#pyprojecttoml)
-- [Module Import Map](Packages#module-import-map)
-- [GitHub Packages](Packages#github-packages)
 
 ## Releases & Versioning
 - [Release Process](Releases)
 - [Changelog](Releases#changelog)
 - [Version History](Releases#version-history)
-- [GitHub Packages](Releases#github-packages)
-- [Release Artifacts](Releases#release-artifacts)
 
 ## Projects & Roadmap
 - [Project Board](Projects)
@@ -48,5 +38,4 @@
 
 ## Advanced
 - [Development](Development)
-- [Extending SLATE](Development#extending-slate)
 - [Troubleshooting](Troubleshooting)

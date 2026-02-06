@@ -128,17 +128,9 @@ release:
       name: ghcr.io/synchronizedlivingarchitecture/s.l.a.t.e.
       platforms: [linux/amd64]
 
-# Agents
-agents:
-  ALPHA: {role: coding, gpu: true}
-  BETA: {role: testing, gpu: true}
-  GAMMA: {role: planning, gpu: false}
-  DELTA: {role: external_bridge, gpu: false}
-
-# Routing
-routing:
-  implement|code|build|fix: ALPHA
-  test|validate|verify|coverage: BETA
-  analyze|plan|research|document: GAMMA
-  claude|mcp|sdk|integration: DELTA
-  complex|multi-step: COPILOT
+# Execution
+# All tasks execute via GitHub Actions on self-hosted runner
+execution:
+  mode: github_runner
+  runner: slate-DESKTOP-R3UD82D
+  gpu_enabled: true
