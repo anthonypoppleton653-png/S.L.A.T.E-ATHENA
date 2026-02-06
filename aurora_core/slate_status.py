@@ -71,7 +71,7 @@ def get_system_info():
         return {"available": False}
     
     mem = psutil.virtual_memory()
-    disk = psutil.disk_usage(Path.cwd())
+    disk = psutil.disk_usage(str(Path.cwd()))
     
     return {
         "available": True,
@@ -119,6 +119,84 @@ def get_ollama_info():
         return {"available": False, "model_count": 0}
 
 
+def get_runner_info():
+    """Check GitHub Actions self-hosted runner status."""
+    runner_dir = Path("C:/actions-runner") if os.name == "nt" else Path.home() / "actions-runner"
+    runner_config = runner_dir / ".runner"
+    slate_config = runner_dir / ".slate_runner_config.json"
+
+    info = {
+        "installed": runner_dir.exists() and (runner_dir / "config.cmd").exists(),
+        "configured": runner_config.exists(),
+        "running": False,
+        "name": None,
+        "repo": None,
+        "labels": []
+    }
+
+    # Check if runner process is active
+    if HAS_PSUTIL:
+        for proc in psutil.process_iter(['name']):
+            try:
+                if 'Runner.Listener' in proc.info['name']:
+                    info["running"] = True
+                    break
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+
+    # Load configuration
+    if runner_config.exists():
+        try:
+            config = json.loads(runner_config.read_text())
+            info["name"] = config.get("agentName")
+            info["repo"] = config.get("gitHubUrl")
+        except Exception:
+            pass
+
+    if slate_config.exists():
+        try:
+            config = json.loads(slate_config.read_text())
+            info["labels"] = config.get("labels", [])
+        except Exception:
+            pass
+
+    return info
+
+
+def get_github_info():
+    """Check GitHub CLI and authentication status."""
+    try:
+        result = subprocess.run(
+            ["gh", "auth", "status"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        authenticated = result.returncode == 0
+
+        # Get username if authenticated
+        username = None
+        if authenticated:
+            user_result = subprocess.run(
+                ["gh", "api", "user", "-q", ".login"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if user_result.returncode == 0:
+                username = user_result.stdout.strip()
+
+        return {
+            "cli_installed": True,
+            "authenticated": authenticated,
+            "username": username
+        }
+    except FileNotFoundError:
+        return {"cli_installed": False, "authenticated": False}
+    except Exception:
+        return {"cli_installed": True, "authenticated": False}
+
+
 def get_status():
     """Get full system status."""
     return {
@@ -127,7 +205,9 @@ def get_status():
         "gpu": get_gpu_info(),
         "system": get_system_info(),
         "pytorch": get_pytorch_info(),
-        "ollama": get_ollama_info()
+        "ollama": get_ollama_info(),
+        "runner": get_runner_info(),
+        "github": get_github_info()
     }
 
 
@@ -141,17 +221,17 @@ def print_quick_status(status: dict):
     
     # Python
     py = status["python"]
-    icon = "✓" if py["ok"] else "✗"
+    icon = "[OK]" if py["ok"] else "[!!]"
     print(f"  Python:   {icon} {py['version']}")
-    
+
     # GPU
     gpu = status["gpu"]
     if gpu["available"]:
-        print(f"  GPU:      ✓ {gpu['count']} NVIDIA GPU(s)")
+        print(f"  GPU:      [OK] {gpu['count']} NVIDIA GPU(s)")
         for g in gpu["gpus"]:
             print(f"            - {g['name']} ({g['memory_total']})")
     else:
-        print("  GPU:      ○ CPU-only mode")
+        print("  GPU:      [--] CPU-only mode")
     
     # System
     sys_info = status["system"]
@@ -164,17 +244,38 @@ def print_quick_status(status: dict):
     pt = status["pytorch"]
     if pt.get("installed"):
         cuda_status = f"CUDA {pt['cuda_version']}" if pt.get("cuda_available") else "CPU"
-        print(f"  PyTorch:  ✓ {pt['version']} ({cuda_status})")
+        print(f"  PyTorch:  [OK] {pt['version']} ({cuda_status})")
     else:
-        print("  PyTorch:  ○ Not installed")
+        print("  PyTorch:  [--] Not installed")
     
     # Ollama
     ollama = status["ollama"]
     if ollama.get("available"):
-        print(f"  Ollama:   ✓ {ollama['model_count']} models")
+        print(f"  Ollama:   [OK] {ollama['model_count']} models")
     else:
-        print("  Ollama:   ○ Not available")
-    
+        print("  Ollama:   [--] Not available")
+
+    # GitHub Runner
+    runner = status.get("runner", {})
+    runner_name = runner.get('name') or 'self-hosted'
+    if runner.get("running"):
+        print(f"  Runner:   [OK] {runner_name} (listening)")
+    elif runner.get("configured"):
+        print(f"  Runner:   [--] {runner_name} (stopped)")
+    elif runner.get("installed"):
+        print("  Runner:   [--] Installed but not configured")
+    else:
+        print("  Runner:   [--] Not installed")
+
+    # GitHub CLI
+    github = status.get("github", {})
+    if github.get("authenticated"):
+        print(f"  GitHub:   [OK] {github.get('username', 'authenticated')}")
+    elif github.get("cli_installed"):
+        print("  GitHub:   [--] CLI installed but not authenticated")
+    else:
+        print("  GitHub:   [--] CLI not installed")
+
     print()
     print("=" * 50)
     print()
