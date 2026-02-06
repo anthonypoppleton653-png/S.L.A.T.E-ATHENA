@@ -71,7 +71,7 @@ Get your runner token from: https://github.com/SynchronizedLivingArchitecture/S.
 | Property | Value |
 |----------|-------|
 | **Name** | `slate-DESKTOP-R3UD82D` |
-| **Labels** | `self-hosted`, `slate`, `gpu`, `windows`, `cuda`, `gpu-2`, `blackwell` |
+| **Labels** | `self-hosted`, `slate`, `gpu`, `windows`, `cuda`, `gpu-2`, `multi-gpu`, `blackwell` |
 | **Hardware** | 2x RTX 5070 Ti (Blackwell) |
 
 ### Runner Commands
@@ -126,6 +126,62 @@ python agents/slate_dashboard_server.py
 - **Python**: 3.11+
 - **RAM**: 8GB minimum, 16GB recommended
 - **GPU**: NVIDIA RTX series (for self-hosted runner)
+
+## AI Agent Integration
+
+SLATE provides first-class integration with AI coding assistants via the
+[Model Context Protocol (MCP)](https://modelcontextprotocol.io/).
+
+### GitHub Copilot
+
+Copilot automatically loads SLATE context when the workspace is open:
+
+- **Agent instructions**: `.github/copilot-instructions.md` — project conventions, architecture, security
+- **MCP tools**: `.vscode/mcp.json` — 8 SLATE tools available in Copilot Chat
+
+### Claude (Desktop / Code)
+
+- **CLAUDE.md** — full project context, commands, integration checklist
+- **`.claude/skills/`** — 5 domain skills (status, tasks, agents, benchmark, traces)
+- **MCP server** — same server works with Claude Desktop via `claude_desktop_config.json`
+
+### MCP Server
+
+```bash
+# Verify tools are registered
+python aurora_core/slate_mcp_server.py --verify
+
+# stdio mode (Copilot / Claude)
+python aurora_core/slate_mcp_server.py
+
+# SSE mode (web clients)
+python aurora_core/slate_mcp_server.py --sse --port 6274
+```
+
+Available tools: `slate_get_status`, `slate_run_check`, `slate_list_tasks`,
+`slate_gpu_info`, `slate_agent_status`, `slate_runner_status`, `slate_search_code`,
+`slate_dashboard_url`.
+
+## GitHub Integrations
+
+| Integration | Config |
+|-------------|--------|
+| Actions (17 workflows) | `.github/workflows/` |
+| Self-Hosted Runner (2x GPU) | `aurora_core/slate_runner_manager.py` |
+| Projects (3 templates) | `.github/projects.json` |
+| Issue Templates (3) | `.github/ISSUE_TEMPLATE/` |
+| PR Template | `.github/PULL_REQUEST_TEMPLATE.md` |
+| Dependabot | `.github/dependabot.yml` |
+| CodeQL | `.github/workflows/codeql.yml` |
+| CODEOWNERS | `.github/CODEOWNERS` |
+| Releases & Packages | `.github/workflows/release.yml` |
+| Label Sync | `.github/labels.yml` |
+| Security Advisories | `.github/SECURITY.md` |
+| Funding | `.github/FUNDING.yml` |
+| Wiki (14 pages) | `docs/wiki/` |
+| Copilot Agent | `.github/copilot-instructions.md` |
+| Claude Plugin | `CLAUDE.md` + `.claude/skills/` |
+| MCP Server | `aurora_core/slate_mcp_server.py` |
 
 ## Contributing
 

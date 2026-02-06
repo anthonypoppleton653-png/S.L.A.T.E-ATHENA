@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # ═══════════════════════════════════════════════════════════════════════════════
 # CELL: install_slate [python]
-# Author: COPILOT | Created: 2026-02-06T00:30:00Z | Modified: 2026-02-09T06:30:00Z
-# Purpose: SLATE public installation script with dashboard-first tracking + runner
+# Author: COPILOT | Created: 2026-02-06T00:30:00Z | Modified: 2026-02-06T10:15:00Z
+# Purpose: SLATE public installation script with dashboard-first tracking + runner + AI agents
 # ═══════════════════════════════════════════════════════════════════════════════
 """
 S.L.A.T.E. Installation Script
@@ -10,6 +10,14 @@ S.L.A.T.E. Installation Script
 Installs and configures SLATE with real-time dashboard progress tracking.
 The dashboard is the FIRST system installed — every subsequent step is
 visible in the browser at http://127.0.0.1:8080.
+
+12 Installation Steps:
+    0. Dashboard boot      6. SDK validate       
+    1. Python check         7. Dirs create        
+    2. Venv setup           8. Git sync           
+    3. Deps install         9. Benchmark          
+    4. GPU detect          10. Runner setup (opt) 
+    5. AI agents           11. Runtime check
 
 Architecture:
     install_slate.py → InstallTracker → install_state.json ← Dashboard reads
@@ -744,6 +752,12 @@ def print_completion(success: bool, tracker=None):
         print("  Self-hosted runner (optional):")
         print("    python install_slate.py --runner --runner-token TOKEN")
         print("    python slate/slate_runner_manager.py --status")
+        print()
+        print("  AI Agent integration:")
+        print("    Copilot:  .github/copilot-instructions.md (auto-loaded)")
+        print("    MCP:      .vscode/mcp.json (Copilot Chat MCP tools)")
+        print("    Claude:   CLAUDE.md + .claude/skills/ (5 skills)")
+        print("    Verify:   python aurora_core/slate_mcp_server.py --verify")
         print()
     else:
         print("  Troubleshooting:")
