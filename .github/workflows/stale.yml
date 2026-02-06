@@ -1,27 +1,38 @@
-# This workflow warns and then closes issues and PRs that have had no activity for a specified amount of time.
-#
-# You can adjust the behavior by modifying this file.
-# For more information, see:
-# https://github.com/actions/stale
-name: Mark stale issues and pull requests
+﻿# 
+# Stale Issue & PR Management
+# Author: COPILOT | Created: 2026-02-06T14:00:00Z
+# Automatically manages stale issues and pull requests
+# 
+
+name: Stale Issues & PRs
 
 on:
   schedule:
-  - cron: '31 23 * * *'
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
 
 jobs:
   stale:
-
+    name: Manage Stale Items
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      pull-requests: write
-
+    timeout-minutes: 10
     steps:
-    - uses: actions/stale@v5
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        stale-issue-message: 'Stale issue message'
-        stale-pr-message: 'Stale pull request message'
-        stale-issue-label: 'no-issue-activity'
-        stale-pr-label: 'no-pr-activity'
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-issue-message: 'This issue has been automatically marked as stale due to inactivity. It will be closed in 14 days if no further activity occurs.'
+          stale-issue-label: 'stale'
+          days-before-issue-stale: 60
+          days-before-issue-close: 14
+          stale-pr-message: 'This PR has been automatically marked as stale due to inactivity. It will be closed in 7 days if no further activity occurs.'
+          stale-pr-label: 'stale'
+          days-before-pr-stale: 30
+          days-before-pr-close: 7
+          exempt-issue-labels: 'pinned,security,critical,in-progress'
+          exempt-pr-labels: 'pinned,security,critical,in-progress,do-not-close'
+          exempt-all-milestones: true
+          operations-per-run: 50

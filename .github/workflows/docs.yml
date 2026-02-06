@@ -1,0 +1,108 @@
+﻿# 
+# Documentation Validation
+# Author: COPILOT | Created: 2026-02-06T14:00:00Z
+# Validates documentation files, links, and spec consistency
+# 
+
+name: Docs Validation
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - '**.md'
+      - 'docs/**'
+      - 'specs/**'
+      - '.specify/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**.md'
+      - 'docs/**'
+      - 'specs/**'
+  workflow_dispatch:
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  link-check:
+    name: Link Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check internal links
+        run: |
+          python3 -c "
+          import os, re, sys
+          broken = []
+          checked = 0
+          for root, dirs, files in os.walk('.'):
+              dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ('node_modules', '.venv', '__pycache__')]
+              for f in files:
+                  if not f.endswith('.md'):
+                      continue
+                  filepath = os.path.join(root, f)
+                  with open(filepath, 'r', encoding='utf-8', errors='ignore') as fh:
+                      content = fh.read()
+                  links = re.findall(r'\[([^\]]+)\]\(([^)]+)\)', content)
+                  for text, link in links:
+                      if link.startswith(('http', '#', 'mailto:')):
+                          continue
+                      path = link.split('#')[0]
+                      if not path:
+                          continue
+                      target = os.path.normpath(os.path.join(os.path.dirname(filepath), path))
+                      checked += 1
+                      if not os.path.exists(target):
+                          broken.append(f'{filepath}: [{text}]({link})')
+          print(f'Checked {checked} internal links')
+          if broken:
+              print(f'::warning::Found {len(broken)} broken internal links')
+              for b in broken[:20]:
+                  print(f'  - {b}')
+          else:
+              print('All internal links OK')
+          "
+
+  readme-check:
+    name: README Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate README
+        run: |
+          python3 -c "
+          import os
+          if not os.path.exists('README.md'):
+              print('::error::README.md not found')
+              exit(1)
+          with open('README.md', 'r') as f:
+              content = f.read()
+          lines = content.strip().split('\n')
+          print(f'README.md: {len(lines)} lines')
+          if 'SLATE' not in content and 'slate' not in content:
+              print('::warning::README.md does not mention SLATE')
+          else:
+              print('README.md references SLATE: OK')
+          "
+
+  summary:
+    name: Docs Summary
+    runs-on: ubuntu-latest
+    needs: [link-check, readme-check]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Docs Validation" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Link Check | ${{ needs.link-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| README Check | ${{ needs.readme-check.result }} |" >> $GITHUB_STEP_SUMMARY

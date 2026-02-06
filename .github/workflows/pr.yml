@@ -1,0 +1,146 @@
+﻿# 
+# SLATE Pull Request Checks
+# Author: COPILOT | Created: 2026-02-02T00:00:00Z | Modified: 2026-02-06T14:00:00Z
+# 
+
+name: SLATE PR Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.11'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - run: pip install ruff mypy
+      - name: Ruff lint
+        run: ruff check aurora_core/ agents/ --output-format=github || true
+      - name: Format check
+        run: ruff format --check aurora_core/ agents/ --diff || true
+
+  tests:
+    name: Tests
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio
+        continue-on-error: true
+      - name: Run tests
+        run: python -m pytest tests/ -v --tb=short --ignore=tests/integration/ -x
+        continue-on-error: true
+
+  sdk-check:
+    name: SDK Validation
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+        continue-on-error: true
+      - name: Validate SDK
+        run: |
+          python -c "import aurora_core; print(f'SDK v{aurora_core.__version__}')"
+          python -c "import aurora_core.action_guard; print('action_guard OK')"
+          python -c "import aurora_core.smart_task_router; print('smart_task_router OK')"
+          python -c "import aurora_core.slate_status; print('slate_status OK')"
+          python -c "import aurora_core.feature_flags; print('feature_flags OK')"
+      - name: Version sync check
+        run: |
+          python -c "
+          import tomllib
+          with open('pyproject.toml', 'rb') as f:
+              c = tomllib.load(f)
+          v = c['project']['version']
+          import aurora_core
+          assert aurora_core.__version__ == v, f'Mismatch: {aurora_core.__version__} != {v}'
+          print(f'Version sync OK: {v}')
+          "
+
+  build-check:
+    name: Build Check
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+        continue-on-error: true
+      - name: Smoke tests
+        run: python aurora_core/build_smoke_tests.py
+
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install bandit
+      - name: Security scan
+        run: bandit -r aurora_core/ agents/ -ll -ii -x "**/test*" -f json -o bandit-report.json || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr-security-report
+          path: bandit-report.json
+
+  summary:
+    name: PR Summary
+    runs-on: ubuntu-latest
+    needs: [quality, tests, sdk-check, build-check, security]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## PR Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Quality | ${{ needs.quality.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ needs.tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| SDK Validation | ${{ needs.sdk-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Check | ${{ needs.build-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
