@@ -12,17 +12,9 @@
       "source": {
         "source": "github",
         "repo": "SynchronizedLivingArchitecture/S.L.A.T.E",
-        "ref": "feature/workflow-management"
+        "ref": "main"
       },
-      "description": "SLATE orchestration, workflow management, and AI tools for Claude Code",
-      "author": {
-        "name": "SynchronizedLivingArchitecture"
-      },
-      "license": "MIT",
-      "keywords": ["slate", "ai", "orchestration", "agents", "workflow", "automation"],
-      "skills": "./skills/",
-      "commands": ["./commands/slate-help.md"],
-      "strict": false
+      "description": "SLATE orchestration, workflow management, and AI tools for Claude Code"
     }
   ]
 }
