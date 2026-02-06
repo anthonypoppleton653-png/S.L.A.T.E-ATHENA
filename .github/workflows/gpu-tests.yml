@@ -41,7 +41,16 @@ jobs:
     timeout-minutes: 30
 
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${{ github.workspace }}")) {
+            New-Item -ItemType Directory -Path "${{ github.workspace }}" -Force | Out-Null
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
 
       - name: GPU Info
         run: |
@@ -94,7 +103,7 @@ jobs:
   # ==========================================================================
   fallback-tests:
     name: Tests (Fallback - No GPU)
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     if: ${{ failure() && !inputs.force_gpu }}
     needs: gpu-tests
     timeout-minutes: 20

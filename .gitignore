@@ -101,3 +101,7 @@ models/
 .DS_Store
 Thumbs.db
 actions-runner/
+_PipelineMapping/
+_actions/
+_temp/
+_tool/

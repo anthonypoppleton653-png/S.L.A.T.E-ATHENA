@@ -51,7 +51,21 @@ jobs:
       gpu_count: ${{ steps.gpu.outputs.count }}
       slate_version: ${{ steps.sdk.outputs.version }}
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          # Self-heal: ensure workspace directory exists for checkout
+          $ws = "${{ github.workspace }}"
+          if (-not (Test-Path $ws)) {
+            New-Item -ItemType Directory -Path $ws -Force | Out-Null
+            Write-Host "Created workspace: $ws"
+          } else {
+            Write-Host "Workspace ready: $ws"
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
 
       - name: SLATE Environment Check
         id: env
@@ -127,7 +141,16 @@ jobs:
     needs: environment
     timeout-minutes: 15
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${{ github.workspace }}")) {
+            New-Item -ItemType Directory -Path "${{ github.workspace }}" -Force | Out-Null
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
 
       - name: SLATE Status
         shell: pwsh
@@ -202,7 +225,16 @@ jobs:
     needs: environment
     timeout-minutes: 10
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${{ github.workspace }}")) {
+            New-Item -ItemType Directory -Path "${{ github.workspace }}" -Force | Out-Null
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
 
       - name: Dashboard Import Test
         shell: pwsh
@@ -254,7 +286,16 @@ jobs:
     needs: core-systems
     timeout-minutes: 15
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${{ github.workspace }}")) {
+            New-Item -ItemType Directory -Path "${{ github.workspace }}" -Force | Out-Null
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
 
       - name: Agent Module Imports
         shell: pwsh
@@ -307,7 +348,16 @@ jobs:
     env:
       CUDA_VISIBLE_DEVICES: "0,1"
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${{ github.workspace }}")) {
+            New-Item -ItemType Directory -Path "${{ github.workspace }}" -Force | Out-Null
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
 
       - name: Dual-GPU Detection
         shell: pwsh
@@ -401,7 +451,16 @@ jobs:
       SLATE_RUNNER: "true"
       SLATE_CI_MODE: "true"
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${{ github.workspace }}")) {
+            New-Item -ItemType Directory -Path "${{ github.workspace }}" -Force | Out-Null
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
 
       - name: Verify Dual-GPU Environment
         shell: pwsh
@@ -618,7 +677,16 @@ jobs:
       (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_ml_pipeline))
     timeout-minutes: 30
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${{ github.workspace }}")) {
+            New-Item -ItemType Directory -Path "${{ github.workspace }}" -Force | Out-Null
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
 
       - name: ML Orchestrator Status
         shell: pwsh
@@ -654,7 +722,16 @@ jobs:
     needs: environment
     timeout-minutes: 10
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${{ github.workspace }}")) {
+            New-Item -ItemType Directory -Path "${{ github.workspace }}" -Force | Out-Null
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
 
       - name: Package Build Test
         shell: pwsh
@@ -684,7 +761,16 @@ jobs:
     if: always()
     timeout-minutes: 5
     steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${{ github.workspace }}")) {
+            New-Item -ItemType Directory -Path "${{ github.workspace }}" -Force | Out-Null
+          }
+
       - uses: actions/checkout@v4
+        with:
+          clean: true
 
       - name: Generate Summary
         shell: pwsh

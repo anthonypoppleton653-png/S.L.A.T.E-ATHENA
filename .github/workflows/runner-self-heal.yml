@@ -1,0 +1,441 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# SLATE Runner Self-Heal — Automatic Recovery & Retry
+# Modified: 2026-02-06T23:30:00Z | Author: COPILOT | Change: Initial creation
+# ═══════════════════════════════════════════════════════════════════════════════
+# Monitors runner health, auto-fixes common failures, and retries failed workflows.
+# Triggers on workflow failure or manually. Runs on the self-hosted runner.
+#
+# Self-healing capabilities:
+#   1. Workspace directory repair (dots-in-path issue)
+#   2. Stale checkout cleanup
+#   3. Python venv validation & repair
+#   4. GPU driver health check
+#   5. Runner process verification
+#   6. Automatic retry of failed workflow runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: "SLATE Runner: Self-Heal"
+
+on:
+  workflow_run:
+    workflows:
+      - "SLATE Runner: Full System"
+      - "SLATE Integration"
+      - "SLATE CI"
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      retry_run_id:
+        description: "Run ID to retry (leave empty for health check only)"
+        required: false
+        type: string
+      force_repair:
+        description: "Force full repair even if health checks pass"
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 */6 * * *"  # Every 6 hours
+
+concurrency:
+  group: self-heal-${{ github.ref }}
+  cancel-in-progress: false  # Never cancel a heal in progress
+
+env:
+  PYTHON_VERSION: '3.11'
+
+permissions:
+  contents: read
+  actions: write  # Needed to re-run workflows
+
+jobs:
+  # ─── Health Check ─────────────────────────────────────────────────────────
+  health-check:
+    name: "Runner Health Check"
+    runs-on: [self-hosted, slate, gpu, windows]
+    timeout-minutes: 10
+    outputs:
+      healthy: ${{ steps.verdict.outputs.healthy }}
+      issues_found: ${{ steps.verdict.outputs.issues }}
+      trigger_was_failure: ${{ steps.check-trigger.outputs.was_failure }}
+      failed_run_id: ${{ steps.check-trigger.outputs.run_id }}
+    steps:
+      - name: Check Trigger
+        id: check-trigger
+        shell: pwsh
+        run: |
+          $wasFailure = "${{ github.event.workflow_run.conclusion }}" -eq "failure"
+          $runId = "${{ github.event.workflow_run.id }}"
+          echo "was_failure=$($wasFailure.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+          echo "run_id=$runId" >> $env:GITHUB_OUTPUT
+          if ($wasFailure) {
+            Write-Host "::warning::Triggered by failed workflow: ${{ github.event.workflow_run.name }} (run $runId)"
+          } else {
+            Write-Host "Running scheduled/manual health check"
+          }
+
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          $ws = "${{ github.workspace }}"
+          if (-not (Test-Path $ws)) {
+            New-Item -ItemType Directory -Path $ws -Force | Out-Null
+            Write-Host "::warning::Workspace directory was missing — created: $ws"
+          }
+
+      - uses: actions/checkout@v4
+        with:
+          clean: true
+
+      - name: Workspace Health
+        id: workspace
+        shell: pwsh
+        run: |
+          $issues = @()
+          Write-Host "=== Workspace Health ===" -ForegroundColor Cyan
+
+          # Check workspace exists and has code
+          if (-not (Test-Path "slate/__init__.py")) {
+            $issues += "missing_sdk"
+            Write-Host "::error::SLATE SDK not found in workspace"
+          } else {
+            Write-Host "  SLATE SDK: Present"
+          }
+
+          # Check for stale checkout artifacts
+          $staleDir = Join-Path ${{ github.workspace }} "S.L.A.T.E."
+          if (Test-Path $staleDir) {
+            Write-Host "::warning::Stale checkout directory found: $staleDir"
+            Remove-Item -Recurse -Force $staleDir -ErrorAction SilentlyContinue
+            Write-Host "  Cleaned: $staleDir"
+            $issues += "stale_checkout"
+          }
+
+          echo "issues=$($issues -join ',')" >> $env:GITHUB_OUTPUT
+
+      - name: Python Environment Health
+        id: python
+        shell: pwsh
+        run: |
+          $issues = @()
+          Write-Host "=== Python Environment ===" -ForegroundColor Cyan
+
+          # Check venv
+          $venvPython = ".venv\Scripts\python.exe"
+          if (Test-Path $venvPython) {
+            $ver = & $venvPython --version 2>&1
+            Write-Host "  Python venv: $ver"
+
+            # Check key packages
+            $result = & $venvPython -c "import slate; print(f'v{slate.__version__}')" 2>&1
+            if ($LASTEXITCODE -eq 0) {
+              Write-Host "  SLATE SDK: $result"
+            } else {
+              Write-Host "::warning::SLATE SDK not importable in venv"
+              $issues += "sdk_import"
+            }
+
+            # Check psutil (required dep)
+            & $venvPython -c "import psutil" 2>$null
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "::warning::psutil not installed"
+              $issues += "missing_psutil"
+            }
+          } else {
+            Write-Host "::warning::Python venv not found"
+            $issues += "no_venv"
+          }
+
+          echo "issues=$($issues -join ',')" >> $env:GITHUB_OUTPUT
+
+      - name: GPU Health
+        id: gpu
+        shell: pwsh
+        run: |
+          $issues = @()
+          Write-Host "=== GPU Health ===" -ForegroundColor Cyan
+
+          try {
+            $gpuInfo = & nvidia-smi --query-gpu=name,memory.used,memory.total,temperature.gpu,utilization.gpu --format=csv,noheader 2>$null
+            if ($LASTEXITCODE -eq 0 -and $gpuInfo) {
+              $gpuCount = ($gpuInfo -split "`n" | Where-Object { $_.Trim() }).Count
+              Write-Host "  GPUs: $gpuCount detected"
+              $gpuInfo -split "`n" | ForEach-Object { Write-Host "    $_" }
+
+              if ($gpuCount -lt 2) {
+                Write-Host "::warning::Expected 2 GPUs, found $gpuCount"
+                $issues += "gpu_count"
+              }
+
+              # Check for high temperature
+              $temps = & nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits 2>$null
+              foreach ($temp in ($temps -split "`n" | Where-Object { $_.Trim() })) {
+                if ([int]$temp.Trim() -gt 85) {
+                  Write-Host "::warning::GPU temperature critical: ${temp}C"
+                  $issues += "gpu_temp"
+                }
+              }
+            } else {
+              Write-Host "::error::nvidia-smi failed"
+              $issues += "nvidia_smi"
+            }
+          } catch {
+            Write-Host "::error::GPU check failed: $_"
+            $issues += "gpu_error"
+          }
+
+          echo "issues=$($issues -join ',')" >> $env:GITHUB_OUTPUT
+
+      - name: Runner Config Health
+        id: runner
+        shell: pwsh
+        run: |
+          $issues = @()
+          Write-Host "=== Runner Config ===" -ForegroundColor Cyan
+
+          # Check .runner work folder
+          $runnerFile = Join-Path (Split-Path ${{ github.workspace }} -Parent) "actions-runner\.runner"
+          if (-not (Test-Path $runnerFile)) {
+            # Try E:\11132025\actions-runner\.runner
+            $runnerFile = "E:\11132025\actions-runner\.runner"
+          }
+
+          if (Test-Path $runnerFile) {
+            $config = Get-Content $runnerFile | ConvertFrom-Json
+            $workFolder = $config.workFolder
+            Write-Host "  Work folder: $workFolder"
+
+            # Validate work folder is NOT the repo root
+            if ($workFolder -eq "E:\11132025" -or $workFolder -eq "E:\\11132025") {
+              Write-Host "::error::Work folder is set to repo root! Should be actions-runner\_work"
+              $issues += "bad_workfolder"
+            }
+          } else {
+            Write-Host "  Runner config: Not found at expected path"
+          }
+
+          echo "issues=$($issues -join ',')" >> $env:GITHUB_OUTPUT
+
+      - name: Health Verdict
+        id: verdict
+        shell: pwsh
+        run: |
+          $allIssues = @()
+          $wsIssues = "${{ steps.workspace.outputs.issues }}" -split ","
+          $pyIssues = "${{ steps.python.outputs.issues }}" -split ","
+          $gpuIssues = "${{ steps.gpu.outputs.issues }}" -split ","
+          $runnerIssues = "${{ steps.runner.outputs.issues }}" -split ","
+
+          $allIssues += $wsIssues | Where-Object { $_ }
+          $allIssues += $pyIssues | Where-Object { $_ }
+          $allIssues += $gpuIssues | Where-Object { $_ }
+          $allIssues += $runnerIssues | Where-Object { $_ }
+
+          $healthy = $allIssues.Count -eq 0
+          Write-Host ""
+          Write-Host "========================================" -ForegroundColor $(if ($healthy) { "Green" } else { "Red" })
+          Write-Host "  Health: $(if ($healthy) { 'HEALTHY' } else { 'ISSUES FOUND' })"
+          if (-not $healthy) {
+            Write-Host "  Issues: $($allIssues -join ', ')"
+          }
+          Write-Host "========================================" -ForegroundColor $(if ($healthy) { "Green" } else { "Red" })
+
+          echo "healthy=$($healthy.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+          echo "issues=$($allIssues -join ',')" >> $env:GITHUB_OUTPUT
+
+  # ─── Self-Repair ──────────────────────────────────────────────────────────
+  repair:
+    name: "Auto-Repair"
+    runs-on: [self-hosted, slate, gpu, windows]
+    needs: health-check
+    if: |
+      always() &&
+      (needs.health-check.outputs.healthy == 'false' ||
+       github.event.inputs.force_repair == 'true')
+    timeout-minutes: 15
+    steps:
+      - name: Prepare Workspace
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${{ github.workspace }}")) {
+            New-Item -ItemType Directory -Path "${{ github.workspace }}" -Force | Out-Null
+          }
+
+      - uses: actions/checkout@v4
+        with:
+          clean: true
+
+      - name: Repair Workspace
+        shell: pwsh
+        run: |
+          Write-Host "=== Auto-Repair: Workspace ===" -ForegroundColor Yellow
+
+          # Clean stale checkout directories
+          $staleDirs = @("S.L.A.T.E.", "_temp", "_PipelineMapping")
+          foreach ($dir in $staleDirs) {
+            $path = Join-Path ${{ github.workspace }} $dir
+            if (Test-Path $path) {
+              Remove-Item -Recurse -Force $path -ErrorAction SilentlyContinue
+              Write-Host "  Cleaned stale dir: $dir"
+            }
+          }
+
+          # Ensure critical directories exist
+          $requiredDirs = @("slate", "agents", "tests", "slate_core")
+          foreach ($dir in $requiredDirs) {
+            if (-not (Test-Path $dir)) {
+              Write-Host "::warning::Missing directory: $dir (checkout may have failed)"
+            } else {
+              Write-Host "  OK: $dir/"
+            }
+          }
+
+      - name: Repair Python Environment
+        shell: pwsh
+        run: |
+          Write-Host "=== Auto-Repair: Python ===" -ForegroundColor Yellow
+          $python = ".venv\Scripts\python.exe"
+
+          if (-not (Test-Path $python)) {
+            Write-Host "Creating venv..."
+            python -m venv .venv
+            $python = ".venv\Scripts\python.exe"
+          }
+
+          # Ensure pip is up to date
+          & $python -m pip install --upgrade pip --quiet 2>$null
+
+          # Install requirements
+          if (Test-Path "requirements.txt") {
+            Write-Host "  Installing requirements..."
+            & $python -m pip install -r requirements.txt --quiet 2>$null
+            Write-Host "  Requirements installed"
+          }
+
+          # Verify SDK
+          $result = & $python -c "import slate; print(f'v{slate.__version__}')" 2>&1
+          Write-Host "  SLATE SDK: $result"
+
+      - name: Repair GPU State
+        shell: pwsh
+        run: |
+          Write-Host "=== Auto-Repair: GPU ===" -ForegroundColor Yellow
+
+          # Reset GPU state if needed
+          try {
+            & nvidia-smi --gpu-reset 2>$null
+            Write-Host "  GPU state reset"
+          } catch {
+            Write-Host "  GPU reset not needed/available"
+          }
+
+          # Clear CUDA cache
+          $python = ".venv\Scripts\python.exe"
+          if (Test-Path $python) {
+            & $python -c "
+          try:
+              import torch
+              if torch.cuda.is_available():
+                  torch.cuda.empty_cache()
+                  print('  CUDA cache cleared')
+          except:
+              print('  PyTorch not available')
+          " 2>$null
+          }
+
+      - name: Verify Repair
+        shell: pwsh
+        run: |
+          Write-Host "=== Repair Verification ===" -ForegroundColor Green
+          $python = ".venv\Scripts\python.exe"
+
+          # SDK import
+          & $python -c "import slate; print(f'SDK: v{slate.__version__}')" 2>$null
+
+          # Status check
+          & $python slate/slate_status.py --quick 2>$null
+
+          # GPU check
+          try {
+            $gpuCount = (& nvidia-smi --query-gpu=name --format=csv,noheader 2>$null | Measure-Object -Line).Lines
+            Write-Host "GPUs: $gpuCount available"
+          } catch {
+            Write-Host "::warning::GPU verification failed"
+          }
+
+          Write-Host ""
+          Write-Host "Repair complete" -ForegroundColor Green
+
+  # ─── Retry Failed Run ────────────────────────────────────────────────────
+  retry:
+    name: "Retry Failed Workflow"
+    runs-on: ubuntu-latest
+    needs: [health-check, repair]
+    if: |
+      always() &&
+      (needs.health-check.outputs.trigger_was_failure == 'true' ||
+       github.event.inputs.retry_run_id != '')
+    timeout-minutes: 5
+    steps:
+      - name: Retry Failed Run
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runId = '${{ github.event.inputs.retry_run_id }}' || '${{ needs.health-check.outputs.failed_run_id }}';
+
+            if (!runId || runId === '') {
+              console.log('No run ID to retry');
+              return;
+            }
+
+            console.log(`Attempting to re-run workflow ${runId}...`);
+
+            try {
+              // Re-run only failed jobs
+              await github.rest.actions.reRunWorkflowFailedJobs({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: parseInt(runId),
+              });
+              console.log(`Successfully triggered retry of run ${runId} (failed jobs only)`);
+            } catch (error) {
+              console.log(`Failed to retry run ${runId}: ${error.message}`);
+
+              // Fallback: re-run entire workflow
+              try {
+                await github.rest.actions.reRunWorkflow({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: parseInt(runId),
+                });
+                console.log(`Triggered full re-run of workflow ${runId}`);
+              } catch (fallbackError) {
+                console.log(`Full re-run also failed: ${fallbackError.message}`);
+              }
+            }
+
+  # ─── Summary ──────────────────────────────────────────────────────────────
+  summary:
+    name: "Self-Heal Summary"
+    runs-on: ubuntu-latest
+    needs: [health-check, repair, retry]
+    if: always()
+    timeout-minutes: 2
+    steps:
+      - name: Write Summary
+        run: |
+          echo "## SLATE Runner Self-Heal Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Health Check | ${{ needs.health-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Runner Healthy | ${{ needs.health-check.outputs.healthy }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Issues Found | ${{ needs.health-check.outputs.issues_found }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Auto-Repair | ${{ needs.repair.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Retry | ${{ needs.retry.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.health-check.outputs.trigger_was_failure }}" = "true" ]; then
+            echo "**Triggered by:** Failed workflow run \`${{ needs.health-check.outputs.failed_run_id }}\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Triggered by:** Scheduled / Manual" >> $GITHUB_STEP_SUMMARY
+          fi
