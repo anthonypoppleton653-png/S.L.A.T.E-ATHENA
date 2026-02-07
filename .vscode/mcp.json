@@ -1,8 +1,9 @@
+// Modified: 2026-02-06T04:50:00Z | Author: COPILOT | Change: Make MCP paths portable
 {
   "servers": {
     "slate": {
       "type": "stdio",
-      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "command": "${command:python.interpreterPath}",
       "args": ["slate/mcp_server.py"],
       "cwd": "${workspaceFolder}",
       "env": {
