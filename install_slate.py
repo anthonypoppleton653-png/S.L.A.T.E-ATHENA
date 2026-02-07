@@ -1018,6 +1018,74 @@ def step_watchdog_setup(tracker, args):
         return True
 
 
+def step_fork_deps(tracker, args):
+    """Step: Verify and sync SLATE's forked dependencies."""
+    tracker.start_step("fork_deps")
+    tracker.update_progress("fork_deps", 10, "Checking forked dependencies")
+
+    python_exe = _get_python_exe()
+    fork_script = WORKSPACE_ROOT / "slate" / "slate_dependency_forks.py"
+
+    if not python_exe.exists():
+        tracker.skip_step("fork_deps", "Python venv not available")
+        return True
+
+    if not fork_script.exists():
+        tracker.complete_step("fork_deps", success=True, warning=True,
+                              details="Fork manager not found - using PyPI dependencies")
+        return True
+
+    # Check if gh CLI is available
+    tracker.update_progress("fork_deps", 30, "Checking GitHub CLI")
+    try:
+        gh_check = subprocess.run(["gh", "--version"], capture_output=True, text=True, timeout=10)
+        if gh_check.returncode != 0:
+            tracker.complete_step("fork_deps", success=True, warning=True,
+                                  details="GitHub CLI not available - fork sync disabled")
+            return True
+    except FileNotFoundError:
+        tracker.complete_step("fork_deps", success=True, warning=True,
+                              details="GitHub CLI not installed - install from cli.github.com")
+        return True
+
+    # Check if authenticated
+    tracker.update_progress("fork_deps", 50, "Checking GitHub authentication")
+    try:
+        auth_check = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True, timeout=10)
+        if auth_check.returncode != 0:
+            tracker.complete_step("fork_deps", success=True, warning=True,
+                                  details="GitHub not authenticated - run: gh auth login")
+            return True
+    except Exception:
+        pass
+
+    # Get fork status
+    tracker.update_progress("fork_deps", 70, "Verifying forked dependencies")
+    try:
+        result = _run_cmd([python_exe, str(fork_script), "--json"], timeout=60)
+        if result.returncode == 0:
+            import json as json_mod
+            status = json_mod.loads(result.stdout)
+            total = len(status)
+            exists = sum(1 for v in status.values() if v.get("exists"))
+            behind = sum(1 for v in status.values() if v.get("behind", 0) > 0)
+
+            if behind > 0:
+                tracker.complete_step("fork_deps", success=True, warning=True,
+                                      details=f"{exists}/{total} forks verified, {behind} need sync")
+            else:
+                tracker.complete_step("fork_deps", success=True,
+                                      details=f"{exists}/{total} forked dependencies verified")
+        else:
+            tracker.complete_step("fork_deps", success=True, warning=True,
+                                  details="Fork status check failed")
+    except Exception as e:
+        tracker.complete_step("fork_deps", success=True, warning=True,
+                              details=f"Fork check error: {e}")
+
+    return True
+
+
 def step_runtime_check(tracker, args):
     # Modified: 2025-07-12T21:30:00Z | Author: COPILOT | Change: Expand to 8 ecosystem checks
     """Step 9: Final runtime verification — full ecosystem validation."""
@@ -1329,6 +1397,7 @@ def main():
         ("gpu_manager",    step_gpu_manager),
         ("runner_check",   step_runner_check),
         ("watchdog_setup", step_watchdog_setup),
+        ("fork_deps",      step_fork_deps),
         ("benchmark",      step_benchmark),
         ("runtime_check",  step_runtime_check),
     ]

@@ -149,6 +149,58 @@ DEPENDENCY_FORKS = {
         "track": ["releases"],
         "paths_of_interest": [],
     },
+
+    # ── Claude / Anthropic ─────────────────────────────────────────────────
+    "anthropics/claude-code": {
+        "purpose": "Claude Code CLI — skills format, slash commands",
+        "category": "claude",
+        "priority": "critical",
+        "track": ["releases", "tags"],
+        "paths_of_interest": [
+            "src/",
+            "skills/",
+        ],
+    },
+    "anthropics/anthropic-sdk-python": {
+        "purpose": "Anthropic Python SDK — API integration",
+        "category": "claude",
+        "priority": "high",
+        "track": ["releases"],
+        "paths_of_interest": [
+            "src/anthropic/",
+        ],
+    },
+
+    # ── GitHub Tools ────────────────────────────────────────────────────────
+    "actions/runner": {
+        "purpose": "GitHub Actions self-hosted runner",
+        "category": "github",
+        "priority": "high",
+        "track": ["releases"],
+        "paths_of_interest": [
+            "src/Runner.Worker/",
+            "src/Runner.Listener/",
+        ],
+    },
+    "cli/cli": {
+        "purpose": "GitHub CLI (gh) — API and workflow management",
+        "category": "github",
+        "priority": "medium",
+        "track": ["releases"],
+        "paths_of_interest": [
+            "pkg/cmd/",
+            "api/",
+        ],
+    },
+
+    # ── Additional AI ───────────────────────────────────────────────────────
+    "huggingface/peft": {
+        "purpose": "Parameter-Efficient Fine-Tuning — LoRA adapters",
+        "category": "ai",
+        "priority": "low",
+        "track": ["releases"],
+        "paths_of_interest": [],
+    },
 }
 
 
