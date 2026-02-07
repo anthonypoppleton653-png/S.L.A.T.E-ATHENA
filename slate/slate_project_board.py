@@ -18,7 +18,9 @@ Usage:
 """
 
 import argparse
+import contextlib
 import json
+import msvcrt
 import os
 import subprocess
 import sys
@@ -35,10 +37,6 @@ if sys.platform == "win32":
 # Add workspace root to path
 WORKSPACE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(WORKSPACE_ROOT))
-
-# Simple file locking for Windows
-import msvcrt
-import contextlib
 
 
 @contextlib.contextmanager
@@ -316,7 +314,6 @@ def categorize_task(task: dict[str, Any]) -> str:
     """Categorize a task to determine which board it belongs to."""
     title = task.get("title", "").lower()
     desc = task.get("description", "").lower()
-    source = task.get("source", "")
 
     # Bug-related keywords
     if any(kw in title or kw in desc for kw in ["bug", "fix", "crash", "error", "broken"]):
@@ -432,7 +429,7 @@ def update_all_boards() -> dict[str, Any]:
     kanban_titles = {item.get("title", "") for item in kanban_items}
     roadmap_titles = {item.get("title", "") for item in roadmap_items}
     bug_titles = {item.get("title", "") for item in bug_items}
-    iterative_titles = {item.get("title", "") for item in iterative_items}
+    _iterative_titles = {item.get("title", "") for item in iterative_items}  # Reserved for future
 
     print("Processing tasks...")
     for task in all_tasks:

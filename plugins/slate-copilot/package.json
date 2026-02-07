@@ -66,6 +66,7 @@
 				]
 			}
 		],
+		"chatCommandVariables": [],
 		"languageModelTools": [
 			{
 				"name": "slate_systemStatus",
@@ -182,6 +183,52 @@
 				"toolReferenceName": "slateBenchmark",
 				"displayName": "SLATE Benchmark",
 				"modelDescription": "Run SLATE performance benchmarks.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {}
+				}
+			},
+			{
+				"name": "slate_install",
+				"tags": ["slate", "install", "setup"],
+				"toolReferenceName": "slateInstall",
+				"displayName": "SLATE Install",
+				"modelDescription": "Install the full SLATE ecosystem: git repo, venv, pip deps, PyTorch (GPU-aware), Ollama, Docker, VS Code extension, SLATE models, and workspace config.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"target": {
+							"type": "string",
+							"description": "Target directory for fresh install (defaults to current workspace)"
+						},
+						"beta": {
+							"type": "boolean",
+							"description": "Use BETA fork instead of main repo",
+							"default": false
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_update",
+				"tags": ["slate", "update", "sync"],
+				"toolReferenceName": "slateUpdate",
+				"displayName": "SLATE Update",
+				"modelDescription": "Update SLATE from git, refresh pip dependencies, rebuild VS Code extension, re-validate ecosystem.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {}
+				}
+			},
+			{
+				"name": "slate_checkDeps",
+				"tags": ["slate", "dependencies", "check"],
+				"toolReferenceName": "slateCheckDeps",
+				"displayName": "SLATE Dependency Check",
+				"modelDescription": "Check all SLATE ecosystem dependencies: Python, Git, GPU, PyTorch, Ollama, Docker, VS Code extension.",
 				"canBeReferencedInPrompt": true,
 				"inputSchema": {
 					"type": "object",

@@ -9,9 +9,7 @@ Modified: 2026-02-06T23:15:00Z | Author: COPILOT | Change: Initial implementatio
 """
 
 import json
-import subprocess
 import sys
-import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -22,7 +20,7 @@ import threading
 WORKSPACE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(WORKSPACE_ROOT))
 
-from slate.slate_runner_benchmark import RunnerBenchmark, RUNNER_PROFILES
+from slate.slate_runner_benchmark import RunnerBenchmark  # noqa: E402
 
 
 @dataclass

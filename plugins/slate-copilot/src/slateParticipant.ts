@@ -30,6 +30,8 @@ const COMMAND_PROMPTS: Record<string, string> = {
 	hardware: 'Check GPU and hardware status. Use the slate_hardwareInfo tool and report: GPU models, CUDA version, memory usage, and optimization status.',
 	benchmark: 'Run performance benchmarks. Use the slate_benchmark tool and present the results in a table.',
 	orchestrator: 'Check or manage SLATE services. Use the slate_orchestrator tool and report the status of all services.',
+	install: 'Run a FULL SLATE ecosystem installation. Use the slate_install tool. This sets up: git repo, Python venv, pip dependencies, PyTorch (GPU-aware), Ollama, Docker detection, VS Code extension, SLATE custom models, and workspace configuration. Report progress for each step.',
+	update: 'Update the SLATE installation from git. Use the slate_update tool. This pulls latest code, updates pip dependencies, rebuilds the VS Code extension, and re-validates the ecosystem. Report what was updated.',
 	help: '',
 };
 
@@ -45,6 +47,8 @@ export function registerSlateParticipant(context: vscode.ExtensionContext) {
 			stream.markdown('## SLATE Commands\n\n');
 			stream.markdown('| Command | Description |\n');
 			stream.markdown('|---------|-------------|\n');
+			stream.markdown('| `/install` | **Full ecosystem setup** — git, venv, PyTorch, Ollama, Docker, extension |\n');
+			stream.markdown('| `/update` | **Update from git** — pull latest, refresh deps, rebuild extension |\n');
 			stream.markdown('| `/status` | Full system health check |\n');
 			stream.markdown('| `/runner` | Runner status & management |\n');
 			stream.markdown('| `/ci` | Dispatch & monitor CI/CD |\n');
@@ -52,7 +56,7 @@ export function registerSlateParticipant(context: vscode.ExtensionContext) {
 			stream.markdown('| `/benchmark` | Run performance benchmarks |\n');
 			stream.markdown('| `/orchestrator` | Service lifecycle management |\n');
 			stream.markdown('| `/help` | This help message |\n\n');
-			stream.markdown('**Tools available:** `#slateStatus` `#slateRuntime` `#slateRunner` `#slateHardware` `#slateOrchestrator` `#slateWorkflow` `#slateBenchmark`\n\n');
+			stream.markdown('**Tools available:** `#slateStatus` `#slateRuntime` `#slateRunner` `#slateHardware` `#slateOrchestrator` `#slateWorkflow` `#slateBenchmark` `#slateInstall` `#slateUpdate` `#slateCheckDeps`\n\n');
 			stream.markdown('You can also ask me anything about the SLATE system in natural language.\n');
 			return;
 		}

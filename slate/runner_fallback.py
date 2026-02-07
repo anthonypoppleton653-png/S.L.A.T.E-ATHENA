@@ -96,7 +96,7 @@ def check_self_hosted_runner() -> dict:
                         "name": r.get("name"),
                         "status": r.get("status"),
                         "busy": r.get("busy", False),
-                        "labels": [l.get("name") for l in r.get("labels", [])],
+                        "labels": [label.get("name") for label in r.get("labels", [])],
                     }
                     for r in runners
                 ],

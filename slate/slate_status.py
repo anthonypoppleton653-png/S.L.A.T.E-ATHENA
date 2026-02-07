@@ -16,7 +16,6 @@ Usage:
 
 import argparse
 import json
-import os
 import subprocess
 import sys
 from datetime import datetime
@@ -69,10 +68,10 @@ def get_system_info():
     """Get system resource info."""
     if not HAS_PSUTIL:
         return {"available": False}
-    
+
     mem = psutil.virtual_memory()
     disk = psutil.disk_usage(str(Path.cwd()))
-    
+
     return {
         "available": True,
         "cpu_count": psutil.cpu_count(),
@@ -112,7 +111,7 @@ def get_ollama_info():
         )
         if result.returncode == 0:
             lines = result.stdout.strip().split("\n")
-            models = [l.split()[0] for l in lines[1:] if l.strip()]
+            models = [line.split()[0] for line in lines[1:] if line.strip()]
             return {"available": True, "model_count": len(models), "models": models[:10]}
         return {"available": False, "model_count": 0}
     except Exception:
@@ -133,48 +132,53 @@ def get_status():
 
 def print_quick_status(status: dict):
     """Print quick status summary."""
+    # Use ASCII-safe icons for Windows console compatibility
+    OK = "[OK]"
+    FAIL = "[X]"
+    NONE = "[-]"
+
     print()
     print("=" * 50)
     print("  S.L.A.T.E. Status")
     print("=" * 50)
     print()
-    
+
     # Python
     py = status["python"]
-    icon = "✓" if py["ok"] else "✗"
+    icon = OK if py["ok"] else FAIL
     print(f"  Python:   {icon} {py['version']}")
-    
+
     # GPU
     gpu = status["gpu"]
     if gpu["available"]:
-        print(f"  GPU:      ✓ {gpu['count']} NVIDIA GPU(s)")
+        print(f"  GPU:      {OK} {gpu['count']} NVIDIA GPU(s)")
         for g in gpu["gpus"]:
             print(f"            - {g['name']} ({g['memory_total']})")
     else:
-        print("  GPU:      ○ CPU-only mode")
-    
+        print(f"  GPU:      {NONE} CPU-only mode")
+
     # System
     sys_info = status["system"]
     if sys_info.get("available"):
         print(f"  CPU:      {sys_info['cpu_count']} cores ({sys_info['cpu_percent']}% used)")
         print(f"  Memory:   {sys_info['memory_available_gb']}/{sys_info['memory_total_gb']} GB free")
         print(f"  Disk:     {sys_info['disk_free_gb']}/{sys_info['disk_total_gb']} GB free")
-    
+
     # PyTorch
     pt = status["pytorch"]
     if pt.get("installed"):
         cuda_status = f"CUDA {pt['cuda_version']}" if pt.get("cuda_available") else "CPU"
-        print(f"  PyTorch:  ✓ {pt['version']} ({cuda_status})")
+        print(f"  PyTorch:  {OK} {pt['version']} ({cuda_status})")
     else:
-        print("  PyTorch:  ○ Not installed")
-    
+        print(f"  PyTorch:  {NONE} Not installed")
+
     # Ollama
     ollama = status["ollama"]
     if ollama.get("available"):
-        print(f"  Ollama:   ✓ {ollama['model_count']} models")
+        print(f"  Ollama:   {OK} {ollama['model_count']} models")
     else:
-        print("  Ollama:   ○ Not available")
-    
+        print(f"  Ollama:   {NONE} Not available")
+
     print()
     print("=" * 50)
     print()
@@ -186,14 +190,14 @@ def main():
     parser.add_argument("--quick", action="store_true", help="Quick status")
     parser.add_argument("--json", action="store_true", help="JSON output")
     args = parser.parse_args()
-    
+
     status = get_status()
-    
+
     if args.json:
         print(json.dumps(status, indent=2))
     else:
         print_quick_status(status)
-    
+
     return 0
 
 

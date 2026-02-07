@@ -10,10 +10,7 @@ Modified: 2026-02-07T01:41:00Z | Author: COPILOT | Change: Initial implementatio
 """
 
 import json
-import os
-import platform
 import subprocess
-import sys
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -106,7 +103,7 @@ class RealMultiRunnerManager:
             if d.is_dir() and d.name.startswith("actions-runner"):
                 runner_file = d / ".runner"
                 if runner_file.exists():
-                    with open(runner_file, encoding="utf-8") as f:
+                    with open(runner_file, encoding="utf-8-sig") as f:
                         cfg = json.load(f)
                     runner = RealRunner(
                         name=cfg.get("agentName", d.name),
@@ -140,8 +137,8 @@ class RealMultiRunnerManager:
             runner.status = gh_info.get("status", "not_registered")
             runner.busy = gh_info.get("busy", False)
             runner.labels = [
-                l["name"] for l in gh_info.get("labels", [])
-                if l.get("type") == "custom"
+                label["name"] for label in gh_info.get("labels", [])
+                if label.get("type") == "custom"
             ]
             runner.agent_id = gh_info.get("id", runner.agent_id)
 

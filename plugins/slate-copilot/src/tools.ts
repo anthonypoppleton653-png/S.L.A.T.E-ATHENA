@@ -1,6 +1,6 @@
-// Modified: 2026-02-07T02:00:00Z | Author: COPILOT | Change: SLATE tool implementations for LM API
+// Modified: 2026-02-06T22:30:00Z | Author: COPILOT | Change: SLATE tool implementations with /install and /update
 import * as vscode from 'vscode';
-import { execSlateCommand } from './slateRunner';
+import { execSlateCommand, execSlateCommandLong } from './slateRunner';
 
 // ─── Tool Implementations ──────────────────────────────────────────────
 
@@ -12,6 +12,9 @@ interface IOrchestratorParams { action?: string }
 interface IWorkflowParams { action?: string }
 interface IBenchmarkParams { /* no params */ }
 interface IRunCommandParams { command: string }
+interface IInstallParams { target?: string; beta?: boolean }
+interface IUpdateParams { /* no params */ }
+interface ICheckDepsParams { /* no params */ }
 
 class SystemStatusTool implements vscode.LanguageModelTool<IStatusParams> {
 	async invoke(options: vscode.LanguageModelToolInvocationOptions<IStatusParams>, token: vscode.CancellationToken) {
@@ -142,6 +145,79 @@ class RunCommandTool implements vscode.LanguageModelTool<IRunCommandParams> {
 	}
 }
 
+class InstallTool implements vscode.LanguageModelTool<IInstallParams> {
+	async invoke(options: vscode.LanguageModelToolInvocationOptions<IInstallParams>, token: vscode.CancellationToken) {
+		let cmd = 'slate/slate_installer.py --install';
+		if (options.input.target) {
+			cmd += ` --target "${options.input.target}"`;
+		}
+		if (options.input.beta) {
+			cmd += ' --beta';
+		}
+		const output = await execSlateCommandLong(cmd, token);
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(output)]);
+	}
+
+	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<IInstallParams>, _token: vscode.CancellationToken) {
+		const target = options.input.target ? ` to ${options.input.target}` : '';
+		const beta = options.input.beta ? ' (BETA fork)' : '';
+		return {
+			invocationMessage: `Installing SLATE ecosystem${target}${beta}...`,
+			confirmationMessages: {
+				title: 'Install SLATE Ecosystem',
+				message: new vscode.MarkdownString(
+					`This will set up the full SLATE ecosystem${target}${beta}:\n\n` +
+					'- Git repository clone/verify\n' +
+					'- Python virtual environment\n' +
+					'- pip dependencies (requirements.txt)\n' +
+					'- PyTorch (GPU-aware)\n' +
+					'- Ollama (local LLM)\n' +
+					'- Docker (containerization)\n' +
+					'- VS Code extension\n' +
+					'- SLATE custom models\n' +
+					'- Workspace configuration\n\n' +
+					'Continue?'
+				),
+			},
+		};
+	}
+}
+
+class UpdateTool implements vscode.LanguageModelTool<IUpdateParams> {
+	async invoke(_options: vscode.LanguageModelToolInvocationOptions<IUpdateParams>, token: vscode.CancellationToken) {
+		const output = await execSlateCommandLong('slate/slate_installer.py --update', token);
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(output)]);
+	}
+
+	async prepareInvocation(_options: vscode.LanguageModelToolInvocationPrepareOptions<IUpdateParams>, _token: vscode.CancellationToken) {
+		return {
+			invocationMessage: 'Updating SLATE from git...',
+			confirmationMessages: {
+				title: 'Update SLATE',
+				message: new vscode.MarkdownString(
+					'This will:\n\n' +
+					'- Pull latest code from git\n' +
+					'- Update pip dependencies\n' +
+					'- Rebuild VS Code extension\n' +
+					'- Re-validate ecosystem\n\n' +
+					'Continue?'
+				),
+			},
+		};
+	}
+}
+
+class CheckDepsTool implements vscode.LanguageModelTool<ICheckDepsParams> {
+	async invoke(_options: vscode.LanguageModelToolInvocationOptions<ICheckDepsParams>, token: vscode.CancellationToken) {
+		const output = await execSlateCommand('slate/slate_installer.py --check', token);
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(output)]);
+	}
+
+	async prepareInvocation(_options: vscode.LanguageModelToolInvocationPrepareOptions<ICheckDepsParams>, _token: vscode.CancellationToken) {
+		return { invocationMessage: 'Checking SLATE ecosystem dependencies...' };
+	}
+}
+
 // ─── Registration ───────────────────────────────────────────────────────
 
 export function registerSlateTools(context: vscode.ExtensionContext) {
@@ -153,4 +229,7 @@ export function registerSlateTools(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.lm.registerTool('slate_workflow', new WorkflowTool()));
 	context.subscriptions.push(vscode.lm.registerTool('slate_benchmark', new BenchmarkTool()));
 	context.subscriptions.push(vscode.lm.registerTool('slate_runCommand', new RunCommandTool()));
+	context.subscriptions.push(vscode.lm.registerTool('slate_install', new InstallTool()));
+	context.subscriptions.push(vscode.lm.registerTool('slate_update', new UpdateTool()));
+	context.subscriptions.push(vscode.lm.registerTool('slate_checkDeps', new CheckDepsTool()));
 }

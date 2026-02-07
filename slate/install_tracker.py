@@ -19,7 +19,6 @@ Usage:
 """
 
 import json
-import os
 import sys
 import time
 import threading
@@ -27,7 +26,7 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Callable, Optional
 
 WORKSPACE_ROOT = Path(__file__).parent.parent
 

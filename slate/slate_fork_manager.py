@@ -20,8 +20,6 @@ Security Model:
 
 import json
 import logging
-import os
-import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -349,7 +347,7 @@ class SlateForkManager:
             results["errors"].append(f"IMPORT FAIL: slate.slate_status - {e}")
 
         try:
-            import slate.action_guard
+            import slate.action_guard  # noqa: F401
             results["checks"].append("PASS: slate.action_guard imports")
         except ImportError as e:
             results["passed"] = False

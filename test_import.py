@@ -5,9 +5,6 @@ import sys
 sys.path.insert(0, '.')
 
 print("Step 1: Testing basic imports...")
-import os
-import json
-import logging
 print("Step 1: OK")
 
 # Test each slate submodule individually

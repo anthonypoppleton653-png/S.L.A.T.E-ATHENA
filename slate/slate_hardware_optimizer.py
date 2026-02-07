@@ -18,7 +18,6 @@ import json
 import subprocess
 import sys
 from dataclasses import dataclass
-from pathlib import Path
 
 GPU_ARCHITECTURES = {
     "12.0": "Blackwell", "8.9": "Ada Lovelace", "8.6": "Ampere",

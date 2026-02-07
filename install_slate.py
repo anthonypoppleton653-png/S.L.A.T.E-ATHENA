@@ -1,31 +1,43 @@
 #!/usr/bin/env python3
 # ═══════════════════════════════════════════════════════════════════════════════
 # CELL: install_slate [python]
-# Author: COPILOT | Created: 2026-02-06T00:30:00Z | Modified: 2026-02-08T02:15:00Z
-# Purpose: SLATE public installation script with dashboard-first tracking
+# Author: COPILOT | Created: 2026-02-06T00:30:00Z | Modified: 2026-02-06T22:30:00Z
+# Purpose: SLATE public installation script — delegates to slate_installer for full ecosystem
 # ═══════════════════════════════════════════════════════════════════════════════
 """
 S.L.A.T.E. Installation Script
 ===============================
-Installs and configures SLATE with real-time dashboard progress tracking.
-The dashboard is the FIRST system installed — every subsequent step is
-visible in the browser at http://127.0.0.1:8080.
+Installs and configures the complete SLATE ecosystem with real-time dashboard
+progress tracking. The dashboard is the FIRST system installed — every
+subsequent step is visible in the browser at http://127.0.0.1:8080.
+
+Full ecosystem setup includes:
+    - Git repository clone/verify
+    - Python virtual environment
+    - pip dependencies (requirements.txt)
+    - PyTorch (GPU-aware — auto-detects CUDA compute capability)
+    - Ollama (local LLM inference — auto-installs via winget)
+    - Docker (container deployment — detection + guidance)
+    - VS Code extension (@slate chat participant)
+    - SLATE custom models (slate-coder, slate-fast, slate-planner)
+    - Workspace configuration + .env
 
 Architecture:
-    install_slate.py → InstallTracker → install_state.json ← Dashboard reads
-                                      → SSE broadcast     ← Dashboard listens
+    install_slate.py → SlateInstaller → InstallTracker → install_state.json
+                                      → SSE broadcast  → Dashboard listens
 
 Usage:
-    python install_slate.py                     # Full install with dashboard
+    python install_slate.py                     # Full ecosystem install with dashboard
     python install_slate.py --no-dashboard      # CLI-only (no browser)
     python install_slate.py --skip-gpu          # Skip GPU detection
     python install_slate.py --beta              # Init from S.L.A.T.E.-BETA fork
     python install_slate.py --dev               # Developer mode (editable install)
     python install_slate.py --resume            # Resume a failed install
+    python install_slate.py --update            # Update mode — pull latest + re-validate
+    python install_slate.py --check             # Check ecosystem dependencies only
 """
 
 import argparse
-import importlib
 import json
 import os
 import subprocess
@@ -212,7 +224,7 @@ def step_deps_install(tracker, args):
 
         if result.returncode != 0:
             # Try to extract useful error
-            err_lines = [l for l in (result.stderr or "").splitlines() if "ERROR" in l]
+            err_lines = [line for line in (result.stderr or "").splitlines() if "ERROR" in line]
             error_msg = err_lines[-1] if err_lines else "pip install failed"
             tracker.complete_step("deps_install", success=False, error=error_msg)
             return False
@@ -281,6 +293,289 @@ def step_gpu_detect(tracker, args):
         tracker.complete_step("gpu_detect", success=True, warning=True,
                               details=f"GPU detection error: {e}")
         return True
+
+
+# Modified: 2026-02-06T22:30:00Z | Author: COPILOT | Change: New ecosystem setup steps
+
+def step_pytorch_setup(tracker, args):
+    """Step 4b: Install PyTorch with GPU support if available."""
+    tracker.start_step("pytorch_setup")
+
+    if args.skip_gpu:
+        tracker.skip_step("pytorch_setup", "Skipped (--skip-gpu)")
+        return True
+
+    # Check if already installed
+    tracker.update_progress("pytorch_setup", 20, "Checking PyTorch installation")
+    try:
+        check = _run_cmd([_get_python_exe(), "-c",
+                          "import torch; print(torch.__version__); "
+                          "print(torch.cuda.is_available()); "
+                          "print(torch.version.cuda or 'none')"], timeout=30)
+        if check.returncode == 0:
+            lines = check.stdout.strip().splitlines()
+            if len(lines) >= 3:
+                version = lines[0]
+                cuda_ok = lines[1].strip().lower() == "true"
+                cuda_ver = lines[2] if lines[2] != "none" else "N/A"
+                if cuda_ok:
+                    tracker.complete_step("pytorch_setup", success=True,
+                                          details=f"PyTorch {version} with CUDA {cuda_ver}")
+                    return True
+                else:
+                    tracker.update_progress("pytorch_setup", 30,
+                                            f"PyTorch {version} found but no CUDA — upgrading")
+    except Exception:
+        pass
+
+    # Detect GPU compute capability for correct CUDA wheel
+    tracker.update_progress("pytorch_setup", 40, "Detecting GPU for PyTorch CUDA version")
+    pip = _get_pip_exe()
+    cuda_tag = "cpu"
+
+    try:
+        gpu_result = _run_cmd(
+            ["nvidia-smi", "--query-gpu=compute_cap", "--format=csv,noheader"],
+            timeout=15,
+        )
+        if gpu_result.returncode == 0 and gpu_result.stdout.strip():
+            ccs = gpu_result.stdout.strip().splitlines()
+            max_cc = max(float(cc.strip()) for cc in ccs if cc.strip())
+            if max_cc >= 8.9:  # Ada Lovelace / Blackwell
+                cuda_tag = "cu124"
+            elif max_cc >= 8.0:  # Ampere
+                cuda_tag = "cu121"
+            else:
+                cuda_tag = "cu118"
+            tracker.update_progress("pytorch_setup", 50,
+                                    f"GPU compute {max_cc} → installing with {cuda_tag}")
+    except Exception:
+        tracker.update_progress("pytorch_setup", 50, "No GPU detected — installing CPU version")
+
+    # Install PyTorch
+    tracker.update_progress("pytorch_setup", 60, f"Installing PyTorch ({cuda_tag})...")
+    try:
+        install_cmd = [str(pip), "install", "torch", "torchvision", "torchaudio"]
+        if cuda_tag != "cpu":
+            install_cmd += ["--index-url", f"https://download.pytorch.org/whl/{cuda_tag}"]
+        else:
+            install_cmd += ["--index-url", "https://download.pytorch.org/whl/cpu"]
+
+        result = _run_cmd(install_cmd, timeout=600)
+        if result.returncode == 0:
+            # Verify
+            verify = _run_cmd([_get_python_exe(), "-c",
+                               "import torch; print(torch.__version__, "
+                               "'CUDA' if torch.cuda.is_available() else 'CPU')"], timeout=15)
+            details = verify.stdout.strip() if verify.returncode == 0 else "installed"
+            tracker.complete_step("pytorch_setup", success=True,
+                                  details=f"PyTorch {details}")
+        else:
+            tracker.complete_step("pytorch_setup", success=True, warning=True,
+                                  details="PyTorch install failed (non-fatal)")
+        return True
+    except subprocess.TimeoutExpired:
+        tracker.complete_step("pytorch_setup", success=True, warning=True,
+                              details="PyTorch install timed out (non-fatal)")
+        return True
+    except Exception as e:
+        tracker.complete_step("pytorch_setup", success=True, warning=True,
+                              details=f"PyTorch setup error: {e}")
+        return True
+
+
+def step_ollama_setup(tracker, args):
+    """Step 4c: Check/install Ollama for local LLM inference."""
+    tracker.start_step("ollama_setup")
+    tracker.update_progress("ollama_setup", 20, "Checking Ollama installation")
+
+    try:
+        result = _run_cmd(["ollama", "--version"], timeout=10)
+        if result.returncode == 0:
+            version = result.stdout.strip()
+            # Check if running
+            list_result = _run_cmd(["ollama", "list"], timeout=10)
+            if list_result.returncode == 0:
+                models = [l.split()[0] for l in list_result.stdout.strip().splitlines()[1:] if l.strip()]
+                tracker.complete_step("ollama_setup", success=True,
+                                      details=f"Ollama {version} running, {len(models)} model(s)")
+            else:
+                tracker.complete_step("ollama_setup", success=True, warning=True,
+                                      details=f"Ollama {version} installed but not running — start with: ollama serve")
+            return True
+    except FileNotFoundError:
+        pass
+
+    # Not installed — try automatic install
+    tracker.update_progress("ollama_setup", 40, "Ollama not found — attempting install")
+
+    if os.name == "nt":
+        # Try winget
+        try:
+            winget_check = _run_cmd(["winget", "--version"], timeout=10)
+            if winget_check.returncode == 0:
+                tracker.update_progress("ollama_setup", 50, "Installing Ollama via winget...")
+                result = _run_cmd(
+                    ["winget", "install", "Ollama.Ollama",
+                     "--accept-package-agreements", "--accept-source-agreements"],
+                    timeout=300,
+                )
+                if result.returncode == 0:
+                    tracker.complete_step("ollama_setup", success=True,
+                                          details="Ollama installed via winget — restart terminal and run: ollama serve")
+                    return True
+        except FileNotFoundError:
+            pass
+
+    tracker.complete_step("ollama_setup", success=True, warning=True,
+                          details="Ollama not installed. Install from: https://ollama.com/download")
+    return True
+
+
+def step_docker_check(tracker, args):
+    """Step 4d: Check Docker installation."""
+    tracker.start_step("docker_check")
+    tracker.update_progress("docker_check", 30, "Checking Docker")
+
+    try:
+        result = _run_cmd(["docker", "--version"], timeout=10)
+        if result.returncode == 0:
+            version = result.stdout.strip()
+            # Check daemon
+            ps_result = _run_cmd(["docker", "ps"], timeout=10)
+            running = ps_result.returncode == 0
+            # Check compose
+            compose = _run_cmd(["docker", "compose", "version"], timeout=10)
+            compose_ok = compose.returncode == 0
+
+            status_parts = [version]
+            if running:
+                status_parts.append("daemon running")
+            else:
+                status_parts.append("daemon not running")
+            if compose_ok:
+                status_parts.append("compose available")
+
+            tracker.complete_step("docker_check", success=True,
+                                  details=" | ".join(status_parts))
+            return True
+    except FileNotFoundError:
+        pass
+
+    tracker.complete_step("docker_check", success=True, warning=True,
+                          details="Docker not installed (optional). Install: https://docs.docker.com/get-docker/")
+    return True
+
+
+def step_vscode_extension(tracker, args):
+    """Step 7b: Install SLATE VS Code extension."""
+    tracker.start_step("vscode_ext")
+    tracker.update_progress("vscode_ext", 20, "Checking VS Code")
+
+    try:
+        code_check = _run_cmd(["code", "--version"], timeout=15)
+        if code_check.returncode != 0:
+            tracker.complete_step("vscode_ext", success=True, warning=True,
+                                  details="VS Code 'code' command not on PATH")
+            return True
+    except FileNotFoundError:
+        tracker.complete_step("vscode_ext", success=True, warning=True,
+                              details="VS Code not detected — install code command in PATH")
+        return True
+
+    # Check if extension already installed
+    tracker.update_progress("vscode_ext", 40, "Checking for SLATE extension")
+    ext_result = _run_cmd(["code", "--list-extensions"], timeout=15)
+    if ext_result.returncode == 0:
+        extensions = ext_result.stdout.strip().splitlines()
+        if any("slate" in ext.lower() for ext in extensions):
+            tracker.complete_step("vscode_ext", success=True,
+                                  details="SLATE extension already installed")
+            return True
+
+    # Build and install from source
+    ext_dir = WORKSPACE_ROOT / "plugins" / "slate-copilot"
+    if not ext_dir.exists():
+        tracker.complete_step("vscode_ext", success=True, warning=True,
+                              details="Extension source not found at plugins/slate-copilot/")
+        return True
+
+    tracker.update_progress("vscode_ext", 50, "Building SLATE extension")
+
+    # Check npm
+    try:
+        npm_check = _run_cmd(["npm", "--version"], timeout=10)
+        if npm_check.returncode != 0:
+            tracker.complete_step("vscode_ext", success=True, warning=True,
+                                  details="npm not found — install Node.js to build extension")
+            return True
+    except FileNotFoundError:
+        tracker.complete_step("vscode_ext", success=True, warning=True,
+                              details="npm not found — install Node.js first")
+        return True
+
+    # npm install + compile
+    tracker.update_progress("vscode_ext", 60, "Installing extension dependencies")
+    npm_install = _run_cmd(["npm", "install"], timeout=120)
+    if npm_install.returncode != 0:
+        tracker.complete_step("vscode_ext", success=True, warning=True,
+                              details="npm install failed for extension")
+        return True
+
+    tracker.update_progress("vscode_ext", 70, "Compiling extension")
+    compile_result = subprocess.run(
+        ["npm", "run", "compile"], capture_output=True, text=True,
+        timeout=60, cwd=str(ext_dir),
+    )
+    if compile_result.returncode != 0:
+        tracker.complete_step("vscode_ext", success=True, warning=True,
+                              details="Extension TypeScript compilation failed")
+        return True
+
+    # Try vsce package + install
+    tracker.update_progress("vscode_ext", 80, "Packaging extension")
+    try:
+        # Install vsce if needed
+        _run_cmd(["npm", "install", "-g", "@vscode/vsce"], timeout=60)
+        pkg = subprocess.run(
+            ["vsce", "package", "--no-dependencies"],
+            capture_output=True, text=True, timeout=60, cwd=str(ext_dir),
+        )
+        if pkg.returncode == 0:
+            vsix_files = list(ext_dir.glob("*.vsix"))
+            if vsix_files:
+                vsix = vsix_files[-1]
+                tracker.update_progress("vscode_ext", 90, f"Installing {vsix.name}")
+                inst = _run_cmd(["code", "--install-extension", str(vsix)], timeout=60)
+                if inst.returncode == 0:
+                    tracker.complete_step("vscode_ext", success=True,
+                                          details="SLATE extension installed — reload VS Code")
+                    return True
+    except Exception:
+        pass
+
+    # Fallback: dev mode symlink
+    tracker.update_progress("vscode_ext", 90, "Using development mode link")
+    if os.name == "nt":
+        ext_target = Path(os.environ.get("USERPROFILE", "~")) / ".vscode" / "extensions" / "slate.slate-copilot-2.4.0"
+    else:
+        ext_target = Path.home() / ".vscode" / "extensions" / "slate.slate-copilot-2.4.0"
+
+    try:
+        ext_target.parent.mkdir(parents=True, exist_ok=True)
+        if ext_target.exists():
+            import shutil
+            shutil.rmtree(ext_target, ignore_errors=True)
+        if os.name == "nt":
+            _run_cmd(["cmd", "/c", "mklink", "/J", str(ext_target), str(ext_dir)], timeout=10)
+        else:
+            ext_target.symlink_to(ext_dir)
+        tracker.complete_step("vscode_ext", success=True,
+                              details="SLATE extension linked (dev mode) — reload VS Code")
+    except Exception as e:
+        tracker.complete_step("vscode_ext", success=True, warning=True,
+                              details=f"Extension link failed: {e}")
+    return True
 
 
 def step_sdk_validate(tracker, args):
@@ -555,8 +850,17 @@ def print_completion(success: bool, tracker=None):
         print("    4. Dashboard: python agents/slate_dashboard_server.py")
         print("    5. Hardware:  python slate/slate_hardware_optimizer.py")
         print()
+        print("  In VS Code:")
+        print("    • Open this workspace in VS Code")
+        print("    • Type @slate /status in Copilot Chat")
+        print("    • Use @slate /install to re-run full setup")
+        print("    • Use @slate /update to pull latest changes")
+        print()
         print("  For GPU support (optional):")
         print("    python slate/slate_hardware_optimizer.py --install-pytorch")
+        print()
+        print("  For full ecosystem check:")
+        print("    python slate/slate_installer.py --check")
         print()
     else:
         print("  Troubleshooting:")
@@ -565,6 +869,7 @@ def print_completion(success: bool, tracker=None):
         print("    • Check install state: cat .slate_install/install_state.json")
         print("    • Resume install:     python install_slate.py --resume")
         print("    • Skip GPU:           python install_slate.py --skip-gpu")
+        print("    • Full ecosystem:     python slate/slate_installer.py --install")
         print()
 
 
@@ -585,6 +890,9 @@ Examples:
   python install_slate.py --beta            Initialize from S.L.A.T.E.-BETA fork
   python install_slate.py --resume          Resume a previously failed install
   python install_slate.py --dev             Developer mode (verbose + editable)
+  python install_slate.py --update          Update from git + re-validate ecosystem
+  python install_slate.py --check           Check ecosystem dependencies only
+  python install_slate.py --full            Full ecosystem install (PyTorch, Ollama, Docker, VS Code ext)
         """,
     )
     parser.add_argument("--no-dashboard", action="store_true",
@@ -597,12 +905,41 @@ Examples:
                         help="Developer mode — verbose output, editable install")
     parser.add_argument("--resume", action="store_true",
                         help="Resume a previously failed installation")
+    parser.add_argument("--update", action="store_true",
+                        help="Update mode — pull latest and re-validate ecosystem")
+    parser.add_argument("--check", action="store_true",
+                        help="Check ecosystem dependencies only")
+    parser.add_argument("--full", action="store_true",
+                        help="Full ecosystem install (PyTorch, Ollama, Docker, VS Code extension)")
     return parser.parse_args()
 
 
 def main():
     """Main installation entry point."""
     args = parse_args()
+
+    # ── Route to ecosystem installer for --update, --check, --full ────
+    if args.update or args.check or args.full:
+        sys.path.insert(0, str(WORKSPACE_ROOT))
+        try:
+            from slate.slate_installer import SlateInstaller
+            installer = SlateInstaller(workspace=WORKSPACE_ROOT)
+
+            if args.check:
+                installer.run_check()
+                return 0
+            elif args.update:
+                result = installer.run_update()
+                return 0 if result["success"] else 1
+            elif args.full:
+                result = installer.run_install(beta=args.beta)
+                return 0 if result["success"] else 1
+        except ImportError as e:
+            print(f"  ✗ Could not load ecosystem installer: {e}")
+            print("    Run the base install first: python install_slate.py")
+            return 1
+
+    # ── Standard install flow (dashboard-first) ──────────────────────
     print_banner()
 
     # Initialize the install tracker
@@ -646,16 +983,21 @@ def main():
         except Exception:
             pass
 
-    # Define all 10 installation steps in canonical order
+    # Define all installation steps in canonical order
+    # Modified: 2026-02-06T22:30:00Z | Author: COPILOT | Change: Added ecosystem steps
     install_steps = [
         ("dashboard_boot", step_dashboard_boot),
         ("python_check",   step_python_check),
         ("venv_setup",     step_venv_setup),
         ("deps_install",   step_deps_install),
         ("gpu_detect",     step_gpu_detect),
+        ("pytorch_setup",  step_pytorch_setup),
+        ("ollama_setup",   step_ollama_setup),
+        ("docker_check",   step_docker_check),
         ("sdk_validate",   step_sdk_validate),
         ("dirs_create",    step_dirs_create),
         ("git_sync",       step_git_sync),
+        ("vscode_ext",     step_vscode_extension),
         ("benchmark",      step_benchmark),
         ("runtime_check",  step_runtime_check),
     ]

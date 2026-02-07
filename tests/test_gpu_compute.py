@@ -168,10 +168,10 @@ if __name__ == "__main__":
             result = func()
             if result:
                 passed += 1
-                print(f"  RESULT: PASS")
+                print("  RESULT: PASS")
             else:
                 failed += 1
-                print(f"  RESULT: FAIL")
+                print("  RESULT: FAIL")
         except Exception as e:
             failed += 1
             print(f"  RESULT: ERROR - {e}")

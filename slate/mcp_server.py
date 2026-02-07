@@ -14,7 +14,6 @@ Provides tools for:
 """
 
 import asyncio
-import json
 import subprocess
 import sys
 from pathlib import Path
@@ -203,6 +202,21 @@ async def list_tools() -> list[Tool]:
                 "properties": {}
             }
         ),
+        Tool(
+            name="slate_gpu",
+            description="Manage dual-GPU load balancing for Ollama LLMs (2x RTX 5070 Ti)",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "type": "string",
+                        "enum": ["status", "configure", "preload"],
+                        "description": "status: show GPU/model placement, configure: set up dual-GPU env, preload: warm models on GPUs",
+                        "default": "status"
+                    }
+                }
+            }
+        ),
     ]
 
 
@@ -266,6 +280,15 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
 
     elif name == "slate_benchmark":
         result = run_slate_command("slate_benchmark.py")
+
+    elif name == "slate_gpu":
+        action = arguments.get("action", "status")
+        if action == "configure":
+            result = run_slate_command("slate_gpu_manager.py", "--configure")
+        elif action == "preload":
+            result = run_slate_command("slate_gpu_manager.py", "--preload")
+        else:
+            result = run_slate_command("slate_gpu_manager.py", "--status")
 
     else:
         result = {

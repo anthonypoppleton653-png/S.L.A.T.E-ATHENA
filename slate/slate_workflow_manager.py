@@ -20,12 +20,10 @@ Usage:
 """
 
 import json
-import os
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-import subprocess
 
 # Add workspace root to path
 WORKSPACE_ROOT = Path(__file__).parent.parent

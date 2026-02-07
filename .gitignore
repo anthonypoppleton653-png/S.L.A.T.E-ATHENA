@@ -103,13 +103,27 @@ slate_logs/
 *.key
 secrets/
 
-# Large files
+# Large model files (keep Modelfile definitions, ignore binaries)
 *.onnx
 *.gguf
 *.safetensors
 *.pt
 *.bin
-models/
+
+# Installer artifacts
+.slate_install/
+install_state.json
+
+# Additional runtime state
+.slate_chromadb_state.json
+.slate_startup_state.json
+.slate_startup.pid
+
+# Extension build artifacts (root level)
+*.vsix
+
+# Temp developer scripts (contains tokens + scratch files)
+_temp/
 
 # OS
 .DS_Store

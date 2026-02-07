@@ -1,4 +1,4 @@
-// Modified: 2026-02-07T02:00:00Z | Author: COPILOT | Change: SLATE Python command runner with cancellation support
+// Modified: 2026-02-06T22:30:00Z | Author: COPILOT | Change: SLATE Python command runner with long-running support for /install and /update
 import * as cp from 'child_process';
 import * as vscode from 'vscode';
 import { getSlateConfig } from './extension';
@@ -9,6 +9,18 @@ import { getSlateConfig } from './extension';
  * All commands bind to 127.0.0.1 only (security rule).
  */
 export function execSlateCommand(command: string, token: vscode.CancellationToken): Promise<string> {
+	return _execCommand(command, token, 60_000);
+}
+
+/**
+ * Execute a long-running SLATE command (install/update).
+ * Timeout: 10 minutes. Streams progress incrementally.
+ */
+export function execSlateCommandLong(command: string, token: vscode.CancellationToken): Promise<string> {
+	return _execCommand(command, token, 600_000);
+}
+
+function _execCommand(command: string, token: vscode.CancellationToken, timeoutMs: number): Promise<string> {
 	const config = getSlateConfig();
 
 	return new Promise<string>((resolve, reject) => {
@@ -66,12 +78,12 @@ export function execSlateCommand(command: string, token: vscode.CancellationToke
 			reject(new Error(`Failed to run command: ${err.message}`));
 		});
 
-		// Timeout after 60 seconds
+		// Timeout
 		setTimeout(() => {
 			if (!proc.killed) {
 				proc.kill('SIGTERM');
-				resolve(stdout.trim() + '\n[timeout after 60s]');
+				resolve(stdout.trim() + `\n[timeout after ${timeoutMs / 1000}s]`);
 			}
-		}, 60_000);
+		}, timeoutMs);
 	});
 }

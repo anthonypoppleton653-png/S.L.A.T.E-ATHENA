@@ -46,7 +46,7 @@ def benchmark_disk():
     """Disk I/O benchmark."""
     import tempfile
     from pathlib import Path
-    
+
     start = time.perf_counter()
     with tempfile.TemporaryDirectory() as tmpdir:
         testfile = Path(tmpdir) / "benchmark.bin"
@@ -64,19 +64,19 @@ def benchmark_gpu():
         import torch
         if not torch.cuda.is_available():
             return {"name": "gpu", "available": False}
-        
+
         device = torch.device("cuda")
         torch.cuda.synchronize()
         start = time.perf_counter()
-        
+
         a = torch.randn(2000, 2000, device=device)
         b = torch.randn(2000, 2000, device=device)
         for _ in range(10):
-            c = torch.matmul(a, b)
-        
+            _ = torch.matmul(a, b)
+
         torch.cuda.synchronize()
         elapsed = time.perf_counter() - start
-        
+
         return {
             "name": "gpu_matmul",
             "available": True,
@@ -97,21 +97,21 @@ def run_benchmarks():
         "timestamp": datetime.now().isoformat(),
         "benchmarks": []
     }
-    
+
     print("Running benchmarks...")
-    
+
     print("  [1/4] CPU single-threaded...")
     results["benchmarks"].append(benchmark_cpu_single())
-    
+
     print("  [2/4] Memory allocation...")
     results["benchmarks"].append(benchmark_memory())
-    
+
     print("  [3/4] Disk I/O...")
     results["benchmarks"].append(benchmark_disk())
-    
+
     print("  [4/4] GPU compute...")
     results["benchmarks"].append(benchmark_gpu())
-    
+
     return results
 
 
@@ -122,7 +122,7 @@ def print_results(results: dict):
     print("  S.L.A.T.E. Benchmark Results")
     print("=" * 50)
     print()
-    
+
     for b in results["benchmarks"]:
         name = b["name"]
         if name == "cpu_single":
@@ -134,8 +134,8 @@ def print_results(results: dict):
         elif name == "gpu_matmul" and b.get("available"):
             print(f"  GPU:    {b['gflops']} GFLOPS on {b['device']}")
         elif name == "gpu" and not b.get("available"):
-            print(f"  GPU:    Not available")
-    
+            print("  GPU:    Not available")
+
     print()
     print("=" * 50)
     print()
@@ -146,14 +146,14 @@ def main():
     parser = argparse.ArgumentParser(description="SLATE Benchmark")
     parser.add_argument("--json", action="store_true", help="JSON output")
     args = parser.parse_args()
-    
+
     results = run_benchmarks()
-    
+
     if args.json:
         print(json.dumps(results, indent=2))
     else:
         print_results(results)
-    
+
     return 0
 
 
