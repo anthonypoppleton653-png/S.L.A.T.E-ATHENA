@@ -1,4 +1,4 @@
-// Modified: 2026-02-07T16:00:00Z | Author: COPILOT | Change: Agentic transformation — @slate is now an autonomous agent brain that plans, decides, delegates, and executes
+﻿// Modified: 2026-02-07T16:00:00Z | Author: COPILOT | Change: Agentic transformation — @slate is now an autonomous agent brain that plans, decides, delegates, and executes
 import * as vscode from 'vscode';
 import { getSystemState, type SlateSystemState } from './tools';
 
@@ -140,30 +140,8 @@ AUTO-DECISIONS during execution:
 - GPU not optimized → optimize immediately
 
 Report a concise BEFORE→AFTER delta table at the end. Show what you FIXED, not just what you checked.`,
-  Call slate_agentStatus(action="status").
-  Check: all 8 agents discovered and healthy (ALPHA, BETA, GAMMA, DELTA, EPSILON, ZETA, COPILOT, COPILOT_CHAT).
-  If agents missing → note for remediation.
 
-PHASE 5 — Task Management:
-  Call slate_workflow(action="status").
-  If stale tasks → call slate_workflow(action="cleanup").
-  Call slate_workflow(action="enforce") to ensure completion rules.
-
-PHASE 6 — Work Discovery & Execution:
-  Call slate_autonomous(action="discover").
-  If tasks found → call slate_executeWork(scope="full") or slate_handoff for each significant task.
-
-PHASE 7 — Security & Quality:
-  Call slate_securityAudit(scan="quick").
-  If findings → hand off code fixes with slate_handoff.
-  Call slate_checkDeps to verify dependency health.
-
-PHASE 8 — Final Verification:
-  Call slate_systemStatus(quick=true) one final time.
-  Compare against Phase 1 results. Report BEFORE→AFTER delta for every layer.
-  Show ecosystem status table: Layer | Status | Action Taken.`,
-
-	// ─── /status — Quick autonomous health scan ─────────────────────────
+		// ─── /status — Quick autonomous health scan ─────────────────────────
 	status: `MISSION: Rapid health assessment + auto-fix. Be an agent, not a reporter.
 
 1. Call slate_systemStatus(quick=true) AND slate_runtimeCheck AND slate_orchestrator(action="status") — all in parallel

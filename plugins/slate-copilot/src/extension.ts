@@ -1,9 +1,10 @@
-// Modified: 2026-02-07T14:30:00Z | Author: COPILOT | Change: Add animated Control Board with SLATE theming above Dashboard
+// Modified: 2026-02-07T15:00:00Z | Author: CLAUDE | Change: Add AI-powered Guided Install view
 import * as vscode from 'vscode';
 import { registerSlateParticipant } from './slateParticipant';
 import { registerSlateTools } from './tools';
 import { SlateDashboardViewProvider } from './slateDashboardView';
 import { SlateControlBoardViewProvider } from './slateControlBoardView';
+import { registerGuidedInstallView } from './slateGuidedInstallView';
 import { registerServiceMonitor } from './slateServiceMonitor';
 
 const DASHBOARD_URL = 'http://127.0.0.1:8080';
@@ -29,6 +30,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Register service monitor for auto-restart
 	const serviceMonitor = registerServiceMonitor(context);
+
+	// Register the AI-powered Guided Install view
+	context.subscriptions.push(registerGuidedInstallView(context));
 
 	// Register the sidebar Control Board webview (above Dashboard)
 	const controlBoardViewProvider = new SlateControlBoardViewProvider(context.extensionUri);
