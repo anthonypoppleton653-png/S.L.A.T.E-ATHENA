@@ -135,6 +135,7 @@ install_state.json
 .slate_chromadb_state.json
 .slate_startup_state.json
 .slate_startup.pid
+.slate_spec_kit.json
 
 # Extension build artifacts (root level)
 *.vsix
