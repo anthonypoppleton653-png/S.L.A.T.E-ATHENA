@@ -14,10 +14,26 @@
     <link rel="icon" type="image/svg+xml" href="assets/slate-logo-v2.svg">
     <style>
         :root {
-            /* SLATE Natural Theme System */
-            --theme-value: 0.15;
+            /* SLATE Engineering Blueprint Theme v3.0.0 (LOCKED) */
 
-            /* Dark Mode Base Colors (organic earth tones) */
+            /* Primary Brand - Anthropic-inspired */
+            --slate-primary: #B85A3C;
+            --slate-primary-light: #D4785A;
+            --slate-primary-dark: #8B4530;
+
+            /* Blueprint Engineering */
+            --blueprint-bg: #0D1B2A;
+            --blueprint-grid: #1B3A4B;
+            --blueprint-accent: #98C1D9;
+            --blueprint-node: #E0FBFC;
+
+            /* Status Semantics */
+            --status-active: #22C55E;
+            --status-pending: #F59E0B;
+            --status-error: #EF4444;
+            --status-inactive: #6B7280;
+
+            /* Dark Mode Base */
             --bg-dark: #0a0f0a;
             --bg-surface: #121812;
             --bg-card: rgba(20, 28, 20, 0.85);
@@ -28,7 +44,6 @@
             --text-primary: #ffffff;
             --text-secondary: #a3a3a3;
             --text-muted: #525252;
-            --text-dim: #333333;
 
             /* Accent Colors */
             --accent-green: #22c55e;
@@ -42,9 +57,8 @@
 
             /* Shadows */
             --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.2);
-            --shadow-lg: 0 8px 32px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3);
-            --shadow-glow: 0 0 40px rgba(255,255,255,0.03);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
 
             /* Spacing */
             --space-xs: clamp(4px, 0.5vw, 8px);
@@ -74,7 +88,6 @@
             /* Transitions */
             --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
             --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -82,7 +95,6 @@
         html {
             scroll-behavior: smooth;
             -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
 
         body {
@@ -91,7 +103,6 @@
             background-image:
                 radial-gradient(ellipse at 0% 0%, rgba(34, 197, 94, 0.03) 0%, transparent 50%),
                 radial-gradient(ellipse at 100% 50%, rgba(59, 130, 246, 0.02) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 100%, rgba(255, 255, 255, 0.01) 0%, transparent 50%),
                 linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-surface) 100%);
             background-attachment: fixed;
             color: var(--text-primary);
@@ -133,42 +144,51 @@
             color: var(--text-primary);
         }
 
-        .nav-logo img {
-            width: 40px;
-            height: 40px;
-            border-radius: var(--rounded-md);
-        }
+        .nav-logo img { width: 40px; height: 40px; border-radius: var(--rounded-md); }
+        .nav-logo span { font-family: Consolas, monospace; font-weight: 700; letter-spacing: 2px; }
 
-        .nav-logo span {
-            font-family: Consolas, 'Courier New', monospace;
-            font-weight: 700;
-            font-size: var(--font-lg);
-            letter-spacing: 2px;
-        }
+        .nav-links { display: flex; gap: var(--space-md); list-style: none; }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: var(--font-sm); transition: color var(--transition-fast); padding: var(--space-xs) var(--space-sm); }
+        .nav-links a:hover { color: var(--text-primary); }
+        .nav-cta { background: var(--text-primary); color: var(--bg-dark) !important; border-radius: var(--rounded-full); font-weight: 600; }
 
-        .nav-links {
+        /* System Status Bar */
+        .status-bar {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99;
             display: flex;
             gap: var(--space-md);
-            list-style: none;
-        }
-
-        .nav-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: var(--font-sm);
-            transition: color var(--transition-fast);
-            padding: var(--space-xs) var(--space-sm);
-        }
-
-        .nav-links a:hover {
-            color: var(--text-primary);
-        }
-
-        .nav-cta {
-            background: var(--text-primary);
-            color: var(--bg-dark) !important;
+            padding: var(--space-xs) var(--space-md);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
             border-radius: var(--rounded-full);
-            font-weight: 600;
+            backdrop-filter: blur(10px);
+            font-size: var(--font-xs);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.active { background: var(--status-active); }
+        .status-dot.pending { background: var(--status-pending); }
+        .status-dot.error { background: var(--status-error); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.9); }
         }
 
         /* Hero Section */
@@ -180,7 +200,7 @@
             align-items: center;
             text-align: center;
             padding: var(--space-2xl) var(--space-lg);
-            padding-top: calc(var(--space-2xl) + 80px);
+            padding-top: calc(var(--space-2xl) + 100px);
         }
 
         .hero-badge {
@@ -194,20 +214,6 @@
             font-size: var(--font-sm);
             color: var(--text-secondary);
             margin-bottom: var(--space-lg);
-            backdrop-filter: blur(10px);
-        }
-
-        .hero-badge .dot {
-            width: 8px;
-            height: 8px;
-            background: var(--accent-green);
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(0.9); }
         }
 
         .hero h1 {
@@ -235,12 +241,7 @@
             margin-bottom: var(--space-xl);
         }
 
-        .hero-buttons {
-            display: flex;
-            gap: var(--space-md);
-            flex-wrap: wrap;
-            justify-content: center;
-        }
+        .hero-buttons { display: flex; gap: var(--space-md); flex-wrap: wrap; justify-content: center; }
 
         .btn {
             display: inline-flex;
@@ -256,181 +257,391 @@
             border: none;
         }
 
-        .btn-primary {
-            background: var(--text-primary);
-            color: var(--bg-dark);
-        }
+        .btn-primary { background: var(--text-primary); color: var(--bg-dark); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,255,255,0.15); }
+        .btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border-hover); }
+        .btn-secondary:hover { background: var(--bg-card); }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(255,255,255,0.15);
-        }
+        /* Section Headers */
+        .section { padding: var(--space-2xl) var(--space-lg); }
+        .section-header { text-align: center; margin-bottom: var(--space-xl); }
+        .section-header h2 { font-size: var(--font-3xl); font-weight: 700; margin-bottom: var(--space-sm); }
+        .section-header p { color: var(--text-secondary); font-size: var(--font-lg); }
 
-        .btn-secondary {
-            background: transparent;
-            color: var(--text-primary);
-            border: 1px solid var(--border-hover);
-        }
-
-        .btn-secondary:hover {
-            background: var(--bg-card);
-            border-color: var(--text-muted);
-        }
-
-        /* Features Grid */
-        .features {
-            padding: var(--space-2xl) var(--space-lg);
-        }
-
-        .section-header {
+        /* Objective Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--space-lg);
             text-align: center;
             margin-bottom: var(--space-xl);
         }
 
-        .section-header h2 {
-            font-size: var(--font-3xl);
-            font-weight: 700;
-            margin-bottom: var(--space-sm);
-        }
-
-        .section-header p {
-            color: var(--text-secondary);
-            font-size: var(--font-lg);
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: var(--space-lg);
-        }
-
-        .feature-card {
+        .stat-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: var(--rounded-xl);
+            border-radius: var(--rounded-lg);
             padding: var(--space-lg);
             backdrop-filter: blur(10px);
-            transition: all var(--transition-base);
         }
 
-        .feature-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--border-hover);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, var(--bg-elevated), var(--bg-card));
-            border-radius: var(--rounded-lg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            margin-bottom: var(--space-md);
-            border: 1px solid var(--border);
-        }
-
-        .feature-card h3 {
-            font-size: var(--font-lg);
-            font-weight: 600;
-            margin-bottom: var(--space-sm);
-        }
-
-        .feature-card p {
-            color: var(--text-secondary);
-            font-size: var(--font-sm);
-        }
-
-        /* Stats Section */
-        .stats {
-            padding: var(--space-2xl) var(--space-lg);
-            background: var(--bg-surface);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: var(--space-lg);
-            text-align: center;
-        }
-
-        .stat-item h3 {
+        .stat-card h3 {
             font-size: var(--font-3xl);
             font-weight: 800;
             background: linear-gradient(135deg, var(--accent-green), #4ade80);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
 
-        .stat-item p {
-            color: var(--text-secondary);
+        .stat-card p { color: var(--text-secondary); font-size: var(--font-sm); margin-top: var(--space-xs); }
+        .stat-card .stat-source { font-size: var(--font-xs); color: var(--text-muted); margin-top: var(--space-xs); }
+
+        /* AI Inference Matrix */
+        .matrix-section { background: var(--bg-surface); }
+
+        .matrix-container {
+            background: var(--blueprint-bg);
+            border: 1px solid var(--blueprint-grid);
+            border-radius: var(--rounded-xl);
+            overflow: hidden;
+        }
+
+        .matrix-header {
+            background: var(--blueprint-grid);
+            padding: var(--space-md);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .matrix-title {
+            font-family: Consolas, monospace;
+            font-size: var(--font-lg);
+            color: var(--blueprint-accent);
+        }
+
+        .matrix-live {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: var(--font-xs);
+            color: var(--status-active);
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: Consolas, monospace;
             font-size: var(--font-sm);
-            margin-top: var(--space-xs);
         }
 
-        /* Architecture Section */
-        .architecture {
-            padding: var(--space-2xl) var(--space-lg);
+        .matrix-table th {
+            background: rgba(27, 58, 75, 0.5);
+            color: var(--blueprint-accent);
+            padding: var(--space-sm) var(--space-md);
+            text-align: left;
+            border-bottom: 1px solid var(--blueprint-grid);
+            font-weight: 600;
         }
 
-        .arch-diagram {
+        .matrix-table td {
+            padding: var(--space-sm) var(--space-md);
+            border-bottom: 1px solid rgba(27, 58, 75, 0.3);
+            color: var(--blueprint-node);
+        }
+
+        .matrix-table tr:hover td { background: rgba(152, 193, 217, 0.05); }
+
+        .matrix-backend {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 8px;
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: var(--rounded-sm);
+            color: var(--status-active);
+        }
+
+        .matrix-cost {
+            color: var(--status-active);
+            font-weight: 700;
+        }
+
+        /* Tech Tree Progress */
+        .progress-section { }
+
+        .progress-container {
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: var(--rounded-xl);
             padding: var(--space-xl);
-            font-family: Consolas, 'Courier New', monospace;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-lg);
+        }
+
+        .progress-title { font-size: var(--font-xl); font-weight: 600; }
+        .progress-percent { font-size: var(--font-2xl); color: var(--accent-green); font-weight: 800; }
+
+        .progress-bar {
+            height: 12px;
+            background: var(--bg-elevated);
+            border-radius: var(--rounded-full);
+            overflow: hidden;
+            margin-bottom: var(--space-lg);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-green), #4ade80);
+            border-radius: var(--rounded-full);
+            transition: width 1s ease-out;
+        }
+
+        .progress-components {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-md);
+        }
+
+        .component-group h4 {
+            font-size: var(--font-sm);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-sm);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .component-group .count {
+            background: var(--bg-elevated);
+            padding: 2px 8px;
+            border-radius: var(--rounded-sm);
+            font-size: var(--font-xs);
+        }
+
+        .component-list {
+            list-style: none;
+            font-size: var(--font-sm);
+        }
+
+        .component-list li {
+            padding: 4px 0;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .component-list li::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .component-group.complete .component-list li::before { background: var(--status-active); }
+        .component-group.in-progress .component-list li::before { background: var(--status-pending); }
+        .component-group.available .component-list li::before { background: var(--status-inactive); }
+
+        /* Operations Expansion */
+        .expansion-section { background: var(--bg-surface); }
+
+        .roadmap-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-lg);
+        }
+
+        .roadmap-phase {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--rounded-xl);
+            padding: var(--space-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .roadmap-phase.active {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+        }
+
+        .roadmap-phase.complete {
+            border-color: var(--accent-green);
+        }
+
+        .phase-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-md);
+        }
+
+        .phase-number {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-elevated);
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: var(--font-sm);
+        }
+
+        .roadmap-phase.complete .phase-number { background: var(--accent-green); color: var(--bg-dark); }
+        .roadmap-phase.active .phase-number { background: var(--accent-blue); color: var(--text-primary); }
+
+        .phase-title { font-size: var(--font-lg); font-weight: 600; }
+
+        .phase-status {
+            position: absolute;
+            top: var(--space-md);
+            right: var(--space-md);
+            font-size: var(--font-xs);
+            padding: 2px 8px;
+            border-radius: var(--rounded-sm);
+        }
+
+        .roadmap-phase.complete .phase-status { background: rgba(34, 197, 94, 0.15); color: var(--status-active); }
+        .roadmap-phase.active .phase-status { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+        .roadmap-phase.planned .phase-status { background: rgba(107, 114, 128, 0.15); color: var(--status-inactive); }
+
+        .phase-items {
+            list-style: none;
+            font-size: var(--font-sm);
+            color: var(--text-secondary);
+        }
+
+        .phase-items li { padding: 6px 0; display: flex; align-items: center; gap: 8px; }
+        .phase-items li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--text-muted); }
+
+        /* Architecture Blueprint */
+        .architecture { padding: var(--space-2xl) var(--space-lg); }
+
+        .arch-diagram {
+            background: var(--blueprint-bg);
+            border: 1px solid var(--blueprint-grid);
+            border-radius: var(--rounded-xl);
+            padding: var(--space-xl);
+            font-family: Consolas, monospace;
             font-size: var(--font-sm);
             overflow-x: auto;
-            backdrop-filter: blur(10px);
         }
 
-        .arch-diagram pre {
-            color: var(--text-secondary);
-            white-space: pre;
-            line-height: 1.4;
+        .arch-diagram pre { color: var(--blueprint-accent); white-space: pre; line-height: 1.4; }
+
+        /* Integrations Grid */
+        .integrations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-lg);
         }
+
+        .integration-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--rounded-lg);
+            padding: var(--space-lg);
+            transition: all var(--transition-base);
+        }
+
+        .integration-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-hover);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .integration-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-md);
+        }
+
+        .integration-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-elevated);
+            border-radius: var(--rounded-md);
+            font-size: 20px;
+        }
+
+        .integration-name { font-weight: 600; font-size: var(--font-lg); }
+
+        .integration-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: var(--font-xs);
+            color: var(--status-active);
+            margin-bottom: var(--space-sm);
+        }
+
+        .integration-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-sm);
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+        }
+
+        .integration-metric { display: flex; flex-direction: column; }
+        .integration-metric .value { font-size: var(--font-lg); color: var(--text-primary); font-weight: 600; }
 
         /* CTA Section */
-        .cta {
-            padding: var(--space-2xl) var(--space-lg);
-            text-align: center;
-        }
+        .cta { padding: var(--space-2xl) var(--space-lg); text-align: center; }
 
         .cta-box {
             background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-elevated) 100%);
             border: 1px solid var(--border);
             border-radius: var(--rounded-xl);
             padding: var(--space-2xl);
-            backdrop-filter: blur(10px);
         }
 
-        .cta-box h2 {
-            font-size: var(--font-2xl);
-            margin-bottom: var(--space-md);
-        }
-
-        .cta-box p {
-            color: var(--text-secondary);
-            margin-bottom: var(--space-lg);
-            max-width: 500px;
-            margin-inline: auto;
-        }
+        .cta-box h2 { font-size: var(--font-2xl); margin-bottom: var(--space-md); }
+        .cta-box p { color: var(--text-secondary); margin-bottom: var(--space-lg); max-width: 500px; margin-inline: auto; }
 
         .install-code {
             background: var(--bg-dark);
             border: 1px solid var(--border);
             border-radius: var(--rounded-lg);
             padding: var(--space-md);
-            font-family: Consolas, 'Courier New', monospace;
+            font-family: Consolas, monospace;
             font-size: var(--font-sm);
             color: var(--accent-green);
             margin-bottom: var(--space-lg);
-            max-width: 600px;
+            max-width: 700px;
             margin-inline: auto;
             overflow-x: auto;
+        }
+
+        /* Data Source Notice */
+        .data-source {
+            text-align: center;
+            padding: var(--space-lg);
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+        }
+
+        .data-source p {
+            font-size: var(--font-xs);
+            color: var(--text-muted);
+        }
+
+        .data-source code {
+            background: var(--bg-elevated);
+            padding: 2px 6px;
+            border-radius: var(--rounded-sm);
         }
 
         /* Footer */
@@ -440,79 +651,23 @@
             text-align: center;
         }
 
-        .footer-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: var(--space-md);
-        }
-
-        .footer-logo {
-            display: flex;
-            align-items: center;
-            gap: var(--space-sm);
-        }
-
-        .footer-logo img {
-            width: 32px;
-            height: 32px;
-            border-radius: var(--rounded-sm);
-        }
-
-        .footer-logo span {
-            font-family: Consolas, 'Courier New', monospace;
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
-
-        .footer-links {
-            display: flex;
-            gap: var(--space-lg);
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .footer-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: var(--font-sm);
-            transition: color var(--transition-fast);
-        }
-
-        .footer-links a:hover {
-            color: var(--text-primary);
-        }
-
-        .footer-author {
-            color: var(--text-muted);
-            font-size: var(--font-xs);
-        }
-
-        .footer-author a {
-            color: var(--text-secondary);
-            text-decoration: none;
-        }
+        .footer-content { display: flex; flex-direction: column; align-items: center; gap: var(--space-md); }
+        .footer-logo { display: flex; align-items: center; gap: var(--space-sm); }
+        .footer-logo img { width: 32px; height: 32px; border-radius: var(--rounded-sm); }
+        .footer-logo span { font-family: Consolas, monospace; font-weight: 600; letter-spacing: 1px; }
+        .footer-links { display: flex; gap: var(--space-lg); flex-wrap: wrap; justify-content: center; }
+        .footer-links a { color: var(--text-secondary); text-decoration: none; font-size: var(--font-sm); transition: color var(--transition-fast); }
+        .footer-links a:hover { color: var(--text-primary); }
+        .footer-author { color: var(--text-muted); font-size: var(--font-xs); }
+        .footer-author a { color: var(--text-secondary); text-decoration: none; }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-            }
-
-            .hero h1 {
-                font-size: var(--font-3xl);
-            }
-
-            .hero-buttons {
-                flex-direction: column;
-                width: 100%;
-                max-width: 300px;
-            }
-
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
+            .nav-links { display: none; }
+            .status-bar { display: none; }
+            .hero h1 { font-size: var(--font-3xl); }
+            .progress-components { grid-template-columns: 1fr; }
+            .matrix-table { font-size: var(--font-xs); }
         }
     </style>
 </head>
@@ -525,7 +680,9 @@
                 <span>S.L.A.T.E.</span>
             </a>
             <ul class="nav-links">
-                <li><a href="#features">Features</a></li>
+                <li><a href="#matrix">AI Matrix</a></li>
+                <li><a href="#progress">Progress</a></li>
+                <li><a href="#expansion">Expansion</a></li>
                 <li><a href="#architecture">Architecture</a></li>
                 <li><a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/wiki">Docs</a></li>
                 <li><a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E" class="nav-cta">GitHub</a></li>
@@ -533,91 +690,273 @@
         </div>
     </nav>
 
+    <!-- System Status Bar -->
+    <div class="status-bar">
+        <div class="status-item">
+            <span class="status-dot active" id="status-system"></span>
+            <span>System: <span id="system-status">Operational</span></span>
+        </div>
+        <div class="status-item">
+            <span class="status-dot active" id="status-ollama"></span>
+            <span>Ollama: <span id="ollama-status">Active</span></span>
+        </div>
+        <div class="status-item">
+            <span class="status-dot active" id="status-runners"></span>
+            <span>Runners: <span id="runners-count">19</span></span>
+        </div>
+    </div>
+
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-badge">
-            <span class="dot"></span>
-            <span>v2.4 - Production Ready</span>
+            <span class="status-dot active"></span>
+            <span id="version-badge">v2.5 - Production Ready</span>
         </div>
         <h1>Turn Your Hardware Into<br>an <span class="accent">AI Operations Center</span></h1>
-        <p class="hero-subtitle">Stop paying for cloud AI. Stop sending code to external servers. Run AI operations locally and integrate seamlessly with GitHub.</p>
+        <p class="hero-subtitle">Stop paying for cloud AI. Run AI operations locally and integrate seamlessly with GitHub. All inference happens on your hardware.</p>
         <div class="hero-buttons">
-            <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E" class="btn btn-primary">
-                Get Started
-            </a>
-            <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/wiki" class="btn btn-secondary">
-                Documentation
-            </a>
+            <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E" class="btn btn-primary">Get Started</a>
+            <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/wiki" class="btn btn-secondary">Documentation</a>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section class="features" id="features">
+    <!-- Objective Stats -->
+    <section class="section">
         <div class="container">
-            <div class="section-header">
-                <h2>Built for Developers</h2>
-                <p>Everything you need to run AI locally with GitHub integration</p>
-            </div>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">&#x1F4BB;</div>
-                    <h3>Local AI Engine</h3>
-                    <p>Ollama + Foundry running on your GPU. Code analysis, automation, and task routing without API bills.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">&#x1F9E0;</div>
-                    <h3>Persistent Memory</h3>
-                    <p>ChromaDB stores context about your codebase. Your AI ops get smarter over time.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">&#x1F4CA;</div>
-                    <h3>Live Dashboard</h3>
-                    <p>Monitor services, task queues, and GPU utilization in real-time with glassmorphism UI.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">&#x1F517;</div>
-                    <h3>GitHub Bridge</h3>
-                    <p>Self-hosted runner connects your local AI to GitHub Actions, Issues, and PRs.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">&#x1F6E1;</div>
-                    <h3>Built-in Security</h3>
-                    <p>ActionGuard, SDK Source Guard, and PII Scanner protect your automation.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">&#x26A1;</div>
-                    <h3>Multi-GPU Support</h3>
-                    <p>19 parallel runners across dual GPUs with intelligent task distribution.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Stats Section -->
-    <section class="stats">
-        <div class="container">
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <h3>$0</h3>
+            <div class="stats-grid" id="stats-grid">
+                <div class="stat-card">
+                    <h3 id="stat-cost">$0</h3>
                     <p>Cloud AI Costs</p>
+                    <span class="stat-source">Monthly</span>
                 </div>
-                <div class="stat-item">
-                    <h3>19</h3>
+                <div class="stat-card">
+                    <h3 id="stat-runners">19</h3>
                     <p>Parallel Runners</p>
+                    <span class="stat-source">GPU + CPU</span>
                 </div>
-                <div class="stat-item">
-                    <h3>100%</h3>
+                <div class="stat-card">
+                    <h3 id="stat-local">100%</h3>
                     <p>Local Processing</p>
+                    <span class="stat-source">No Cloud APIs</span>
                 </div>
-                <div class="stat-item">
+                <div class="stat-card">
+                    <h3 id="stat-vram">32GB</h3>
+                    <p>GPU Memory</p>
+                    <span class="stat-source">Dual RTX 5070 Ti</span>
+                </div>
+                <div class="stat-card">
+                    <h3 id="stat-tasks">9</h3>
+                    <p>Task Types</p>
+                    <span class="stat-source">AI Routed</span>
+                </div>
+                <div class="stat-card">
                     <h3>24/7</h3>
                     <p>Autonomous Ops</p>
+                    <span class="stat-source">Self-Managing</span>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Architecture Section -->
+    <!-- AI Inference Matrix -->
+    <section class="section matrix-section" id="matrix">
+        <div class="container">
+            <div class="section-header">
+                <h2>AI Inference Matrix</h2>
+                <p>All AI tasks route through local backends. Zero cloud costs.</p>
+            </div>
+            <div class="matrix-container">
+                <div class="matrix-header">
+                    <span class="matrix-title">TASK ROUTING MATRIX</span>
+                    <span class="matrix-live"><span class="status-dot active"></span> Live Data</span>
+                </div>
+                <table class="matrix-table" id="inference-matrix">
+                    <thead>
+                        <tr>
+                            <th>Task Type</th>
+                            <th>Backend</th>
+                            <th>Model</th>
+                            <th>Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>code_generation</td><td><span class="matrix-backend">ollama_local</span></td><td>mistral-nemo</td><td class="matrix-cost">$0</td></tr>
+                        <tr><td>code_review</td><td><span class="matrix-backend">ollama_local</span></td><td>mistral-nemo</td><td class="matrix-cost">$0</td></tr>
+                        <tr><td>test_generation</td><td><span class="matrix-backend">ollama_local</span></td><td>mistral-nemo</td><td class="matrix-cost">$0</td></tr>
+                        <tr><td>bug_fix</td><td><span class="matrix-backend">ollama_local</span></td><td>mistral-nemo</td><td class="matrix-cost">$0</td></tr>
+                        <tr><td>refactoring</td><td><span class="matrix-backend">ollama_local</span></td><td>mistral-nemo</td><td class="matrix-cost">$0</td></tr>
+                        <tr><td>documentation</td><td><span class="matrix-backend">ollama_local</span></td><td>mistral-nemo</td><td class="matrix-cost">$0</td></tr>
+                        <tr><td>analysis</td><td><span class="matrix-backend">ollama_local</span></td><td>mistral-nemo</td><td class="matrix-cost">$0</td></tr>
+                        <tr><td>research</td><td><span class="matrix-backend">ollama_local</span></td><td>mistral-nemo</td><td class="matrix-cost">$0</td></tr>
+                        <tr><td>planning</td><td><span class="matrix-backend">spec_kit</span></td><td>local</td><td class="matrix-cost">$0</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Tree Progress -->
+    <section class="section progress-section" id="progress">
+        <div class="container">
+            <div class="section-header">
+                <h2>Development Progress</h2>
+                <p>Objective status from tech tree. Updated locally via AI inference.</p>
+            </div>
+            <div class="progress-container">
+                <div class="progress-header">
+                    <span class="progress-title">Tech Tree Completion</span>
+                    <span class="progress-percent" id="progress-percent">68.75%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 68.75%"></div>
+                </div>
+                <div class="progress-components">
+                    <div class="component-group complete">
+                        <h4>Complete <span class="count" id="complete-count">9</span></h4>
+                        <ul class="component-list" id="complete-list">
+                            <li>Core SDK</li>
+                            <li>Workflow System</li>
+                            <li>MCP Server</li>
+                            <li>Self-Hosted Runner</li>
+                            <li>Workflow Pipeline</li>
+                            <li>Docker Infrastructure</li>
+                            <li>Meta-Workflow System</li>
+                            <li>Multi-Runner System</li>
+                            <li>VSCode SDK Integration</li>
+                        </ul>
+                    </div>
+                    <div class="component-group in-progress">
+                        <h4>In Progress <span class="count" id="progress-count">2</span></h4>
+                        <ul class="component-list" id="progress-list">
+                            <li>Dashboard</li>
+                            <li>Tech Tree Visualization</li>
+                        </ul>
+                    </div>
+                    <div class="component-group available">
+                        <h4>Available <span class="count" id="available-count">5</span></h4>
+                        <ul class="component-list" id="available-list">
+                            <li>Copilot Development</li>
+                            <li>Claude Integration</li>
+                            <li>UI Development</li>
+                            <li>Agent System</li>
+                            <li>Discord Bot</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Operations Expansion -->
+    <section class="section expansion-section" id="expansion">
+        <div class="container">
+            <div class="section-header">
+                <h2>Operations Expansion</h2>
+                <p>Current capabilities and expanding features. Phase 2 active.</p>
+            </div>
+            <div class="roadmap-container">
+                <div class="roadmap-phase complete">
+                    <span class="phase-status">Complete</span>
+                    <div class="phase-header">
+                        <span class="phase-number">1</span>
+                        <span class="phase-title">Foundation</span>
+                    </div>
+                    <ul class="phase-items">
+                        <li>Core SDK infrastructure</li>
+                        <li>Workflow execution system</li>
+                        <li>MCP server integration</li>
+                        <li>Self-hosted GitHub runner</li>
+                    </ul>
+                </div>
+                <div class="roadmap-phase active">
+                    <span class="phase-status">Active</span>
+                    <div class="phase-header">
+                        <span class="phase-number">2</span>
+                        <span class="phase-title">Expansion</span>
+                    </div>
+                    <ul class="phase-items">
+                        <li>Multi-runner parallel system</li>
+                        <li>Docker containerization</li>
+                        <li>VSCode SDK integration</li>
+                        <li>Dashboard development</li>
+                    </ul>
+                </div>
+                <div class="roadmap-phase planned">
+                    <span class="phase-status">Planned</span>
+                    <div class="phase-header">
+                        <span class="phase-number">3</span>
+                        <span class="phase-title">Intelligence</span>
+                    </div>
+                    <ul class="phase-items">
+                        <li>Custom model training</li>
+                        <li>Agent system automation</li>
+                        <li>Discord integration</li>
+                        <li>UV package migration</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integrations -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Integration Status</h2>
+                <p>Connected services and capabilities.</p>
+            </div>
+            <div class="integrations-grid">
+                <div class="integration-card">
+                    <div class="integration-header">
+                        <div class="integration-icon">&#128187;</div>
+                        <span class="integration-name">GitHub</span>
+                    </div>
+                    <div class="integration-status"><span class="status-dot active"></span> Connected</div>
+                    <div class="integration-metrics">
+                        <div class="integration-metric"><span class="value">Yes</span> Self-Hosted Runner</div>
+                        <div class="integration-metric"><span class="value">Yes</span> Actions Enabled</div>
+                        <div class="integration-metric"><span class="value">Yes</span> Projects V2</div>
+                        <div class="integration-metric"><span class="value">Yes</span> Discussions</div>
+                    </div>
+                </div>
+                <div class="integration-card">
+                    <div class="integration-header">
+                        <div class="integration-icon">&#128736;</div>
+                        <span class="integration-name">VSCode</span>
+                    </div>
+                    <div class="integration-status"><span class="status-dot active"></span> Active</div>
+                    <div class="integration-metrics">
+                        <div class="integration-metric"><span class="value" id="vscode-commands">21</span> Chat Commands</div>
+                        <div class="integration-metric"><span class="value" id="vscode-tools">26</span> LM Tools</div>
+                    </div>
+                </div>
+                <div class="integration-card">
+                    <div class="integration-header">
+                        <div class="integration-icon">&#129302;</div>
+                        <span class="integration-name">Claude Code</span>
+                    </div>
+                    <div class="integration-status"><span class="status-dot active"></span> Active</div>
+                    <div class="integration-metrics">
+                        <div class="integration-metric"><span class="value" id="claude-commands">10</span> Slash Commands</div>
+                        <div class="integration-metric"><span class="value" id="claude-tools">11</span> MCP Tools</div>
+                    </div>
+                </div>
+                <div class="integration-card">
+                    <div class="integration-header">
+                        <div class="integration-icon">&#128230;</div>
+                        <span class="integration-name">Docker</span>
+                    </div>
+                    <div class="integration-status"><span class="status-dot active"></span> Active</div>
+                    <div class="integration-metrics">
+                        <div class="integration-metric"><span class="value">Yes</span> GPU Image</div>
+                        <div class="integration-metric"><span class="value">Yes</span> CPU Image</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
     <section class="architecture" id="architecture">
         <div class="container">
             <div class="section-header">
@@ -626,31 +965,37 @@
             </div>
             <div class="arch-diagram">
 <pre>
-&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
-&#x2502;                           S.L.A.T.E. v2.4                            &#x2502;
-&#x251C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2524;
-&#x2502;                                                                       &#x2502;
-&#x2502;   &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;   &#x2502;
-&#x2502;   &#x2502;               GitHub Projects V2 (Task Source)                &#x2502;   &#x2502;
-&#x2502;   &#x2502;   KANBAN &#x2192; BUG TRACKING &#x2192; ITERATIVE DEV &#x2192; ROADMAP          &#x2502;   &#x2502;
-&#x2502;   &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x252C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;   &#x2502;
-&#x2502;                               &#x2502;                                       &#x2502;
-&#x2502;                               &#x25BC;                                       &#x2502;
-&#x2502;   &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;   &#x2502;
-&#x2502;   &#x2502;              Multi-Runner System (19 Runners)                &#x2502;   &#x2502;
-&#x2502;   &#x2502;   GPU Runners (7)              CPU Runners (12)              &#x2502;   &#x2502;
-&#x2502;   &#x2502;   &#x251C;&#x2500; 6x Light (2GB VRAM)        &#x251C;&#x2500; 12x Parallel Workers       &#x2502;   &#x2502;
-&#x2502;   &#x2502;   &#x2514;&#x2500; 1x Heavy (12GB VRAM)       &#x2514;&#x2500; 24 CPU Threads             &#x2502;   &#x2502;
-&#x2502;   &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x252C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;   &#x2502;
-&#x2502;                               &#x2502;                                       &#x2502;
-&#x2502;                               &#x25BC;                                       &#x2502;
-&#x2502;   &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;   &#x2502;
-&#x2502;   &#x2502;                   AI Backend Router                         &#x2502;   &#x2502;
-&#x2502;   &#x2502;   Ollama :11434    Foundry :5272    External APIs           &#x2502;   &#x2502;
-&#x2502;   &#x2502;   (mistral-nemo)   (ONNX)           (blocked by default)    &#x2502;   &#x2502;
-&#x2502;   &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;   &#x2502;
-&#x2502;                                                                       &#x2502;
-&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+┌───────────────────────────────────────────────────────────────────────────┐
+│                           S.L.A.T.E. v2.5                                 │
+│                 Synchronized Living Architecture                           │
+├───────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│   ┌───────────────────────────────────────────────────────────────────┐   │
+│   │               GitHub Projects V2 (Task Source)                    │   │
+│   │   KANBAN → BUG TRACKING → ITERATIVE DEV → ROADMAP                 │   │
+│   └─────────────────────────────┬─────────────────────────────────────┘   │
+│                                 │                                         │
+│                                 ▼                                         │
+│   ┌───────────────────────────────────────────────────────────────────┐   │
+│   │              Multi-Runner System (19 Runners)                     │   │
+│   │   GPU Runners (7)                    CPU Runners (12)             │   │
+│   │   ├─ 6x Light (2GB VRAM)             ├─ 12x Parallel Workers      │   │
+│   │   └─ 1x Heavy (12GB VRAM)            └─ 24 CPU Threads            │   │
+│   └─────────────────────────────┬─────────────────────────────────────┘   │
+│                                 │                                         │
+│                                 ▼                                         │
+│   ┌───────────────────────────────────────────────────────────────────┐   │
+│   │                   AI Backend Router (Matrix)                      │   │
+│   │   Ollama :11434        Foundry :5272       External APIs          │   │
+│   │   (mistral-nemo)       (ONNX)              (blocked by default)   │   │
+│   └───────────────────────────────────────────────────────────────────┘   │
+│                                                                           │
+│   ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────────┐   │
+│   │   ActionGuard   │  │ SDK Source Guard│  │    PII Scanner          │   │
+│   │   (Security)    │  │ (Publishers)    │  │    (Data Safety)        │   │
+│   └─────────────────┘  └─────────────────┘  └─────────────────────────┘   │
+│                                                                           │
+└───────────────────────────────────────────────────────────────────────────┘
 </pre>
             </div>
         </div>
@@ -665,12 +1010,15 @@
                 <div class="install-code">
                     git clone https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git && cd S.L.A.T.E && python install_slate.py
                 </div>
-                <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E" class="btn btn-primary">
-                    View on GitHub
-                </a>
+                <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E" class="btn btn-primary">View on GitHub</a>
             </div>
         </div>
     </section>
+
+    <!-- Data Source Notice -->
+    <div class="data-source">
+        <p>Data sourced from <code>slate-data.json</code> | Updated locally via AI inference | Run <code>python update_pages.py</code> to refresh</p>
+    </div>
 
     <!-- Footer -->
     <footer>
@@ -694,5 +1042,111 @@
             </div>
         </div>
     </footer>
+
+    <!-- Data Loading Script -->
+    <script>
+        // Load and display data from slate-data.json
+        async function loadSlateData() {
+            try {
+                const response = await fetch('slate-data.json');
+                if (!response.ok) return;
+                const data = await response.json();
+                updateUI(data);
+            } catch (e) {
+                console.log('Using static data (slate-data.json not available)');
+            }
+        }
+
+        function updateUI(data) {
+            // Version badge
+            if (data.version) {
+                document.getElementById('version-badge').textContent = `v${data.version} - Production Ready`;
+            }
+
+            // System status
+            if (data.system) {
+                document.getElementById('system-status').textContent = data.system.status === 'operational' ? 'Operational' : 'Degraded';
+                document.getElementById('status-system').className = 'status-dot ' + (data.system.status === 'operational' ? 'active' : 'pending');
+            }
+
+            // AI backends
+            if (data.ai_backends?.ollama) {
+                document.getElementById('ollama-status').textContent = data.ai_backends.ollama.status === 'active' ? 'Active' : 'Offline';
+                document.getElementById('status-ollama').className = 'status-dot ' + (data.ai_backends.ollama.status === 'active' ? 'active' : 'error');
+            }
+
+            // Runners
+            if (data.runners) {
+                document.getElementById('runners-count').textContent = data.runners.total;
+                document.getElementById('stat-runners').textContent = data.runners.total;
+            }
+
+            // Metrics
+            if (data.metrics) {
+                document.getElementById('stat-cost').textContent = data.metrics.cloud_costs_monthly;
+                document.getElementById('stat-local').textContent = data.metrics.local_processing_percent + '%';
+                document.getElementById('stat-vram').textContent = data.metrics.gpu_memory_total_gb + 'GB';
+                document.getElementById('stat-tasks').textContent = data.metrics.task_types_supported;
+            }
+
+            // Tech tree progress
+            if (data.tech_tree) {
+                const percent = data.tech_tree.completion_percent;
+                document.getElementById('progress-percent').textContent = percent + '%';
+                document.getElementById('progress-fill').style.width = percent + '%';
+                document.getElementById('complete-count').textContent = data.tech_tree.nodes_complete;
+                document.getElementById('progress-count').textContent = data.tech_tree.nodes_in_progress;
+                document.getElementById('available-count').textContent = data.tech_tree.nodes_available;
+
+                // Update component lists
+                if (data.tech_tree.components) {
+                    updateComponentList('complete-list', data.tech_tree.components.complete);
+                    updateComponentList('progress-list', data.tech_tree.components.in_progress);
+                    updateComponentList('available-list', data.tech_tree.components.available);
+                }
+            }
+
+            // Integrations
+            if (data.integrations) {
+                if (data.integrations.vscode) {
+                    document.getElementById('vscode-commands').textContent = data.integrations.vscode.chat_commands;
+                    document.getElementById('vscode-tools').textContent = data.integrations.vscode.lm_tools;
+                }
+                if (data.integrations.claude_code) {
+                    document.getElementById('claude-commands').textContent = data.integrations.claude_code.slash_commands;
+                    document.getElementById('claude-tools').textContent = data.integrations.claude_code.mcp_tools;
+                }
+            }
+
+            // AI Inference Matrix
+            if (data.ai_inference_matrix?.task_routing) {
+                updateInferenceMatrix(data.ai_inference_matrix.task_routing);
+            }
+        }
+
+        function updateComponentList(elementId, items) {
+            const list = document.getElementById(elementId);
+            if (list && items) {
+                list.innerHTML = items.map(item => `<li>${item}</li>`).join('');
+            }
+        }
+
+        function updateInferenceMatrix(routing) {
+            const tbody = document.querySelector('#inference-matrix tbody');
+            if (tbody && routing.length > 0) {
+                tbody.innerHTML = routing.map(r => `
+                    <tr>
+                        <td>${r.task_type}</td>
+                        <td><span class="matrix-backend">${r.backend}</span></td>
+                        <td>${r.model}</td>
+                        <td class="matrix-cost">${r.cost}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // Load data on page load
+        loadSlateData();
+    </script>
 </body>
 </html>

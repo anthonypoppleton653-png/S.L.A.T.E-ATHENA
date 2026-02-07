@@ -799,7 +799,7 @@ SLATE development follows a specification-driven approach. Each major feature st
 | 005 | Dashboard Monochrome Theme | `Completed` | Black/white base theme with minimal status colors |
 | 006 | Natural Theme System | `Completed` | Procedural dark/light slider with natural color palette |
 | 007 | Unified Design System | `Completed` | M3 Material Design + Anthropic Geometric Art |
-| 008 | Guided Experience | `Active` | AI-driven onboarding wizard with zero-config setup |
+| 008 | Guided Experience | `Completed` | AI-driven onboarding wizard with zero-config setup |
 | 009 | Copilot Roadmap Awareness | `Completed` | @slate participant with dev cycle integration |
 
 ### Spec Lifecycle
