@@ -2,7 +2,7 @@
 # Base: Python 3.11 Slim
 # Author: SLATE | Created: 2026-02-06
 
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 LABEL org.opencontainers.image.source="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E"
 LABEL org.opencontainers.image.description="SLATE - Synchronized Living Architecture for Transformation and Evolution (CPU)"
