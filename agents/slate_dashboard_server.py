@@ -287,6 +287,339 @@ async def api_workflow_pipeline():
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
+# ─── GitHub Integration Endpoints ────────────────────────────────────────────
+
+@app.get("/api/github/prs")
+async def api_github_prs():
+    """Get open pull requests."""
+    try:
+        gh_cli = get_gh_cli()
+        result = subprocess.run(
+            [gh_cli, "pr", "list", "--state", "open", "--limit", "10",
+             "--json", "number,title,author,labels,createdAt,headRefName,additions,deletions"],
+            capture_output=True, text=True, timeout=15, cwd=str(WORKSPACE_ROOT)
+        )
+        if result.returncode == 0:
+            prs = json.loads(result.stdout) if result.stdout.strip() else []
+            return JSONResponse(content={"prs": prs, "count": len(prs)})
+        return JSONResponse(content={"error": result.stderr, "prs": [], "count": 0})
+    except Exception as e:
+        return JSONResponse(content={"error": str(e), "prs": [], "count": 0})
+
+@app.get("/api/github/commits")
+async def api_github_commits():
+    """Get recent commits on current branch."""
+    try:
+        gh_cli = get_gh_cli()
+        result = subprocess.run(
+            [gh_cli, "api", "repos/SynchronizedLivingArchitecture/S.L.A.T.E/commits",
+             "--jq", "[.[:10][] | {sha: .sha, message: .commit.message, author: .commit.author.name, date: .commit.author.date}]"],
+            capture_output=True, text=True, timeout=15, cwd=str(WORKSPACE_ROOT)
+        )
+        if result.returncode == 0:
+            commits = json.loads(result.stdout) if result.stdout.strip() else []
+            return JSONResponse(content={"commits": commits, "count": len(commits)})
+        return JSONResponse(content={"error": result.stderr, "commits": [], "count": 0})
+    except Exception as e:
+        return JSONResponse(content={"error": str(e), "commits": [], "count": 0})
+
+@app.get("/api/github/issues")
+async def api_github_issues():
+    """Get open issues."""
+    try:
+        gh_cli = get_gh_cli()
+        result = subprocess.run(
+            [gh_cli, "issue", "list", "--state", "open", "--limit", "15",
+             "--json", "number,title,labels,author,createdAt"],
+            capture_output=True, text=True, timeout=15, cwd=str(WORKSPACE_ROOT)
+        )
+        if result.returncode == 0:
+            issues = json.loads(result.stdout) if result.stdout.strip() else []
+            return JSONResponse(content={"issues": issues, "count": len(issues)})
+        return JSONResponse(content={"error": result.stderr, "issues": [], "count": 0})
+    except Exception as e:
+        return JSONResponse(content={"error": str(e), "issues": [], "count": 0})
+
+@app.get("/api/github/releases")
+async def api_github_releases():
+    """Get latest release."""
+    try:
+        gh_cli = get_gh_cli()
+        result = subprocess.run(
+            [gh_cli, "release", "list", "--limit", "1",
+             "--json", "tagName,name,publishedAt,isPrerelease"],
+            capture_output=True, text=True, timeout=10, cwd=str(WORKSPACE_ROOT)
+        )
+        if result.returncode == 0:
+            releases = json.loads(result.stdout) if result.stdout.strip() else []
+            release = releases[0] if releases else None
+            return JSONResponse(content={"release": release})
+        return JSONResponse(content={"error": result.stderr, "release": None})
+    except Exception as e:
+        return JSONResponse(content={"error": str(e), "release": None})
+
+# ─── System Health Endpoints ─────────────────────────────────────────────────
+
+@app.get("/api/system/gpu")
+async def api_system_gpu():
+    """Get real-time GPU utilization."""
+    try:
+        result = subprocess.run(
+            ["nvidia-smi", "--query-gpu=index,name,utilization.gpu,utilization.memory,memory.used,memory.total,temperature.gpu",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=10
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            gpus = []
+            for line in result.stdout.strip().split("\n"):
+                parts = [p.strip() for p in line.split(",")]
+                if len(parts) >= 7:
+                    gpus.append({
+                        "index": int(parts[0]),
+                        "name": parts[1],
+                        "gpu_util": int(parts[2]) if parts[2].isdigit() else 0,
+                        "memory_util": int(parts[3]) if parts[3].isdigit() else 0,
+                        "memory_used": int(parts[4]) if parts[4].isdigit() else 0,
+                        "memory_total": int(parts[5]) if parts[5].isdigit() else 0,
+                        "temperature": int(parts[6]) if parts[6].isdigit() else None
+                    })
+            return JSONResponse(content={"available": True, "gpus": gpus})
+        return JSONResponse(content={"available": False, "gpus": []})
+    except Exception:
+        return JSONResponse(content={"available": False, "gpus": []})
+
+@app.get("/api/system/resources")
+async def api_system_resources():
+    """Get CPU, memory, disk usage."""
+    try:
+        import psutil
+        cpu = psutil.cpu_percent(interval=0.1)
+        mem = psutil.virtual_memory()
+        disk = psutil.disk_usage(str(WORKSPACE_ROOT))
+
+        return JSONResponse(content={
+            "available": True,
+            "cpu": {"percent": cpu, "cores": psutil.cpu_count()},
+            "memory": {
+                "percent": mem.percent,
+                "used_gb": round(mem.used / (1024**3), 1),
+                "total_gb": round(mem.total / (1024**3), 1)
+            },
+            "disk": {
+                "percent": round((disk.used / disk.total) * 100, 1),
+                "free_gb": round(disk.free / (1024**3), 1),
+                "total_gb": round(disk.total / (1024**3), 1)
+            }
+        })
+    except ImportError:
+        return JSONResponse(content={"available": False, "error": "psutil not installed"})
+    except Exception as e:
+        return JSONResponse(content={"available": False, "error": str(e)})
+
+@app.get("/api/system/ollama")
+async def api_system_ollama():
+    """Get Ollama service and loaded models."""
+    result = {"available": False, "models": [], "loaded": []}
+
+    # Check if Ollama is running
+    try:
+        import urllib.request
+        req = urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=2)
+        if req.status == 200:
+            result["available"] = True
+    except Exception:
+        return JSONResponse(content=result)
+
+    # Get installed models
+    try:
+        proc = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=5)
+        if proc.returncode == 0:
+            lines = proc.stdout.strip().split("\n")[1:]  # Skip header
+            for line in lines:
+                parts = line.split()
+                if parts:
+                    result["models"].append({"name": parts[0], "size": parts[1] if len(parts) > 1 else ""})
+    except Exception:
+        pass
+
+    # Get loaded/running models
+    try:
+        proc = subprocess.run(["ollama", "ps"], capture_output=True, text=True, timeout=5)
+        if proc.returncode == 0:
+            lines = proc.stdout.strip().split("\n")[1:]  # Skip header
+            for line in lines:
+                parts = line.split()
+                if parts:
+                    result["loaded"].append({"name": parts[0], "vram": parts[2] if len(parts) > 2 else ""})
+    except Exception:
+        pass
+
+    return JSONResponse(content=result)
+
+@app.get("/api/services")
+async def api_services():
+    """Get all service statuses."""
+    services = []
+
+    # Dashboard (always online if we're responding)
+    services.append({"id": "dashboard", "name": "Dashboard", "online": True, "port": 8080})
+
+    # Orchestrator
+    try:
+        from slate.slate_orchestrator import SlateOrchestrator
+        orch = SlateOrchestrator()
+        status = orch.status()
+        services.append({"id": "orch", "name": "Orchestrator", "online": status.get("orchestrator", {}).get("running", False)})
+    except Exception:
+        services.append({"id": "orch", "name": "Orchestrator", "online": False})
+
+    # GitHub Runner
+    try:
+        from slate.slate_runner_manager import SlateRunnerManager
+        mgr = SlateRunnerManager()
+        detection = mgr.detect()
+        services.append({"id": "runner", "name": "GitHub Runner", "online": detection.get("runner_installed", False)})
+    except Exception:
+        services.append({"id": "runner", "name": "GitHub Runner", "online": False})
+
+    # Ollama
+    try:
+        import urllib.request
+        req = urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=2)
+        services.append({"id": "ollama", "name": "Ollama", "online": req.status == 200, "port": 11434})
+    except Exception:
+        services.append({"id": "ollama", "name": "Ollama", "online": False, "port": 11434})
+
+    # Foundry Local
+    try:
+        import urllib.request
+        req = urllib.request.urlopen("http://127.0.0.1:5272/health", timeout=2)
+        services.append({"id": "foundry", "name": "Foundry Local", "online": req.status == 200, "port": 5272})
+    except Exception:
+        services.append({"id": "foundry", "name": "Foundry Local", "online": False, "port": 5272})
+
+    return JSONResponse(content={"services": services})
+
+# ─── Activity Feed ───────────────────────────────────────────────────────────
+
+# In-memory activity feed
+ACTIVITY_FEED: List[Dict[str, Any]] = []
+MAX_ACTIVITY_EVENTS = 50
+
+def add_activity_event(event_type: str, message: str, details: Dict[str, Any] = None):
+    """Add event to activity feed."""
+    event = {
+        "id": str(uuid.uuid4())[:8],
+        "type": event_type,
+        "message": message,
+        "details": details or {},
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    ACTIVITY_FEED.insert(0, event)
+    if len(ACTIVITY_FEED) > MAX_ACTIVITY_EVENTS:
+        ACTIVITY_FEED.pop()
+    return event
+
+@app.get("/api/activity")
+async def api_activity():
+    """Get recent activity events."""
+    return JSONResponse(content={"events": ACTIVITY_FEED[:20]})
+
+@app.get("/api/task-activity")
+async def api_task_activity():
+    """Get task activity data for heatmap visualization.
+
+    Returns aggregated task counts per day for the last 365 days,
+    including success/failure breakdown for objective feedback.
+    """
+    from datetime import timedelta
+
+    try:
+        tasks = load_tasks()
+
+        # Initialize activity data for last 365 days
+        today = datetime.now(timezone.utc).date()
+        activity = {}
+        for i in range(365):
+            date = today - timedelta(days=i)
+            activity[date.isoformat()] = {"total": 0, "completed": 0, "failed": 0}
+
+        # Count tasks by creation/completion date
+        total_tasks = 0
+        total_completed = 0
+        total_failed = 0
+
+        for task in tasks:
+            # Use created_at or updated_at date
+            task_date = None
+            if task.get("created_at"):
+                try:
+                    dt = datetime.fromisoformat(task["created_at"].replace("Z", "+00:00"))
+                    task_date = dt.date().isoformat()
+                except Exception:
+                    pass
+
+            if task_date and task_date in activity:
+                activity[task_date]["total"] += 1
+                total_tasks += 1
+
+                status = task.get("status", "pending")
+                if status == "completed":
+                    activity[task_date]["completed"] += 1
+                    total_completed += 1
+                elif status in ("failed", "error"):
+                    activity[task_date]["failed"] += 1
+                    total_failed += 1
+
+        # Also count workflow runs from GitHub for a more complete picture
+        try:
+            gh_cli = get_gh_cli()
+            result = subprocess.run(
+                [gh_cli, "run", "list", "--limit", "100", "--json", "conclusion,createdAt"],
+                capture_output=True, text=True, timeout=15, cwd=str(WORKSPACE_ROOT)
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                runs = json.loads(result.stdout)
+                for run in runs:
+                    try:
+                        run_date = datetime.fromisoformat(
+                            run["createdAt"].replace("Z", "+00:00")
+                        ).date().isoformat()
+                        if run_date in activity:
+                            activity[run_date]["total"] += 1
+                            total_tasks += 1
+                            if run.get("conclusion") == "success":
+                                activity[run_date]["completed"] += 1
+                                total_completed += 1
+                            elif run.get("conclusion") == "failure":
+                                activity[run_date]["failed"] += 1
+                                total_failed += 1
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        # Calculate current streak (consecutive days with activity)
+        streak = 0
+        for i in range(365):
+            date = (today - timedelta(days=i)).isoformat()
+            if activity.get(date, {}).get("total", 0) > 0:
+                streak += 1
+            else:
+                break
+
+        return JSONResponse(content={
+            "activity": activity,
+            "stats": {
+                "total": total_tasks,
+                "completed": total_completed,
+                "failed": total_failed,
+                "streak": streak
+            }
+        })
+    except Exception as e:
+        return JSONResponse(content={"error": str(e), "activity": {}, "stats": {}})
+
 # ─── Task Management Endpoints ────────────────────────────────────────────────
 
 @app.get("/api/tasks")
@@ -1265,6 +1598,385 @@ DASHBOARD_HTML = """
             background: rgba(255, 255, 255, 0.1);
             color: var(--text-primary);
         }
+
+        /* GitHub Integration Grid */
+        .github-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 1200px) {
+            .github-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .github-grid { grid-template-columns: 1fr; }
+        }
+
+        .github-section {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 10px;
+            padding: 12px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .section-count {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.08);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-family: Consolas, monospace;
+        }
+
+        .github-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .pr-item, .issue-item, .commit-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 8px 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            border-left: 2px solid var(--border);
+            font-size: 0.75rem;
+        }
+
+        .pr-item { border-left-color: var(--status-success); }
+        .issue-item { border-left-color: var(--status-error); }
+        .commit-item { border-left-color: var(--text-secondary); }
+
+        .item-title {
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .item-meta {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .release-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .release-info {
+            text-align: center;
+            padding: 16px;
+        }
+
+        .release-tag {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: Consolas, monospace;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .release-name {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .release-date {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* System Health Section */
+        .health-section {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .health-section:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .section-title-sm {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+        }
+
+        /* GPU Utilization Cards */
+        .gpu-util-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .gpu-index {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            font-family: Consolas, monospace;
+            color: var(--text-secondary);
+        }
+
+        .gpu-details { flex: 1; }
+
+        .gpu-name {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .gpu-stats {
+            display: flex;
+            gap: 12px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-family: Consolas, monospace;
+        }
+
+        .gpu-temp {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 500;
+            font-family: Consolas, monospace;
+        }
+
+        .gpu-temp.cool { background: var(--status-success-bg); color: var(--status-success); }
+        .gpu-temp.warm { background: rgba(255, 200, 100, 0.15); color: #ffc864; }
+        .gpu-temp.hot { background: var(--status-error-bg); color: var(--status-error); }
+
+        /* Resource Bars */
+        .resource-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .resource-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .resource-label {
+            width: 60px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .bar-container {
+            flex: 1;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--text-muted), var(--text-primary));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .bar-fill.high {
+            background: linear-gradient(90deg, var(--status-error), #ff8080);
+        }
+
+        .resource-value {
+            width: 45px;
+            font-size: 0.75rem;
+            font-family: Consolas, monospace;
+            color: var(--text-primary);
+            text-align: right;
+        }
+
+        /* Ollama Models */
+        .ollama-model {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            margin-bottom: 6px;
+        }
+
+        .model-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .model-status.loaded { background: var(--status-success); }
+        .model-status.available { background: var(--text-muted); }
+
+        .model-name {
+            flex: 1;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .model-size {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-family: Consolas, monospace;
+        }
+
+        /* Contribution Heatmap (GitHub-style) */
+        .heatmap-container {
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 10px;
+        }
+
+        .heatmap-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .heatmap-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .heatmap-legend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .legend-label { margin: 0 4px; }
+
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(52, 1fr);
+            gap: 3px;
+        }
+
+        .heatmap-week {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .heatmap-day {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.15s ease;
+        }
+
+        .heatmap-day:hover {
+            transform: scale(1.3);
+            outline: 1px solid var(--text-secondary);
+        }
+
+        .heatmap-day[data-level="0"] { background: rgba(255, 255, 255, 0.05); }
+        .heatmap-day[data-level="1"] { background: rgba(34, 197, 94, 0.25); }
+        .heatmap-day[data-level="2"] { background: rgba(34, 197, 94, 0.45); }
+        .heatmap-day[data-level="3"] { background: rgba(34, 197, 94, 0.65); }
+        .heatmap-day[data-level="4"] { background: rgba(34, 197, 94, 0.85); }
+
+        .heatmap-day.failure { background: rgba(239, 68, 68, 0.6); }
+
+        .heatmap-months {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            padding: 0 2px;
+        }
+
+        .heatmap-month {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+
+        .heatmap-stats {
+            display: flex;
+            gap: 24px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .heatmap-stat {
+            text-align: center;
+        }
+
+        .heatmap-stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-family: Consolas, monospace;
+            color: var(--text-primary);
+        }
+
+        .heatmap-stat-value.success { color: var(--status-success); }
+        .heatmap-stat-value.error { color: var(--status-error); }
+
+        .heatmap-stat-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .legend-box {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
     </style>
 </head>
 <body>
@@ -1343,12 +2055,104 @@ DASHBOARD_HTML = """
                 </div>
             </div>
 
-            <!-- Services & GPU -->
-            <div class="card col-4">
+            <!-- GitHub Integration Panel -->
+            <div class="card col-12">
+                <div class="card-header">
+                    <span class="card-title">GitHub Integration</span>
+                    <button class="card-action" onclick="refreshGitHub()">Refresh</button>
+                </div>
+                <div class="github-grid">
+                    <div class="github-section">
+                        <div class="section-header">
+                            <span class="section-title">Open PRs</span>
+                            <span class="section-count" id="pr-count">0</span>
+                        </div>
+                        <div class="github-list" id="pr-list">
+                            <div class="empty-state">Loading PRs...</div>
+                        </div>
+                    </div>
+                    <div class="github-section">
+                        <div class="section-header">
+                            <span class="section-title">Recent Commits</span>
+                        </div>
+                        <div class="github-list" id="commit-list">
+                            <div class="empty-state">Loading commits...</div>
+                        </div>
+                    </div>
+                    <div class="github-section">
+                        <div class="section-header">
+                            <span class="section-title">Open Issues</span>
+                            <span class="section-count" id="issue-count">0</span>
+                        </div>
+                        <div class="github-list" id="issue-list">
+                            <div class="empty-state">Loading issues...</div>
+                        </div>
+                    </div>
+                    <div class="github-section release-section">
+                        <div class="section-header">
+                            <span class="section-title">Latest Release</span>
+                        </div>
+                        <div class="release-info" id="release-info">
+                            <div class="empty-state">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Health -->
+            <div class="card col-6">
+                <div class="card-header">
+                    <span class="card-title">System Health</span>
+                    <button class="card-action" onclick="refreshSystemHealth()">Refresh</button>
+                </div>
+                <div class="health-section">
+                    <div class="section-title-sm">GPU Utilization</div>
+                    <div id="gpu-utilization">
+                        <div class="empty-state">Loading GPU info...</div>
+                    </div>
+                </div>
+                <div class="health-section">
+                    <div class="section-title-sm">System Resources</div>
+                    <div class="resource-bars">
+                        <div class="resource-bar">
+                            <span class="resource-label">CPU</span>
+                            <div class="bar-container"><div class="bar-fill" id="cpu-bar" style="width: 0%"></div></div>
+                            <span class="resource-value" id="cpu-value">--%</span>
+                        </div>
+                        <div class="resource-bar">
+                            <span class="resource-label">Memory</span>
+                            <div class="bar-container"><div class="bar-fill" id="memory-bar" style="width: 0%"></div></div>
+                            <span class="resource-value" id="memory-value">--%</span>
+                        </div>
+                        <div class="resource-bar">
+                            <span class="resource-label">Disk</span>
+                            <div class="bar-container"><div class="bar-fill" id="disk-bar" style="width: 0%"></div></div>
+                            <span class="resource-value" id="disk-value">--%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="health-section">
+                    <div class="section-title-sm">Ollama Models</div>
+                    <div id="ollama-status">
+                        <div class="empty-state">Loading Ollama...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Services -->
+            <div class="card col-6">
                 <div class="card-header">
                     <span class="card-title">Services</span>
+                    <button class="card-action" onclick="refreshServices()">Refresh</button>
                 </div>
                 <div class="service-list" id="services-list">
+                    <div class="service-item">
+                        <div class="service-name">
+                            <div class="service-icon">D</div>
+                            <span>Dashboard</span>
+                        </div>
+                        <span class="badge online">Online</span>
+                    </div>
                     <div class="service-item">
                         <div class="service-name">
                             <div class="service-icon">O</div>
@@ -1365,21 +2169,18 @@ DASHBOARD_HTML = """
                     </div>
                     <div class="service-item">
                         <div class="service-name">
-                            <div class="service-icon">D</div>
-                            <span>Dashboard</span>
+                            <div class="service-icon">A</div>
+                            <span>Ollama</span>
                         </div>
-                        <span class="badge online">Online</span>
+                        <span class="badge pending" id="ollama-badge">Checking</span>
                     </div>
-                </div>
-            </div>
-
-            <!-- GPU Status -->
-            <div class="card col-4">
-                <div class="card-header">
-                    <span class="card-title">GPU Configuration</span>
-                </div>
-                <div id="gpu-list">
-                    <div class="empty-state">Loading GPU info...</div>
+                    <div class="service-item">
+                        <div class="service-name">
+                            <div class="service-icon">F</div>
+                            <span>Foundry Local</span>
+                        </div>
+                        <span class="badge pending" id="foundry-badge">Checking</span>
+                    </div>
                 </div>
             </div>
 
@@ -1425,11 +2226,53 @@ DASHBOARD_HTML = """
                 </div>
             </div>
 
+            <!-- Task Activity Heatmap -->
+            <div class="card col-12">
+                <div class="card-header">
+                    <span class="card-title">Task Activity</span>
+                    <button class="card-action" onclick="refreshHeatmap()">Refresh</button>
+                </div>
+                <div class="heatmap-container">
+                    <div class="heatmap-header">
+                        <span class="heatmap-title" id="heatmap-total">0 tasks in the last year</span>
+                        <div class="heatmap-legend">
+                            <span class="legend-label">Less</span>
+                            <div class="legend-box" style="background: rgba(255,255,255,0.05)"></div>
+                            <div class="legend-box" style="background: rgba(34,197,94,0.25)"></div>
+                            <div class="legend-box" style="background: rgba(34,197,94,0.45)"></div>
+                            <div class="legend-box" style="background: rgba(34,197,94,0.65)"></div>
+                            <div class="legend-box" style="background: rgba(34,197,94,0.85)"></div>
+                            <span class="legend-label">More</span>
+                        </div>
+                    </div>
+                    <div class="heatmap-grid" id="heatmap-grid"></div>
+                    <div class="heatmap-months" id="heatmap-months"></div>
+                    <div class="heatmap-stats">
+                        <div class="heatmap-stat">
+                            <div class="heatmap-stat-value" id="heatmap-total-count">0</div>
+                            <div class="heatmap-stat-label">Total Tasks</div>
+                        </div>
+                        <div class="heatmap-stat">
+                            <div class="heatmap-stat-value success" id="heatmap-success-count">0</div>
+                            <div class="heatmap-stat-label">Completed</div>
+                        </div>
+                        <div class="heatmap-stat">
+                            <div class="heatmap-stat-value error" id="heatmap-failure-count">0</div>
+                            <div class="heatmap-stat-label">Failed</div>
+                        </div>
+                        <div class="heatmap-stat">
+                            <div class="heatmap-stat-value" id="heatmap-streak">0</div>
+                            <div class="heatmap-stat-label">Current Streak</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Activity Feed -->
             <div class="card col-6">
                 <div class="card-header">
                     <span class="card-title">Activity Feed</span>
-                    <button class="card-action" onclick="clearActivity()">Clear</button>
+                    <button class="card-action" onclick="refreshActivity()">Refresh</button>
                 </div>
                 <div class="activity-feed" id="activity-feed">
                     <div class="empty-state">No recent activity</div>
@@ -1666,11 +2509,334 @@ DASHBOARD_HTML = """
             }
         }
 
+        // GitHub Integration Functions
+        async function refreshGitHub() {
+            refreshPRs();
+            refreshCommits();
+            refreshIssues();
+            refreshRelease();
+        }
+
+        async function refreshPRs() {
+            try {
+                const res = await fetch('/api/github/prs');
+                const data = await res.json();
+                const list = document.getElementById('pr-list');
+                document.getElementById('pr-count').textContent = data.count || 0;
+
+                if (data.prs && data.prs.length > 0) {
+                    list.innerHTML = data.prs.slice(0, 5).map(pr => `
+                        <div class="pr-item">
+                            <div class="item-title">#${pr.number} ${pr.title}</div>
+                            <div class="item-meta">${pr.author?.login || 'unknown'} · ${pr.headRefName}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<div class="empty-state" style="font-size:0.75rem;">No open PRs</div>';
+                }
+            } catch (e) {
+                console.error('Failed to fetch PRs:', e);
+            }
+        }
+
+        async function refreshCommits() {
+            try {
+                const res = await fetch('/api/github/commits');
+                const data = await res.json();
+                const list = document.getElementById('commit-list');
+
+                if (data.commits && data.commits.length > 0) {
+                    list.innerHTML = data.commits.slice(0, 5).map(c => `
+                        <div class="commit-item">
+                            <div class="item-title">${c.sha?.substring(0, 7)} ${c.message?.split('\\n')[0]?.substring(0, 40)}</div>
+                            <div class="item-meta">${c.author || 'unknown'}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<div class="empty-state" style="font-size:0.75rem;">No commits</div>';
+                }
+            } catch (e) {
+                console.error('Failed to fetch commits:', e);
+            }
+        }
+
+        async function refreshIssues() {
+            try {
+                const res = await fetch('/api/github/issues');
+                const data = await res.json();
+                const list = document.getElementById('issue-list');
+                document.getElementById('issue-count').textContent = data.count || 0;
+
+                if (data.issues && data.issues.length > 0) {
+                    list.innerHTML = data.issues.slice(0, 5).map(issue => `
+                        <div class="issue-item">
+                            <div class="item-title">#${issue.number} ${issue.title}</div>
+                            <div class="item-meta">${issue.author?.login || 'unknown'}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<div class="empty-state" style="font-size:0.75rem;">No open issues</div>';
+                }
+            } catch (e) {
+                console.error('Failed to fetch issues:', e);
+            }
+        }
+
+        async function refreshRelease() {
+            try {
+                const res = await fetch('/api/github/releases');
+                const data = await res.json();
+                const info = document.getElementById('release-info');
+
+                if (data.release) {
+                    const date = new Date(data.release.publishedAt).toLocaleDateString();
+                    info.innerHTML = `
+                        <div class="release-tag">${data.release.tagName}</div>
+                        <div class="release-name">${data.release.name || ''}</div>
+                        <div class="release-date">${date}</div>
+                    `;
+                } else {
+                    info.innerHTML = '<div class="empty-state" style="font-size:0.75rem;">No releases</div>';
+                }
+            } catch (e) {
+                console.error('Failed to fetch release:', e);
+            }
+        }
+
+        // System Health Functions
+        async function refreshSystemHealth() {
+            refreshGPUUtilization();
+            refreshSystemResources();
+            refreshOllamaStatus();
+        }
+
+        async function refreshGPUUtilization() {
+            try {
+                const res = await fetch('/api/system/gpu');
+                const data = await res.json();
+                const container = document.getElementById('gpu-utilization');
+
+                if (data.available && data.gpus && data.gpus.length > 0) {
+                    container.innerHTML = data.gpus.map(gpu => {
+                        const tempClass = gpu.temperature < 60 ? 'cool' : (gpu.temperature < 80 ? 'warm' : 'hot');
+                        return `
+                            <div class="gpu-util-card">
+                                <div class="gpu-index">${gpu.index}</div>
+                                <div class="gpu-details">
+                                    <div class="gpu-name">${gpu.name}</div>
+                                    <div class="gpu-stats">
+                                        <span>GPU: ${gpu.gpu_util}%</span>
+                                        <span>Mem: ${Math.round(gpu.memory_used/1024)}/${Math.round(gpu.memory_total/1024)}GB</span>
+                                    </div>
+                                </div>
+                                <div class="gpu-temp ${tempClass}">${gpu.temperature}°C</div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    container.innerHTML = '<div class="empty-state" style="font-size:0.75rem;">No GPU detected</div>';
+                }
+            } catch (e) {
+                console.error('Failed to fetch GPU:', e);
+            }
+        }
+
+        async function refreshSystemResources() {
+            try {
+                const res = await fetch('/api/system/resources');
+                const data = await res.json();
+
+                if (data.available) {
+                    // CPU
+                    const cpuBar = document.getElementById('cpu-bar');
+                    const cpuVal = document.getElementById('cpu-value');
+                    cpuBar.style.width = `${data.cpu.percent}%`;
+                    cpuBar.classList.toggle('high', data.cpu.percent > 80);
+                    cpuVal.textContent = `${Math.round(data.cpu.percent)}%`;
+
+                    // Memory
+                    const memBar = document.getElementById('memory-bar');
+                    const memVal = document.getElementById('memory-value');
+                    memBar.style.width = `${data.memory.percent}%`;
+                    memBar.classList.toggle('high', data.memory.percent > 80);
+                    memVal.textContent = `${Math.round(data.memory.percent)}%`;
+
+                    // Disk
+                    const diskBar = document.getElementById('disk-bar');
+                    const diskVal = document.getElementById('disk-value');
+                    diskBar.style.width = `${data.disk.percent}%`;
+                    diskBar.classList.toggle('high', data.disk.percent > 80);
+                    diskVal.textContent = `${Math.round(data.disk.percent)}%`;
+                }
+            } catch (e) {
+                console.error('Failed to fetch resources:', e);
+            }
+        }
+
+        async function refreshOllamaStatus() {
+            try {
+                const res = await fetch('/api/system/ollama');
+                const data = await res.json();
+                const container = document.getElementById('ollama-status');
+                const badge = document.getElementById('ollama-badge');
+
+                if (data.available) {
+                    badge.className = 'badge online';
+                    badge.textContent = 'Online';
+
+                    if (data.models && data.models.length > 0) {
+                        const loadedNames = data.loaded?.map(l => l.name) || [];
+                        container.innerHTML = data.models.slice(0, 4).map(m => {
+                            const isLoaded = loadedNames.some(n => n.startsWith(m.name));
+                            return `
+                                <div class="ollama-model">
+                                    <div class="model-status ${isLoaded ? 'loaded' : 'available'}"></div>
+                                    <span class="model-name">${m.name}</span>
+                                    <span class="model-size">${m.size}</span>
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        container.innerHTML = '<div class="empty-state" style="font-size:0.75rem;">No models installed</div>';
+                    }
+                } else {
+                    badge.className = 'badge offline';
+                    badge.textContent = 'Offline';
+                    container.innerHTML = '<div class="empty-state" style="font-size:0.75rem;">Ollama not running</div>';
+                }
+            } catch (e) {
+                console.error('Failed to fetch Ollama:', e);
+            }
+        }
+
+        // Services
+        async function refreshServices() {
+            try {
+                const res = await fetch('/api/services');
+                const data = await res.json();
+
+                if (data.services) {
+                    let online = 0;
+                    data.services.forEach(s => {
+                        if (s.online) online++;
+                        const badge = document.getElementById(`${s.id}-badge`);
+                        if (badge) {
+                            badge.className = s.online ? 'badge online' : 'badge offline';
+                            badge.textContent = s.online ? 'Online' : 'Offline';
+                        }
+                    });
+                    document.getElementById('stat-online').textContent = `${online}/${data.services.length}`;
+                }
+            } catch (e) {
+                console.error('Failed to fetch services:', e);
+            }
+        }
+
+        // Activity Feed
+        async function refreshActivity() {
+            try {
+                const res = await fetch('/api/activity');
+                const data = await res.json();
+                const feed = document.getElementById('activity-feed');
+
+                if (data.events && data.events.length > 0) {
+                    feed.innerHTML = data.events.slice(0, 10).map(e => {
+                        const typeClass = e.type === 'workflow' ? 'workflow' :
+                                         e.type === 'task' ? 'task' :
+                                         e.type === 'success' ? 'success' :
+                                         e.type === 'error' ? 'error' : '';
+                        const icon = e.type === 'workflow' ? 'W' :
+                                    e.type === 'task' ? 'T' :
+                                    e.type === 'success' ? '✓' :
+                                    e.type === 'error' ? '!' : '·';
+                        const time = new Date(e.timestamp).toLocaleTimeString();
+                        return `
+                            <div class="activity-item ${typeClass}">
+                                <div class="activity-icon">${icon}</div>
+                                <div class="activity-content">
+                                    <div class="activity-text">${e.message}</div>
+                                    <div class="activity-time">${time}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    feed.innerHTML = '<div class="empty-state">No recent activity</div>';
+                }
+            } catch (e) {
+                console.error('Failed to fetch activity:', e);
+            }
+        }
+
+        // Contribution Heatmap
+        async function refreshHeatmap() {
+            try {
+                const res = await fetch('/api/task-activity');
+                const data = await res.json();
+                const grid = document.getElementById('heatmap-grid');
+                const monthsContainer = document.getElementById('heatmap-months');
+
+                // Update stats
+                const stats = data.stats || {};
+                document.getElementById('heatmap-total').textContent = `${stats.total || 0} tasks in the last year`;
+                document.getElementById('heatmap-total-count').textContent = stats.total || 0;
+                document.getElementById('heatmap-success-count').textContent = stats.completed || 0;
+                document.getElementById('heatmap-failure-count').textContent = stats.failed || 0;
+                document.getElementById('heatmap-streak').textContent = stats.streak || 0;
+
+                // Build heatmap grid (52 weeks x 7 days)
+                const activity = data.activity || {};
+                const today = new Date();
+                let html = '';
+                const months = [];
+
+                for (let week = 51; week >= 0; week--) {
+                    html += '<div class="heatmap-week">';
+                    for (let day = 0; day < 7; day++) {
+                        const date = new Date(today);
+                        date.setDate(date.getDate() - (week * 7 + (6 - day)));
+                        const dateStr = date.toISOString().split('T')[0];
+                        const dayData = activity[dateStr] || { total: 0, failed: 0 };
+
+                        // Determine level (0-4) based on activity
+                        let level = 0;
+                        if (dayData.total >= 10) level = 4;
+                        else if (dayData.total >= 5) level = 3;
+                        else if (dayData.total >= 3) level = 2;
+                        else if (dayData.total >= 1) level = 1;
+
+                        const hasFailure = dayData.failed > 0;
+                        const failClass = hasFailure ? ' failure' : '';
+                        const tooltip = `${dateStr}: ${dayData.total} tasks, ${dayData.failed} failed`;
+
+                        html += `<div class="heatmap-day${failClass}" data-level="${level}" title="${tooltip}"></div>`;
+
+                        // Track months for labels
+                        if (day === 0 && week % 4 === 0) {
+                            months.push(date.toLocaleString('default', { month: 'short' }));
+                        }
+                    }
+                    html += '</div>';
+                }
+
+                grid.innerHTML = html;
+                monthsContainer.innerHTML = months.map(m => `<span class="heatmap-month">${m}</span>`).join('');
+
+            } catch (e) {
+                console.error('Failed to fetch heatmap:', e);
+            }
+        }
+
         function refreshAll() {
             refreshTasks();
             refreshWorkflows();
             refreshRunner();
             refreshWorkflowPipeline();
+            refreshGitHub();
+            refreshSystemHealth();
+            refreshServices();
+            refreshActivity();
+            refreshHeatmap();
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ type: 'refresh' }));
             }
