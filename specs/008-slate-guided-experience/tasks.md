@@ -1,9 +1,9 @@
 # Tasks: SLATE Guided Experience & Brochure UI
 
 **Spec ID**: 008-slate-guided-experience
-**Status**: implementing
+**Status**: implementing (95% complete)
 **Started**: 2026-02-07
-**Updated**: 2026-02-07
+**Updated**: 2026-02-07T13:30:00Z
 
 ## Implementation Checklist
 
@@ -44,10 +44,10 @@
 - [ ] Contextual help tooltips
 
 ### Phase 6: Installer Integration
-- [ ] Add guided mode to slate_installer.py
-- [ ] Auto-launch guided mode on first run
-- [ ] Save guided mode completion state
-- [ ] Skip guided mode if already completed
+- [x] Add guided mode to slate_installer.py (step_guided_mode)
+- [x] Save guided mode completion state (.slate_identity/guided_mode_state.json)
+- [x] Skip guided mode if already completed
+- [~] Auto-launch guided mode on first run (manual launch via CLI)
 
 ## Files Created/Modified
 
@@ -59,6 +59,7 @@
 - `agents/slate_dashboard_server.py` - Brochure UI + guided mode endpoints + overlay
 - `docs/specs/design-inspiration.json` - Engineering patterns added
 - `slate/design_tokens.py` - Blueprint engineering tokens
+- `slate/slate_installer.py` - Added step_guided_mode() for installer integration
 
 ## API Endpoints Added
 

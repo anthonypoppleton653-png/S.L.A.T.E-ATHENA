@@ -32,7 +32,7 @@
 - **[Overview](Specifications)** - All specs and relationships
 - [x] [Dashboard Monochrome Theme](Spec-005-Monochrome-Theme)
 - [x] [Natural Theme System](Spec-006-Natural-Theme-System)
-- [~] [Unified Design System](Spec-007-Design-System)
+- [x] [Unified Design System](Spec-007-Design-System)
 - [~] [Guided Experience](Spec-008-Guided-Experience)
 - [x] [Copilot Roadmap Awareness](Spec-009-Copilot-Roadmap-Awareness)
 

@@ -173,37 +173,47 @@ class AIGuidanceNarrator:
 - [x] Define typography scale
 - [x] Define spacing scale
 - [x] Create design-tokens.py
+- [x] Add blueprint engineering tokens
 
 ### Phase 2: Brochure Elements
-- [~] Hero section with animated background
-- [~] Feature showcase cards
-- [ ] Stats/metrics display
-- [ ] CTA buttons
+- [x] Hero section with animated background
+- [x] Feature showcase cards
+- [x] System stats/metrics display
+- [x] Primary/Secondary CTA buttons
 
 ### Phase 3: Guided Mode Core
-- [~] GuidedModeState management
-- [~] Step execution engine
-- [ ] AI narrator integration
-- [ ] Auto-advance logic
+- [x] GuidedModeState enum
+- [x] GuidedStep dataclass
+- [x] GuidedExecutor class
+- [x] AIGuidanceNarrator class
+- [x] API endpoints in dashboard
 
 ### Phase 4: Guided Mode UI
-- [ ] Full-screen overlay
-- [ ] Step progress indicators
-- [ ] Narrator bubble
-- [ ] Action visualizations
+- [x] Full-screen guided overlay
+- [x] Step progress indicators
+- [x] AI narrator bubble with avatar
+- [x] Action status visualization
+- [x] Auto-advance timer display
 
 ### Phase 5: AI Integration
-- [ ] Ollama narration prompts
-- [ ] Error diagnosis
-- [ ] Recovery suggestions
-- [ ] Contextual help
+- [x] Ollama narration prompts
+- [x] Error diagnosis system
+- [x] Recovery suggestion generator
+- [~] Contextual help tooltips
+
+### Phase 6: Installer Integration
+- [x] Add step_guided_mode() to installer
+- [x] Save guided mode state
+- [x] Skip if already completed
 
 ## Implementation Files
 
 | File | Description |
 |------|-------------|
-| `slate/guided_mode.py` | Guided mode state machine |
-| `slate/guided_workflow.py` | Step execution engine |
+| `slate/guided_mode.py` | Guided mode state machine with 11 steps |
+| `slate/guided_workflow.py` | Workflow guide integration |
+| `slate/slate_installer.py` | step_guided_mode() integration |
+| `agents/slate_dashboard_server.py` | Brochure UI + guided overlay |
 | `slate_web/guided_workflow_ui.py` | UI components |
 | `plugins/slate-copilot/src/slateGuidedInstallView.ts` | VSCode webview |
 

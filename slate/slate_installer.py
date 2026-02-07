@@ -1017,11 +1017,67 @@ class SlateInstaller:
         self.results["generative_ui"] = {"status": "configured", "logos_dir": str(logos_dir)}
         return True
 
-    # ── Step 12: Final Validation ────────────────────────────────────────
+    # ── Step 12: Guided Mode Setup ────────────────────────────────────────
+
+    def step_guided_mode(self, auto_launch: bool = False) -> bool:
+        """
+        Configure guided mode for new users.
+
+        Saves guided mode state and optionally offers to launch
+        the interactive guided setup experience.
+        """
+        _print_header("Step 12: Guided Mode Setup")
+
+        state_dir = self.workspace / ".slate_identity"
+        state_file = state_dir / "guided_mode_state.json"
+
+        # Check if guided mode was already completed
+        if state_file.exists():
+            try:
+                state = json.loads(state_file.read_text())
+                if state.get("completed"):
+                    self._log("✓", "Guided mode previously completed")
+                    self.results["guided_mode"] = {"status": "already_completed"}
+                    return True
+            except Exception:
+                pass
+
+        # Initialize guided mode state
+        state_dir.mkdir(parents=True, exist_ok=True)
+        initial_state = {
+            "completed": False,
+            "installer_version": SLATE_VERSION,
+            "installed_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "steps_completed": [],
+            "auto_launch_offered": auto_launch,
+        }
+
+        try:
+            state_file.write_text(json.dumps(initial_state, indent=2))
+            self._log("✓", "Guided mode state initialized")
+        except Exception as e:
+            self._log("⚠", f"Could not save guided mode state: {e}")
+
+        # Check if guided_mode.py exists
+        guided_py = self.workspace / "slate" / "guided_mode.py"
+        if guided_py.exists():
+            self._log("✓", "Guided mode module available")
+            self._log("→", "Run 'python slate/guided_mode.py' for interactive setup")
+        else:
+            self._log("⚠", "Guided mode module not found")
+
+        self.results["guided_mode"] = {
+            "status": "configured",
+            "state_file": str(state_file),
+            "ready": guided_py.exists(),
+        }
+        return True
+
+    # ── Step 13: Final Validation ────────────────────────────────────────
 
     def step_validate(self) -> bool:
         """Run final validation of the SLATE ecosystem."""
-        _print_header("Step 12: Final Validation")
+        _print_header("Step 13: Final Validation")
 
         checks = []
 
@@ -1115,6 +1171,7 @@ class SlateInstaller:
             ("Personalization", lambda: self.step_personalization(interactive=interactive, fork_name=fork_name) if personalize else True),
             ("Workspace Config", self.step_workspace_setup),
             ("Generative UI", self.step_generative_ui),
+            ("Guided Mode", self.step_guided_mode),
             ("Final Validation", self.step_validate),
         ]
 
@@ -1160,9 +1217,10 @@ class SlateInstaller:
             print("    1. Activate:  .\\.venv\\Scripts\\activate")
         else:
             print("    1. Activate:  source .venv/bin/activate")
-        print("    2. In VS Code: Open workspace and use @slate /status")
-        print("    3. System check: python slate/slate_status.py --quick")
-        print("    4. Start services: python slate/slate_orchestrator.py start")
+        print("    2. Guided setup: python slate/guided_mode.py")
+        print("    3. In VS Code: Open workspace and use @slate /status")
+        print("    4. System check: python slate/slate_status.py --quick")
+        print("    5. Start services: python slate/slate_orchestrator.py start")
 
         if "personalization" in self.results and self.results["personalization"].get("status") == "skipped":
             print()
