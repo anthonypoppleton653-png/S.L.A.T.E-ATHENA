@@ -18,7 +18,7 @@
 
 <p align="center">
   A <strong>local-first</strong> AI agent orchestration framework that coordinates multiple AI models<br>
-  while keeping your code and data on your machine.
+  while keeping your code and data on your machine.  [ WARNING THIS PROJECT IS ENTIRELY AI MANAGED AND IS EXPERIMENTAL ]
 </p>
 
 ---
