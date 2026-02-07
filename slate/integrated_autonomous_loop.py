@@ -25,14 +25,11 @@ Usage:
 
 import argparse
 import json
-import os
 import subprocess
 import sys
 import time
-import traceback
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
 
 # Modified: 2026-02-07T04:30:00Z | Author: COPILOT | Change: workspace setup
 WORKSPACE_ROOT = Path(__file__).parent.parent
@@ -151,7 +148,7 @@ class IntegratedAutonomousLoop:
                 capture_output=True, text=True, timeout=10,
             )
             if r.returncode == 0:
-                gpus = [l.strip() for l in r.stdout.strip().split("\n") if l.strip()]
+                gpus = [line.strip() for line in r.stdout.strip().split("\n") if line.strip()]
                 return {"healthy": True, "gpus": len(gpus), "details": gpus}
         except Exception as e:
             return {"healthy": False, "error": str(e)[:80]}
@@ -237,8 +234,6 @@ class IntegratedAutonomousLoop:
             try:
                 content = py_file.read_text(encoding="utf-8", errors="replace")
                 lines = content.split("\n")
-                line_count = len(lines)
-
                 # Check for missing docstrings
                 has_module_doc = '"""' in "\n".join(lines[:5])
                 if not has_module_doc:
@@ -252,7 +247,7 @@ class IntegratedAutonomousLoop:
                     })
 
                 # Check for missing type hints (basic heuristic)
-                func_defs = [l for l in lines if l.strip().startswith("def ") and "->" not in l]
+                func_defs = [line for line in lines if line.strip().startswith("def ") and "->" not in line]
                 if len(func_defs) > 3:
                     tasks.append({
                         "id": f"techtree_types_{py_file.stem}",
@@ -264,8 +259,8 @@ class IntegratedAutonomousLoop:
                     })
 
                 # Check for error handling
-                try_blocks = sum(1 for l in lines if l.strip().startswith("try:"))
-                bare_except = sum(1 for l in lines if "except:" in l or "except Exception:" in l)
+                try_blocks = sum(1 for line in lines if line.strip().startswith("try:"))
+                bare_except = sum(1 for line in lines if "except:" in line or "except Exception:" in line)
                 if bare_except > try_blocks * 0.5 and bare_except > 2:
                     tasks.append({
                         "id": f"techtree_errors_{py_file.stem}",
@@ -291,6 +286,18 @@ class IntegratedAutonomousLoop:
         self.state["started_at"] = datetime.now(timezone.utc).isoformat()
         self._save_state()
         self._log(f"Integrated Autonomous Loop started (max={max_tasks})")
+
+        # Phase 0: Warmup — preload models to GPUs
+        # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: warmup integration
+        self._log("Phase 0: Warming up GPU models...")
+        try:
+            from slate.slate_warmup import SlateWarmup
+            warmup = SlateWarmup()
+            warmup_result = warmup.warmup(skip_index=True)  # Skip index to start fast
+            loaded = warmup_result.get("preload", {}).get("loaded", 0)
+            self._log(f"Warmup complete: {loaded} models loaded to GPUs")
+        except Exception as e:
+            self._log(f"Warmup failed (continuing anyway): {e}", "WARN")
 
         # Import the unified loop
         from slate.slate_unified_autonomous import UnifiedAutonomousLoop
@@ -353,6 +360,27 @@ class IntegratedAutonomousLoop:
 
             # Phase 6: Adapt
             auto.adapt()
+
+            # Phase 6.5: Periodic re-warmup to keep models in VRAM
+            # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: periodic model re-warmup
+            if self.state["cycles"] % 20 == 0:
+                self._log("Periodic re-warmup: refreshing model keep-alive...")
+                try:
+                    from slate.slate_warmup import SlateWarmup
+                    w = SlateWarmup()
+                    w.preload_models()
+                except Exception as e:
+                    self._log(f"Re-warmup failed: {e}", "WARN")
+
+            # Phase 6.6: Periodic embedding index refresh
+            if self.state["cycles"] % 50 == 0 and self.state["cycles"] > 0:
+                self._log("Periodic: refreshing embedding index...")
+                try:
+                    from slate.slate_warmup import SlateWarmup
+                    w = SlateWarmup()
+                    w.build_embeddings()
+                except Exception as e:
+                    self._log(f"Index refresh failed: {e}", "WARN")
 
             # Phase 7: Sync results to KANBAN
             self._sync_to_kanban()
@@ -445,10 +473,13 @@ class IntegratedAutonomousLoop:
 
 
 def main():
+    # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: fix CLI parsing, add --warmup
     parser = argparse.ArgumentParser(description="SLATE Integrated Autonomous Loop")
     parser.add_argument("--max", type=int, default=100, help="Max tasks")
     parser.add_argument("--status", action="store_true", help="Show status")
     parser.add_argument("--generate", action="store_true", help="Generate tech tree tasks")
+    parser.add_argument("--run", action="store_true", help="Run the autonomous loop")
+    parser.add_argument("--warmup", action="store_true", help="Run warmup only")
     parser.add_argument("--json", action="store_true", help="JSON output")
     args = parser.parse_args()
 
@@ -459,12 +490,18 @@ def main():
         print(f"Generated {len(tasks)} tasks:")
         for t in tasks:
             print(f"  [{t.get('priority', '?'):>6}] {t.get('title', '')[:60]}")
+    elif args.warmup:
+        from slate.slate_warmup import SlateWarmup
+        SlateWarmup().warmup()
     elif args.json:
         print(json.dumps(loop.get_status(), indent=2, default=str))
-    elif args.status or (not args.max or args.max == 100):
+    elif args.run:
+        loop.run(max_tasks=args.max)
+    elif args.status:
         loop.print_status()
     else:
-        loop.run(max_tasks=args.max)
+        # Default: show status (not run)
+        loop.print_status()
 
 
 if __name__ == "__main__":

@@ -26,6 +26,7 @@ Usage:
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 import time
@@ -126,10 +127,14 @@ class UnifiedAutonomousLoop:
         # Source 2: KANBAN board
         tasks.extend(self._discover_from_kanban())
 
-        # Source 3: Codebase analysis (TODOs, FIXMEs, errors)
+        # Source 3: GitHub Issues (labeled for autonomy)
+        # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: GitHub Issues integration
+        tasks.extend(self._discover_from_github_issues())
+
+        # Source 4: Codebase analysis (TODOs, FIXMEs, errors)
         tasks.extend(self._discover_from_codebase())
 
-        # Source 4: Test coverage gaps
+        # Source 5: Test coverage gaps
         tasks.extend(self._discover_from_coverage())
 
         # Deduplicate by title similarity
@@ -176,6 +181,61 @@ class UnifiedAutonomousLoop:
         except Exception as e:
             self._log(f"KANBAN sync failed: {e}", "WARN")
         return []
+
+    # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: GitHub Issues task discovery
+    def _discover_from_github_issues(self) -> list[dict]:
+        """Pull open GitHub Issues labeled for autonomous processing."""
+        tasks = []
+        try:
+            # Get GitHub token from git credential manager
+            cred_result = subprocess.run(
+                ["git", "credential", "fill"],
+                input="protocol=https\nhost=github.com\n",
+                capture_output=True, text=True, timeout=10,
+            )
+            token = None
+            for line in cred_result.stdout.splitlines():
+                if line.startswith("password="):
+                    token = line.split("=", 1)[1]
+                    break
+            if not token:
+                return []
+
+            # Fetch issues with 'autonomous' or 'slate-task' labels
+            import urllib.request
+            import urllib.error
+            api_url = (
+                "https://api.github.com/repos/SynchronizedLivingArchitecture/S.L.A.T.E"
+                "/issues?state=open&labels=autonomous&per_page=10"
+            )
+            req = urllib.request.Request(api_url, headers={
+                "Authorization": f"token {token}",
+                "Accept": "application/vnd.github.v3+json",
+            })
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                issues = json.loads(resp.read().decode("utf-8"))
+
+            for issue in issues:
+                if issue.get("pull_request"):
+                    continue  # Skip PRs
+                labels = [l.get("name", "") for l in issue.get("labels", [])]
+                priority = "high" if "priority:high" in labels else (
+                    "critical" if "priority:critical" in labels else "medium"
+                )
+                tasks.append({
+                    "id": f"gh_issue_{issue['number']}",
+                    "title": issue.get("title", ""),
+                    "description": (issue.get("body", "") or "")[:500],
+                    "priority": priority,
+                    "source": "github_issues",
+                    "issue_number": issue["number"],
+                    "issue_url": issue.get("html_url", ""),
+                    "status": "pending",
+                })
+
+        except Exception as e:
+            self._log(f"GitHub Issues fetch failed: {e}", "WARN")
+        return tasks[:5]  # Cap at 5
 
     def _discover_from_codebase(self) -> list[dict]:
         """Find TODOs and FIXMEs in codebase."""
@@ -398,6 +458,14 @@ class UnifiedAutonomousLoop:
 
             self._log(f"  Inference complete: {tokens} tokens @ {tok_per_sec:.0f} tok/s")
 
+            # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: apply code changes from inference
+            # Attempt to apply code changes if the response contains code blocks
+            applied_changes = []
+            if target_files and agent == "ALPHA":
+                applied_changes = self._apply_code_changes(response, target_files)
+                if applied_changes:
+                    self._log(f"  Applied {len(applied_changes)} code changes")
+
             # Log the response for audit
             log_file = LOG_DIR / f"task_{task.get('id', 'unknown')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
             log_content = (
@@ -405,9 +473,14 @@ class UnifiedAutonomousLoop:
                 f"**Agent**: {agent}\n"
                 f"**Model**: {result.get('model', '?')}\n"
                 f"**Tokens**: {tokens} @ {tok_per_sec:.0f} tok/s\n"
-                f"**Time**: {datetime.now(timezone.utc).isoformat()}\n\n"
+                f"**Time**: {datetime.now(timezone.utc).isoformat()}\n"
+                f"**Changes Applied**: {len(applied_changes)}\n\n"
                 f"## Response\n\n{response}\n"
             )
+            if applied_changes:
+                log_content += f"\n## Applied Changes\n\n"
+                for ch in applied_changes:
+                    log_content += f"- {ch}\n"
             try:
                 log_file.write_text(log_content, encoding="utf-8")
             except Exception:
@@ -422,6 +495,7 @@ class UnifiedAutonomousLoop:
                 "tokens": tokens,
                 "tok_per_sec": tok_per_sec,
                 "duration_s": round(elapsed, 1),
+                "changes_applied": len(applied_changes),
                 "log_file": str(log_file.relative_to(self.workspace)) if log_file.exists() else None,
             }
         except Exception as e:
@@ -487,6 +561,70 @@ class UnifiedAutonomousLoop:
             }
         except Exception as e:
             return {"success": False, "error": str(e), "duration_s": round(time.time() - start, 1)}
+
+    # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: code change application
+    def _apply_code_changes(self, response: str, target_files: list[str]) -> list[str]:
+        """Extract and apply code changes from inference response to files.
+
+        Safety rules:
+        - Only writes to files that already exist in the workspace
+        - Only writes Python files (.py)
+        - Skips if response doesn't contain code blocks
+        - Creates backup before overwriting
+        - Validates basic syntax before writing
+        """
+        applied = []
+
+        # Extract code blocks from markdown-formatted response
+        code_blocks = re.findall(r'```(?:python)?\s*\n(.*?)```', response, re.DOTALL)
+        if not code_blocks:
+            return []
+
+        for i, fp in enumerate(target_files):
+            if not fp.endswith(".py"):
+                continue
+            full_path = self.workspace / fp
+            if not full_path.exists():
+                continue
+            if i >= len(code_blocks):
+                break
+
+            code = code_blocks[i].strip()
+            if len(code) < 20:  # Too short to be meaningful
+                continue
+
+            # Basic syntax check
+            try:
+                compile(code, fp, "exec")
+            except SyntaxError:
+                self._log(f"  Skipping {fp}: syntax error in generated code", "WARN")
+                continue
+
+            # Safety: don't write if it contains blocked patterns
+            blocked = ["eval(", "exec(os", "rm -rf /", "base64.b64decode", "0.0.0.0"]
+            if any(pat in code for pat in blocked):
+                self._log(f"  Skipping {fp}: blocked pattern detected", "WARN")
+                continue
+
+            # Create backup
+            backup_dir = self.workspace / "slate_logs" / "backups"
+            backup_dir.mkdir(parents=True, exist_ok=True)
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_path = backup_dir / f"{Path(fp).stem}_{ts}.py.bak"
+            try:
+                backup_path.write_text(full_path.read_text(encoding="utf-8"), encoding="utf-8")
+            except Exception:
+                pass
+
+            # Write the updated code
+            try:
+                full_path.write_text(code, encoding="utf-8")
+                applied.append(f"Updated {fp} ({len(code)} chars, backup: {backup_path.name})")
+                self._log(f"  Wrote {len(code)} chars to {fp}")
+            except Exception as e:
+                self._log(f"  Failed to write {fp}: {e}", "ERROR")
+
+        return applied
 
     def _update_task_status(self, task_id: str, status: str, error: str = ""):
         """Update task status in current_tasks.json."""
@@ -577,6 +715,17 @@ class UnifiedAutonomousLoop:
         self._save_state()
         self._log(f"Autonomous loop started (max={max_tasks})")
 
+        # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: warmup on loop start
+        # Warm up models before starting task execution
+        try:
+            from slate.slate_warmup import SlateWarmup
+            warmup = SlateWarmup()
+            warmup.configure_ollama_env()
+            result = warmup.preload_models()
+            self._log(f"Warmup: {result.get('loaded', 0)} models preloaded to GPUs")
+        except Exception as e:
+            self._log(f"Warmup skipped: {e}", "WARN")
+
         tasks_executed = 0
 
         while tasks_executed < max_tasks:
@@ -608,6 +757,16 @@ class UnifiedAutonomousLoop:
             # Adapt after every 5 tasks
             if tasks_executed % 5 == 0:
                 self.adapt()
+
+            # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: periodic model keep-alive
+            # Refresh model keep-alive every 10 tasks to prevent GPU unloading
+            if tasks_executed % 10 == 0:
+                try:
+                    from slate.slate_warmup import SlateWarmup
+                    SlateWarmup().preload_models()
+                    self._log("Refreshed model keep-alive")
+                except Exception:
+                    pass
 
             # Brief pause between tasks
             time.sleep(2)

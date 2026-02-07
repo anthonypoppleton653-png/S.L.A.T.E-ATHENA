@@ -1,4 +1,4 @@
-# Modified: 2026-02-07T06:00:00Z | Author: COPILOT | Change: Agentic AI with SLATE model training + dual-GPU
+# Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: Added warmup step for GPU persistence
 name: SLATE Agentic AI
 
 on:
@@ -105,6 +105,8 @@ jobs:
           'E:\11132025\.venv\Scripts' | Out-File -Append $env:GITHUB_PATH
       - name: Build SLATE models (if needed)
         run: python slate/ml_orchestrator.py --train-now
+      - name: Warmup — preload models to GPUs
+        run: python slate/slate_warmup.py --preload-only
       - name: GPU status before run
         run: nvidia-smi --query-gpu=index,name,memory.used,memory.total,utilization.gpu --format=csv,noheader
       - name: Sync KANBAN tasks

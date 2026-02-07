@@ -347,10 +347,11 @@ Categories: implement, test, analyze, integrate, complex"""
             print(f"  ChromaDB error ({e}), falling back to flat-file index")
 
         # Fallback: flat-file JSON index
+        # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: faster indexing, larger chunks, fewer dirs
         if not extensions:
-            extensions = [".py", ".ts", ".yml", ".yaml", ".md"]
+            extensions = [".py", ".yml", ".yaml"]
         if not dirs:
-            dirs = ["slate", "agents", "plugins", ".github/workflows", "skills"]
+            dirs = ["slate", "agents", ".github/workflows"]
 
         EMBEDDINGS_DIR.mkdir(parents=True, exist_ok=True)
         index = {"files": [], "built_at": datetime.now(timezone.utc).isoformat()}
@@ -365,11 +366,12 @@ Categories: implement, test, analyze, integrate, complex"""
                 for file_path in dir_path.rglob(f"*{ext}"):
                     try:
                         content = file_path.read_text(encoding="utf-8", errors="replace")
-                        chunks = self._chunk_text(content, max_chars=500)
-                        embeddings = []
+                        if len(content) < 20:
+                            continue
+                        chunks = self._chunk_text(content, max_chars=1000)
+
                         for chunk in chunks:
-                            emb = self.embed_text(chunk)
-                            embeddings.append({"text": chunk[:200], "embedding": emb[:10]})
+                            self.embed_text(chunk)
                             total_chunks += 1
 
                         rel_path = str(file_path.relative_to(self.workspace))
@@ -379,6 +381,8 @@ Categories: implement, test, analyze, integrate, complex"""
                             "size": len(content),
                         })
                         total_files += 1
+                        if total_files % 5 == 0:
+                            print(f"  Progress: {total_files} files, {total_chunks} chunks...")
                     except Exception as e:
                         print(f"  Skip {file_path}: {e}")
 
