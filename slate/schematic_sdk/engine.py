@@ -1,3 +1,4 @@
+# Modified: 2026-02-08T01:05:00Z | Author: COPILOT | Change: Generalize hardcoded GPU references
 """
 SLATE Schematic SDK - Main Engine
 
@@ -348,7 +349,7 @@ def generate_from_system_state() -> str:
     engine.add_node(AINode(id="ollama", label="Ollama", sublabel=":11434", layer=2))
     engine.add_node(AINode(id="foundry", label="Foundry Local", sublabel=":5272", layer=2))
     engine.add_node(DatabaseNode(id="chroma", label="ChromaDB", sublabel="Vector Store", layer=2))
-    engine.add_node(GPUNode(id="gpu", label="Dual GPU", sublabel="RTX 5070 Ti x2", layer=2))
+    engine.add_node(GPUNode(id="gpu", label="Your GPU(s)", sublabel="Auto-Detected", layer=2))
 
     # Connections
     engine.add_connector(FlowConnector(id="c1", from_node="dashboard", to_node="router"))

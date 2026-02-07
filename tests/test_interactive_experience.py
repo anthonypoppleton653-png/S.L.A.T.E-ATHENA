@@ -347,9 +347,10 @@ class TestInteractiveAPI:
 
     def test_transition_stage(self, client):
         """Test POST /api/devcycle/transition."""
+        # Modified: 2026-02-08T01:00:00Z | Author: COPILOT | Change: Fix transition target to valid stage
         response = client.post(
             "/api/devcycle/transition",
-            json={"to_stage": "code"}  # lowercase to match enum value
+            json={"to_stage": "test"}  # valid transition from default 'code' stage
         )
         assert response.status_code == 200
 

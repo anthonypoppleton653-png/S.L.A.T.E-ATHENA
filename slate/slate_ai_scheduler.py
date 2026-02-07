@@ -115,6 +115,19 @@ TASK_PRIORITY = {
     "general": 11,
 }
 
+# GPU Health Thresholds
+THERMAL_THRESHOLDS = {
+    "safe": 80,      # Below 80C - full speed
+    "throttle": 85,  # 85C - reduce new task acceptance
+    "pause": 90,     # 90C - pause all new tasks
+}
+
+MEMORY_THRESHOLDS = {
+    "normal": 0.70,   # Below 70% - normal operation
+    "caution": 0.80,  # 80% - prefer other GPU
+    "critical": 0.90, # 90% - pause new tasks
+}
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # DATA CLASSES
@@ -195,6 +208,23 @@ class GPUState:
     active_tasks: int = 0
     loaded_models: list = field(default_factory=list)
     available: bool = True
+
+
+@dataclass
+class GPUHealthStatus:
+    """GPU health metrics for throttling decisions."""
+    gpu_id: int
+    temperature_c: int
+    memory_used_mb: int
+    memory_total_mb: int
+    memory_percent: float
+    utilization_pct: int
+    health_state: str  # "healthy", "caution", "throttle", "pause"
+
+    @property
+    def can_accept_task(self) -> bool:
+        """Check if GPU can accept new tasks based on health state."""
+        return self.health_state in ("healthy", "caution")
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -289,21 +319,42 @@ class AIScheduler:
         STATE_FILE.write_text(json.dumps(self.state, indent=2, default=str), encoding="utf-8")
 
     def _load_queue(self):
-        if QUEUE_FILE.exists():
+        """Load queue with file locking for safe concurrent access."""
+        if not QUEUE_FILE.exists():
+            return
+        from slate_core.file_lock import FileLock
+        lock = FileLock(QUEUE_FILE, timeout=5.0)
+        try:
+            with lock.acquire(exclusive=False):
+                data = json.loads(QUEUE_FILE.read_text(encoding="utf-8"))
+                self.task_queue = [AITask.from_dict(t) for t in data.get("pending", [])]
+                self.completed_tasks = [AITask.from_dict(t) for t in data.get("completed", [])]
+        except TimeoutError:
+            # Fallback: read without lock
             try:
                 data = json.loads(QUEUE_FILE.read_text(encoding="utf-8"))
                 self.task_queue = [AITask.from_dict(t) for t in data.get("pending", [])]
                 self.completed_tasks = [AITask.from_dict(t) for t in data.get("completed", [])]
             except Exception:
                 pass
+        except Exception:
+            pass
 
     def _save_queue(self):
+        """Save queue with file locking for safe concurrent access."""
+        from slate_core.file_lock import FileLock
         data = {
             "pending": [t.to_dict() for t in self.task_queue],
             "completed": [t.to_dict() for t in self.completed_tasks[-100:]],  # Keep last 100
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
-        QUEUE_FILE.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
+        lock = FileLock(QUEUE_FILE, timeout=5.0)
+        try:
+            with lock.acquire():
+                QUEUE_FILE.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
+        except TimeoutError:
+            # Fallback: write without lock
+            QUEUE_FILE.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
 
     def _init_gpu_states(self):
         """Initialize GPU state tracking."""
@@ -338,6 +389,63 @@ class AIScheduler:
         for gpu_state in self.gpu_states.values():
             gpu_state.loaded_models = [m.get("name") for m in running_models]
 
+    def get_gpu_health(self) -> dict[int, GPUHealthStatus]:
+        """Get health status of all GPUs with thermal and memory checks."""
+        health = {}
+        try:
+            result = subprocess.run(
+                ["nvidia-smi",
+                 "--query-gpu=index,temperature.gpu,memory.used,memory.total,utilization.gpu",
+                 "--format=csv,noheader,nounits"],
+                capture_output=True, text=True, timeout=10
+            )
+            if result.returncode != 0:
+                return health
+            for line in result.stdout.strip().split('\n'):
+                parts = [p.strip() for p in line.split(',')]
+                if len(parts) >= 5:
+                    gpu_id = int(parts[0])
+                    temp = int(parts[1])
+                    mem_used = int(float(parts[2]))
+                    mem_total = int(float(parts[3]))
+                    util = int(parts[4])
+                    mem_pct = mem_used / max(mem_total, 1)
+
+                    # Determine health state based on thresholds
+                    if temp >= THERMAL_THRESHOLDS["pause"] or mem_pct >= MEMORY_THRESHOLDS["critical"]:
+                        state = "pause"
+                    elif temp >= THERMAL_THRESHOLDS["throttle"]:
+                        state = "throttle"
+                    elif mem_pct >= MEMORY_THRESHOLDS["caution"]:
+                        state = "caution"
+                    else:
+                        state = "healthy"
+
+                    health[gpu_id] = GPUHealthStatus(
+                        gpu_id=gpu_id,
+                        temperature_c=temp,
+                        memory_used_mb=mem_used,
+                        memory_total_mb=mem_total,
+                        memory_percent=mem_pct,
+                        utilization_pct=util,
+                        health_state=state,
+                    )
+        except Exception:
+            pass
+        return health
+
+    def can_accept_task(self) -> bool:
+        """Check if scheduler can accept new tasks based on GPU health."""
+        if not self.ollama.is_running():
+            return False
+        pending = [t for t in self.task_queue if t.status == TaskStatus.PENDING]
+        if len(pending) > 50:
+            return False
+        health = self.get_gpu_health()
+        if not health:
+            return True  # No GPU info available, allow task
+        return any(status.can_accept_task for status in health.values())
+
     def add_task(self, task_type: str, description: str, payload: dict = None,
                  dependencies: list = None) -> AITask:
         """Add a new task to the queue."""
@@ -358,6 +466,48 @@ class AIScheduler:
         self._save_state()
 
         return task
+
+    def sync_from_autonomous_loop(self, tasks: list[dict]) -> dict:
+        """Import tasks from autonomous loop into scheduler queue."""
+        added = 0
+        skipped = 0
+        for task in tasks:
+            task_id = task.get("id", "")
+            # Skip if already queued
+            if any(t.task_id == task_id for t in self.task_queue):
+                skipped += 1
+                continue
+            # Map priority
+            prio_map = {"critical": 1, "high": 3, "medium": 5, "low": 8}
+            priority = prio_map.get(task.get("priority", "medium"), 5)
+            # Infer task type
+            task_type = self._infer_task_type(
+                task.get("title", ""),
+                task.get("description", "")
+            )
+            self.add_task(
+                task_type=task_type,
+                description=task.get("title", ""),
+                payload={"source_task": task},
+            )
+            added += 1
+        return {"added": added, "skipped": skipped}
+
+    def _infer_task_type(self, title: str, desc: str) -> str:
+        """Infer task type from title and description."""
+        combined = f"{title} {desc}".lower()
+        type_keywords = {
+            "code_generation": ["implement", "create", "add", "build", "write code"],
+            "code_review": ["review", "refactor", "optimize", "improve"],
+            "analysis": ["analyze", "research", "investigate", "explore"],
+            "documentation": ["document", "docs", "readme", "docstring"],
+            "embedding": ["embed", "index", "vector"],
+            "training": ["train", "fine-tune", "model"],
+        }
+        for ttype, keywords in type_keywords.items():
+            if any(kw in combined for kw in keywords):
+                return ttype
+        return "general"
 
     def get_best_gpu(self, task_type: str, required_vram: int = 0) -> Optional[int]:
         """Find the best GPU for a task."""
@@ -432,7 +582,21 @@ class AIScheduler:
         return schedule
 
     def run_task(self, task: AITask) -> bool:
-        """Execute a single task."""
+        """Execute a single task with GPU health checking."""
+        # Pre-flight GPU health check
+        health = self.get_gpu_health()
+        if health:
+            healthy_gpus = [gid for gid, s in health.items() if s.can_accept_task]
+            if not healthy_gpus:
+                task.status = TaskStatus.PENDING
+                task.error = "All GPUs thermal/memory throttled"
+                self._save_queue()
+                return False
+            for gid, status in health.items():
+                if status.health_state in ("throttle", "pause"):
+                    print(f"  [GPU {gid}] {status.health_state}: "
+                          f"temp={status.temperature_c}C mem={status.memory_percent:.0%}")
+
         task.status = TaskStatus.RUNNING
         task.started_at = datetime.now(timezone.utc).isoformat()
         self._save_queue()

@@ -88,9 +88,8 @@ Python: 3.11.9
 Platform: Windows 11
 
 Hardware:
-  GPU 0: NVIDIA RTX 5070 Ti (16GB)
-  GPU 1: NVIDIA RTX 5070 Ti (16GB)
-  RAM: 32GB
+  GPU 0: NVIDIA RTX xxxx (xGB)  # Auto-detected
+  RAM: xxGB
 
 Backends:
   Ollama: Connected (mistral-nemo)
@@ -103,6 +102,8 @@ Tasks:
 
 Status: Ready
 ```
+
+*Note: Output reflects your actual hardware configuration.*
 
 ### slate_runtime.py
 
@@ -157,20 +158,22 @@ python slate/slate_hardware_optimizer.py --verbose
 ```
 Hardware Detection
 ==================
-GPU Architecture: Blackwell (RTX 50xx)
-GPU Count: 2
-Total VRAM: 32GB
-CUDA Version: 12.4
-cuDNN: 9.0
+GPU Architecture: [Auto-detected]
+GPU Count: [Your GPU count]
+Total VRAM: [Your VRAM]
+CUDA Version: [Your version]
+cuDNN: [Your version]
 
 Recommendations:
-  - Enable TF32: Yes
-  - Enable BF16: Yes
-  - Flash Attention: v2
-  - CUDA Graphs: Enabled
+  - Enable TF32: [Based on GPU]
+  - Enable BF16: [Based on GPU]
+  - Flash Attention: [Based on GPU]
+  - CUDA Graphs: [Based on GPU]
 
 Apply with: --optimize
 ```
+
+*Note: SLATE auto-detects your hardware and provides tailored recommendations.*
 
 ## Benchmark Commands
 

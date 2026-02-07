@@ -2,6 +2,7 @@
   "version": "2.5.0",
   "last_updated": "2026-02-07T12:00:00Z",
   "generated_by": "SLATE Local AI Inference",
+  "note": "Hardware values are examples. SLATE auto-detects your actual hardware at runtime.",
 
   "system": {
     "phase": 2,
@@ -10,19 +11,18 @@
   },
 
   "hardware": {
-    "gpus": [
-      {"id": 0, "name": "NVIDIA GeForce RTX 5070 Ti", "vram_gb": 16, "architecture": "Blackwell"},
-      {"id": 1, "name": "NVIDIA GeForce RTX 5070 Ti", "vram_gb": 16, "architecture": "Blackwell"}
-    ],
-    "total_vram_gb": 32,
-    "cpu_threads": 24
+    "note": "Auto-detected from your system",
+    "gpus": [],
+    "total_vram_gb": 0,
+    "cpu_threads": 0
   },
 
   "runners": {
-    "total": 19,
-    "gpu_runners": 7,
-    "cpu_runners": 12,
-    "active": 19,
+    "note": "Scales to your hardware",
+    "total": "auto",
+    "gpu_runners": "auto",
+    "cpu_runners": "auto",
+    "active": 0,
     "status": "healthy"
   },
 
@@ -141,7 +141,7 @@
 
   "operations_expansion": {
     "current_capabilities": [
-      "Local AI inference on dual GPUs",
+      "Local AI inference on your GPU(s)",
       "GitHub Actions workflow automation",
       "VSCode Copilot integration",
       "Claude Code slash commands",
@@ -164,10 +164,10 @@
 
   "metrics": {
     "cloud_costs_monthly": "$0",
-    "parallel_runners": 19,
+    "parallel_runners": "auto",
     "local_processing_percent": 100,
     "autonomous_ops": "24/7",
-    "gpu_memory_total_gb": 32,
+    "gpu_memory_total_gb": "auto",
     "task_types_supported": 9
   }
 }

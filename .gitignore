@@ -97,6 +97,12 @@ actions-runner-*/
 .slate_warmup_state.json
 .slate_gpu_config.json
 .slate_install/
+.slate_scheduler_state.json
+.slate_task_queue.json
+
+# Copilot Agent Bridge (runtime task queue - source code is in slate/copilot_agent_bridge.py)
+.slate_copilot_bridge.json
+.slate_copilot_bridge_results.json
 vscode_errors.json
 vscode_code_actions.json
 vscode_debug_state.json

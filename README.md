@@ -64,6 +64,19 @@ SLATE creates an AI operations layer on your local hardware that connects direct
 - **Live Dashboard** - Monitor your local AI services, task queues, and GPU utilization in real-time.
 - **GitHub Bridge** - Self-hosted runner connects your local AI ops directly to GitHub Actions, Issues, and PRs.
 
+### System Requirements
+
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| **OS** | Windows 10/11, Linux, macOS | Windows 11, Ubuntu 22.04+ |
+| **Python** | 3.11+ | 3.11+ |
+| **RAM** | 8GB | 16GB+ |
+| **GPU** | None (CPU-only mode) | NVIDIA RTX 20xx+ with 8GB VRAM |
+| **Storage** | 10GB free | 50GB+ SSD |
+| **CUDA** | N/A for CPU | 12.x for GPU acceleration |
+
+SLATE works without a GPU using CPU-only inference, but GPU acceleration significantly improves performance.
+
 ### How It Works
 
 Your local hardware runs the AI. Your cloud stays in sync. SLATE monitors GitHub, processes tasks locally, and pushes results back. Automated code review, task execution, workflow management - all orchestrated from your machine.
@@ -286,7 +299,7 @@ The orchestrator uses local Ollama models. It learns your codebase over time. It
 │  │   └── slate_workflow_analyzer.py # Meta-workflow self-management       │
 │  │                                                                        │
 │  ├── Execution                                                            │
-│  │   ├── slate_multi_runner.py      # 19 parallel runner coordination     │
+│  │   ├── slate_multi_runner.py      # Parallel runner coordination         │
 │  │   ├── slate_runner_manager.py    # GitHub Actions runner setup         │
 │  │   ├── slate_runner_benchmark.py  # Resource capacity benchmarking      │
 │  │   └── runner_fallback.py         # Cost-aware runner selection         │
@@ -326,11 +339,11 @@ The orchestrator uses local Ollama models. It learns your codebase over time. It
 - Scheduled sync every 30 minutes
 
 ### Multi-Runner Execution
-- **19 parallel runners** across dual GPUs
-- 6 GPU light runners (2GB VRAM each)
-- 1 GPU heavy runner (12GB VRAM)
-- 12 CPU parallel workers
+- **Scales to your hardware** - auto-detects GPUs and CPU cores
+- GPU runners for inference tasks (VRAM-aware allocation)
+- CPU runners for linting, testing, and file operations
 - Resource-aware task distribution
+- Supports single GPU, multi-GPU, and CPU-only configurations
 
 ### Hardware Optimization
 | Architecture | GPUs | Optimizations |
@@ -361,7 +374,7 @@ This installs **everything** with a live dashboard at http://127.0.0.1:8080:
 - SLATE custom models (slate-coder, slate-fast, slate-planner)
 - Copilot Chat skills
 - ChromaDB vector store
-- Dual-GPU configuration
+- GPU configuration (auto-detected)
 - GitHub Actions runner detection
 - System benchmarks + final validation
 
@@ -512,30 +525,32 @@ The `project-automation.yml` workflow:
 
 ## Multi-Runner System
 
-SLATE maximizes hardware utilization with 19 parallel runners.
+SLATE maximizes hardware utilization with parallel runners that scale to your hardware.
 
 ### Runner Configuration
+
+SLATE auto-detects your hardware and creates runners accordingly:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                  Multi-Runner Distribution                       │
+│                 (Scales to YOUR hardware)                        │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  GPU 0 (RTX 5070 Ti - 16GB)          GPU 1 (RTX 5070 Ti - 16GB) │
+│  GPU(s) Detected                     CPU Pool                    │
 │  ┌─────────────────────────┐         ┌─────────────────────────┐│
-│  │ Light Runners (3)       │         │ Light Runners (3)       ││
-│  │ ├─ 2GB VRAM each        │         │ ├─ 2GB VRAM each        ││
-│  │ └─ Inference tasks      │         │ └─ Inference tasks      ││
+│  │ Light Runners           │         │ CPU Runners             ││
+│  │ ├─ ~2GB VRAM each       │         │ ├─ 2 threads each       ││
+│  │ └─ Inference tasks      │         │ └─ Lint, test, git ops  ││
 │  │                         │         │                         ││
-│  │ Heavy Runner (shared)   │◄────────┤ Heavy Runner (shared)   ││
-│  │ └─ 12GB VRAM            │         │ └─ Fine-tuning, batch   ││
+│  │ Heavy Runner (optional) │         │ Count based on cores    ││
+│  │ └─ Fine-tuning, batch   │         │                         ││
 │  └─────────────────────────┘         └─────────────────────────┘│
 │                                                                  │
-│  CPU Pool (24 threads)                                          │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │ CPU Runners (12) - 2 threads each                           ││
-│  │ └─ Linting, testing, file operations, git commands          ││
-│  └─────────────────────────────────────────────────────────────┘│
+│  Example configurations:                                         │
+│  • Single 8GB GPU: 3 light runners + CPU pool                   │
+│  • Dual 16GB GPUs: 6 light + 1 heavy + CPU pool                 │
+│  • CPU only: Full CPU runner pool                               │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -774,7 +789,7 @@ SLATE won't run your GPU into the ground:
 | **Docker** | Container | Compose | GPU/CPU |
 | **ChromaDB** | Vector Store | Local | RAG Memory |
 | **PyTorch** | ML Framework | 2.7+ | CUDA 12.4 |
-| **NVIDIA GPU** | Hardware | Dual RTX 5070 Ti | 32GB VRAM |
+| **NVIDIA GPU** | Hardware | Auto-Detected | RTX 20xx+ Recommended |
 
 ---
 
@@ -857,6 +872,20 @@ python slate/slate_fork_manager.py --validate
 **Daniel Perry** - Canadian Forces Veteran | Afghanistan Veteran | PPCLI Battlegroup | Task Force 3-09
 
 S.L.A.T.E. is the sole intellectual property of Daniel Perry. See [AUTHOR.md](AUTHOR.md) for more information.
+
+### Development System
+
+SLATE was developed and tested on the following hardware (not provided to users):
+
+| Component | Specification |
+|-----------|---------------|
+| **GPU** | Dual NVIDIA RTX 5070 Ti (32GB VRAM total) |
+| **CPU** | 24 threads |
+| **RAM** | 32GB+ |
+| **Storage** | NVMe SSD |
+| **OS** | Windows 11 |
+
+This represents the upper end of SLATE's capabilities. SLATE scales down to work on much more modest hardware - see [System Requirements](#system-requirements).
 
 ## License
 

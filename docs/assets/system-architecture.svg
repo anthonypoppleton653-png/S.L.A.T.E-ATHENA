@@ -109,8 +109,8 @@
     <!-- Multi-Runner -->
     <rect x="430" y="330" width="200" height="70" rx="8" fill="#2A2624" stroke="url(#primaryGradient)" stroke-width="2"/>
     <text x="530" y="355" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="13" font-weight="500" fill="#E8E2DE">Multi-Runner System</text>
-    <text x="530" y="375" text-anchor="middle" font-family="Consolas, monospace" font-size="10" fill="#CAC4BF">19 Parallel Runners</text>
-    <text x="530" y="390" text-anchor="middle" font-family="Consolas, monospace" font-size="9" fill="#CAC4BF">7 GPU + 12 CPU</text>
+    <text x="530" y="375" text-anchor="middle" font-family="Consolas, monospace" font-size="10" fill="#CAC4BF">Scales to your hardware</text>
+    <text x="530" y="390" text-anchor="middle" font-family="Consolas, monospace" font-size="9" fill="#CAC4BF">GPU + CPU parallel</text>
   </g>
 
   <!-- AI Backend Layer -->
@@ -135,9 +135,9 @@
 
     <!-- GPU Cluster -->
     <rect x="660" y="460" width="150" height="80" rx="8" fill="#2A2624" stroke="#FF9800" stroke-width="2"/>
-    <text x="735" y="490" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="13" font-weight="500" fill="#E8E2DE">Dual GPU</text>
-    <text x="735" y="510" text-anchor="middle" font-family="Consolas, monospace" font-size="10" fill="#CAC4BF">RTX 5070 Ti x2</text>
-    <text x="735" y="528" text-anchor="middle" font-family="Consolas, monospace" font-size="9" fill="#FF9800">32GB VRAM</text>
+    <text x="735" y="490" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="13" font-weight="500" fill="#E8E2DE">Your GPU(s)</text>
+    <text x="735" y="510" text-anchor="middle" font-family="Consolas, monospace" font-size="10" fill="#CAC4BF">Auto-detected</text>
+    <text x="735" y="528" text-anchor="middle" font-family="Consolas, monospace" font-size="9" fill="#FF9800">Multi-GPU Ready</text>
   </g>
 
   <!-- Connection Lines -->

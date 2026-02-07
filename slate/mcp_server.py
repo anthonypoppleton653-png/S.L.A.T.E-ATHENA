@@ -260,6 +260,31 @@ async def list_tools() -> list[Tool]:
                 }
             }
         ),
+        Tool(
+            name="slate_schematic",
+            description="Generate circuit-board style system diagrams and architecture visualizations using SLATE locked theme",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "type": "string",
+                        "enum": ["from-system", "from-tech-tree", "components"],
+                        "description": "from-system: current system state, from-tech-tree: tech tree diagram, components: list available",
+                        "default": "from-system"
+                    },
+                    "output": {
+                        "type": "string",
+                        "description": "Output file path (default: docs/assets/slate-schematic.svg)"
+                    },
+                    "theme": {
+                        "type": "string",
+                        "enum": ["blueprint", "dark", "light"],
+                        "description": "Diagram theme",
+                        "default": "blueprint"
+                    }
+                }
+            }
+        ),
     ]
 
 
@@ -373,6 +398,17 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             result = run_slate_command("slate_spec_kit.py", "--process-all", "--analyze")
         else:
             result = run_slate_command("slate_spec_kit.py", "--status")
+
+    elif name == "slate_schematic":
+        action = arguments.get("action", "from-system")
+        output = arguments.get("output", "docs/assets/slate-schematic.svg")
+        theme = arguments.get("theme", "blueprint")
+        if action == "components":
+            result = run_slate_command("schematic_sdk/cli.py", "components", "--list")
+        elif action == "from-tech-tree":
+            result = run_slate_command("schematic_sdk/cli.py", "from-tech-tree", "--output", output, "--theme", theme)
+        else:
+            result = run_slate_command("schematic_sdk/cli.py", "from-system", "--output", output, "--theme", theme)
 
     else:
         result = {

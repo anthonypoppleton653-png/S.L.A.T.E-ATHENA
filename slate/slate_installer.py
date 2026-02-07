@@ -31,6 +31,11 @@ import time
 from pathlib import Path
 from typing import Optional, Dict, Any
 
+# Fix Windows console encoding for Unicode characters (═, ✓, ✗, etc.)
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 # Modified: 2026-02-07T06:00:00Z | Author: COPILOT | Change: Sync extension version to 2.6.1
 SLATE_REPO = "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git"
 SLATE_BETA_REPO = "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.-BETA.git"

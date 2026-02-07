@@ -109,8 +109,8 @@
   <g filter="url(#shadow)">
     <circle cx="400" cy="570" r="50" fill="#2A2624" stroke="#FF9800" stroke-width="2"/>
     <text x="400" y="555" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="12" font-weight="500" fill="#E8E2DE">NVIDIA GPU</text>
-    <text x="400" y="575" text-anchor="middle" font-family="Consolas, monospace" font-size="9" fill="#FF9800">CUDA 12.4</text>
-    <text x="400" y="592" text-anchor="middle" font-family="Consolas, monospace" font-size="8" fill="#CAC4BF">Dual RTX 5070 Ti</text>
+    <text x="400" y="575" text-anchor="middle" font-family="Consolas, monospace" font-size="9" fill="#FF9800">CUDA 12.x</text>
+    <text x="400" y="592" text-anchor="middle" font-family="Consolas, monospace" font-size="8" fill="#CAC4BF">Auto-Detected</text>
     <line x1="400" y1="520" x2="400" y2="420" stroke="#FF9800" stroke-width="2" stroke-dasharray="5,3"/>
   </g>
 

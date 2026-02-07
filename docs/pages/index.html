@@ -702,7 +702,7 @@
         </div>
         <div class="status-item">
             <span class="status-dot active" id="status-runners"></span>
-            <span>Runners: <span id="runners-count">19</span></span>
+            <span>Runners: <span id="runners-count">Auto</span></span>
         </div>
     </div>
 
@@ -730,9 +730,9 @@
                     <span class="stat-source">Monthly</span>
                 </div>
                 <div class="stat-card">
-                    <h3 id="stat-runners">19</h3>
+                    <h3 id="stat-runners">Auto</h3>
                     <p>Parallel Runners</p>
-                    <span class="stat-source">GPU + CPU</span>
+                    <span class="stat-source">Scales to hardware</span>
                 </div>
                 <div class="stat-card">
                     <h3 id="stat-local">100%</h3>
@@ -740,9 +740,9 @@
                     <span class="stat-source">No Cloud APIs</span>
                 </div>
                 <div class="stat-card">
-                    <h3 id="stat-vram">32GB</h3>
+                    <h3 id="stat-vram">Your</h3>
                     <p>GPU Memory</p>
-                    <span class="stat-source">Dual RTX 5070 Ti</span>
+                    <span class="stat-source">Auto-Detected</span>
                 </div>
                 <div class="stat-card">
                     <h3 id="stat-tasks">9</h3>
@@ -977,10 +977,10 @@
 │                                 │                                         │
 │                                 ▼                                         │
 │   ┌───────────────────────────────────────────────────────────────────┐   │
-│   │              Multi-Runner System (19 Runners)                     │   │
-│   │   GPU Runners (7)                    CPU Runners (12)             │   │
-│   │   ├─ 6x Light (2GB VRAM)             ├─ 12x Parallel Workers      │   │
-│   │   └─ 1x Heavy (12GB VRAM)            └─ 24 CPU Threads            │   │
+│   │              Multi-Runner System (Scales to Hardware)             │   │
+│   │   GPU Runners                        CPU Runners                   │   │
+│   │   ├─ Light (2GB VRAM each)           ├─ Parallel Workers          │   │
+│   │   └─ Heavy (optional)                └─ Based on CPU cores        │   │
 │   └─────────────────────────────┬─────────────────────────────────────┘   │
 │                                 │                                         │
 │                                 ▼                                         │
