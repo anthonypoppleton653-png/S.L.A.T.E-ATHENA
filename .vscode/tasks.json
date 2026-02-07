@@ -227,7 +227,7 @@
 			"type": "shell",
 			"command": "wsl",
 			"args": [
-				"--cd", "/mnt/e/11132025",
+				"--cd", ".",
 				"bash", "launch_autonomous_linux.sh"
 			],
 			"isBackground": true,

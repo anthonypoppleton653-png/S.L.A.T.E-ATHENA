@@ -1,0 +1,10 @@
+{
+  "extraKnownMarketplaces": {
+    "slate-marketplace": {
+      "source": "."
+    }
+  },
+  "enabledPlugins": {
+    "slate-sdk@slate-marketplace": true
+  }
+}

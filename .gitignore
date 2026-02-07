@@ -99,8 +99,14 @@ slate_logs/
 # Discussion state (runtime)
 .slate_discussions/
 
-# Claude
-.claude/
+# Claude — track commands/settings (agent definitions), exclude user-local config
+.claude/settings.local.json
+
+# Ruff lint cache
+.ruff_cache/
+
+# Build artifacts
+dist/
 
 # Secrets (NEVER commit)
 .env
