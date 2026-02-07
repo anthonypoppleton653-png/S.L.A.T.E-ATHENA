@@ -1,72 +1,64 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#0d1117;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#161b22;stop-opacity:1" />
     </linearGradient>
-    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#0f3460;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#533483;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#e94560;stop-opacity:1" />
-    </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
   </defs>
 
-  <!-- Background circle -->
-  <circle cx="100" cy="100" r="95" fill="url(#bgGrad)" stroke="url(#accentGrad)" stroke-width="3"/>
+  <!-- Background -->
+  <rect x="0" y="0" width="200" height="200" rx="20" fill="url(#bgGrad)"/>
 
-  <!-- Inner decorative ring -->
-  <circle cx="100" cy="100" r="80" fill="none" stroke="#533483" stroke-width="1" opacity="0.5"/>
+  <!-- Outer border -->
+  <rect x="4" y="4" width="192" height="192" rx="18" fill="none" stroke="#30363d" stroke-width="1"/>
 
-  <!-- Circuit-like decorative elements -->
-  <g stroke="#0f3460" stroke-width="1.5" fill="none" opacity="0.6">
-    <!-- Top circuit -->
-    <path d="M100 25 L100 45 M90 35 L110 35"/>
-    <!-- Bottom circuit -->
-    <path d="M100 175 L100 155 M90 165 L110 165"/>
-    <!-- Left circuit -->
-    <path d="M25 100 L45 100 M35 90 L35 110"/>
-    <!-- Right circuit -->
-    <path d="M175 100 L155 100 M165 90 L165 110"/>
+  <!-- Grid pattern (subtle) -->
+  <g stroke="#21262d" stroke-width="0.5" opacity="0.5">
+    <line x1="50" y1="0" x2="50" y2="200"/>
+    <line x1="100" y1="0" x2="100" y2="200"/>
+    <line x1="150" y1="0" x2="150" y2="200"/>
+    <line x1="0" y1="50" x2="200" y2="50"/>
+    <line x1="0" y1="100" x2="200" y2="100"/>
+    <line x1="0" y1="150" x2="200" y2="150"/>
   </g>
 
-  <!-- Hexagon frame -->
-  <polygon points="100,30 160,65 160,135 100,170 40,135 40,65"
-           fill="none" stroke="url(#accentGrad)" stroke-width="2" opacity="0.8"/>
+  <!-- Central hexagon -->
+  <polygon points="100,35 155,67.5 155,132.5 100,165 45,132.5 45,67.5"
+           fill="none" stroke="#30363d" stroke-width="2"/>
 
   <!-- Inner hexagon -->
   <polygon points="100,50 140,75 140,125 100,150 60,125 60,75"
-           fill="rgba(15,52,96,0.3)" stroke="#533483" stroke-width="1"/>
+           fill="#0d1117" stroke="#484f58" stroke-width="1"/>
 
-  <!-- S.L.A.T.E. text -->
-  <text x="100" y="95" text-anchor="middle" font-family="Consolas, Monaco, monospace"
-        font-size="28" font-weight="bold" fill="#e94560" filter="url(#glow)">
+  <!-- S.L.A.T.E. main text -->
+  <text x="100" y="92" text-anchor="middle" font-family="Consolas, 'Courier New', monospace"
+        font-size="22" font-weight="bold" fill="#c9d1d9" letter-spacing="2">
     S.L.A.T.E.
   </text>
 
-  <!-- Tagline -->
-  <text x="100" y="115" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif"
-        font-size="8" fill="#a0a0a0" letter-spacing="1">
+  <!-- Underline -->
+  <line x1="55" y1="100" x2="145" y2="100" stroke="#484f58" stroke-width="1"/>
+
+  <!-- Version/tagline -->
+  <text x="100" y="118" text-anchor="middle" font-family="Consolas, 'Courier New', monospace"
+        font-size="7" fill="#484f58" letter-spacing="1">
     SYNCHRONIZED LIVING
   </text>
-  <text x="100" y="125" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif"
-        font-size="8" fill="#a0a0a0" letter-spacing="1">
+  <text x="100" y="128" text-anchor="middle" font-family="Consolas, 'Courier New', monospace"
+        font-size="7" fill="#484f58" letter-spacing="1">
     ARCHITECTURE
   </text>
 
-  <!-- Corner accents -->
-  <g fill="#e94560" opacity="0.8">
-    <circle cx="100" cy="30" r="3"/>
-    <circle cx="160" cy="65" r="3"/>
-    <circle cx="160" cy="135" r="3"/>
-    <circle cx="100" cy="170" r="3"/>
-    <circle cx="40" cy="135" r="3"/>
-    <circle cx="40" cy="65" r="3"/>
+  <!-- Corner dots -->
+  <g fill="#484f58">
+    <circle cx="100" cy="35" r="2"/>
+    <circle cx="155" cy="67.5" r="2"/>
+    <circle cx="155" cy="132.5" r="2"/>
+    <circle cx="100" cy="165" r="2"/>
+    <circle cx="45" cy="132.5" r="2"/>
+    <circle cx="45" cy="67.5" r="2"/>
   </g>
+
+  <!-- Status indicator -->
+  <circle cx="170" cy="30" r="4" fill="#238636"/>
 </svg>
