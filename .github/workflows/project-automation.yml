@@ -1,5 +1,6 @@
 # GitHub Projects automation using gh CLI
 # Security: PII scanning prevents personal data from reaching public project boards
+# Cost: Uses self-hosted runner only (no GitHub-hosted runner costs)
 name: Project Automation
 
 on:
@@ -26,10 +27,14 @@ on:
 env:
   PROJECT_OWNER: SynchronizedLivingArchitecture
 
+defaults:
+  run:
+    shell: powershell
+
 jobs:
   pii-scan:
     name: PII Security Scan
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, slate]
     if: github.event_name == 'issues' || github.event_name == 'pull_request'
     outputs:
       blocked: ${{ steps.scan.outputs.blocked }}
@@ -38,52 +43,60 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+        run: |
+          'E:\11132025\.venv\Scripts' | Out-File -Append $env:GITHUB_PATH
 
       - name: Scan for PII
         id: scan
         run: |
           # Get title and body from event
-          if [ "${{ github.event_name }}" == "issues" ]; then
-            TITLE="${{ github.event.issue.title }}"
-            BODY="${{ github.event.issue.body }}"
-          else
-            TITLE="${{ github.event.pull_request.title }}"
-            BODY="${{ github.event.pull_request.body }}"
-          fi
+          if ('${{ github.event_name }}' -eq 'issues') {
+            $Title = '${{ github.event.issue.title }}'
+            $Body = '${{ github.event.issue.body }}'
+          } else {
+            $Title = '${{ github.event.pull_request.title }}'
+            $Body = '${{ github.event.pull_request.body }}'
+          }
+
+          # Escape quotes for command line
+          $Title = $Title -replace '"', '\"'
+          $Body = $Body -replace '"', '\"'
 
           # Run PII scanner
-          RESULT=$(python slate/pii_scanner.py --title "$TITLE" --body "$BODY" --json 2>/dev/null || echo '{"has_pii":false,"blocked":false}')
+          try {
+            $Result = python slate/pii_scanner.py --title "$Title" --body "$Body" --json 2>$null | ConvertFrom-Json
+            $HasPII = $Result.has_pii
+            $Blocked = $Result.blocked
+            $Message = $Result.message
+          } catch {
+            $HasPII = $false
+            $Blocked = $false
+            $Message = ""
+          }
 
-          HAS_PII=$(echo "$RESULT" | jq -r '.has_pii')
-          BLOCKED=$(echo "$RESULT" | jq -r '.blocked')
-          MESSAGE=$(echo "$RESULT" | jq -r '.message // empty')
+          "has_pii=$HasPII" | Out-File -Append $env:GITHUB_OUTPUT
+          "blocked=$Blocked" | Out-File -Append $env:GITHUB_OUTPUT
 
-          echo "has_pii=$HAS_PII" >> $GITHUB_OUTPUT
-          echo "blocked=$BLOCKED" >> $GITHUB_OUTPUT
-
-          if [ "$BLOCKED" == "true" ]; then
-            echo "::error::BLOCKED - Critical PII detected. This item will NOT be added to public project boards."
-            echo "## PII Security Block" >> $GITHUB_STEP_SUMMARY
-            echo "Critical PII was detected in this issue/PR. It has been blocked from public project boards." >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Please remove sensitive information and try again." >> $GITHUB_STEP_SUMMARY
+          if ($Blocked -eq $true) {
+            Write-Host "::error::BLOCKED - Critical PII detected. This item will NOT be added to public project boards."
+            "## PII Security Block" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+            "Critical PII was detected in this issue/PR. It has been blocked from public project boards." | Out-File -Append $env:GITHUB_STEP_SUMMARY
+            "" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+            "Please remove sensitive information and try again." | Out-File -Append $env:GITHUB_STEP_SUMMARY
             exit 1
-          elif [ "$HAS_PII" == "true" ]; then
-            echo "::warning::PII detected - $MESSAGE"
-            echo "## PII Warning" >> $GITHUB_STEP_SUMMARY
-            echo "PII was detected but is not critical. Content may be redacted." >> $GITHUB_STEP_SUMMARY
-          else
-            echo "No PII detected"
-            echo "## PII Scan Passed" >> $GITHUB_STEP_SUMMARY
-            echo "No personal identifiable information detected." >> $GITHUB_STEP_SUMMARY
-          fi
+          } elseif ($HasPII -eq $true) {
+            Write-Host "::warning::PII detected - $Message"
+            "## PII Warning" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+            "PII was detected but is not critical. Content may be redacted." | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          } else {
+            Write-Host "No PII detected"
+            "## PII Scan Passed" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+            "No personal identifiable information detected." | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          }
 
   auto-add-to-project:
     name: Auto-add to Project
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, slate]
     needs: pii-scan
     if: |
       always() &&
@@ -101,9 +114,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
         run: |
-          ITEM_URL="${{ github.event.issue.html_url || github.event.pull_request.html_url }}"
-          echo "Adding $ITEM_URL to project 7 (BUG TRACKING)"
-          gh project item-add 7 --owner $PROJECT_OWNER --url "$ITEM_URL" || echo "Already in project or no access"
+          $ItemUrl = '${{ github.event.issue.html_url }}${{ github.event.pull_request.html_url }}'
+          Write-Host "Adding $ItemUrl to project 7 (BUG TRACKING)"
+          gh project item-add 7 --owner $env:PROJECT_OWNER --url $ItemUrl 2>$null
+          if ($LASTEXITCODE -ne 0) { Write-Host "Already in project or no access" }
 
       - name: Add to SLATE ROADMAP (features)
         if: |
@@ -112,22 +126,24 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
         run: |
-          ITEM_URL="${{ github.event.issue.html_url || github.event.pull_request.html_url }}"
-          echo "Adding $ITEM_URL to project 10 (ROADMAP)"
-          gh project item-add 10 --owner $PROJECT_OWNER --url "$ITEM_URL" || echo "Already in project or no access"
+          $ItemUrl = '${{ github.event.issue.html_url }}${{ github.event.pull_request.html_url }}'
+          Write-Host "Adding $ItemUrl to project 10 (ROADMAP)"
+          gh project item-add 10 --owner $env:PROJECT_OWNER --url $ItemUrl 2>$null
+          if ($LASTEXITCODE -ne 0) { Write-Host "Already in project or no access" }
 
       - name: Add to SLATE ITERATIVE DEV (PRs)
         if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
         run: |
-          ITEM_URL="${{ github.event.pull_request.html_url }}"
-          echo "Adding $ITEM_URL to project 8 (ITERATIVE DEVELOPMENT)"
-          gh project item-add 8 --owner $PROJECT_OWNER --url "$ITEM_URL" || echo "Already in project or no access"
+          $ItemUrl = '${{ github.event.pull_request.html_url }}'
+          Write-Host "Adding $ItemUrl to project 8 (ITERATIVE DEVELOPMENT)"
+          gh project item-add 8 --owner $env:PROJECT_OWNER --url $ItemUrl 2>$null
+          if ($LASTEXITCODE -ne 0) { Write-Host "Already in project or no access" }
 
   manual-actions:
     name: Manual Project Actions
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, slate]
     if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
@@ -135,53 +151,58 @@ jobs:
 
       - name: Setup Python
         if: inputs.action == 'scan-pii'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+        run: |
+          'E:\11132025\.venv\Scripts' | Out-File -Append $env:GITHUB_PATH
 
       - name: List Projects
         if: inputs.action == 'list-projects'
         env:
           GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
         run: |
-          echo "## All Projects" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          gh project list --owner $PROJECT_OWNER >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          "## All Projects" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          gh project list --owner $env:PROJECT_OWNER | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
 
       - name: List Items
         if: inputs.action == 'list-items'
         env:
           GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
         run: |
-          echo "## Project ${{ inputs.project_number }} Items" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          gh project item-list ${{ inputs.project_number }} --owner $PROJECT_OWNER --limit 50 >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          "## Project ${{ inputs.project_number }} Items" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          gh project item-list ${{ inputs.project_number }} --owner $env:PROJECT_OWNER --limit 50 | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
 
       - name: Sync Tasks to Project
         if: inputs.action == 'sync-tasks'
         env:
           GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
         run: |
-          echo "## Syncing current_tasks.json to Project ${{ inputs.project_number }}" >> $GITHUB_STEP_SUMMARY
+          "## Syncing current_tasks.json to Project ${{ inputs.project_number }}" | Out-File -Append $env:GITHUB_STEP_SUMMARY
 
-          if [ -f current_tasks.json ]; then
-            jq -r '.tasks[]? // .[]? | select(.status == "pending") | .title // .name' current_tasks.json | while read -r title; do
-              if [ -n "$title" ]; then
-                echo "Creating: $title"
-                gh project item-create ${{ inputs.project_number }} --owner $PROJECT_OWNER --title "$title" || echo "Failed: $title"
-              fi
-            done
-            echo "Sync complete" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "No current_tasks.json found" >> $GITHUB_STEP_SUMMARY
-          fi
+          if (Test-Path current_tasks.json) {
+            $data = Get-Content current_tasks.json | ConvertFrom-Json
+            $tasks = if ($data.tasks) { $data.tasks } else { $data }
+
+            foreach ($task in $tasks) {
+              if ($task.status -eq 'pending') {
+                $title = if ($task.title) { $task.title } else { $task.name }
+                if ($title) {
+                  Write-Host "Creating: $title"
+                  gh project item-create ${{ inputs.project_number }} --owner $env:PROJECT_OWNER --title "$title" 2>$null
+                }
+              }
+            }
+            "Sync complete" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          } else {
+            "No current_tasks.json found" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          }
 
       - name: Run PII Scanner Test
         if: inputs.action == 'scan-pii'
         run: |
-          echo "## PII Scanner Self-Test" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          python slate/pii_scanner.py --test >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          "## PII Scanner Self-Test" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          python slate/pii_scanner.py --test | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
