@@ -388,6 +388,245 @@ def build_template() -> str:
             .schematic-title {{ font-size: 0.65rem; }}
         }}
 
+        /* ─── Schematic Widget Library (Spec 012 Phase 2) ─────────── */
+        /* Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Add Phase 2 widget library CSS */
+
+        /* Compact sidebar schematic widget */
+        .schematic-compact {{
+            width: 100%;
+            aspect-ratio: 16 / 10;
+            background: var(--sl-surface-2, #1A1816);
+            border: 1px solid var(--sl-border, #2A2624);
+            border-radius: var(--sl-radius-md, 8px);
+            padding: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }}
+
+        .schematic-compact:hover {{
+            border-color: var(--sl-accent, #B85A3C);
+            box-shadow: 0 0 12px rgba(184, 90, 60, 0.15);
+        }}
+
+        .schematic-compact svg {{
+            width: 100%;
+            height: auto;
+            opacity: 0.85;
+            transition: opacity 0.2s ease;
+        }}
+
+        .schematic-compact:hover svg {{
+            opacity: 1;
+        }}
+
+        .schematic-compact-label {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+            font-size: 0.6rem;
+            color: var(--sl-text-disabled);
+        }}
+
+        .schematic-compact-label .sc-dot {{
+            width: 5px;
+            height: 5px;
+            background: var(--sl-success, #22C55E);
+            border-radius: 50%;
+            animation: schematic-pulse 2s infinite;
+        }}
+
+        /* Card schematic component */
+        .card-schematic {{
+            background: var(--sl-surface-2, #141211);
+            border-radius: var(--sl-radius-md, 8px);
+            padding: 12px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }}
+
+        .card-schematic:hover {{
+            background: var(--sl-surface-3, #1E1C1A);
+        }}
+
+        .card-schematic svg {{
+            width: 100%;
+            height: auto;
+            max-height: 200px;
+        }}
+
+        .card-schematic .cs-expand {{
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid var(--sl-border);
+            border-radius: 4px;
+            color: var(--sl-text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }}
+
+        .card-schematic:hover .cs-expand {{
+            opacity: 1;
+        }}
+
+        /* Schematic modal detail view */
+        .schematic-modal-overlay {{
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }}
+
+        .schematic-modal-overlay.active {{
+            display: flex;
+            opacity: 1;
+        }}
+
+        .schematic-modal {{
+            width: 90vw;
+            max-width: 1400px;
+            height: 80vh;
+            background: var(--sl-surface-1, #0F0E0D);
+            border: 1px solid var(--sl-border, #2A2624);
+            border-radius: var(--sl-radius-lg, 16px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+        }}
+
+        .schematic-modal-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: var(--sl-surface-2, #1A1816);
+            border-bottom: 1px solid var(--sl-border);
+        }}
+
+        .schematic-modal-title {{
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--sl-text-primary, #E8E2DE);
+        }}
+
+        .schematic-modal-actions {{
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }}
+
+        .schematic-modal-close {{
+            width: 32px;
+            height: 32px;
+            background: transparent;
+            border: 1px solid var(--sl-border);
+            border-radius: 6px;
+            color: var(--sl-text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: background 0.2s ease;
+        }}
+
+        .schematic-modal-close:hover {{
+            background: rgba(255,255,255,0.05);
+        }}
+
+        .schematic-modal-body {{
+            flex: 1;
+            padding: 24px;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+
+        .schematic-modal-body svg {{
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+        }}
+
+        .schematic-modal-footer {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 24px;
+            background: var(--sl-surface-2, #1A1816);
+            border-top: 1px solid var(--sl-border);
+            font-size: 0.65rem;
+            color: var(--sl-text-disabled);
+        }}
+
+        /* Status overlay system */
+        .schematic-status-overlay {{
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            pointer-events: none;
+        }}
+
+        .schematic-status-chip {{
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--sl-border);
+            border-radius: 9999px;
+            font-family: 'Consolas', monospace;
+            font-size: 10px;
+            color: var(--sl-text-secondary);
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+        }}
+
+        .schematic-status-chip .ssc-dot {{
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }}
+
+        .schematic-status-chip .ssc-dot.active {{ background: var(--sl-success, #22C55E); }}
+        .schematic-status-chip .ssc-dot.warning {{ background: var(--sl-warning, #F59E0B); }}
+        .schematic-status-chip .ssc-dot.error {{ background: var(--sl-error, #EF4444); }}
+        .schematic-status-chip .ssc-dot.idle {{ background: var(--sl-text-disabled, #666); }}
+
+        @media (max-width: 767px) {{
+            .schematic-compact {{ aspect-ratio: auto; height: 120px; }}
+            .schematic-modal {{ width: 96vw; height: 90vh; }}
+            .schematic-modal-header {{ padding: 12px 16px; }}
+            .schematic-modal-body {{ padding: 12px; }}
+        }}
+
         /* ─── Buttons (M3-inspired) ────────────────────────────────── */
         .btn {{
             display: inline-flex;
@@ -1296,6 +1535,32 @@ def build_template() -> str:
                 </button>
             </div>
 
+            <!-- Compact Schematic Widget (Spec 012 Phase 2) -->
+            <div style="padding: 0 var(--sl-space-4); margin-bottom: var(--sl-space-4);">
+                <div class="schematic-compact" id="sidebar-schematic" onclick="openSchematicModal('system')" title="Click to expand system architecture">
+                    <div id="sidebar-schematic-svg">
+                        <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;opacity:0.6;">
+                            <rect x="5" y="10" width="30" height="20" rx="3" fill="none" stroke="#3A3634" stroke-width="1"/>
+                            <rect x="65" y="10" width="30" height="20" rx="3" fill="none" stroke="#3A3634" stroke-width="1"/>
+                            <rect x="125" y="10" width="30" height="20" rx="3" fill="none" stroke="#3A3634" stroke-width="1"/>
+                            <rect x="35" y="50" width="30" height="20" rx="3" fill="none" stroke="#3A3634" stroke-width="1"/>
+                            <rect x="95" y="50" width="30" height="20" rx="3" fill="none" stroke="#3A3634" stroke-width="1"/>
+                            <rect x="65" y="75" width="30" height="20" rx="3" fill="none" stroke="#3A3634" stroke-width="1"/>
+                            <line x1="35" y1="20" x2="65" y2="20" stroke="#2A2624" stroke-width="0.5"/>
+                            <line x1="95" y1="20" x2="125" y2="20" stroke="#2A2624" stroke-width="0.5"/>
+                            <line x1="50" y1="30" x2="50" y2="50" stroke="#2A2624" stroke-width="0.5"/>
+                            <line x1="110" y1="30" x2="110" y2="50" stroke="#2A2624" stroke-width="0.5"/>
+                            <line x1="65" y1="60" x2="80" y2="75" stroke="#2A2624" stroke-width="0.5"/>
+                            <line x1="95" y1="60" x2="80" y2="75" stroke="#2A2624" stroke-width="0.5"/>
+                        </svg>
+                    </div>
+                    <div class="schematic-compact-label">
+                        <span>System</span>
+                        <span class="sc-dot"></span>
+                    </div>
+                </div>
+            </div>
+
             <div class="nav-footer">
                 <div class="nav-footer-status">
                     <span class="pulse-dot" id="runner-dot"></span>
@@ -1552,6 +1817,26 @@ def build_template() -> str:
                             <div class="hw-stat"><div class="hw-stat-value" id="bench-speed">--</div><div class="hw-stat-label">tok/s</div></div>
                             <div class="hw-stat"><div class="hw-stat-value" id="bench-bandwidth">--</div><div class="hw-stat-label">GB/s</div></div>
                         </div>
+                        <!-- GPU Topology Card Schematic (Spec 012 Phase 2) -->
+                        <div class="card-schematic" id="gpu-topology-schematic" onclick="openSchematicModal('inference')" title="GPU topology — click to expand">
+                            <button class="cs-expand" aria-label="Expand schematic">&#x26F6;</button>
+                            <svg viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+                                <rect x="5" y="10" width="60" height="28" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <text x="35" y="27" text-anchor="middle" fill="#666" font-size="8" font-family="Consolas, monospace">GPU 0</text>
+                                <rect x="120" y="10" width="60" height="28" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <text x="150" y="27" text-anchor="middle" fill="#666" font-size="8" font-family="Consolas, monospace">GPU 1</text>
+                                <rect x="235" y="10" width="60" height="28" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <text x="265" y="27" text-anchor="middle" fill="#666" font-size="8" font-family="Consolas, monospace">Ollama</text>
+                                <rect x="5" y="50" width="60" height="22" rx="4" fill="none" stroke="#2A2624" stroke-width="0.8"/>
+                                <text x="35" y="64" text-anchor="middle" fill="#555" font-size="7" font-family="Consolas, monospace">16GB VRAM</text>
+                                <rect x="120" y="50" width="60" height="22" rx="4" fill="none" stroke="#2A2624" stroke-width="0.8"/>
+                                <text x="150" y="64" text-anchor="middle" fill="#555" font-size="7" font-family="Consolas, monospace">16GB VRAM</text>
+                                <line x1="65" y1="24" x2="120" y2="24" stroke="#2A2624" stroke-width="0.8" stroke-dasharray="3,2"/>
+                                <line x1="180" y1="24" x2="235" y2="24" stroke="#2A2624" stroke-width="0.8" stroke-dasharray="3,2"/>
+                                <line x1="35" y1="38" x2="35" y2="50" stroke="#2A2624" stroke-width="0.5"/>
+                                <line x1="150" y1="38" x2="150" y2="50" stroke="#2A2624" stroke-width="0.5"/>
+                            </svg>
+                        </div>
                     </div>
 
                     <div class="card col-6">
@@ -1690,6 +1975,36 @@ def build_template() -> str:
                             <span class="card-title">Agent System</span>
                             <button class="card-action" onclick="refreshAgents()">Refresh</button>
                         </div>
+                        <!-- Agent Pipeline Card Schematic (Spec 012 Phase 2) -->
+                        <div class="card-schematic" id="agent-pipeline-schematic" onclick="openSchematicModal('system')" title="Agent pipeline — click to expand">
+                            <button class="cs-expand" aria-label="Expand schematic">&#x26F6;</button>
+                            <svg viewBox="0 0 400 60" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+                                <rect x="5" y="15" width="50" height="30" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <text x="30" y="34" text-anchor="middle" fill="#666" font-size="7" font-family="Consolas, monospace">ALPHA</text>
+                                <rect x="75" y="15" width="50" height="30" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <text x="100" y="34" text-anchor="middle" fill="#666" font-size="7" font-family="Consolas, monospace">BETA</text>
+                                <rect x="145" y="15" width="50" height="30" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <text x="170" y="34" text-anchor="middle" fill="#666" font-size="7" font-family="Consolas, monospace">GAMMA</text>
+                                <rect x="215" y="15" width="50" height="30" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <text x="240" y="34" text-anchor="middle" fill="#666" font-size="7" font-family="Consolas, monospace">DELTA</text>
+                                <rect x="285" y="15" width="56" height="30" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <text x="313" y="34" text-anchor="middle" fill="#666" font-size="7" font-family="Consolas, monospace">COPILOT</text>
+                                <line x1="55" y1="30" x2="75" y2="30" stroke="#2A2624" stroke-width="0.8" stroke-dasharray="2,2"/>
+                                <line x1="125" y1="30" x2="145" y2="30" stroke="#2A2624" stroke-width="0.8" stroke-dasharray="2,2"/>
+                                <line x1="195" y1="30" x2="215" y2="30" stroke="#2A2624" stroke-width="0.8" stroke-dasharray="2,2"/>
+                                <line x1="265" y1="30" x2="285" y2="30" stroke="#2A2624" stroke-width="0.8" stroke-dasharray="2,2"/>
+                                <rect x="360" y="18" width="35" height="24" rx="3" fill="none" stroke="#B85A3C" stroke-width="1" opacity="0.6"/>
+                                <text x="378" y="34" text-anchor="middle" fill="#B85A3C" font-size="6" font-family="Consolas, monospace">ROUTER</text>
+                                <line x1="341" y1="30" x2="360" y2="30" stroke="#B85A3C" stroke-width="0.6" opacity="0.4"/>
+                            </svg>
+                            <div class="schematic-status-overlay">
+                                <span class="schematic-status-chip"><span class="ssc-dot active"></span>ALPHA</span>
+                                <span class="schematic-status-chip"><span class="ssc-dot active"></span>BETA</span>
+                                <span class="schematic-status-chip"><span class="ssc-dot active"></span>GAMMA</span>
+                                <span class="schematic-status-chip"><span class="ssc-dot idle"></span>DELTA</span>
+                                <span class="schematic-status-chip"><span class="ssc-dot active"></span>COPILOT</span>
+                            </div>
+                        </div>
                         <div id="agent-list"><div class="empty">Loading agents...</div></div>
                     </div>
                 </div>
@@ -1714,6 +2029,32 @@ def build_template() -> str:
     </div>
 
     <div id="conn-status"><span class="pulse-dot" id="ws-dot"></span> <span id="ws-text">Connecting...</span></div>
+
+    <!-- Schematic Modal Detail View (Spec 012 Phase 2) -->
+    <div class="schematic-modal-overlay" id="schematic-modal" role="dialog" aria-modal="true" aria-label="Schematic detail view">
+        <div class="schematic-modal">
+            <div class="schematic-modal-header">
+                <span class="schematic-modal-title" id="schematic-modal-title">System Architecture</span>
+                <div class="schematic-modal-actions">
+                    <span class="schematic-live-badge">
+                        <span class="schematic-live-dot"></span>
+                        Live
+                    </span>
+                    <button class="schematic-modal-close" onclick="closeSchematicModal()" aria-label="Close">&times;</button>
+                </div>
+            </div>
+            <div class="schematic-modal-body" id="schematic-modal-body">
+                <div class="schematic-loading">
+                    <div class="schematic-loading-spinner"></div>
+                    <span>Loading schematic...</span>
+                </div>
+            </div>
+            <div class="schematic-modal-footer">
+                <span id="schematic-modal-timestamp">Last updated: --</span>
+                <span>Spec 012 &middot; Schematic SDK v1.1.0</span>
+            </div>
+        </div>
+    </div>
 '''
 
 
@@ -2379,6 +2720,105 @@ def build_template_js() -> str:
             }
         }
 
+        // ─── Schematic Widget Library (Spec 012 Phase 2) ──────────────
+
+        // Modal detail view
+        function openSchematicModal(templateId) {
+            const modal = document.getElementById('schematic-modal');
+            const body = document.getElementById('schematic-modal-body');
+            const title = document.getElementById('schematic-modal-title');
+
+            if (!modal || !body) return;
+
+            const titles = {
+                'system': 'SLATE System Architecture',
+                'inference': 'GPU Inference Pipeline',
+                'ci-cd': 'CI/CD Pipeline',
+                'agents': 'Agent Routing System'
+            };
+
+            title.textContent = titles[templateId] || 'Schematic Detail';
+            body.innerHTML = '<div class="schematic-loading"><div class="schematic-loading-spinner"></div><span>Loading...</span></div>';
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            // Fetch the template schematic
+            fetch(`/api/schematic/template/${templateId}`)
+                .then(r => r.ok ? r.json() : Promise.reject('Template not found'))
+                .then(data => {
+                    body.innerHTML = data.svg || '<div class="schematic-loading"><span>No schematic data</span></div>';
+                    document.getElementById('schematic-modal-timestamp').textContent =
+                        'Last updated: ' + new Date().toLocaleTimeString();
+                })
+                .catch(() => {
+                    // Fall back to system widget
+                    fetch('/api/schematic/widget/system')
+                        .then(r => r.ok ? r.json() : Promise.reject())
+                        .then(data => {
+                            body.innerHTML = data.html || '';
+                            document.getElementById('schematic-modal-timestamp').textContent =
+                                'Last updated: ' + new Date().toLocaleTimeString();
+                        })
+                        .catch(() => {
+                            body.innerHTML = '<div class="schematic-loading"><span>Schematic unavailable</span></div>';
+                        });
+                });
+        }
+
+        function closeSchematicModal() {
+            const modal = document.getElementById('schematic-modal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeSchematicModal();
+        });
+
+        // Close modal on backdrop click
+        document.getElementById('schematic-modal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeSchematicModal();
+        });
+
+        // Sidebar compact widget updater
+        async function updateSidebarSchematic() {
+            try {
+                const res = await fetch('/api/schematic/widget/compact?template_id=system');
+                if (res.ok) {
+                    const data = await res.json();
+                    const container = document.getElementById('sidebar-schematic-svg');
+                    if (container && data.html) {
+                        container.innerHTML = data.html;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        // Status overlay updater
+        async function updateSchematicStatusOverlay() {
+            try {
+                const res = await fetch('/api/schematic/system-state');
+                if (res.ok) {
+                    const data = await res.json();
+                    // Update agent status chips based on live data
+                    const chips = document.querySelectorAll('.schematic-status-chip');
+                    if (data.components && chips.length > 0) {
+                        const componentNames = Object.keys(data.components);
+                        chips.forEach((chip, i) => {
+                            const dot = chip.querySelector('.ssc-dot');
+                            if (dot && componentNames[i]) {
+                                const status = data.components[componentNames[i]]?.status || 'idle';
+                                dot.className = 'ssc-dot ' + (status === 'active' ? 'active' : status === 'warning' ? 'warning' : status === 'error' ? 'error' : 'idle');
+                            }
+                        });
+                    }
+                }
+            } catch (e) {}
+        }
+
         // ─── Initial Load ─────────────────────────────────────────────
         async function fetchInitialStatus() {
             try {
@@ -2392,8 +2832,12 @@ def build_template_js() -> str:
         refreshAll();
         loadSchematic();
         connectSchematicWebSocket();
+        updateSidebarSchematic();
+        updateSchematicStatusOverlay();
         setInterval(refreshAll, 15000);
         setInterval(requestSchematicUpdate, 30000);
+        setInterval(updateSidebarSchematic, 60000);
+        setInterval(updateSchematicStatusOverlay, 15000);
     </script>
 </body>
 </html>'''

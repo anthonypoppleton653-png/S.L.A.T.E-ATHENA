@@ -671,7 +671,7 @@ class GenerativeUIEngine:
             "system_analyzed": self._system_analysis is not None,
             "schematic_sdk_available": SCHEMATIC_SDK_AVAILABLE,
             "schematic_templates": list(TEMPLATES.keys()) if SCHEMATIC_SDK_AVAILABLE else [],
-            "step_schematics": list(STEP_SCHEMATICS.keys()) if SCHEMATIC_SDK_AVAILABLE else [],
+            "step_schematics": [s.value for s in STEP_SCHEMATICS.keys()] if SCHEMATIC_SDK_AVAILABLE else [],
         }
 
 

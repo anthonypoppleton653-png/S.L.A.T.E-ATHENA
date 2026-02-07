@@ -39,11 +39,12 @@
             --blueprint-accent: #98C1D9;
             --blueprint-node: #E0FBFC;
 
-            /* Semantic Colors */
-            --slate-success: #4CAF50;
-            --slate-warning: #FF9800;
-            --slate-error: #F44336;
+            /* Semantic Colors - Using primary rust for accents */
+            --slate-success: #22C55E;  /* For actual success states only */
+            --slate-warning: #F59E0B;
+            --slate-error: #EF4444;
             --slate-info: #2196F3;
+            --slate-accent-glow: rgba(184, 90, 60, 0.5);
 
             /* Outline */
             --slate-outline: #7D7873;
@@ -200,10 +201,14 @@
         }
 
         .nav-cta {
-            background: var(--slate-on-surface) !important;
-            color: var(--slate-surface) !important;
+            background: var(--slate-primary) !important;
+            color: var(--slate-on-primary) !important;
             font-weight: 600;
             padding: var(--space-sm) var(--space-md) !important;
+        }
+
+        .nav-cta:hover {
+            background: var(--slate-primary-light) !important;
         }
 
         /* ================================================================
@@ -242,7 +247,8 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: var(--slate-success);
+            background: var(--slate-primary);
+            box-shadow: 0 0 8px var(--slate-accent-glow);
             animation: pulse 2s infinite;
         }
 
@@ -300,13 +306,14 @@
         }
 
         .btn-primary {
-            background: var(--slate-on-surface);
-            color: var(--slate-surface);
+            background: var(--slate-primary);
+            color: var(--slate-on-primary);
         }
 
         .btn-primary:hover {
+            background: var(--slate-primary-light);
             transform: translateY(-2px);
-            box-shadow: var(--elevation-3);
+            box-shadow: var(--elevation-3), 0 0 20px var(--slate-accent-glow);
         }
 
         .btn-secondary {
@@ -370,8 +377,8 @@
         .feature-badge {
             display: inline-block;
             padding: 2px 10px;
-            background: var(--slate-success);
-            color: white;
+            background: var(--slate-primary);
+            color: var(--slate-on-primary);
             border-radius: var(--radius-full);
             font-size: var(--font-caption);
             font-weight: 600;
@@ -408,9 +415,10 @@
 
         .schematic-title {
             font-family: Consolas, monospace;
-            color: var(--blueprint-accent);
+            color: var(--slate-primary-light);
             font-size: var(--font-label);
             font-weight: 600;
+            letter-spacing: 0.1em;
         }
 
         .schematic-tabs {
@@ -432,8 +440,9 @@
 
         .schematic-tab:hover,
         .schematic-tab.active {
-            background: var(--blueprint-grid);
-            border-color: var(--blueprint-accent);
+            background: rgba(184, 90, 60, 0.2);
+            border-color: var(--slate-primary);
+            color: var(--slate-primary-light);
         }
 
         .schematic-body {
@@ -486,6 +495,7 @@
             display: flex;
             align-items: center;
             gap: var(--space-sm);
+            color: var(--slate-primary-light);
         }
 
         .requirements-card ul {
@@ -506,7 +516,7 @@
         }
 
         .req-label {
-            color: var(--slate-on-surface);
+            color: var(--slate-primary-light);
             font-weight: 500;
             min-width: 100px;
         }
@@ -521,11 +531,12 @@
 
         .install-box {
             background: linear-gradient(135deg, var(--slate-surface-variant), var(--slate-surface-elevated));
-            border: 1px solid var(--slate-outline-variant);
+            border: 1px solid var(--slate-primary-dark);
             border-radius: var(--radius-xl);
             padding: var(--space-2xl);
             max-width: 800px;
             margin: 0 auto;
+            box-shadow: 0 0 40px rgba(184, 90, 60, 0.1);
         }
 
         .install-box h2 {
@@ -545,7 +556,7 @@
             padding: var(--space-md) var(--space-lg);
             font-family: Consolas, 'Courier New', monospace;
             font-size: var(--font-body);
-            color: var(--slate-success);
+            color: var(--slate-primary-light);
             margin-bottom: var(--space-lg);
             overflow-x: auto;
             text-align: left;
@@ -703,6 +714,12 @@
                     <h3>GitHub Integration</h3>
                     <p>Self-hosted runner with bidirectional sync to Issues, Projects V2, and Discussions.</p>
                     <span class="feature-badge">AUTOMATED</span>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F5BC;</div>
+                    <h3>Generative UI</h3>
+                    <p>Schematic Diagram SDK with live WebSocket updates. Blueprint-style architecture visualization.</p>
+                    <span class="feature-badge">LIVE</span>
                 </div>
             </div>
         </div>

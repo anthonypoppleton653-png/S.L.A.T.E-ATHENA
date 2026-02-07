@@ -457,10 +457,11 @@ document.addEventListener('DOMContentLoaded', () => schematicManager.init());
 ## Implementation Priority
 
 ### Phase 1: Core Integration
-- [x] Schematic API module
-- [x] Layout specification
-- [ ] Dashboard hero widget
-- [ ] WebSocket live updates
+- [x] Schematic API module (`slate/schematic_api.py`)
+- [x] Layout specification (this document)
+- [x] Dashboard hero widget (`slate_web/dashboard_template.py`)
+- [x] WebSocket live updates (`/api/schematic/ws/live`)
+- [x] Generative UI protocol integration (`slate/slate_generative_ui.py`)
 
 ### Phase 2: Widget Library
 - [ ] Compact sidebar widget
