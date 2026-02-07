@@ -116,8 +116,10 @@ jobs:
 
   ai-codebase-analysis:
     name: AI Codebase Analysis
-    runs-on: [self-hosted, slate]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 60
+    env:
+      CUDA_VISIBLE_DEVICES: '0,1'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python

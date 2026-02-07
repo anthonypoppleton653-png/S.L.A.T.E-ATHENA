@@ -1,5 +1,5 @@
 # SLATE AI Maintenance Workflow
-# Modified: 2026-02-07T09:00:00Z | Author: Claude | Change: Comprehensive AI-powered codebase maintenance
+# Modified: 2026-02-07T15:45:00Z | Author: COPILOT | Change: Fix Python path, add GPU label, enable AI inference on local hardware
 #
 # Runs local AI (Ollama) for:
 # - Codebase analysis and quality checks
@@ -63,14 +63,20 @@ permissions:
 jobs:
   ai-maintenance:
     name: AI-Powered Maintenance
-    runs-on: [self-hosted, slate]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 120  # 2 hours max for training
+    env:
+      CUDA_VISIBLE_DEVICES: '0,1'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Full history for analysis
+
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
 
       - name: Determine maintenance mode
         id: mode
@@ -133,31 +139,27 @@ jobs:
       - name: Warm up AI models
         if: steps.ollama.outputs.available == 'True'
         run: |
-          $python = ".\.venv\Scripts\python.exe"
-
           Write-Host ""
           Write-Host "═══════════════════════════════════════════════════════════════"
           Write-Host "  Warming up AI models..."
           Write-Host "═══════════════════════════════════════════════════════════════"
           Write-Host ""
 
-          & $python slate/slate_ai_orchestrator.py --warmup
+          python slate/slate_ai_orchestrator.py --warmup
         shell: powershell
 
       - name: Quick Analysis
         if: contains(fromJSON('["quick", "full", "all"]'), steps.mode.outputs.mode) && steps.ollama.outputs.available == 'True'
         id: quick
         run: |
-          $python = ".\.venv\Scripts\python.exe"
-
           Write-Host ""
           Write-Host "═══════════════════════════════════════════════════════════════"
-          Write-Host "  Quick Codebase Analysis"
+          Write-Host "  Quick Codebase Analysis (GPU Inference)"
           Write-Host "═══════════════════════════════════════════════════════════════"
           Write-Host ""
 
-          # Analyze recently changed files
-          & $python slate/slate_ai_orchestrator.py --analyze-recent --json > analysis_quick.json
+          # Analyze recently changed files using local GPU inference
+          python slate/slate_ai_orchestrator.py --analyze-recent --json > analysis_quick.json
 
           $analysis = Get-Content analysis_quick.json -Raw | ConvertFrom-Json -ErrorAction SilentlyContinue
           if ($analysis) {
@@ -170,15 +172,13 @@ jobs:
         if: contains(fromJSON('["full", "all"]'), steps.mode.outputs.mode) && steps.ollama.outputs.available == 'True'
         id: full
         run: |
-          $python = ".\.venv\Scripts\python.exe"
-
           Write-Host ""
           Write-Host "═══════════════════════════════════════════════════════════════"
-          Write-Host "  Full Codebase Analysis"
+          Write-Host "  Full Codebase Analysis (GPU Inference)"
           Write-Host "═══════════════════════════════════════════════════════════════"
           Write-Host ""
 
-          & $python slate/slate_ai_orchestrator.py --analyze-codebase --json > analysis_full.json
+          python slate/slate_ai_orchestrator.py --analyze-codebase --json > analysis_full.json
 
           $analysis = Get-Content analysis_full.json -Raw | ConvertFrom-Json -ErrorAction SilentlyContinue
           if ($analysis) {
@@ -192,15 +192,13 @@ jobs:
         if: contains(fromJSON('["quick", "docs", "all"]'), steps.mode.outputs.mode) && steps.ollama.outputs.available == 'True'
         id: docs
         run: |
-          $python = ".\.venv\Scripts\python.exe"
-
           Write-Host ""
           Write-Host "═══════════════════════════════════════════════════════════════"
-          Write-Host "  AI Documentation Update"
+          Write-Host "  AI Documentation Update (GPU Inference)"
           Write-Host "═══════════════════════════════════════════════════════════════"
           Write-Host ""
 
-          & $python slate/slate_ai_orchestrator.py --update-docs --json > docs_update.json
+          python slate/slate_ai_orchestrator.py --update-docs --json > docs_update.json
 
           $docs = Get-Content docs_update.json -Raw | ConvertFrom-Json -ErrorAction SilentlyContinue
           if ($docs) {
@@ -223,15 +221,13 @@ jobs:
         if: contains(fromJSON('["monitor", "full", "all"]'), steps.mode.outputs.mode) && steps.ollama.outputs.available == 'True'
         id: monitor
         run: |
-          $python = ".\.venv\Scripts\python.exe"
-
           Write-Host ""
           Write-Host "═══════════════════════════════════════════════════════════════"
-          Write-Host "  GitHub Integration Monitor"
+          Write-Host "  GitHub Integration Monitor (GPU Inference)"
           Write-Host "═══════════════════════════════════════════════════════════════"
           Write-Host ""
 
-          & $python slate/slate_ai_orchestrator.py --monitor-github --json > github_monitor.json
+          python slate/slate_ai_orchestrator.py --monitor-github --json > github_monitor.json
 
           $monitor = Get-Content github_monitor.json -Raw | ConvertFrom-Json -ErrorAction SilentlyContinue
           if ($monitor) {
@@ -245,16 +241,14 @@ jobs:
         if: steps.mode.outputs.should_train == 'True' && steps.ollama.outputs.available == 'True'
         id: training
         run: |
-          $python = ".\.venv\Scripts\python.exe"
-
           Write-Host ""
           Write-Host "═══════════════════════════════════════════════════════════════"
-          Write-Host "  AI Training Data Collection"
+          Write-Host "  AI Training Data Collection (GPU Inference)"
           Write-Host "═══════════════════════════════════════════════════════════════"
           Write-Host ""
 
           # Collect training data from codebase
-          & $python slate/slate_ai_orchestrator.py --collect-training --json > training_data.json
+          python slate/slate_ai_orchestrator.py --collect-training --json > training_data.json
 
           $training = Get-Content training_data.json -Raw | ConvertFrom-Json -ErrorAction SilentlyContinue
           if ($training) {
@@ -267,16 +261,14 @@ jobs:
         if: steps.mode.outputs.should_train == 'True' && steps.training.outputs.training_ready == 'True' && steps.ollama.outputs.available == 'True'
         id: train
         run: |
-          $python = ".\.venv\Scripts\python.exe"
-
           Write-Host ""
           Write-Host "═══════════════════════════════════════════════════════════════"
-          Write-Host "  Local Model Training Session"
+          Write-Host "  Local Model Training Session (GPU Inference)"
           Write-Host "═══════════════════════════════════════════════════════════════"
           Write-Host ""
 
           # Run training session (using collected data to create/update custom model)
-          & $python slate/slate_ai_orchestrator.py --train --json > training_result.json
+          python slate/slate_ai_orchestrator.py --train --json > training_result.json
 
           $result = Get-Content training_result.json -Raw | ConvertFrom-Json -ErrorAction SilentlyContinue
           if ($result) {
@@ -311,15 +303,13 @@ jobs:
         if: contains(fromJSON('["docs", "full", "all"]'), steps.mode.outputs.mode) && steps.ollama.outputs.available == 'True'
         id: speckit
         run: |
-          $python = "$env:GITHUB_WORKSPACE\.venv\Scripts\python.exe"
-
           Write-Host ""
           Write-Host "═══════════════════════════════════════════════════════════════"
-          Write-Host "  Spec-Kit Wiki Integration"
+          Write-Host "  Spec-Kit Wiki Integration (GPU Inference)"
           Write-Host "═══════════════════════════════════════════════════════════════"
           Write-Host ""
 
-          & $python slate/slate_spec_kit.py --process-all --wiki --analyze --json > speckit_results.json
+          python slate/slate_spec_kit.py --process-all --wiki --analyze --json > speckit_results.json
 
           $results = Get-Content speckit_results.json -Raw | ConvertFrom-Json -ErrorAction SilentlyContinue
           if ($results) {
@@ -447,26 +437,30 @@ jobs:
   # Parallel job for fork analysis
   fork-ai-analysis:
     name: AI Fork Analysis
-    runs-on: [self-hosted, slate]
+    runs-on: [self-hosted, slate, gpu]
     needs: ai-maintenance
     if: contains(fromJSON('["full", "all"]'), needs.ai-maintenance.outputs.mode)
     timeout-minutes: 30
+    env:
+      CUDA_VISIBLE_DEVICES: '0,1'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
+
       - name: Run Fork Intelligence with AI
         run: |
-          $python = ".\.venv\Scripts\python.exe"
-
           Write-Host ""
           Write-Host "═══════════════════════════════════════════════════════════════"
-          Write-Host "  AI-Powered Fork Intelligence"
+          Write-Host "  AI-Powered Fork Intelligence (GPU Inference)"
           Write-Host "═══════════════════════════════════════════════════════════════"
           Write-Host ""
 
-          & $python slate/slate_fork_intelligence.py --analyze --json > fork_ai_analysis.json
+          python slate/slate_fork_intelligence.py --analyze --json > fork_ai_analysis.json
         shell: powershell
 
       - name: Upload Fork Analysis

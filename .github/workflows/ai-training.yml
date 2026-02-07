@@ -1,5 +1,5 @@
 # SLATE AI Training Workflow
-# Modified: 2026-02-07T15:45:00Z | Author: Claude | Change: Secure pipeline with full git ingestion minus secrets
+# Modified: 2026-02-07T15:45:00Z | Author: COPILOT | Change: Fix schedule, add GPU label, enhance triggers for active training
 #
 # Runs weekly to:
 # - Ingest ENTIRE git repository for training (code, commits, docstrings)
@@ -56,7 +56,7 @@ jobs:
   # ═══════════════════════════════════════════════════════════════════════
   collect-training-data:
     name: Secure Data Collection
-    runs-on: [self-hosted, slate]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 45
     outputs:
       samples_collected: ${{ steps.collect.outputs.samples_collected }}

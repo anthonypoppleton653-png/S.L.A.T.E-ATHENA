@@ -1,4 +1,4 @@
-# Modified: 2026-02-07T04:56:45Z | Author: COPILOT | Change: Normalize paths and clean workflow artifacts
+# Modified: 2026-02-07T15:45:00Z | Author: COPILOT | Change: Add AI inference on code changes, Copilot SDK integration
 name: SLATE CI
 
 on:
@@ -198,10 +198,171 @@ jobs:
           "**Files Analyzed**: $($review.files_analyzed)" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "**Issues Found**: $($review.issues_found)" | Out-File -Append $env:GITHUB_STEP_SUMMARY
 
+  # ------------ AI Inference on Code Changes (GPU) ------------
+  ai-inference:
+    name: AI Code Inference
+    runs-on: [self-hosted, slate, gpu]
+    timeout-minutes: 20
+    env:
+      CUDA_VISIBLE_DEVICES: '0,1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
+      - name: Verify Ollama + GPU
+        id: ollama
+        run: |
+          $available = $false
+          try {
+            $response = Invoke-RestMethod -Uri "http://127.0.0.1:11434/api/tags" -TimeoutSec 5
+            if ($response) {
+              $available = $true
+              $models = $response.models.name -join ','
+              Write-Host "Ollama: RUNNING ($($response.models.Count) models)"
+            }
+          } catch { Write-Host "Ollama: not available" }
+          "available=$available" | Out-File -Append $env:GITHUB_OUTPUT
+      - name: GPU Status
+        run: nvidia-smi --query-gpu=index,name,memory.used,utilization.gpu --format=csv,noheader
+      - name: AI Analyze Changed Files
+        if: steps.ollama.outputs.available == 'True'
+        run: |
+          Write-Host ""
+          Write-Host "═══════════════════════════════════════════════════════════════"
+          Write-Host "  AI Inference on Changed Files (Local GPU)"
+          Write-Host "═══════════════════════════════════════════════════════════════"
+          Write-Host ""
+
+          # Run AI analysis on recently changed files
+          python slate/slate_ai_orchestrator.py --analyze-recent --json > ai_inference.json
+
+          $result = Get-Content ai_inference.json -Raw | ConvertFrom-Json -ErrorAction SilentlyContinue
+          if ($result) {
+            Write-Host "Files analyzed: $($result.files_analyzed)"
+            Write-Host "Issues found: $($result.issues_found)"
+
+            "## AI Code Inference (GPU)" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+            "**Files Analyzed**: $($result.files_analyzed)" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+            "**Issues Found**: $($result.issues_found)" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+            "**GPU**: NVIDIA RTX 5070 Ti x2" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          }
+      - name: Update ChromaDB Index
+        if: steps.ollama.outputs.available == 'True' && github.event_name == 'push'
+        run: |
+          python slate/slate_chromadb.py --index
+        continue-on-error: true
+      - name: Upload AI Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-inference-${{ github.run_number }}
+          path: ai_inference.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # ------------ Copilot SDK Validation ------------
+  copilot-sdk:
+    name: Copilot SDK Integration
+    runs-on: [self-hosted, slate]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
+      - name: Validate Copilot Instructions
+        run: |
+          python -c @"
+          import pathlib, sys
+          instructions = pathlib.Path('.github/copilot-instructions.md')
+          if not instructions.exists():
+              print('FAIL: copilot-instructions.md not found')
+              sys.exit(1)
+          content = instructions.read_text(encoding='utf-8')
+          required = ['MANDATORY PROTOCOL', 'Agent Routing', 'Security Rules', 'Terminal Rules']
+          for r in required:
+              assert r in content, f'Missing section: {r}'
+              print(f'  OK: {r}')
+          print(f'Copilot instructions: {len(content)} chars, all sections present')
+          "@
+      - name: Validate Agent Definition
+        run: |
+          python -c @"
+          import pathlib, sys
+          agents_md = pathlib.Path('AGENTS.md')
+          if not agents_md.exists():
+              print('FAIL: AGENTS.md not found')
+              sys.exit(1)
+          content = agents_md.read_text(encoding='utf-8')
+          required = ['MANDATORY PROTOCOL', 'Agent Routing', 'Bridge Architecture']
+          for r in required:
+              assert r in content, f'Missing section in AGENTS.md: {r}'
+              print(f'  OK: {r}')
+          print('AGENTS.md validation: PASSED')
+          "@
+      - name: Validate Skills
+        run: |
+          python -c @"
+          import pathlib, json
+          skills_dir = pathlib.Path('skills')
+          if skills_dir.exists():
+              skills = [p for p in skills_dir.iterdir() if p.is_dir()]
+              print(f'Skills found: {len(skills)}')
+              for s in skills:
+                  skill_file = s / 'skill.json'
+                  if skill_file.exists():
+                      data = json.loads(skill_file.read_text(encoding='utf-8'))
+                      print(f'  OK: {s.name} - {data.get(\"name\", \"unnamed\")}')
+                  else:
+                      print(f'  WARN: {s.name} has no skill.json')
+          else:
+              print('No skills directory found')
+          "@
+      - name: Validate @slate Extension
+        run: |
+          $extensionPath = "plugins/slate-copilot/package.json"
+          if (Test-Path $extensionPath) {
+            $pkg = Get-Content $extensionPath -Raw | ConvertFrom-Json
+            Write-Host "Extension: $($pkg.displayName) v$($pkg.version)"
+
+            # Verify chat participant exists
+            $participants = $pkg.contributes.chatParticipants
+            if ($participants) {
+              Write-Host "Chat Participant: $($participants[0].id)"
+              Write-Host "Full Name: $($participants[0].fullName)"
+            }
+
+            # Verify LM tools
+            $tools = $pkg.contributes.languageModelTools
+            if ($tools) {
+              Write-Host "LM Tools: $($tools.Count)"
+              foreach ($t in $tools) { Write-Host "  $($t.name): $($t.displayName)" }
+            }
+          } else {
+            Write-Host "WARN: @slate extension not found"
+          }
+      - name: Validate Copilot Agent Bridge
+        run: |
+          python -c @"
+          import importlib
+          # Verify bridge module exists
+          bridge = importlib.import_module('slate.copilot_agent_bridge')
+          print(f'Copilot Agent Bridge: OK')
+
+          # Verify copilot runner exists
+          runner = importlib.import_module('slate.copilot_slate_runner')
+          print(f'Copilot Slate Runner: OK')
+
+          print('Copilot SDK integration: PASSED')
+          "@
+
   summary:
     name: CI Summary
     runs-on: [self-hosted, slate]
-    needs: [lint, unit-tests, sdk-validation, security, slate-checks, gpu-validation, ai-code-review]
+    needs: [lint, unit-tests, sdk-validation, security, slate-checks, gpu-validation, ai-code-review, ai-inference, copilot-sdk]
     if: always()
     steps:
       - name: Generate summary
@@ -216,3 +377,5 @@ jobs:
           "| SLATE Checks | ${{ needs.slate-checks.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "| GPU Validation | ${{ needs.gpu-validation.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "| AI Code Review | ${{ needs.ai-code-review.result || 'skipped' }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| AI Inference | ${{ needs.ai-inference.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Copilot SDK | ${{ needs.copilot-sdk.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
