@@ -80,7 +80,7 @@ jobs:
           print(f'GPUs: {torch.cuda.device_count()}')
           for i in range(torch.cuda.device_count()):
               print(f'  GPU {i}: {torch.cuda.get_device_name(i)}')
-              mem = torch.cuda.get_device_properties(i).total_mem / 1e9
+              mem = torch.cuda.get_device_properties(i).total_memory / 1e9
               print(f'         {mem:.1f} GB')
           "@
       - name: ML Orchestrator Status
