@@ -8,21 +8,28 @@ on:
     types: [opened, edited, labeled, closed, reopened]
   pull_request:
     types: [opened, edited, labeled, closed, reopened, ready_for_review]
+  schedule:
+    # Process KANBAN board every 30 minutes
+    - cron: '*/30 * * * *'
   workflow_dispatch:
     inputs:
       action:
         description: 'Action to perform'
         type: choice
         options:
+          - board-status
+          - process-kanban
+          - sync-to-kanban
+          - sync-from-kanban
           - list-projects
           - list-items
           - sync-tasks
           - scan-pii
-        default: list-projects
+        default: board-status
       project_number:
-        description: 'Project number (default: 11)'
+        description: 'Project number (5=KANBAN, 7=bugs, 8=iterative, 10=roadmap)'
         type: string
-        default: '11'
+        default: '5'
 
 env:
   PROJECT_OWNER: SynchronizedLivingArchitecture
@@ -147,12 +154,50 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
-        if: inputs.action == 'sync-tasks' || inputs.action == 'scan-pii'
 
       - name: Setup Python
-        if: inputs.action == 'scan-pii'
         run: |
           'E:\11132025\.venv\Scripts' | Out-File -Append $env:GITHUB_PATH
+
+      - name: Board Status
+        if: inputs.action == 'board-status'
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          "## SLATE Project Boards Status" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          python slate/slate_project_board.py --status 2>&1 | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
+
+      - name: Process KANBAN
+        if: inputs.action == 'process-kanban'
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          "## Processing KANBAN Board" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          python slate/slate_project_board.py --process 2>&1 | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
+
+      - name: Sync To KANBAN
+        if: inputs.action == 'sync-to-kanban'
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          "## Pushing Tasks to KANBAN" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          python slate/slate_project_board.py --push 2>&1 | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
+
+      - name: Sync From KANBAN
+        if: inputs.action == 'sync-from-kanban'
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          "## Syncing KANBAN to Tasks" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          python slate/slate_project_board.py --sync 2>&1 | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
 
       - name: List Projects
         if: inputs.action == 'list-projects'
@@ -206,3 +251,40 @@ jobs:
           '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
           python slate/pii_scanner.py --test | Out-File -Append $env:GITHUB_STEP_SUMMARY
           '```' | Out-File -Append $env:GITHUB_STEP_SUMMARY
+
+  # Scheduled KANBAN processing - runs every 30 minutes
+  scheduled-kanban:
+    name: Scheduled KANBAN Processing
+    runs-on: [self-hosted, slate]
+    if: github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        run: |
+          'E:\11132025\.venv\Scripts' | Out-File -Append $env:GITHUB_PATH
+
+      - name: Process KANBAN Board
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          Write-Host "=== SLATE Scheduled KANBAN Processing ==="
+          Write-Host "Time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+          Write-Host ""
+
+          # Sync KANBAN items to local tasks
+          Write-Host "--- Syncing from KANBAN ---"
+          python slate/slate_project_board.py --sync
+
+          # Process the board
+          Write-Host ""
+          Write-Host "--- Processing KANBAN items ---"
+          python slate/slate_project_board.py --process
+
+          # Push any local pending tasks to KANBAN
+          Write-Host ""
+          Write-Host "--- Pushing pending tasks to KANBAN ---"
+          python slate/slate_project_board.py --push
+
+          "## Scheduled KANBAN Processing Complete" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "Processed at: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" | Out-File -Append $env:GITHUB_STEP_SUMMARY
