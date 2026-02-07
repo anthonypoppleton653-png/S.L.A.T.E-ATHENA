@@ -1,0 +1,115 @@
+# GitHub Projects automation using gh CLI
+name: Project Automation
+
+on:
+  issues:
+    types: [opened, labeled, closed, reopened]
+  pull_request:
+    types: [opened, labeled, closed, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        type: choice
+        options:
+          - list-projects
+          - list-items
+          - sync-tasks
+        default: list-projects
+      project_number:
+        description: 'Project number (default: 11)'
+        type: string
+        default: '11'
+
+env:
+  PROJECT_OWNER: SynchronizedLivingArchitecture
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  auto-add-to-project:
+    name: Auto-add to Project
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' || github.event_name == 'pull_request'
+    permissions:
+      issues: write
+      pull-requests: write
+      repository-projects: write
+    steps:
+      - name: Add to SLATE BUG TRACKING (bugs)
+        if: |
+          (github.event_name == 'issues' && contains(toJSON(github.event.issue.labels.*.name), 'bug')) ||
+          (github.event_name == 'pull_request' && contains(toJSON(github.event.pull_request.labels.*.name), 'bug'))
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}  # Create this secret with project scope
+        run: |
+          ITEM_URL="${{ github.event.issue.html_url || github.event.pull_request.html_url }}"
+          echo "Adding $ITEM_URL to project 7 (BUG TRACKING)"
+          gh project item-add 7 --owner $PROJECT_OWNER --url "$ITEM_URL" || echo "Already in project or no access"
+
+      - name: Add to SLATE ROADMAP (features)
+        if: |
+          (github.event_name == 'issues' && contains(toJSON(github.event.issue.labels.*.name), 'enhancement')) ||
+          (github.event_name == 'pull_request' && contains(toJSON(github.event.pull_request.labels.*.name), 'enhancement'))
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}  # Create this secret with project scope
+        run: |
+          ITEM_URL="${{ github.event.issue.html_url || github.event.pull_request.html_url }}"
+          echo "Adding $ITEM_URL to project 10 (ROADMAP)"
+          gh project item-add 10 --owner $PROJECT_OWNER --url "$ITEM_URL" || echo "Already in project or no access"
+
+      - name: Add to SLATE ITERATIVE DEV (PRs)
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}  # Create this secret with project scope
+        run: |
+          ITEM_URL="${{ github.event.pull_request.html_url }}"
+          echo "Adding $ITEM_URL to project 8 (ITERATIVE DEVELOPMENT)"
+          gh project item-add 8 --owner $PROJECT_OWNER --url "$ITEM_URL" || echo "Already in project or no access"
+
+  manual-actions:
+    name: Manual Project Actions
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: List Projects
+        if: inputs.action == 'list-projects'
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}  # PAT with project scope
+        run: |
+          echo "## All Projects" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          gh project list --owner $PROJECT_OWNER >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: List Items
+        if: inputs.action == 'list-items'
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}  # PAT with project scope
+        run: |
+          echo "## Project ${{ inputs.project_number }} Items" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          gh project item-list ${{ inputs.project_number }} --owner $PROJECT_OWNER --limit 50 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - uses: actions/checkout@v4
+        if: inputs.action == 'sync-tasks'
+
+      - name: Sync Tasks to Project
+        if: inputs.action == 'sync-tasks'
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}  # PAT with project scope
+        run: |
+          echo "## Syncing current_tasks.json to Project ${{ inputs.project_number }}" >> $GITHUB_STEP_SUMMARY
+
+          # Read tasks and create draft items
+          if [ -f current_tasks.json ]; then
+            jq -r '.tasks[]? // .[]? | select(.status == "pending") | .title // .name' current_tasks.json | while read -r title; do
+              if [ -n "$title" ]; then
+                echo "Creating: $title"
+                gh project item-create ${{ inputs.project_number }} --owner $PROJECT_OWNER --title "$title" || echo "Failed: $title"
+              fi
+            done
+            echo "Sync complete" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No current_tasks.json found" >> $GITHUB_STEP_SUMMARY
+          fi
