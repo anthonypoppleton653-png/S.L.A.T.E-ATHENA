@@ -41,11 +41,11 @@
   },
 
   "tech_tree": {
-    "nodes_total": 16,
-    "nodes_complete": 11,
-    "nodes_in_progress": 2,
-    "nodes_available": 3,
-    "completion_percent": 68.75,
+    "nodes_total": 17,
+    "nodes_complete": 12,
+    "nodes_in_progress": 3,
+    "nodes_available": 2,
+    "completion_percent": 70.59,
     "components": {
       "complete": [
         "Core SDK",
@@ -56,18 +56,16 @@
         "Docker Infrastructure",
         "Meta-Workflow System",
         "Multi-Runner System",
-        "VSCode SDK Integration"
+        "VSCode SDK Integration",
+        "Schematic Diagram SDK"
       ],
       "in_progress": [
         "Dashboard",
-        "Tech Tree Visualization"
+        "Tech Tree Visualization",
+        "Generative UI Layout"
       ],
       "available": [
-        "Copilot Development",
-        "Claude Integration",
-        "UI Development",
         "Agent System",
-        "UV Package Manager",
         "Discord Bot"
       ]
     }
@@ -126,17 +124,28 @@
   },
 
   "specifications": {
-    "total": 6,
-    "complete": 4,
-    "implementing": 2,
+    "total": 8,
+    "complete": 5,
+    "implementing": 3,
     "specs": [
       {"id": "005", "name": "Monochrome Theme", "status": "complete"},
       {"id": "006", "name": "Natural Theme System", "status": "complete"},
       {"id": "007", "name": "SLATE Design System", "status": "implementing"},
       {"id": "008", "name": "SLATE Guided Experience", "status": "implementing"},
       {"id": "009", "name": "Copilot Roadmap Awareness", "status": "complete"},
-      {"id": "010", "name": "Generative Onboarding", "status": "complete"}
+      {"id": "010", "name": "Generative Onboarding", "status": "complete"},
+      {"id": "011", "name": "Schematic Diagram SDK", "status": "complete"},
+      {"id": "012", "name": "Schematic GUI Layout", "status": "implementing"}
     ]
+  },
+
+  "generative_ui": {
+    "status": "active",
+    "schematic_sdk": "1.1.0",
+    "layout_zones": ["hero", "widget", "detail", "background"],
+    "widget_types": ["hero", "compact", "card", "modal"],
+    "websocket_live": true,
+    "theme_lock_version": "3.0.0"
   },
 
   "operations_expansion": {
@@ -146,14 +155,16 @@
       "VSCode Copilot integration",
       "Claude Code slash commands",
       "Docker containerization",
-      "Multi-runner parallel execution"
+      "Multi-runner parallel execution",
+      "Schematic Diagram SDK for architecture visualization",
+      "Generative UI protocols with live WebSocket updates"
     ],
     "expanding": [
-      "Enhanced dashboard with tech tree visualization",
+      "Enhanced dashboard with schematic hero widgets",
       "AI-driven guided onboarding experience",
+      "Interactive schematic modal views",
       "Discord bot for notifications",
-      "UV package manager migration",
-      "Custom model training pipeline"
+      "UV package manager migration"
     ],
     "roadmap": [
       {"phase": 1, "name": "Foundation", "status": "complete", "items": ["Core SDK", "Workflow System", "MCP Server", "Self-Hosted Runner"]},

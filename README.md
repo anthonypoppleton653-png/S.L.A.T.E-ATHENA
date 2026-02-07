@@ -353,6 +353,13 @@ The orchestrator uses local Ollama models. It learns your codebase over time. It
 | **Ampere** | RTX 30xx, A100 | TF32, BF16, Flash Attention |
 | **CPU-Only** | Any | AVX2/AVX-512 optimizations |
 
+### Generative UI & Schematics
+- **Schematic Diagram SDK** - Circuit-board style architecture visualizations
+- **Live Dashboard Widgets** - Hero, compact, and modal schematic views
+- **WebSocket Updates** - Real-time system state reflection in diagrams
+- **Blueprint Theme** - Technical precision with SLATE visual identity
+- **Responsive Layout** - Desktop hero to mobile compact modes
+
 ## Quick Start
 
 ### Option A: Full Ecosystem Install (Recommended)
@@ -816,6 +823,9 @@ SLATE development follows a specification-driven approach. Each major feature st
 | 007 | Unified Design System | `Completed` | M3 Material Design + Anthropic Geometric Art |
 | 008 | Guided Experience | `Completed` | AI-driven onboarding wizard with zero-config setup |
 | 009 | Copilot Roadmap Awareness | `Completed` | @slate participant with dev cycle integration |
+| 010 | Generative Onboarding | `Completed` | AI-generated installation and setup flows |
+| 011 | Schematic Diagram SDK | `Completed` | Circuit-board style architecture visualization |
+| 012 | Schematic GUI Layout | `Implementing` | Dashboard-integrated schematic widgets |
 
 ### Spec Lifecycle
 

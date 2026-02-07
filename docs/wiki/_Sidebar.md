@@ -35,6 +35,9 @@
 - [x] [Unified Design System](Spec-007-Design-System)
 - [x] [Guided Experience](Spec-008-Guided-Experience)
 - [x] [Copilot Roadmap Awareness](Spec-009-Copilot-Roadmap-Awareness)
+- [x] [Generative Onboarding](Spec-010-Generative-Onboarding)
+- [x] [Schematic Diagram SDK](Spec-011-Schematic-SDK)
+- [~] [Schematic GUI Layout](Spec-012-Schematic-GUI-Layout)
 
 ## Advanced
 - [Development](Development)

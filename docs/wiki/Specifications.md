@@ -71,45 +71,61 @@ DRAFT → SPECIFIED → PLANNED → IMPLEMENTING → COMPLETED
 | # | Specification | Status | Description |
 |---|---------------|--------|-------------|
 | 009 | [Copilot Roadmap Awareness](Spec-009-Copilot-Roadmap-Awareness) | [x] Completed | @slate participant with dev cycle integration |
+| 010 | [Generative Onboarding](Spec-010-Generative-Onboarding) | [x] Completed | AI-generated installation and setup flows |
+
+### Visualization Track
+
+| # | Specification | Status | Description |
+|---|---------------|--------|-------------|
+| 011 | [Schematic Diagram SDK](Spec-011-Schematic-SDK) | [x] Completed | Circuit-board style architecture visualization |
+| 012 | [Schematic GUI Layout](Spec-012-Schematic-GUI-Layout) | [~] Implementing | Dashboard-integrated schematic widgets with live updates |
 
 ## Specification Relationships
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    SLATE SPECIFICATION MAP                       │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │                    DESIGN SYSTEM TRACK                     │  │
-│  │                                                            │  │
-│  │  [005] Monochrome    →    [006] Natural Theme             │  │
-│  │         Theme        →           System                    │  │
-│  │                             │                              │  │
-│  │                             ▼                              │  │
-│  │                      [007] Unified                         │  │
-│  │                      Design System                         │  │
-│  │                             │                              │  │
-│  └─────────────────────────────┼──────────────────────────────┘  │
-│                                │                                  │
-│  ┌─────────────────────────────┼──────────────────────────────┐  │
-│  │            USER EXPERIENCE TRACK                           │  │
-│  │                             │                              │  │
-│  │                             ▼                              │  │
-│  │                      [008] Guided                          │  │
-│  │                      Experience                            │  │
-│  │                             │                              │  │
-│  └─────────────────────────────┼──────────────────────────────┘  │
-│                                │                                  │
-│  ┌─────────────────────────────┼──────────────────────────────┐  │
-│  │              INTEGRATION TRACK                             │  │
-│  │                             │                              │  │
-│  │                             ▼                              │  │
-│  │                      [009] Copilot                         │  │
-│  │                   Roadmap Awareness                        │  │
-│  │                                                            │  │
-│  └────────────────────────────────────────────────────────────┘  │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        SLATE SPECIFICATION MAP                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │                      DESIGN SYSTEM TRACK                           │  │
+│  │                                                                    │  │
+│  │  [005] Monochrome    →    [006] Natural Theme                     │  │
+│  │         Theme        →           System                            │  │
+│  │                             │                                      │  │
+│  │                             ▼                                      │  │
+│  │                      [007] Unified                                 │  │
+│  │                      Design System                                 │  │
+│  │                             │                                      │  │
+│  └─────────────────────────────┼──────────────────────────────────────┘  │
+│                                │                                          │
+│  ┌─────────────────────────────┼──────────────────────────────────────┐  │
+│  │            USER EXPERIENCE TRACK                                   │  │
+│  │                             │                                      │  │
+│  │                             ▼                                      │  │
+│  │                      [008] Guided      →    [010] Generative      │  │
+│  │                      Experience        →    Onboarding            │  │
+│  │                             │                                      │  │
+│  └─────────────────────────────┼──────────────────────────────────────┘  │
+│                                │                                          │
+│  ┌─────────────────────────────┼──────────────────────────────────────┐  │
+│  │              INTEGRATION TRACK                                     │  │
+│  │                             │                                      │  │
+│  │                             ▼                                      │  │
+│  │                      [009] Copilot                                 │  │
+│  │                   Roadmap Awareness                                │  │
+│  │                                                                    │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │              VISUALIZATION TRACK                                   │  │
+│  │                                                                    │  │
+│  │         [011] Schematic      →      [012] Schematic               │  │
+│  │           Diagram SDK        →       GUI Layout                   │  │
+│  │                                                                    │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Key Design Decisions
@@ -169,6 +185,15 @@ Final palette:
 - [x] Dev cycle engine
 - [x] Spec-Kit CLI
 - [x] Token optimization
+- [x] Generative onboarding
+
+### Phase 5: Visualization (In Progress)
+- [x] Schematic Diagram SDK
+- [x] Blueprint theme system
+- [~] Dashboard hero widgets
+- [~] WebSocket live updates
+- [ ] Interactive schematic modals
+- [ ] Component hover tooltips
 
 ## Files by Specification
 
@@ -197,6 +222,25 @@ Final palette:
 - `slate/dev_cycle_engine.py` (new)
 - `slate/slate_spec_kit.py` (new)
 
+### Spec 010: Generative Onboarding
+- `slate/slate_generative_ui.py` (new)
+- `slate_web/interactive_experience_ui.py` (new)
+
+### Spec 011: Schematic Diagram SDK
+- `slate/schematic_sdk/` (new directory)
+- `slate/schematic_sdk/engine.py` (new)
+- `slate/schematic_sdk/components.py` (new)
+- `slate/schematic_sdk/theme.py` (new)
+- `slate/schematic_sdk/layout.py` (new)
+- `slate/schematic_sdk/svg_renderer.py` (new)
+- `slate/schematic_sdk/library.py` (new)
+- `slate/schematic_sdk/exporters.py` (new)
+
+### Spec 012: Schematic GUI Layout
+- `slate/schematic_api.py` (new)
+- `slate_web/dashboard_schematics.py` (new)
+- `slate_web/dashboard_template.py` (modified)
+
 ## API Endpoints by Specification
 
 ### Design System (Spec 007)
@@ -220,6 +264,21 @@ Final palette:
 | `/api/devcycle/*` | GET/POST | Dev cycle state management |
 | `/api/interactive/*` | GET/POST | Learning paths, progress |
 | `/api/feedback/*` | GET/POST | Tool events, patterns |
+
+### Generative UI (Spec 010)
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/generative/experience` | GET | Get current experience state |
+| `/api/generative/step` | POST | Execute generative step |
+
+### Schematic SDK (Spec 011 & 012)
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/schematic/system` | GET | Get system architecture schematic |
+| `/api/schematic/live` | GET | Get live system state schematic |
+| `/api/schematic/templates` | GET | List available templates |
+| `/api/schematic/generate` | POST | Generate custom schematic |
+| `/api/schematic/ws/live` | WS | WebSocket live updates |
 
 ## Related Documentation
 
