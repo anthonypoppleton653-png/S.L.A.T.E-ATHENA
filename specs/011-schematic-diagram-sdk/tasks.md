@@ -1,5 +1,7 @@
 # Spec 011: Schematic Diagram SDK - Implementation Tasks
 
+<!-- Modified: 2026-02-09T06:20:00Z | Author: COPILOT | Change: Mark generative UI integration update -->
+
 ## Phase 1: Core Engine
 - [x] Create specification document
 - [ ] Create `slate/schematic_sdk/` directory structure
@@ -27,7 +29,7 @@
 - [ ] Implement `exporters.py` - Export handlers
 - [ ] Create `.claude/commands/slate-schematic.md`
 - [ ] Add MCP tool to `slate/mcp_server.py`
-- [ ] Update `slate/slate_generative_ui.py`
+- [x] Update `slate/slate_generative_ui.py`
 
 ## Phase 5: Testing & Documentation
 - [ ] Create `tests/test_schematic_sdk.py`
