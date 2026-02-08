@@ -253,10 +253,10 @@ jobs:
   # ------------ AI Inference Validation (GPU) ------------
   ai-inference-validation:
     name: AI Inference Validation
-    runs-on: [self-hosted, slate, gpu, gpu-2]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 15
     env:
-      CUDA_VISIBLE_DEVICES: '0,1'
+      CUDA_VISIBLE_DEVICES: '0'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python

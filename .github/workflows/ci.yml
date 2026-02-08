@@ -160,10 +160,10 @@ jobs:
 
   gpu-validation:
     name: GPU Compute Validation
-    runs-on: [self-hosted, slate, gpu, gpu-2]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 10
     env:
-      CUDA_VISIBLE_DEVICES: '0,1'
+      CUDA_VISIBLE_DEVICES: '0'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -218,10 +218,10 @@ jobs:
   # ------------ AI Inference on Code Changes (GPU) ------------
   ai-inference:
     name: AI Code Inference
-    runs-on: [self-hosted, slate, gpu, gpu-2]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 20
     env:
-      CUDA_VISIBLE_DEVICES: '0,1'
+      CUDA_VISIBLE_DEVICES: '0'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -379,10 +379,10 @@ jobs:
   # ------------ Transformer Pipeline Validation (Matrix across analysis types) ------------
   transformer-analysis:
     name: Transformer (${{ matrix.analysis }})
-    runs-on: [self-hosted, slate, gpu, gpu-2]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 15
     env:
-      CUDA_VISIBLE_DEVICES: '0,1'
+      CUDA_VISIBLE_DEVICES: '0'
     strategy:
       fail-fast: false
       matrix:

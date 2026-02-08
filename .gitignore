@@ -157,6 +157,13 @@ plugins/**/dist/
 # Temp developer scripts (contains tokens + scratch files)
 _temp/
 
+# Modified: 2026-02-08T03:30:00Z | Author: COPILOT | Change: Lock Athena design token build outputs in gitignore
+# SLATE / Athena generated design assets (rebuilt on demand via build_design_assets)
+slate_web/generated/
+
 # OS
 .DS_Store
 Thumbs.db
+
+# SLATE user fork data (local only)
+.slate_fork/

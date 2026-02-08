@@ -56,10 +56,10 @@ jobs:
   # ═══════════════════════════════════════════════════════════════════════
   collect-training-data:
     name: Secure Data Collection
-    runs-on: [self-hosted, slate, gpu, gpu-2]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 45
     env:
-      CUDA_VISIBLE_DEVICES: '0,1'
+      CUDA_VISIBLE_DEVICES: '0'
     outputs:
       samples_collected: ${{ steps.collect.outputs.samples_collected }}
       secrets_blocked: ${{ steps.collect.outputs.secrets_blocked }}
@@ -189,14 +189,14 @@ jobs:
   # ═══════════════════════════════════════════════════════════════════════
   train-model:
     name: Train Custom Model (Local)
-    runs-on: [self-hosted, slate, gpu, gpu-2]
+    runs-on: [self-hosted, slate, gpu]
     needs: collect-training-data
     if: |
       (needs.collect-training-data.outputs.training_ready == 'True' || inputs.force_train == true) &&
       (needs.collect-training-data.outputs.validation_passed != 'False' || inputs.skip_validation == true)
     timeout-minutes: 120
     env:
-      CUDA_VISIBLE_DEVICES: '0,1'
+      CUDA_VISIBLE_DEVICES: '0'
     outputs:
       completed: ${{ steps.train.outputs.completed }}
       model_name: ${{ steps.train.outputs.model_name }}

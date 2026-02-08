@@ -52,10 +52,10 @@ jobs:
   # ------------ GPU Inference Health ------------
   inference-health:
     name: Inference Health
-    runs-on: [self-hosted, slate, gpu, gpu-2]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 5
     env:
-      CUDA_VISIBLE_DEVICES: '0,1'
+      CUDA_VISIBLE_DEVICES: '0'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -101,10 +101,10 @@ jobs:
     name: Autonomous Agent
     needs: inference-health
     if: github.event.inputs.mode == 'autonomous' || github.event_name == 'schedule' || github.event_name == 'push'
-    runs-on: [self-hosted, slate, gpu, gpu-2]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 60
     env:
-      CUDA_VISIBLE_DEVICES: '0,1'
+      CUDA_VISIBLE_DEVICES: '0'
       SLATE_RUNNER: 'true'
       SLATE_AGENT_MODE: 'autonomous'
     steps:
@@ -140,10 +140,10 @@ jobs:
     name: Single Task
     needs: inference-health
     if: github.event.inputs.mode == 'single-task'
-    runs-on: [self-hosted, slate, gpu, gpu-2]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 15
     env:
-      CUDA_VISIBLE_DEVICES: '0,1'
+      CUDA_VISIBLE_DEVICES: '0'
       SLATE_RUNNER: 'true'
     steps:
       - uses: actions/checkout@v4
@@ -165,10 +165,10 @@ jobs:
     name: Inference Benchmarks
     needs: inference-health
     if: github.event.inputs.mode == 'inference-bench'
-    runs-on: [self-hosted, slate, gpu, gpu-2]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 20
     env:
-      CUDA_VISIBLE_DEVICES: '0,1'
+      CUDA_VISIBLE_DEVICES: '0'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -240,10 +240,10 @@ jobs:
     name: Full Health Check
     needs: inference-health
     if: github.event.inputs.mode == 'health-check'
-    runs-on: [self-hosted, slate, gpu, gpu-2]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 10
     env:
-      CUDA_VISIBLE_DEVICES: '0,1'
+      CUDA_VISIBLE_DEVICES: '0'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -273,10 +273,10 @@ jobs:
     name: Build ${{ matrix.model }}
     needs: inference-health
     if: github.event.inputs.mode == 'build-models'
-    runs-on: [self-hosted, slate, gpu, gpu-2]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 15
     env:
-      CUDA_VISIBLE_DEVICES: '0,1'
+      CUDA_VISIBLE_DEVICES: '0'
     strategy:
       fail-fast: false
       matrix:
@@ -360,10 +360,10 @@ jobs:
     name: Transformer ${{ matrix.task }}
     needs: inference-health
     if: always()
-    runs-on: [self-hosted, slate, gpu, gpu-2]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 15
     env:
-      CUDA_VISIBLE_DEVICES: '0,1'
+      CUDA_VISIBLE_DEVICES: '0'
     strategy:
       fail-fast: false
       matrix:
@@ -411,10 +411,10 @@ jobs:
     name: Copilot SDK Integration
     needs: inference-health
     if: always()
-    runs-on: [self-hosted, slate, gpu, gpu-2]
+    runs-on: [self-hosted, slate, gpu]
     timeout-minutes: 10
     env:
-      CUDA_VISIBLE_DEVICES: '0,1'
+      CUDA_VISIBLE_DEVICES: '0'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
