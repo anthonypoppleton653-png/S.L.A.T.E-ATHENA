@@ -1,0 +1,106 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- SLATE-ATHENA Logo: Greek Minimalism
+       Athena's owl, strategic spear, olive branch, Acropolis silhouette
+       Color: Parthenon Gold on Acropolis Gray
+       Style: Minimalist outline, 45° angles, sacred symbols
+  -->
+  
+  <defs>
+    <style>
+      .logo-gold { fill: none; stroke: #D4AF37; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+      .logo-silver { fill: none; stroke: #B0B0B0; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+      .logo-deep { fill: none; stroke: #1A3A52; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+  
+  <!-- Background circle (foundation) -->
+  <circle cx="100" cy="100" r="95" class="logo-deep" />
+  
+  <!-- Acropolis silhouette (base: 3 Doric columns) -->
+  <g id="acropolis">
+    <!-- Left column -->
+    <line x1="40" y1="140" x2="40" y2="160" class="logo-gold" stroke-width="2"/>
+    <rect x="35" y="160" width="10" height="4" fill="#D4AF37"/>
+    
+    <!-- Center column (tallest) -->
+    <line x1="100" y1="120" x2="100" y2="160" class="logo-gold" stroke-width="2.5"/>
+    <rect x="95" y="160" width="10" height="4" fill="#D4AF37"/>
+    
+    <!-- Right column -->
+    <line x1="160" y1="140" x2="160" y2="160" class="logo-gold" stroke-width="2"/>
+    <rect x="155" y="160" width="10" height="4" fill="#D4AF37"/>
+    
+    <!-- Entablature connecting columns -->
+    <line x1="40" y1="138" x2="160" y2="138" class="logo-gold" stroke-width="1.5"/>
+  </g>
+  
+  <!-- Athena's Owl (forward-facing, minimalist) -->
+  <g id="owl">
+    <!-- Head circle -->
+    <circle cx="100" cy="70" r="18" class="logo-gold"/>
+    
+    <!-- Left eye -->
+    <circle cx="92" cy="68" r="4" class="logo-gold"/>
+    <circle cx="92" cy="68" r="1.5" fill="#D4AF37"/>
+    
+    <!-- Right eye -->
+    <circle cx="108" cy="68" r="4" class="logo-gold"/>
+    <circle cx="108" cy="68" r="1.5" fill="#D4AF37"/>
+    
+    <!-- Beak (V-shape) -->
+    <line x1="100" y1="72" x2="96" y2="78" class="logo-gold"/>
+    <line x1="100" y1="72" x2="104" y2="78" class="logo-gold"/>
+    
+    <!-- Wings (45° angles, Greek key pattern) -->
+    <!-- Left wing -->
+    <path d="M 82 70 L 78 75 L 82 80 L 78 85" class="logo-gold"/>
+    
+    <!-- Right wing -->
+    <path d="M 118 70 L 122 75 L 118 80 L 122 85" class="logo-gold"/>
+  </g>
+  
+  <!-- Sacred Spear (Athena's tool, 45° angle) -->
+  <g id="spear">
+    <!-- Shaft -->
+    <line x1="145" y1="40" x2="165" y2="105" class="logo-gold" stroke-width="1.5"/>
+    
+    <!-- Spearhead (triangular point) -->
+    <polygon points="165,105 160,115 170,115" fill="#D4AF37"/>
+  </g>
+  
+  <!-- Olive Branch (peace, wisdom, growth) -->
+  <g id="olive">
+    <!-- Branch stem (45° down) -->
+    <line x1="55" y1="40" x2="35" y2="105" class="logo-silver"/>
+    
+    <!-- Olive leaves (5 small circles) -->
+    <circle cx="50" cy="55" r="2.5" class="logo-silver"/>
+    <circle cx="45" cy="65" r="2.5" class="logo-silver"/>
+    <circle cx="40" cy="80" r="2.5" class="logo-silver"/>
+    <circle cx="37" cy="90" r="2.5" class="logo-silver"/>
+  </g>
+  
+  <!-- Greek Key Pattern (iterative refinement) -->
+  <g id="greek-key" stroke="#B0B0B0" fill="none" stroke-width="1">
+    <path d="M 60 35 L 65 35 L 65 40 L 60 40 L 60 45 L 65 45"/>
+    <path d="M 140 35 L 135 35 L 135 40 L 140 40 L 140 45 L 135 45"/>
+  </g>
+  
+  <!-- Central symbol: Athena's helmet (abstract) -->
+  <g id="helmet-accent">
+    <!-- Crest line (wisdom) -->
+    <line x1="95" y1="45" x2="105" y2="45" class="logo-deep" stroke-width="1.5"/>
+  </g>
+  
+  <!-- Text: "ATHENA" (optional, can be removed) -->
+  <text x="100" y="180" font-family="Georgia, serif" font-size="10" font-weight="bold" 
+        text-anchor="middle" fill="#D4AF37" letter-spacing="2">
+    ATHENA
+  </text>
+  
+  <!-- Text: "SLATE" (sub) -->
+  <text x="100" y="190" font-family="sans-serif" font-size="7" font-weight="500"
+        text-anchor="middle" fill="#B0B0B0" letter-spacing="1.5">
+    SLATE
+  </text>
+</svg>
