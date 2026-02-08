@@ -1,0 +1,161 @@
+# Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Create Helm template for SLATE core deployment
+{{- if .Values.core.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "slate.fullname" . }}-core
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: core
+spec:
+  replicas: {{ .Values.core.replicas }}
+  selector:
+    matchLabels:
+      {{- include "slate.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: core
+  template:
+    metadata:
+      labels:
+        {{- include "slate.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: core
+        app.kubernetes.io/part-of: slate-system
+    spec:
+      serviceAccountName: slate-core
+      automountServiceAccountToken: false
+      securityContext:
+        {{- include "slate.podSecurityContext" . | nindent 8 }}
+      {{- if .Values.core.affinity }}
+      affinity:
+        {{- toYaml .Values.core.affinity | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: slate
+          image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag }}"
+          imagePullPolicy: {{ .Values.core.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.core.service.port }}
+              name: dashboard
+              protocol: TCP
+            {{- if .Values.monitoring.enabled }}
+            - containerPort: {{ .Values.monitoring.port }}
+              name: metrics
+              protocol: TCP
+            {{- end }}
+          env:
+            - name: SLATE_WORKSPACE
+              value: /workspace
+            - name: OLLAMA_HOST
+              value: "{{ include "slate.fullname" . }}-ollama:{{ .Values.ollama.service.port }}"
+            - name: CHROMADB_HOST
+              value: "{{ include "slate.fullname" . }}-chromadb:{{ .Values.chromadb.service.port }}"
+            - name: PYTHONPATH
+              value: /slate:/workspace
+            {{- range $key, $value := .Values.core.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          securityContext:
+            {{- include "slate.containerSecurityContext" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.core.resources | nindent 12 }}
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: slate-data
+              mountPath: /slate/.slate_index
+            - name: tmp
+              mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.core.service.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.core.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: {{ include "slate.fullname" . }}-workspace
+        - name: slate-data
+          persistentVolumeClaim:
+            claimName: {{ include "slate.fullname" . }}-data
+        - name: tmp
+          emptyDir:
+            sizeLimit: 500Mi
+      {{- if .Values.gpu.enabled }}
+      nodeSelector:
+        {{- toYaml .Values.gpu.nodeSelector | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.gpu.tolerations | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "slate.fullname" . }}-dashboard
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+spec:
+  type: {{ .Values.core.service.type }}
+  selector:
+    {{- include "slate.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: core
+  ports:
+    - port: {{ .Values.core.service.port }}
+      targetPort: {{ .Values.core.service.port }}
+      protocol: TCP
+      name: http
+{{- if .Values.core.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "slate.fullname" . }}-core
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "slate.fullname" . }}-core
+  minReplicas: {{ .Values.core.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.core.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.core.autoscaling.targetCPUUtilization }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.core.autoscaling.targetMemoryUtilization }}
+{{- end }}
+{{- if .Values.security.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "slate.fullname" . }}-core
+  namespace: {{ .Values.global.namespace }}
+spec:
+  minAvailable: {{ .Values.security.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "slate.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: core
+{{- end }}
+{{- end }}

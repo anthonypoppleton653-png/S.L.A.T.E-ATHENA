@@ -1,0 +1,247 @@
+# Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Create K8s Ingress and GPU scheduling config
+# SLATE Ingress & GPU Scheduling
+# Internal ingress for dashboard/API access + NVIDIA GPU device plugin config
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Ingress: SLATE Dashboard (nginx ingress controller)
+# Access via: kubectl port-forward svc/slate-ingress-nginx-controller 8080:80
+# Or configure your local DNS to point slate.local → cluster IP
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: slate-ingress
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: ingress
+    app.kubernetes.io/part-of: slate-system
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    # Rate limiting for security
+    nginx.ingress.kubernetes.io/limit-connections: "10"
+    nginx.ingress.kubernetes.io/limit-rps: "20"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: slate.local
+      http:
+        paths:
+          # Dashboard UI
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: slate-dashboard-svc
+                port:
+                  number: 8080
+          # Agent Router API
+          - path: /api/agents
+            pathType: Prefix
+            backend:
+              service:
+                name: slate-agent-router-svc
+                port:
+                  number: 8081
+          # Autonomous Loop API
+          - path: /api/autonomous
+            pathType: Prefix
+            backend:
+              service:
+                name: slate-autonomous-svc
+                port:
+                  number: 8082
+          # Copilot Bridge API
+          - path: /api/bridge
+            pathType: Prefix
+            backend:
+              service:
+                name: slate-copilot-bridge-svc
+                port:
+                  number: 8083
+          # Workflow Manager API
+          - path: /api/workflow
+            pathType: Prefix
+            backend:
+              service:
+                name: slate-workflow-svc
+                port:
+                  number: 8084
+          # Metrics (Prometheus scrape endpoint)
+          - path: /metrics
+            pathType: Prefix
+            backend:
+              service:
+                name: slate-metrics-svc
+                port:
+                  number: 9090
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# NVIDIA GPU Device Plugin DaemonSet
+# Enables GPU scheduling in Kubernetes
+# This is typically installed cluster-wide, included here for completeness
+# Skip if NVIDIA GPU Operator is already installed
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin
+  namespace: kube-system  # Must be in kube-system
+  labels:
+    app.kubernetes.io/name: nvidia-device-plugin
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nvidia-device-plugin
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nvidia-device-plugin
+    spec:
+      priorityClassName: system-node-critical
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+        - key: CriticalAddonsOnly
+          operator: Exists
+      containers:
+        - name: nvidia-device-plugin
+          image: nvcr.io/nvidia/k8s-device-plugin:v0.16.2
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# GPU Resource Quota — limits GPU consumption in slate namespace
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: slate-gpu-quota
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: resource-quota
+spec:
+  hard:
+    # Max 2 GPUs across all pods in namespace (matches our dual-GPU hardware)
+    requests.nvidia.com/gpu: "2"
+    limits.nvidia.com/gpu: "2"
+    # Overall compute limits
+    requests.cpu: "16"
+    limits.cpu: "32"
+    requests.memory: "48Gi"
+    limits.memory: "96Gi"
+    # Pod limits
+    pods: "20"
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# LimitRange — default resource limits for pods without explicit limits
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: slate-limit-range
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: resource-limits
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 500m
+        memory: 1Gi
+      defaultRequest:
+        cpu: 100m
+        memory: 256Mi
+      max:
+        cpu: "8"
+        memory: 32Gi
+      min:
+        cpu: 50m
+        memory: 64Mi
+    - type: Pod
+      max:
+        cpu: "16"
+        memory: 64Gi
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# PriorityClass: GPU workloads get higher priority
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: slate-gpu-priority
+  labels:
+    app.kubernetes.io/name: slate
+value: 1000
+globalDefault: false
+description: "Priority class for SLATE GPU workloads (Ollama, model training, autonomous loop)"
+
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: slate-standard-priority
+  labels:
+    app.kubernetes.io/name: slate
+value: 500
+globalDefault: false
+description: "Priority class for SLATE standard workloads (agent router, workflow manager, bridge)"
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# NetworkPolicy: Ingress controller to SLATE services
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-services
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: ingress-network
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: slate-system
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow from ingress controller namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8081
+        - protocol: TCP
+          port: 8082
+        - protocol: TCP
+          port: 8083
+        - protocol: TCP
+          port: 8084
+        - protocol: TCP
+          port: 9090

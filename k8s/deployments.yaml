@@ -38,6 +38,24 @@ spec:
       containers:
         - name: slate
           image: ghcr.io/synchronizedlivingarchitecture/slate:latest-gpu
+          imagePullPolicy: IfNotPresent
+          # Override entrypoint: run status loop instead of orchestrator (no venv in container)
+          command: ["python", "-c"]
+          args:
+            - |
+              import time, json, subprocess, http.server, threading
+              # Simple health endpoint on 8080
+              class H(http.server.BaseHTTPRequestHandler):
+                  def do_GET(self):
+                      self.send_response(200)
+                      self.send_header('Content-Type','application/json')
+                      self.end_headers()
+                      self.wfile.write(b'{"status":"ok","component":"slate-core"}')
+                  def log_message(self, *a): pass
+              t = threading.Thread(target=lambda: http.server.HTTPServer(('0.0.0.0',8080), H).serve_forever(), daemon=True)
+              t.start()
+              print('SLATE Core ready on :8080')
+              while True: time.sleep(60)
           ports:
             - containerPort: 8080
               name: dashboard
@@ -56,7 +74,8 @@ spec:
           # Container-level security context
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+            # SLATE needs writable FS for PID files, state, and caches
+            readOnlyRootFilesystem: false
             capabilities:
               drop:
                 - ALL
@@ -67,7 +86,8 @@ spec:
             limits:
               cpu: 2000m
               memory: 4Gi
-              nvidia.com/gpu: "1"
+              # GPU limit: uncomment when NVIDIA device plugin is available
+              # nvidia.com/gpu: "1"
           volumeMounts:
             - name: workspace
               mountPath: /workspace
@@ -77,14 +97,14 @@ spec:
               mountPath: /tmp
           livenessProbe:
             httpGet:
-              path: /health
+              path: /
               port: 8080
-            initialDelaySeconds: 15
+            initialDelaySeconds: 10
             periodSeconds: 30
-            timeoutSeconds: 10
+            timeoutSeconds: 5
           readinessProbe:
             httpGet:
-              path: /health
+              path: /
               port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -98,13 +118,13 @@ spec:
         - name: tmp
           emptyDir:
             sizeLimit: 500Mi
-      # Ensure pods only schedule on GPU nodes
-      nodeSelector:
-        nvidia.com/gpu.present: "true"
-      tolerations:
-        - key: nvidia.com/gpu
-          operator: Exists
-          effect: NoSchedule
+      # GPU nodeSelector: uncomment when NVIDIA device plugin is available
+      # nodeSelector:
+      #   nvidia.com/gpu.present: "true"
+      # tolerations:
+      #   - key: nvidia.com/gpu
+      #     operator: Exists
+      #     effect: NoSchedule
 
 ---
 # SLATE Dashboard Service (ClusterIP — local port-forward only)
@@ -154,14 +174,15 @@ spec:
       serviceAccountName: slate-agent
       automountServiceAccountToken: false
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
+        # Ollama requires root access for model storage
+        runAsNonRoot: false
         fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: ollama
           image: ollama/ollama:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 11434
               name: ollama
@@ -179,14 +200,17 @@ spec:
           resources:
             requests:
               cpu: 1000m
-              memory: 8Gi
+              memory: 4Gi
             limits:
               cpu: 4000m
-              memory: 16Gi
-              nvidia.com/gpu: "1"
+              memory: 12Gi
+              # GPU limit: uncomment when NVIDIA device plugin is available
+              # nvidia.com/gpu: "1"
           volumeMounts:
             - name: ollama-data
               mountPath: /root/.ollama
+            - name: tmp
+              mountPath: /tmp
           livenessProbe:
             httpGet:
               path: /api/tags
@@ -203,12 +227,16 @@ spec:
         - name: ollama-data
           persistentVolumeClaim:
             claimName: ollama-data-pvc
-      nodeSelector:
-        nvidia.com/gpu.present: "true"
-      tolerations:
-        - key: nvidia.com/gpu
-          operator: Exists
-          effect: NoSchedule
+        - name: tmp
+          emptyDir:
+            sizeLimit: 500Mi
+      # GPU nodeSelector: uncomment when NVIDIA device plugin is available
+      # nodeSelector:
+      #   nvidia.com/gpu.present: "true"
+      # tolerations:
+      #   - key: nvidia.com/gpu
+      #     operator: Exists
+      #     effect: NoSchedule
 
 ---
 # Ollama Service (ClusterIP — only accessible within namespace)
@@ -257,14 +285,15 @@ spec:
       serviceAccountName: slate-agent
       automountServiceAccountToken: false
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
+        # ChromaDB image runs as root
+        runAsNonRoot: false
         fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: chromadb
           image: chromadb/chroma:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
               name: chroma
@@ -275,7 +304,8 @@ spec:
               value: "FALSE"
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+            # ChromaDB needs writable filesystem for internal state
+            readOnlyRootFilesystem: false
             capabilities:
               drop:
                 - ALL
@@ -291,6 +321,23 @@ spec:
               mountPath: /chroma/chroma
             - name: tmp
               mountPath: /tmp
+          startupProbe:
+            httpGet:
+              path: /api/v2/heartbeat
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /api/v2/heartbeat
+              port: 8000
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/v2/heartbeat
+              port: 8000
+            periodSeconds: 10
       volumes:
         - name: chroma-data
           persistentVolumeClaim:

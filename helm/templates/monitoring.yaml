@@ -1,0 +1,99 @@
+# Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Create Helm monitoring template with ServiceMonitor and PrometheusRule
+{{- if .Values.monitoring.enabled }}
+---
+# Metrics Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "slate.fullname" . }}-metrics
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: monitoring
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "slate.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: core
+  ports:
+    - port: {{ .Values.monitoring.port }}
+      targetPort: {{ .Values.monitoring.port }}
+      protocol: TCP
+      name: metrics
+
+{{- if .Values.monitoring.serviceMonitor.enabled }}
+---
+# ServiceMonitor for Prometheus scraping
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "slate.fullname" . }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: monitoring
+spec:
+  selector:
+    matchLabels:
+      {{- include "slate.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: monitoring
+  endpoints:
+    - port: metrics
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
+      path: /metrics
+      scrapeTimeout: {{ .Values.monitoring.serviceMonitor.scrapeTimeout }}
+{{- end }}
+
+{{- if .Values.monitoring.prometheusRules.enabled }}
+---
+# PrometheusRule for SLATE alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "slate.fullname" . }}-alerts
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: monitoring
+spec:
+  groups:
+    - name: slate.availability
+      interval: 30s
+      rules:
+        - alert: SlateAvailabilityLow
+          expr: slate_availability_ratio < {{ .Values.monitoring.prometheusRules.availabilityTarget }}
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "SLATE availability below SLO target"
+        - alert: SlateCpuHigh
+          expr: slate_cpu_usage_percent > {{ .Values.monitoring.prometheusRules.cpuThreshold }}
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CPU usage above threshold"
+        - alert: SlateGpuMemoryHigh
+          expr: slate_gpu_memory_used_mb / slate_gpu_memory_total_mb > {{ .Values.monitoring.prometheusRules.gpuMemoryThreshold }}
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "GPU memory usage above threshold"
+        - alert: SlateOllamaDown
+          expr: slate_ollama_healthy == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Ollama service unhealthy"
+        - alert: SlateCircuitBreakerOpen
+          expr: slate_circuit_breaker_state == 2
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Circuit breaker OPEN"
+{{- end }}
+{{- end }}

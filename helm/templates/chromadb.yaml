@@ -1,0 +1,98 @@
+# Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Create Helm template for ChromaDB vector store deployment
+{{- if .Values.chromadb.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "slate.fullname" . }}-chromadb
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vectorstore
+spec:
+  replicas: {{ .Values.chromadb.replicas }}
+  selector:
+    matchLabels:
+      {{- include "slate.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: vectorstore
+  template:
+    metadata:
+      labels:
+        {{- include "slate.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: vectorstore
+        app.kubernetes.io/part-of: slate-system
+    spec:
+      serviceAccountName: slate-agent
+      automountServiceAccountToken: false
+      securityContext:
+        {{- include "slate.podSecurityContext" . | nindent 8 }}
+      containers:
+        - name: chromadb
+          image: "{{ .Values.chromadb.image.repository }}:{{ .Values.chromadb.image.tag }}"
+          imagePullPolicy: {{ .Values.chromadb.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.chromadb.service.port }}
+              name: chroma
+          env:
+            {{- range $key, $value := .Values.chromadb.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          securityContext:
+            {{- include "slate.containerSecurityContext" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.chromadb.resources | nindent 12 }}
+          volumeMounts:
+            - name: chroma-data
+              mountPath: /chroma/chroma
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: chroma-data
+          {{- if .Values.chromadb.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "slate.fullname" . }}-chromadb
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: tmp
+          emptyDir:
+            sizeLimit: 100Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "slate.fullname" . }}-chromadb
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vectorstore
+spec:
+  type: {{ .Values.chromadb.service.type }}
+  selector:
+    {{- include "slate.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: vectorstore
+  ports:
+    - port: {{ .Values.chromadb.service.port }}
+      targetPort: {{ .Values.chromadb.service.port }}
+      protocol: TCP
+      name: chroma
+{{- if .Values.chromadb.persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "slate.fullname" . }}-chromadb
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.chromadb.persistence.size }}
+  {{- if .Values.chromadb.persistence.storageClass }}
+  storageClassName: {{ .Values.chromadb.persistence.storageClass }}
+  {{- end }}
+{{- end }}
+{{- end }}

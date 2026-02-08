@@ -20,6 +20,8 @@ resources:
   - ../../network-policy.yaml
   - ../../secrets.yaml
   - ../../deployments.yaml
+  - ../../agentic-system.yaml
+  - ../../ml-pipeline.yaml
   - local-storage.yaml
 
 # Override base storage with local hostPath volumes

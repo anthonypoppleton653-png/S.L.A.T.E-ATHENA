@@ -1,0 +1,34 @@
+# Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Add PodDisruptionBudget for 99.9% availability during rollouts
+# SLATE Pod Disruption Budgets
+# Ensures minimum availability during voluntary disruptions (node upgrades, rollouts)
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: slate-core-pdb
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: availability
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: slate
+      app.kubernetes.io/component: core
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ollama-pdb
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: ollama
+    app.kubernetes.io/component: availability
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ollama
+      app.kubernetes.io/component: ollama

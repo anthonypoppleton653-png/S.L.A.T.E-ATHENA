@@ -1,0 +1,27 @@
+# Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Create Helm Chart.yaml for SLATE Phoenix release
+apiVersion: v2
+name: slate
+description: S.L.A.T.E. — Synchronized Living Architecture for Transformation and Evolution
+type: application
+version: 1.0.0
+appVersion: "2.4.0"
+home: https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E
+sources:
+  - https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E
+maintainers:
+  - name: SynchronizedLivingArchitecture
+keywords:
+  - ai
+  - orchestration
+  - ollama
+  - gpu
+  - local-first
+  - pytorch
+  - chromadb
+  - agent
+icon: https://raw.githubusercontent.com/SynchronizedLivingArchitecture/S.L.A.T.E/main/docs/assets/slate-icon.png
+dependencies:
+  - name: kube-prometheus-stack
+    version: ">=60.0.0"
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: monitoring.enabled

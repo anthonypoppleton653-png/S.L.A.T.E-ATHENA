@@ -1,0 +1,512 @@
+{{/* Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Create Helm template for SLATE agentic AI system */}}
+{{- if .Values.agenticSystem.enabled }}
+---
+# Agent Routing ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "slate.fullname" . }}-agent-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent-config
+data:
+  agent-routing.yaml: |
+    version: {{ .Chart.AppVersion | quote }}
+    agents:
+      {{- range $name, $agent := .Values.agenticSystem.agents }}
+      {{ $name }}:
+        role: {{ $agent.role }}
+        patterns: {{ $agent.patterns | toJson }}
+        gpu: {{ $agent.gpu }}
+        model: {{ $agent.model }}
+      {{- end }}
+    routing:
+      default_agent: {{ .Values.agenticSystem.routing.defaultAgent }}
+      max_concurrent_tasks: {{ .Values.agenticSystem.routing.maxConcurrentTasks }}
+      task_timeout_seconds: {{ .Values.agenticSystem.routing.taskTimeoutSeconds }}
+
+---
+# Agent Router Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "slate.fullname" . }}-agent-router
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent-router
+spec:
+  replicas: {{ .Values.agenticSystem.router.replicas }}
+  selector:
+    matchLabels:
+      {{- include "slate.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: agent-router
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        {{- include "slate.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: agent-router
+        app.kubernetes.io/part-of: slate-system
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+    spec:
+      serviceAccountName: slate-core
+      automountServiceAccountToken: false
+      securityContext:
+        {{- include "slate.podSecurityContext" . | nindent 8 }}
+      containers:
+        - name: agent-router
+          image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag }}"
+          imagePullPolicy: {{ .Values.core.image.pullPolicy }}
+          command: ["python", "-m", "slate.slate_unified_autonomous", "--router"]
+          ports:
+            - containerPort: 8081
+              name: router-api
+            - containerPort: 9090
+              name: metrics
+          env:
+            - name: SLATE_WORKSPACE
+              value: /workspace
+            - name: SLATE_K8S
+              value: "true"
+            - name: SLATE_MODE
+              value: {{ .Values.core.env.SLATE_MODE | default "prod" }}
+            - name: OLLAMA_HOST
+              value: "{{ include "slate.fullname" . }}-ollama:{{ .Values.ollama.service.port }}"
+            - name: CHROMADB_HOST
+              value: "{{ include "slate.fullname" . }}-chromadb:{{ .Values.chromadb.service.port }}"
+            - name: PYTHONPATH
+              value: /slate:/workspace
+            - name: SLATE_AGENT_CONFIG
+              value: /config/agent-routing.yaml
+          securityContext:
+            {{- include "slate.containerSecurityContext" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.agenticSystem.router.resources | nindent 12 }}
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: agent-config
+              mountPath: /config
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+            - name: slate-data
+              mountPath: /slate/.slate_index
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: {{ include "slate.fullname" . }}-workspace
+        - name: agent-config
+          configMap:
+            name: {{ include "slate.fullname" . }}-agent-config
+        - name: tmp
+          emptyDir:
+            sizeLimit: 500Mi
+        - name: slate-data
+          persistentVolumeClaim:
+            claimName: {{ include "slate.fullname" . }}-data
+
+---
+# Agent Router Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "slate.fullname" . }}-agent-router
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent-router
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "slate.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: agent-router
+  ports:
+    - port: 8081
+      targetPort: 8081
+      name: router-api
+    - port: 9090
+      targetPort: 9090
+      name: metrics
+
+---
+# Autonomous Loop Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "slate.fullname" . }}-autonomous
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: autonomous-loop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "slate.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: autonomous-loop
+  template:
+    metadata:
+      labels:
+        {{- include "slate.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: autonomous-loop
+        app.kubernetes.io/part-of: slate-system
+    spec:
+      serviceAccountName: slate-core
+      automountServiceAccountToken: false
+      securityContext:
+        {{- include "slate.podSecurityContext" . | nindent 8 }}
+      initContainers:
+        - name: wait-for-ollama
+          image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag }}"
+          command:
+            - python
+            - -c
+            - |
+              import urllib.request, time, sys
+              for i in range(60):
+                  try:
+                      urllib.request.urlopen('http://{{ include "slate.fullname" . }}-ollama:{{ .Values.ollama.service.port }}/api/tags', timeout=5)
+                      sys.exit(0)
+                  except: time.sleep(5)
+              sys.exit(1)
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+      containers:
+        - name: autonomous-loop
+          image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag }}"
+          imagePullPolicy: {{ .Values.core.image.pullPolicy }}
+          command:
+            - python
+            - -m
+            - slate.integrated_autonomous_loop
+            - --max
+            - {{ .Values.agenticSystem.autonomousLoop.maxTasks | quote }}
+            - --interval
+            - {{ .Values.agenticSystem.autonomousLoop.intervalSeconds | quote }}
+          ports:
+            - containerPort: 8082
+              name: loop-api
+            - containerPort: 9090
+              name: metrics
+          env:
+            - name: SLATE_WORKSPACE
+              value: /workspace
+            - name: SLATE_K8S
+              value: "true"
+            - name: SLATE_MODE
+              value: {{ .Values.core.env.SLATE_MODE | default "prod" }}
+            - name: OLLAMA_HOST
+              value: "{{ include "slate.fullname" . }}-ollama:{{ .Values.ollama.service.port }}"
+            - name: CHROMADB_HOST
+              value: "{{ include "slate.fullname" . }}-chromadb:{{ .Values.chromadb.service.port }}"
+            - name: PYTHONPATH
+              value: /slate:/workspace
+            - name: SLATE_AGENT_CONFIG
+              value: /config/agent-routing.yaml
+          securityContext:
+            {{- include "slate.containerSecurityContext" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.agenticSystem.autonomousLoop.resources | nindent 12 }}
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: agent-config
+              mountPath: /config
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+            - name: slate-data
+              mountPath: /slate/.slate_index
+            - name: slate-memory
+              mountPath: /slate/slate_memory
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 15
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: {{ include "slate.fullname" . }}-workspace
+        - name: agent-config
+          configMap:
+            name: {{ include "slate.fullname" . }}-agent-config
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: slate-data
+          persistentVolumeClaim:
+            claimName: {{ include "slate.fullname" . }}-data
+        - name: slate-memory
+          persistentVolumeClaim:
+            claimName: {{ include "slate.fullname" . }}-memory
+      {{- if .Values.gpu.enabled }}
+      nodeSelector:
+        {{- toYaml .Values.gpu.nodeSelector | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.gpu.tolerations | nindent 8 }}
+      {{- end }}
+
+---
+# Autonomous Loop Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "slate.fullname" . }}-autonomous
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: autonomous-loop
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "slate.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: autonomous-loop
+  ports:
+    - port: 8082
+      targetPort: 8082
+      name: loop-api
+
+---
+# Copilot Bridge Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "slate.fullname" . }}-copilot-bridge
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: copilot-bridge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "slate.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: copilot-bridge
+  template:
+    metadata:
+      labels:
+        {{- include "slate.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: copilot-bridge
+        app.kubernetes.io/part-of: slate-system
+    spec:
+      serviceAccountName: slate-agent
+      automountServiceAccountToken: false
+      securityContext:
+        {{- include "slate.podSecurityContext" . | nindent 8 }}
+      containers:
+        - name: copilot-bridge
+          image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag }}"
+          command: ["python", "-m", "slate.copilot_agent_bridge", "--serve", "--port", "8083"]
+          ports:
+            - containerPort: 8083
+              name: bridge-api
+          env:
+            - name: SLATE_WORKSPACE
+              value: /workspace
+            - name: SLATE_K8S
+              value: "true"
+            - name: OLLAMA_HOST
+              value: "{{ include "slate.fullname" . }}-ollama:{{ .Values.ollama.service.port }}"
+            - name: PYTHONPATH
+              value: /slate:/workspace
+          securityContext:
+            {{- include "slate.containerSecurityContext" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.agenticSystem.copilotBridge.resources | nindent 12 }}
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: tmp
+              mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+            initialDelaySeconds: 10
+            periodSeconds: 30
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: {{ include "slate.fullname" . }}-workspace
+        - name: tmp
+          emptyDir:
+            sizeLimit: 200Mi
+
+---
+# Copilot Bridge Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "slate.fullname" . }}-copilot-bridge
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: copilot-bridge
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "slate.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: copilot-bridge
+  ports:
+    - port: 8083
+      targetPort: 8083
+      name: bridge-api
+
+---
+# Workflow Manager Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "slate.fullname" . }}-workflow
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workflow-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "slate.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: workflow-manager
+  template:
+    metadata:
+      labels:
+        {{- include "slate.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: workflow-manager
+        app.kubernetes.io/part-of: slate-system
+    spec:
+      serviceAccountName: slate-core
+      automountServiceAccountToken: false
+      securityContext:
+        {{- include "slate.podSecurityContext" . | nindent 8 }}
+      containers:
+        - name: workflow-manager
+          image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag }}"
+          command: ["python", "-m", "slate.slate_workflow_manager", "--serve", "--port", "8084"]
+          ports:
+            - containerPort: 8084
+              name: workflow-api
+          env:
+            - name: SLATE_WORKSPACE
+              value: /workspace
+            - name: SLATE_K8S
+              value: "true"
+            - name: OLLAMA_HOST
+              value: "{{ include "slate.fullname" . }}-ollama:{{ .Values.ollama.service.port }}"
+            - name: CHROMADB_HOST
+              value: "{{ include "slate.fullname" . }}-chromadb:{{ .Values.chromadb.service.port }}"
+            - name: PYTHONPATH
+              value: /slate:/workspace
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "slate.fullname" . }}-github
+                  key: GITHUB_TOKEN
+                  optional: true
+          securityContext:
+            {{- include "slate.containerSecurityContext" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.agenticSystem.workflowManager.resources | nindent 12 }}
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: tmp
+              mountPath: /tmp
+            - name: slate-data
+              mountPath: /slate/.slate_index
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8084
+            initialDelaySeconds: 10
+            periodSeconds: 30
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: {{ include "slate.fullname" . }}-workspace
+        - name: tmp
+          emptyDir:
+            sizeLimit: 200Mi
+        - name: slate-data
+          persistentVolumeClaim:
+            claimName: {{ include "slate.fullname" . }}-data
+
+---
+# Workflow Manager Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "slate.fullname" . }}-workflow
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workflow-manager
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "slate.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: workflow-manager
+  ports:
+    - port: 8084
+      targetPort: 8084
+      name: workflow-api
+
+---
+# Memory PVC (for autonomous loop state persistence)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "slate.fullname" . }}-memory
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.agenticSystem.storage.memory.size }}
+  {{- if .Values.agenticSystem.storage.memory.storageClass }}
+  storageClassName: {{ .Values.agenticSystem.storage.memory.storageClass }}
+  {{- end }}
+{{- end }}

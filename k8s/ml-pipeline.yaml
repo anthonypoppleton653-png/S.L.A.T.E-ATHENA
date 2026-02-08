@@ -1,0 +1,664 @@
+﻿# Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Create ML pipeline K8s manifests with model training jobs and GPU manager
+# SLATE ML Pipeline — Model Training, Indexing, Benchmarks, GPU Management
+# Jobs and CronJobs for ML operations that run on GPU nodes
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Job: Model Preloader (runs once after Ollama starts)
+# Pulls and loads all SLATE custom models into Ollama
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: slate-model-preload
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: model-preload
+    app.kubernetes.io/part-of: slate-system
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: slate
+        app.kubernetes.io/component: model-preload
+        app.kubernetes.io/part-of: slate-system
+    spec:
+      serviceAccountName: slate-agent
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: wait-for-ollama
+          image: slate:local
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -c
+            - |
+              import urllib.request, time, sys
+              for i in range(60):
+                  try:
+                      urllib.request.urlopen('http://ollama-svc:11434/api/tags', timeout=5)
+                      print('Ollama ready'); sys.exit(0)
+                  except Exception:
+                      print(f'Waiting for Ollama... ({i+1}/60)'); time.sleep(5)
+              sys.exit(1)
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+      containers:
+        - name: model-preloader
+          image: slate:local
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -c
+            - |
+              import urllib.request, json, sys
+              OLLAMA = 'http://ollama-svc:11434'
+              MODELS = ['slate-coder', 'slate-fast', 'slate-planner']
+              
+              # Check which models exist
+              resp = urllib.request.urlopen(f'{OLLAMA}/api/tags', timeout=10)
+              existing = {m['name'].split(':')[0] for m in json.loads(resp.read())['models']}
+              print(f'Existing models: {existing}')
+              
+              for model in MODELS:
+                  if model in existing:
+                      print(f'  {model}: already loaded')
+                      continue
+                  print(f'  Pulling {model}...')
+                  try:
+                      data = json.dumps({'name': model}).encode()
+                      req = urllib.request.Request(
+                          f'{OLLAMA}/api/pull',
+                          data=data,
+                          headers={'Content-Type': 'application/json'}
+                      )
+                      with urllib.request.urlopen(req, timeout=600) as r:
+                          for line in r:
+                              status = json.loads(line)
+                              if 'status' in status:
+                                  print(f'    {status["status"]}')
+                      print(f'  {model}: loaded successfully')
+                  except Exception as e:
+                      print(f'  {model}: FAILED - {e}')
+              
+              print('Model preload complete')
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      restartPolicy: OnFailure
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 100Mi
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# CronJob: SLATE Model Trainer
+# Rebuilds custom SLATE models on a schedule (weekly)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: slate-model-trainer
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: model-trainer
+    app.kubernetes.io/part-of: slate-system
+spec:
+  schedule: "0 3 * * 0"  # Weekly, Sunday 3 AM UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 7200  # 2 hour max
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: slate
+            app.kubernetes.io/component: model-trainer
+            app.kubernetes.io/part-of: slate-system
+        spec:
+          serviceAccountName: slate-agent
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: trainer
+              image: slate:local
+              imagePullPolicy: IfNotPresent
+              command:
+                - python
+                - -m
+                - slate.slate_model_trainer
+                - --build-all
+                - --update-context
+              env:
+                - name: SLATE_WORKSPACE
+                  value: /workspace
+                - name: SLATE_K8S
+                  value: "true"
+                - name: OLLAMA_HOST
+                  value: ollama-svc:11434
+                - name: PYTHONPATH
+                  value: /slate:/workspace
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 1000m
+                  memory: 4Gi
+                limits:
+                  cpu: 4000m
+                  memory: 16Gi
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+                - name: models
+                  mountPath: /slate/models
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          restartPolicy: OnFailure
+          volumes:
+            - name: workspace
+              persistentVolumeClaim:
+                claimName: slate-workspace-pvc
+            - name: models
+              configMap:
+                name: slate-model-files
+            - name: tmp
+              emptyDir:
+                sizeLimit: 500Mi
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# CronJob: ChromaDB Codebase Indexing
+# Re-indexes the codebase into ChromaDB vector store (daily)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: slate-codebase-indexer
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: codebase-indexer
+    app.kubernetes.io/part-of: slate-system
+spec:
+  schedule: "0 2 * * *"  # Daily, 2 AM UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 3600  # 1 hour max
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: slate
+            app.kubernetes.io/component: codebase-indexer
+            app.kubernetes.io/part-of: slate-system
+        spec:
+          serviceAccountName: slate-agent
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          initContainers:
+            - name: wait-for-chromadb
+              image: slate:local
+              imagePullPolicy: IfNotPresent
+              command:
+                - python
+                - -c
+                - |
+                  import urllib.request, time, sys
+                  for i in range(30):
+                      try:
+                          urllib.request.urlopen('http://chromadb-svc:8000/api/v1/heartbeat', timeout=5)
+                          print('ChromaDB ready'); sys.exit(0)
+                      except: time.sleep(5)
+                  sys.exit(1)
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+          containers:
+            - name: indexer
+              image: slate:local
+              imagePullPolicy: IfNotPresent
+              command:
+                - python
+                - -m
+                - slate.slate_chromadb
+                - --index
+              env:
+                - name: SLATE_WORKSPACE
+                  value: /workspace
+                - name: SLATE_K8S
+                  value: "true"
+                - name: CHROMADB_HOST
+                  value: chromadb-svc:8000
+                - name: OLLAMA_HOST
+                  value: ollama-svc:11434
+                - name: PYTHONPATH
+                  value: /slate:/workspace
+                - name: ANONYMIZED_TELEMETRY
+                  value: "FALSE"
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 1Gi
+                limits:
+                  cpu: 2000m
+                  memory: 4Gi
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          restartPolicy: OnFailure
+          volumes:
+            - name: workspace
+              persistentVolumeClaim:
+                claimName: slate-workspace-pvc
+            - name: tmp
+              emptyDir:
+                sizeLimit: 500Mi
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# CronJob: GPU Inference Benchmarks
+# Runs benchmarks across all models (weekly, after model training)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: slate-inference-benchmarks
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: benchmarks
+    app.kubernetes.io/part-of: slate-system
+spec:
+  schedule: "0 6 * * 0"  # Weekly, Sunday 6 AM UTC (after model training)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: slate
+            app.kubernetes.io/component: benchmarks
+            app.kubernetes.io/part-of: slate-system
+        spec:
+          serviceAccountName: slate-agent
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: benchmarks
+              image: slate:local
+              imagePullPolicy: IfNotPresent
+              command:
+                - python
+                - -m
+                - slate.ml_orchestrator
+                - --benchmarks
+                - --json
+              env:
+                - name: SLATE_WORKSPACE
+                  value: /workspace
+                - name: SLATE_K8S
+                  value: "true"
+                - name: OLLAMA_HOST
+                  value: ollama-svc:11434
+                - name: PYTHONPATH
+                  value: /slate:/workspace
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 1000m
+                  memory: 4Gi
+                limits:
+                  cpu: 4000m
+                  memory: 16Gi
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+                - name: tmp
+                  mountPath: /tmp
+          restartPolicy: Never
+          volumes:
+            - name: workspace
+              persistentVolumeClaim:
+                claimName: slate-workspace-pvc
+            - name: tmp
+              emptyDir:
+                sizeLimit: 200Mi
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# CronJob: Nightly Health Check
+# Runs full system health + integration check nightly
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: slate-nightly-health
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: health-check
+    app.kubernetes.io/part-of: slate-system
+spec:
+  schedule: "0 0 * * *"  # Daily midnight UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 7
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: slate
+            app.kubernetes.io/component: health-check
+            app.kubernetes.io/part-of: slate-system
+        spec:
+          serviceAccountName: slate-agent
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: health-check
+              image: slate:local
+              imagePullPolicy: IfNotPresent
+              command:
+                - python
+                - -c
+                - |
+                  import subprocess, sys, json, datetime
+                  
+                  results = {}
+                  checks = [
+                      ('status', ['python', '-m', 'slate.slate_status', '--json']),
+                      ('runtime', ['python', '-m', 'slate.slate_runtime', '--json']),
+                      ('workflow', ['python', '-m', 'slate.slate_workflow_manager', '--status']),
+                  ]
+                  
+                  all_passed = True
+                  for name, cmd in checks:
+                      try:
+                          r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+                          results[name] = {'exit_code': r.returncode, 'output': r.stdout[:2000]}
+                          if r.returncode != 0:
+                              all_passed = False
+                              print(f'FAIL: {name} (exit code {r.returncode})')
+                          else:
+                              print(f'PASS: {name}')
+                      except Exception as e:
+                          results[name] = {'exit_code': -1, 'error': str(e)}
+                          all_passed = False
+                          print(f'FAIL: {name} (exception: {e})')
+                  
+                  print(f'\nTimestamp: {datetime.datetime.utcnow().isoformat()}Z')
+                  print(f'Overall: {"PASS" if all_passed else "FAIL"}')
+                  sys.exit(0 if all_passed else 1)
+              env:
+                - name: SLATE_WORKSPACE
+                  value: /workspace
+                - name: SLATE_K8S
+                  value: "true"
+                - name: OLLAMA_HOST
+                  value: ollama-svc:11434
+                - name: CHROMADB_HOST
+                  value: chromadb-svc:8000
+                - name: PYTHONPATH
+                  value: /slate:/workspace
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 512Mi
+                limits:
+                  cpu: 1000m
+                  memory: 2Gi
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+                - name: tmp
+                  mountPath: /tmp
+          restartPolicy: Never
+          volumes:
+            - name: workspace
+              persistentVolumeClaim:
+                claimName: slate-workspace-pvc
+            - name: tmp
+              emptyDir:
+                sizeLimit: 200Mi
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# CronJob: Workflow Cleanup
+# Cleans stale/deprecated tasks and archives completed ones (every 4 hours)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: slate-workflow-cleanup
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: workflow-cleanup
+    app.kubernetes.io/part-of: slate-system
+spec:
+  schedule: "0 */4 * * *"  # Every 4 hours
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 300
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: slate
+            app.kubernetes.io/component: workflow-cleanup
+            app.kubernetes.io/part-of: slate-system
+        spec:
+          serviceAccountName: slate-agent
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: cleanup
+              image: slate:local
+              imagePullPolicy: IfNotPresent
+              command:
+                - python
+                - -m
+                - slate.slate_workflow_manager
+                - --cleanup
+                - --enforce
+              env:
+                - name: SLATE_WORKSPACE
+                  value: /workspace
+                - name: SLATE_K8S
+                  value: "true"
+                - name: PYTHONPATH
+                  value: /slate:/workspace
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 1Gi
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+                - name: tmp
+                  mountPath: /tmp
+          restartPolicy: OnFailure
+          volumes:
+            - name: workspace
+              persistentVolumeClaim:
+                claimName: slate-workspace-pvc
+            - name: tmp
+              emptyDir:
+                sizeLimit: 100Mi
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ConfigMap: SLATE Model Files
+# Contains the Ollama Modelfile definitions for custom models
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: slate-model-files
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: model-files
+data:
+  Modelfile.slate-coder: |
+    FROM mistral-nemo
+    PARAMETER temperature 0.3
+    PARAMETER top_p 0.9
+    PARAMETER num_ctx 8192
+    SYSTEM """You are SLATE-Coder, a 12B code generation model for the S.L.A.T.E. framework.
+    Generate clean, idiomatic Python code. Follow SLATE conventions:
+    - All code edits include timestamp comments
+    - Network bindings use 127.0.0.1 only
+    - Use encoding='utf-8' for file operations on Windows
+    """
+  Modelfile.slate-fast: |
+    FROM llama3.2
+    PARAMETER temperature 0.2
+    PARAMETER top_p 0.8
+    PARAMETER num_ctx 4096
+    SYSTEM """You are SLATE-Fast, a 3B classification and summary model.
+    Classify tasks into agent categories: ALPHA (coding), BETA (testing),
+    GAMMA (planning), DELTA (integration), COPILOT (complex).
+    Be concise. Respond with structured JSON when possible.
+    """
+  Modelfile.slate-planner: |
+    FROM mistral
+    PARAMETER temperature 0.4
+    PARAMETER top_p 0.85
+    PARAMETER num_ctx 8192
+    SYSTEM """You are SLATE-Planner, a 7B planning and analysis model.
+    Create structured plans with clear steps, dependencies, and risk assessment.
+    Output in markdown with task tables when appropriate.
+    """
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Additional PVC: SLATE Memory (for autonomous loop state)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: slate-memory-pvc
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: memory
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+

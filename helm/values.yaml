@@ -1,0 +1,319 @@
+# Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Create Helm values.yaml for SLATE deployment configuration
+# SLATE Helm Chart — Default Values
+# Override with: helm install slate ./helm -f custom-values.yaml
+
+# ─── Global ──────────────────────────────────────────────────────────────────
+global:
+  namespace: slate
+  imageRegistry: ghcr.io/synchronizedlivingarchitecture
+
+# ─── SLATE Core ──────────────────────────────────────────────────────────────
+core:
+  enabled: true
+  replicas: 2
+  image:
+    repository: ghcr.io/synchronizedlivingarchitecture/slate
+    tag: latest-gpu
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+      nvidia.com/gpu: "1"
+  service:
+    type: ClusterIP
+    port: 8080
+  env:
+    SLATE_MODE: prod
+    SLATE_K8S: "true"
+    SLATE_BIND_HOST: "127.0.0.1"
+  # Pod anti-affinity: spread replicas across nodes
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                    - core
+            topologyKey: kubernetes.io/hostname
+  # HPA settings
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilization: 70
+    targetMemoryUtilization: 80
+
+# ─── Ollama LLM ─────────────────────────────────────────────────────────────
+ollama:
+  enabled: true
+  replicas: 1
+  image:
+    repository: ollama/ollama
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 8Gi
+    limits:
+      cpu: 4000m
+      memory: 16Gi
+      nvidia.com/gpu: "1"
+  service:
+    type: ClusterIP
+    port: 11434
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: ""
+  # Models to preload after deployment
+  models:
+    - slate-coder
+    - slate-fast
+    - slate-planner
+
+# ─── ChromaDB Vector Store ──────────────────────────────────────────────────
+chromadb:
+  enabled: true
+  replicas: 1
+  image:
+    repository: chromadb/chroma
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  service:
+    type: ClusterIP
+    port: 8000
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: ""
+  env:
+    ANONYMIZED_TELEMETRY: "FALSE"
+    IS_PERSISTENT: "TRUE"
+
+# ─── Metrics / Monitoring ───────────────────────────────────────────────────
+monitoring:
+  enabled: true
+  port: 9090
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+  prometheusRules:
+    enabled: true
+    # Alert thresholds
+    availabilityTarget: 0.999
+    cpuThreshold: 80
+    gpuMemoryThreshold: 0.9
+    inferenceErrorRate: 0.05
+
+# ─── Security ───────────────────────────────────────────────────────────────
+security:
+  # Pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  # Container security context
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+  # Network policies
+  networkPolicy:
+    enabled: true
+    allowGitHubEgress: true
+  # PDB
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# ─── Storage ────────────────────────────────────────────────────────────────
+storage:
+  workspace:
+    size: 10Gi
+    storageClass: ""
+  data:
+    size: 5Gi
+    storageClass: ""
+
+# ─── GPU Configuration ──────────────────────────────────────────────────────
+gpu:
+  enabled: true
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+  # For CPU-only deployments, set gpu.enabled=false
+  # This removes GPU resource requests and node selectors
+
+# ─── Actions Runner Controller ──────────────────────────────────────────────
+actionsRunner:
+  enabled: false
+  # When enabled, deploys self-hosted GitHub Actions runners in K8s
+  # Uses actions-runner-controller for auto-scaling
+  replicas: 1
+  maxRunners: 4
+  labels:
+    - self-hosted
+    - slate
+    - gpu
+  repository: SynchronizedLivingArchitecture/S.L.A.T.E
+  # GitHub App credentials (use sealed-secrets in production)
+  # githubAppId: ""
+  # githubAppInstallationId: ""
+  # githubAppPrivateKey: ""
+
+# ─── Agentic AI System ─────────────────────────────────────────────────────
+# Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Add agentic system values for K8s
+agenticSystem:
+  enabled: true
+  # Agent definitions — routed by task pattern
+  agents:
+    ALPHA:
+      role: Coding
+      patterns: ["implement", "code", "build", "fix"]
+      gpu: true
+      model: slate-coder
+    BETA:
+      role: Testing
+      patterns: ["test", "validate", "verify", "coverage"]
+      gpu: true
+      model: slate-fast
+    GAMMA:
+      role: Planning
+      patterns: ["analyze", "plan", "research", "document"]
+      gpu: false
+      model: slate-planner
+    DELTA:
+      role: External Bridge
+      patterns: ["claude", "mcp", "sdk", "integration"]
+      gpu: false
+      model: slate-fast
+    COPILOT:
+      role: Full Orchestration
+      patterns: ["complex", "multi-step"]
+      gpu: true
+      model: slate-coder
+  routing:
+    defaultAgent: GAMMA
+    maxConcurrentTasks: 10
+    taskTimeoutSeconds: 14400
+  # Agent Router
+  router:
+    replicas: 2
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+  # Autonomous Loop (self-healing brain)
+  autonomousLoop:
+    maxTasks: 1000
+    intervalSeconds: 60
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+        nvidia.com/gpu: "1"
+  # Copilot Bridge (VS Code <-> K8s)
+  copilotBridge:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+  # Workflow Manager
+  workflowManager:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+  # Storage
+  storage:
+    memory:
+      size: 2Gi
+      storageClass: ""
+
+# ─── ML Pipeline (CronJobs & Jobs) ─────────────────────────────────────────
+# Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Add ML pipeline CronJob values
+mlPipeline:
+  enabled: true
+  # Weekly model trainer
+  modelTrainer:
+    enabled: true
+    schedule: "0 3 * * 0"  # Sunday 3 AM UTC
+    timeoutSeconds: 7200
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 4Gi
+      limits:
+        cpu: 4000m
+        memory: 16Gi
+        nvidia.com/gpu: "1"
+  # Daily codebase indexer
+  codebaseIndexer:
+    enabled: true
+    schedule: "0 2 * * *"  # Daily 2 AM UTC
+    timeoutSeconds: 3600
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+  # Weekly inference benchmarks
+  benchmarks:
+    enabled: true
+    schedule: "0 6 * * 0"  # Sunday 6 AM UTC
+    timeoutSeconds: 3600
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 4Gi
+      limits:
+        cpu: 4000m
+        memory: 16Gi
+        nvidia.com/gpu: "1"
+  # Nightly health check
+  nightlyHealth:
+    enabled: true
+    schedule: "0 0 * * *"  # Midnight UTC
+  # Workflow cleanup (every 4 hours)
+  workflowCleanup:
+    enabled: true
+    schedule: "0 */4 * * *"

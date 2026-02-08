@@ -1,4 +1,5 @@
 # Modified: 2026-02-07T09:00:00Z | Author: COPILOT | Change: Create Kustomize base for SLATE K8s deployment
+# Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Add HPA, monitoring, PDB resources for Pass 3 stability
 # SLATE Kustomize Configuration
 # Deploy with: kubectl apply -k k8s/
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -13,6 +14,12 @@ resources:
   - storage.yaml
   - secrets.yaml
   - deployments.yaml
+  - hpa-monitoring.yaml
+  - pdb.yaml
+  - agentic-system.yaml
+  - ml-pipeline.yaml
+  - runners.yaml
+  - ingress-gpu.yaml
 
 commonLabels:
   app.kubernetes.io/managed-by: slate
