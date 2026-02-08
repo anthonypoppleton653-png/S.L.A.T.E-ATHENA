@@ -32,6 +32,7 @@ Full ecosystem setup includes:
     - Ollama (local LLM inference — auto-installs via winget)
     - Docker (container deployment — detection + guidance)
     - VS Code extension (@slate chat participant)
+    - Claude Code plugin (marketplace + MCP server)
     - SLATE custom models (slate-coder, slate-fast, slate-planner)
     - Workspace configuration + .env
 
@@ -164,16 +165,30 @@ def step_dashboard_boot(tracker, args):
 def step_dep_scan(tracker, args):
     """Step: Scan system for existing dependencies to reuse (SLATE Installation Ethos)."""
     tracker.start_step("dep_scan")
+
+    # Skip if --no-scan flag
+    if getattr(args, 'no_scan', False):
+        tracker.skip_step("dep_scan", "Skipped (--no-scan)")
+        return True
+
     tracker.update_progress("dep_scan", 10, "Initializing dependency scanner...")
 
     try:
+        import concurrent.futures
         from slate.slate_dependency_scanner import DependencyScanner
 
         scanner = DependencyScanner(workspace=WORKSPACE_ROOT, verbose=False)
-        tracker.update_progress("dep_scan", 20, "Scanning for Python installations...")
+        tracker.update_progress("dep_scan", 20, "Quick scan (15s timeout)...")
 
-        # Run full scan
-        report = scanner.scan_all()
+        # Run scan with timeout to prevent hanging on slow drives
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(scanner.scan_all)
+            try:
+                report = future.result(timeout=15)  # 15 second timeout
+            except concurrent.futures.TimeoutError:
+                tracker.complete_step("dep_scan", success=True, warning=True,
+                                      details="Scan timeout - will install fresh")
+                return True
 
         tracker.update_progress("dep_scan", 60, "Analyzing scan results...")
 
@@ -932,6 +947,84 @@ def step_vscode_extension(tracker, args):
     except Exception as e:
         tracker.complete_step("vscode_ext", success=True, warning=True,
                               details=f"Extension link failed: {e}")
+    return True
+
+
+def step_claude_code_plugin(tracker, args):
+    """Step 7c: Install SLATE plugin to Claude Code."""
+    tracker.start_step("claude_plugin")
+    tracker.update_progress("claude_plugin", 10, "Checking Claude Code CLI")
+
+    # Check if claude CLI is available
+    try:
+        claude_check = _run_cmd(["claude", "--version"], timeout=15)
+        if claude_check.returncode != 0:
+            tracker.complete_step("claude_plugin", success=True, warning=True,
+                                  details="Claude Code CLI not found — install from https://claude.ai/code")
+            return True
+    except FileNotFoundError:
+        tracker.complete_step("claude_plugin", success=True, warning=True,
+                              details="Claude Code CLI not installed — visit https://claude.ai/code")
+        return True
+
+    tracker.update_progress("claude_plugin", 30, "Cleaning old marketplace entries")
+
+    # Clean any corrupted marketplace entries
+    if os.name == "nt":
+        marketplace_path = Path(os.environ.get("USERPROFILE", "~")) / ".claude" / "plugins" / "marketplaces" / "slate-marketplace"
+    else:
+        marketplace_path = Path.home() / ".claude" / "plugins" / "marketplaces" / "slate-marketplace"
+
+    if marketplace_path.exists():
+        import shutil
+        try:
+            if marketplace_path.is_file():
+                marketplace_path.unlink()
+            else:
+                shutil.rmtree(marketplace_path, ignore_errors=True)
+        except Exception:
+            pass
+
+    tracker.update_progress("claude_plugin", 50, "Adding SLATE marketplace")
+
+    # Add marketplace
+    marketplace_url = "https://raw.githubusercontent.com/SynchronizedLivingArchitecture/S.L.A.T.E/main/.claude-plugin/marketplace.json"
+    add_result = _run_cmd(["claude", "plugin", "marketplace", "add", marketplace_url], timeout=60)
+
+    if add_result.returncode != 0:
+        # Try GitHub repo format as fallback
+        add_result = _run_cmd(["claude", "plugin", "marketplace", "add", "SynchronizedLivingArchitecture/S.L.A.T.E"], timeout=60)
+
+    if add_result.returncode != 0:
+        tracker.complete_step("claude_plugin", success=True, warning=True,
+                              details="Marketplace add failed — run manually: /plugin marketplace add SynchronizedLivingArchitecture/S.L.A.T.E")
+        return True
+
+    tracker.update_progress("claude_plugin", 70, "Installing SLATE plugin")
+
+    # Install plugin
+    install_result = _run_cmd(["claude", "plugin", "install", "slate-sdk@slate-marketplace"], timeout=120)
+
+    if install_result.returncode != 0:
+        # Try direct install as fallback
+        install_result = _run_cmd(["claude", "plugin", "install", "SynchronizedLivingArchitecture/S.L.A.T.E"], timeout=120)
+
+    if install_result.returncode != 0:
+        tracker.complete_step("claude_plugin", success=True, warning=True,
+                              details="Plugin install failed — run manually: /plugin install slate-sdk@slate-marketplace")
+        return True
+
+    tracker.update_progress("claude_plugin", 90, "Verifying installation")
+
+    # Verify plugin is installed
+    list_result = _run_cmd(["claude", "plugin", "list"], timeout=30)
+    if list_result.returncode == 0 and "slate" in list_result.stdout.lower():
+        tracker.complete_step("claude_plugin", success=True,
+                              details="SLATE plugin installed — restart Claude Code to activate")
+    else:
+        tracker.complete_step("claude_plugin", success=True, warning=True,
+                              details="Plugin may need manual verification — run: /plugin list")
+
     return True
 
 
@@ -1934,6 +2027,13 @@ def print_completion(success: bool, tracker=None):
         print("    • Use @slate /status in Copilot Chat for system health")
         print("    • Use @slate /help for all available commands")
         print()
+        print("  ───── Claude Code Integration ─────")
+        print()
+        print("    • Marketplace: /plugin marketplace add SynchronizedLivingArchitecture/S.L.A.T.E")
+        print("    • Install:     /plugin install slate-sdk@slate-marketplace")
+        print("    • Commands:    /slate, /slate-status, /slate-workflow, /slate-gpu")
+        print("    • MCP Tools:   slate_status, slate_ai, slate_workflow, slate_gpu")
+        print()
         print("  ───── GPU & AI (optional) ─────")
         print()
         print("    • PyTorch:     python slate/slate_hardware_optimizer.py --install-pytorch")
@@ -2094,6 +2194,7 @@ def main():
         ("dirs_create",    step_dirs_create),
         ("git_sync",       step_git_sync),
         ("vscode_ext",     step_vscode_extension),
+        ("claude_plugin",  step_claude_code_plugin),
         ("slate_models",   step_slate_models),
         ("skills_validate", step_skills_validate),
         ("chromadb_check", step_chromadb_check),
