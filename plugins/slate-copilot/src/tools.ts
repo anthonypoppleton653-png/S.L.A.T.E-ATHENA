@@ -101,6 +101,9 @@ interface IAgentStatusParams { action?: string }
 interface IGpuManagerParams { action?: string }
 interface IAutonomousParams { action?: string; max?: number }
 interface ISlateRunProtocolParams { /* no params */ }
+interface ISemanticKernelParams { action?: string; prompt?: string; model?: string }
+// Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Add GitHub Models tool interface
+interface IGitHubModelsParams { action?: string; prompt?: string; model?: string; role?: string }
 interface IHandoffParams { task: string; priority?: string }
 interface IStartServicesParams { services?: string }
 interface IExecuteWorkParams { scope?: string; max?: number }
@@ -112,6 +115,8 @@ interface ISpecKitParams { action?: string; specId?: string }
 interface ILearningParams { action?: string; stepId?: string }
 interface IPlanContextParams { scope?: string }
 interface ICodeGuidanceParams { file?: string; context?: string }
+// Modified: 2026-02-09T04:00:00Z | Author: COPILOT | Change: Add Kubernetes deployment tool interface
+interface IKubernetesParams { action?: string; component?: string; overlay?: string }
 
 class SystemStatusTool implements vscode.LanguageModelTool<IStatusParams> {
 	async invoke(options: vscode.LanguageModelToolInvocationOptions<IStatusParams>, token: vscode.CancellationToken) {
@@ -1149,7 +1154,98 @@ class CodeGuidanceTool implements vscode.LanguageModelTool<ICodeGuidanceParams> 
 	}
 }
 
+// Modified: 2026-02-08T10:00:00Z | Author: COPILOT | Change: Add Semantic Kernel tool class
+class SemanticKernelTool implements vscode.LanguageModelTool<ISemanticKernelParams> {
+	async invoke(options: vscode.LanguageModelToolInvocationOptions<ISemanticKernelParams>, token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		let cmd = 'slate/slate_semantic_kernel.py';
+		if (action === 'status') {
+			cmd += ' --status';
+		} else if (action === 'plugins') {
+			cmd += ' --plugins';
+		} else if (action === 'benchmark') {
+			cmd += ' --benchmark';
+		} else if (action === 'invoke' && options.input.prompt) {
+			const model = options.input.model ?? 'general';
+			cmd += ` --invoke "${options.input.prompt.replace(/"/g, '\\"')}" --model ${model}`;
+		}
+		const output = await execSlateCommandLong(cmd, token);
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(output)]);
+	}
+
+	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<ISemanticKernelParams>, _token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		return { invocationMessage: `Semantic Kernel: ${action}...` };
+	}
+}
+
 // ─── Registration ───────────────────────────────────────────────────────
+
+// Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Add GitHub Models tool for free-tier cloud inference
+class GitHubModelsTool implements vscode.LanguageModelTool<IGitHubModelsParams> {
+	async invoke(options: vscode.LanguageModelToolInvocationOptions<IGitHubModelsParams>, token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		let cmd = 'slate/slate_github_models.py';
+		if (action === 'status') {
+			cmd += ' --status';
+		} else if (action === 'list') {
+			cmd += ' --list-models';
+		} else if (action === 'benchmark') {
+			cmd += ' --benchmark';
+		} else if (action === 'chat' && options.input.prompt) {
+			const model = options.input.model ?? 'gpt-4o-mini';
+			const role = options.input.role ?? '';
+			cmd += ` --chat "${options.input.prompt.replace(/"/g, '\\"')}" --model ${model}`;
+			if (role) {
+				cmd += ` --role ${role}`;
+			}
+		} else if (action === 'fallback' && options.input.prompt) {
+			cmd += ` --fallback "${options.input.prompt.replace(/"/g, '\\"')}"`;
+			if (options.input.role) {
+				cmd += ` --role ${options.input.role}`;
+			}
+		}
+		const output = await execSlateCommandLong(cmd, token);
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(output)]);
+	}
+
+	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<IGitHubModelsParams>, _token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		return { invocationMessage: `GitHub Models: ${action}...` };
+	}
+}
+
+// Modified: 2026-02-09T04:00:00Z | Author: COPILOT | Change: Add Kubernetes deployment management tool
+class KubernetesTool implements vscode.LanguageModelTool<IKubernetesParams> {
+	async invoke(options: vscode.LanguageModelToolInvocationOptions<IKubernetesParams>, token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		let cmd = 'slate/slate_k8s_deploy.py';
+		if (action === 'status') {
+			cmd += ' --status';
+		} else if (action === 'health') {
+			cmd += ' --health';
+		} else if (action === 'deploy') {
+			cmd += ' --deploy';
+		} else if (action === 'deploy-kustomize' && options.input.overlay) {
+			cmd += ` --deploy-kustomize ${options.input.overlay}`;
+		} else if (action === 'teardown') {
+			cmd += ' --teardown';
+		} else if (action === 'logs' && options.input.component) {
+			cmd += ` --logs ${options.input.component}`;
+		} else if (action === 'port-forward') {
+			cmd += ' --port-forward';
+		} else if (action === 'preload-models') {
+			cmd += ' --preload-models';
+		}
+		const output = await execSlateCommandLong(cmd, token);
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(output)]);
+	}
+
+	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<IKubernetesParams>, _token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		return { invocationMessage: `Kubernetes: ${action}...` };
+	}
+}
 
 export function registerSlateTools(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.lm.registerTool('slate_systemStatus', new SystemStatusTool()));
@@ -1180,4 +1276,10 @@ export function registerSlateTools(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.lm.registerTool('slate_learningProgress', new LearningProgressTool()));
 	context.subscriptions.push(vscode.lm.registerTool('slate_planContext', new PlanContextTool()));
 	context.subscriptions.push(vscode.lm.registerTool('slate_codeGuidance', new CodeGuidanceTool()));
+	// Semantic Kernel integration
+	context.subscriptions.push(vscode.lm.registerTool('slate_semanticKernel', new SemanticKernelTool()));
+	// GitHub Models free-tier cloud inference
+	context.subscriptions.push(vscode.lm.registerTool('slate_githubModels', new GitHubModelsTool()));
+	// Kubernetes deployment management
+	context.subscriptions.push(vscode.lm.registerTool('slate_kubernetes', new KubernetesTool()));
 }

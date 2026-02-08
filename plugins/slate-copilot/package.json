@@ -820,6 +820,35 @@
 				}
 			},
 			{
+				"name": "slate_semanticKernel",
+				"tags": ["slate", "semantic-kernel", "ai", "microsoft", "plugins", "planner"],
+				"toolReferenceName": "slateSemanticKernel",
+				"displayName": "SLATE Semantic Kernel",
+				"modelDescription": "Microsoft Semantic Kernel integration: check status, list plugins, run inference via local Ollama models with SK function calling, or benchmark SK pipeline performance. Uses SLATE custom models (slate-coder, slate-fast, slate-planner) with ChromaDB RAG memory.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "SK action: 'status' (integration health), 'plugins' (list SK plugins), 'invoke' (run prompt through SK), 'benchmark' (SK inference perf)",
+							"enum": ["status", "plugins", "invoke", "benchmark"],
+							"default": "status"
+						},
+						"prompt": {
+							"type": "string",
+							"description": "Prompt text for 'invoke' action"
+						},
+						"model": {
+							"type": "string",
+							"description": "Model role: code, fast, planner, general",
+							"enum": ["code", "fast", "planner", "general"],
+							"default": "general"
+						}
+					}
+				}
+			},
+			{
 				"name": "slate_gitOps",
 				"tags": ["slate", "git", "source-control", "branch"],
 				"toolReferenceName": "slateGitOps",
@@ -841,13 +870,71 @@
 						}
 					}
 				}
+			},
+			{
+				"name": "slate_githubModels",
+				"tags": ["slate", "github-models", "ai", "cloud", "inference", "free-tier"],
+				"toolReferenceName": "slateGitHubModels",
+				"displayName": "SLATE GitHub Models",
+				"modelDescription": "GitHub Models free-tier cloud AI inference: check status and rate limits, list available models (GPT-4o, GPT-4o-mini, Mistral, DeepSeek-R1, Phi-4, Llama, etc.), send chat prompts, run with Ollama fallback chain, or benchmark API performance. 11 models, 15 RPM / 150 RPD rate limits, no cost.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "GitHub Models action: 'status' (auth + rate limits), 'list' (available models), 'chat' (send prompt), 'fallback' (GitHub→Ollama chain), 'benchmark' (API perf)",
+							"enum": ["status", "list", "chat", "fallback", "benchmark"],
+							"default": "status"
+						},
+						"prompt": {
+							"type": "string",
+							"description": "Prompt text for 'chat' or 'fallback' actions"
+						},
+						"model": {
+							"type": "string",
+							"description": "Model name for 'chat' action (e.g., gpt-4o, gpt-4o-mini, DeepSeek-R1)",
+							"default": "gpt-4o-mini"
+						},
+						"role": {
+							"type": "string",
+							"description": "SLATE role mapping for 'fallback' action: code, fast, planner, analysis, reasoning, summary, general",
+							"enum": ["code", "fast", "planner", "analysis", "reasoning", "summary", "general"],
+							"default": "general"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_kubernetes",
+				"tags": ["slate", "kubernetes", "k8s", "cluster", "pods", "deployment"],
+				"toolReferenceName": "slateKubernetes",
+				"displayName": "SLATE Kubernetes",
+				"modelDescription": "Kubernetes deployment management for SLATE: check cluster status (pods, deployments, services), run health checks, deploy manifests (raw kubectl or Kustomize overlays), teardown, view component logs, set up port forwarding, or preload ML models. Manages the slate namespace with 7 deployments, 5 CronJobs, HPAs, PDBs, and Ingress.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "K8s action: 'status' (cluster overview), 'health' (deep health check), 'deploy' (apply manifests), 'deploy-kustomize' (apply with overlay), 'teardown' (remove all), 'logs' (component logs), 'port-forward' (local access), 'preload-models' (ML model init)",
+							"enum": ["status", "health", "deploy", "deploy-kustomize", "teardown", "logs", "port-forward", "preload-models"],
+							"default": "status"
+						},
+						"component": {
+							"type": "string",
+							"description": "Component name for 'logs' action (e.g., core, ollama, vectorstore, agent-router, autonomous-loop, copilot-bridge, workflow-manager)"
+						},
+						"overlay": {
+							"type": "string",
+							"description": "Kustomize overlay for 'deploy-kustomize' action (e.g., local, dev, staging, prod)",
+							"enum": ["local", "dev", "staging", "prod"]
+						}
+					}
+				}
 			}
 		],
 		"commands": [
-			{
-				"command": "slate.showStatus",
-				"title": "SLATE: Show System Status"
-			},
 			{
 				"command": "slate.openDashboard",
 				"title": "SLATE: Open Dashboard"
@@ -855,6 +942,14 @@
 			{
 				"command": "slate.refreshDashboard",
 				"title": "SLATE: Refresh Dashboard"
+			},
+			{
+				"command": "slate.skipOnboarding",
+				"title": "SLATE: Skip Onboarding (Fix Stuck)"
+			},
+			{
+				"command": "slate.resetOnboarding",
+				"title": "SLATE: Reset Onboarding"
 			},
 			{
 				"command": "slate.applyTheme",

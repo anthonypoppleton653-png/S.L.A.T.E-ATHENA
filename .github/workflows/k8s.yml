@@ -1,0 +1,215 @@
+# Modified: 2026-02-09T04:00:00Z | Author: COPILOT | Change: Create K8s deployment workflow for SLATE namespace
+#
+# S.L.A.T.E. Kubernetes Deployment Workflow
+# Deploys SLATE services to Kubernetes cluster (Docker Desktop or production)
+# Coordinates with: docker.yml (image build), cd.yml (release), ci.yml (validation)
+# Reference: https://github.com/features/actions
+
+name: K8s Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'local'
+        type: choice
+        options:
+          - local
+          - dev
+          - staging
+          - prod
+      action:
+        description: 'Deployment action'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - status
+          - health
+          - teardown
+      overlay:
+        description: 'Kustomize overlay (leave empty for raw kubectl)'
+        required: false
+        default: ''
+        type: string
+  # Trigger after Docker images are built
+  workflow_run:
+    workflows: ['Docker Build']
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: k8s-${{ github.event.inputs.environment || 'local' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: powershell
+
+jobs:
+  # ---- Pre-flight: Verify cluster connectivity and prerequisites ----
+  preflight:
+    name: K8s Pre-flight
+    runs-on: [self-hosted, slate]
+    timeout-minutes: 5
+    if: ${{ github.event.inputs.action != 'teardown' || github.event_name == 'workflow_run' }}
+    outputs:
+      cluster_ready: ${{ steps.check.outputs.ready }}
+      node_count: ${{ steps.check.outputs.nodes }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH
+      - id: check
+        name: Check cluster connectivity
+        run: |
+          $nodes = kubectl get nodes --no-headers 2>$null | Measure-Object | Select-Object -ExpandProperty Count
+          if ($nodes -gt 0) {
+            Write-Host "Cluster connected: $nodes node(s)"
+            "ready=true" | Out-File -Append $env:GITHUB_OUTPUT
+            "nodes=$nodes" | Out-File -Append $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "::error::No Kubernetes cluster available"
+            "ready=false" | Out-File -Append $env:GITHUB_OUTPUT
+            "nodes=0" | Out-File -Append $env:GITHUB_OUTPUT
+            exit 1
+          }
+      - name: Check Helm
+        run: |
+          $helmPath = "$env:GITHUB_WORKSPACE\tools\helm.exe"
+          if (Test-Path $helmPath) {
+            & $helmPath version --short
+          } else {
+            Write-Host "::warning::Helm not found at $helmPath"
+          }
+        continue-on-error: true
+      - name: SLATE runtime check
+        run: |
+          python slate/slate_runtime.py --check-all
+
+  # ---- Deploy: Apply manifests to cluster ----
+  deploy:
+    name: Deploy to K8s (${{ github.event.inputs.environment || 'local' }})
+    runs-on: [self-hosted, slate]
+    needs: preflight
+    if: ${{ (github.event.inputs.action == 'deploy' || github.event_name == 'workflow_run') && needs.preflight.outputs.cluster_ready == 'true' }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH
+
+      - name: Build local image (if needed)
+        run: |
+          $imageExists = docker images slate:local --format "{{.Repository}}" 2>$null
+          if (-not $imageExists) {
+            Write-Host "Building slate:local from Dockerfile.cpu..."
+            docker build -t slate:local -f Dockerfile.cpu .
+          } else {
+            Write-Host "slate:local image already exists"
+          }
+
+      - name: Deploy with Kustomize overlay
+        if: ${{ github.event.inputs.overlay != '' }}
+        run: |
+          $overlay = "${{ github.event.inputs.overlay }}"
+          Write-Host "Deploying with Kustomize overlay: $overlay"
+          python slate/slate_k8s_deploy.py --deploy-kustomize $overlay
+
+      - name: Deploy with raw kubectl
+        if: ${{ github.event.inputs.overlay == '' }}
+        run: |
+          Write-Host "Deploying with raw kubectl..."
+          python slate/slate_k8s_deploy.py --deploy
+
+      - name: Wait for rollout
+        run: |
+          $deployments = @('slate-core', 'ollama', 'chromadb', 'slate-agent-router',
+                          'slate-autonomous-loop', 'slate-copilot-bridge', 'slate-workflow-manager')
+          foreach ($dep in $deployments) {
+            Write-Host "Waiting for $dep..."
+            kubectl rollout status deployment/$dep -n slate --timeout=120s 2>$null
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "::warning::$dep rollout did not complete in time"
+            }
+          }
+
+      - name: Post-deploy health check
+        run: |
+          python slate/slate_k8s_deploy.py --health
+
+  # ---- Status: Report cluster state ----
+  status:
+    name: K8s Status
+    runs-on: [self-hosted, slate]
+    if: ${{ github.event.inputs.action == 'status' }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH
+      - name: Cluster status
+        run: |
+          python slate/slate_k8s_deploy.py --status
+
+  # ---- Health: Deep health check ----
+  health:
+    name: K8s Health Check
+    runs-on: [self-hosted, slate]
+    if: ${{ github.event.inputs.action == 'health' }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH
+      - name: Health check
+        run: |
+          python slate/slate_k8s_deploy.py --health
+
+  # ---- Teardown: Remove SLATE from cluster ----
+  teardown:
+    name: Teardown K8s
+    runs-on: [self-hosted, slate]
+    if: ${{ github.event.inputs.action == 'teardown' }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH
+      - name: Teardown
+        run: |
+          python slate/slate_k8s_deploy.py --teardown
+
+  # ---- Summary ----
+  summary:
+    name: K8s Summary
+    runs-on: [self-hosted, slate]
+    needs: [preflight, deploy, status, health, teardown]
+    if: always()
+    timeout-minutes: 5
+    steps:
+      - name: Summary
+        run: |
+          "## K8s Deployment Results" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Stage | Status |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "|-------|--------|" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Preflight | ${{ needs.preflight.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Deploy | ${{ needs.deploy.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Status | ${{ needs.status.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Health | ${{ needs.health.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Teardown | ${{ needs.teardown.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "**Environment:** ${{ github.event.inputs.environment || 'local' }}" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "**Triggered by:** ${{ github.actor }}" | Out-File -Append $env:GITHUB_STEP_SUMMARY

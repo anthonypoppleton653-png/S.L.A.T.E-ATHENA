@@ -421,9 +421,12 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 						await this._applySlateDefaultTheme();
 						break;
 					case 'detectSystem':
+						console.log('[SLATE] detectSystem message received');
 						try {
 							await this._detectAndSendSystemProfile();
-						} catch {
+							console.log('[SLATE] detectSystem completed successfully');
+						} catch (err) {
+							console.error('[SLATE] detectSystem failed:', err);
 							// Send a minimal profile so the UI doesn't stay stuck on spinner
 							this._sendToWebview({ type: 'systemProfile', profile: {
 								pythonVersion: 'Unknown', gpuCount: 0, gpuModels: [], totalVramGb: 0,
@@ -527,9 +530,12 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 	// ── System Detection (Generative UI) ────────────────────────────────────
 
 	private async _detectAndSendSystemProfile(): Promise<void> {
+		console.log('[SLATE] Starting system detection...');
 		const profile = await this._detectSystem();
+		console.log('[SLATE] Detection complete, sending profile:', JSON.stringify(profile));
 		this._systemProfile = profile;
 		this._sendToWebview({ type: 'systemProfile', profile });
+		console.log('[SLATE] Profile sent to webview');
 	}
 
 	private async _detectSystem(): Promise<SystemProfile> {
@@ -551,16 +557,31 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 			packageCount: 0,
 		};
 
+		// Modified: 2026-02-08 | Author: Claude Opus 4.5 | Change: Fix hanging system scan with proper timeout wrapper
+		// Node's execAsync timeout doesn't reliably kill child processes on Windows
+		// Wrap each check in a race with a hard timeout
+		const withTimeout = <T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> => {
+			return Promise.race([
+				promise,
+				new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))
+			]);
+		};
+
+		const TIMEOUT = 5000; // 5 seconds max per check
+		const FAIL = { stdout: '', stderr: '' };
+
 		// Run all detections in parallel for speed
 		const [pythonRes, gpuRes, ollamaRes, dockerRes, githubRes, venvRes, pkgRes] = await Promise.allSettled([
-			execAsync(`"${py}" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')"`, { cwd, timeout: 10000 }),
-			execAsync(`"${py}" -c "import subprocess; r=subprocess.run(['nvidia-smi','--query-gpu=name,memory.total','--format=csv,noheader,nounits'],capture_output=True,text=True); print(r.stdout.strip() if r.returncode==0 else 'none')"`, { cwd, timeout: 10000 }),
-			execAsync(`"${py}" -c "import urllib.request,json; r=urllib.request.urlopen('http://127.0.0.1:11434/api/tags',timeout=3); d=json.loads(r.read()); names=[m['name'] for m in d.get('models',[])]; print('|'.join(names))"`, { cwd, timeout: 10000 }),
-			execAsync(`"${py}" -c "import subprocess; r=subprocess.run(['docker','info'],capture_output=True,text=True,timeout=5); print('ok' if r.returncode==0 else 'no')"`, { cwd, timeout: 10000 }),
-			execAsync(`"${py}" -c "import subprocess; r=subprocess.run(['git','credential','fill'],input='protocol=https\\nhost=github.com\\n',capture_output=True,text=True); print('ok' if 'password=' in r.stdout else 'no')"`, { cwd, timeout: 10000 }),
-			execAsync(`"${py}" -c "import sys; print('yes' if sys.prefix!=sys.base_prefix else 'no')"`, { cwd, timeout: 10000 }),
+			withTimeout(execAsync(`"${py}" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')"`, { cwd, timeout: TIMEOUT }), TIMEOUT, FAIL),
+			withTimeout(execAsync(`"${py}" -c "import subprocess; r=subprocess.run(['nvidia-smi','--query-gpu=name,memory.total','--format=csv,noheader,nounits'],capture_output=True,text=True,timeout=3); print(r.stdout.strip() if r.returncode==0 else 'none')"`, { cwd, timeout: TIMEOUT }), TIMEOUT, FAIL),
+			withTimeout(execAsync(`"${py}" -c "import urllib.request,json; r=urllib.request.urlopen('http://127.0.0.1:11434/api/tags',timeout=2); d=json.loads(r.read()); names=[m['name'] for m in d.get('models',[])]; print('|'.join(names))"`, { cwd, timeout: TIMEOUT }), TIMEOUT, FAIL),
+			// Docker check with internal Python timeout to prevent hang
+			withTimeout(execAsync(`"${py}" -c "import subprocess; r=subprocess.run(['docker','info'],capture_output=True,text=True,timeout=3); print('ok' if r.returncode==0 else 'no')"`, { cwd, timeout: TIMEOUT }), TIMEOUT, FAIL),
+			// GitHub auth check - use gh CLI which doesn't hang, fallback to 'no'
+			withTimeout(execAsync(`"${py}" -c "import subprocess; r=subprocess.run(['gh','auth','status'],capture_output=True,text=True,timeout=3); print('ok' if r.returncode==0 else 'no')"`, { cwd, timeout: TIMEOUT }).catch(() => ({ stdout: 'no', stderr: '' })), TIMEOUT, { stdout: 'no', stderr: '' }),
+			withTimeout(execAsync(`"${py}" -c "import sys; print('yes' if sys.prefix!=sys.base_prefix else 'no')"`, { cwd, timeout: TIMEOUT }), TIMEOUT, FAIL),
 			// Modified: 2026-02-08T02:00:00Z | Author: COPILOT | Change: Replace broken pkg_resources.working_set with importlib.metadata
-			execAsync(`"${py}" -c "import importlib.metadata; print(len(list(importlib.metadata.distributions())))"`, { cwd, timeout: 10000 }),
+			withTimeout(execAsync(`"${py}" -c "import importlib.metadata; print(len(list(importlib.metadata.distributions())))"`, { cwd, timeout: TIMEOUT }), TIMEOUT, FAIL),
 		]);
 
 		const profile = { ...defaults };
@@ -1430,7 +1451,7 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 				<div class="stat"><span class="stat-value" id="statAi">...</span><span class="stat-label">Local AI</span></div>
 				<div class="stat"><span class="stat-value" id="statCost">$0</span><span class="stat-label">Cloud Cost</span></div>
 			</div>
-			<div class="sys-detect active" id="sysDetect"><span class="sys-detect-spinner"></span><span class="sys-detect-text">Scanning your system...</span></div>
+			<div class="sys-detect active" id="sysDetect"><span class="sys-detect-spinner"></span><span class="sys-detect-text">Scanning your system...</span><button id="escapeBtn" onclick="window.slateForceShowButtons()" style="display:none;margin-left:8px;padding:4px 12px;background:transparent;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:4px;cursor:pointer;font-size:12px;">Skip</button></div>
 			<div class="cta-container" id="ctaContainer" style="display:none;">
 				<button class="cta-primary" id="btnStartGuided">Start Guided Setup</button>
 				<button class="cta-theme" id="btnApplyTheme">Apply SLATE Theme</button>
@@ -1691,16 +1712,41 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 		/* ── Onboarding init ── */
 		if (!\${onboardingComplete}) {
 			vscode.postMessage({ type: 'detectSystem' });
-			setTimeout(function() {
+			// Fallback: if detection takes too long, show buttons anyway
+			var fallbackTimer = setTimeout(function() {
 				var det = document.getElementById('sysDetect');
 				var cta = document.getElementById('ctaContainer');
 				var feat = document.getElementById('featureCards');
 				if (det && det.classList.contains('active')) {
+					console.log('[SLATE] Detection timeout - showing fallback UI');
 					det.classList.remove('active');
 					if(cta) cta.style.display = 'flex';
 					if(feat) feat.style.display = 'grid';
+					// Show manual skip option
+					var esc = document.getElementById('escapeBtn');
+					if (esc) esc.style.display = 'none';
 				}
-			}, 8000);
+			}, 5000);
+			// Show escape button after 3 seconds for impatient users
+			setTimeout(function() {
+				var det = document.getElementById('sysDetect');
+				if (det && det.classList.contains('active')) {
+					var esc = document.getElementById('escapeBtn');
+					if (esc) esc.style.display = 'inline-block';
+				}
+			}, 3000);
+			// Immediate escape handler
+			window.slateForceShowButtons = function() {
+				clearTimeout(fallbackTimer);
+				var det = document.getElementById('sysDetect');
+				var cta = document.getElementById('ctaContainer');
+				var feat = document.getElementById('featureCards');
+				if (det) det.classList.remove('active');
+				if (cta) cta.style.display = 'flex';
+				if (feat) feat.style.display = 'grid';
+				var esc = document.getElementById('escapeBtn');
+				if (esc) esc.style.display = 'none';
+			};
 		}
 
 		/* ── Guided setup functions ── */
@@ -1770,6 +1816,7 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 			document.querySelectorAll('.step-dot').forEach(function(d) { d.classList.remove('active'); d.classList.add('complete'); });
 		}
 		function updateSystemProfile(p) {
+			console.log('[SLATE] System profile received:', p);
 			var g = document.getElementById('statGpu');
 			if(g) { g.textContent = p.gpuCount > 0 ? p.gpuCount + 'x' : 'CPU'; }
 			var a = document.getElementById('statAi');
@@ -1786,6 +1833,7 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 				} else { fa.textContent = 'Ollama needed'; }
 			}
 			var det = document.getElementById('sysDetect'); if(det) det.classList.remove('active');
+			var esc = document.getElementById('escapeBtn'); if(esc) esc.style.display = 'none';
 			var cta = document.getElementById('ctaContainer'); if(cta) cta.style.display = 'flex';
 			var feat = document.getElementById('featureCards'); if(feat) feat.style.display = 'grid';
 		}

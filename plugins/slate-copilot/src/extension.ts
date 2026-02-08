@@ -83,6 +83,26 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
+	// Skip onboarding command (escape hatch for stuck state)
+	context.subscriptions.push(
+		vscode.commands.registerCommand('slate.skipOnboarding', async () => {
+			await context.globalState.update('slateOnboardingComplete', true);
+			await context.globalState.update('slateLastVersion', '4.0.0');
+			unifiedDashboardProvider.refresh();
+			vscode.window.showInformationMessage('SLATE onboarding skipped. Dashboard view refreshed.');
+		})
+	);
+
+	// Reset onboarding command
+	context.subscriptions.push(
+		vscode.commands.registerCommand('slate.resetOnboarding', async () => {
+			await context.globalState.update('slateOnboardingComplete', false);
+			await context.globalState.update('slateLastVersion', '0.0.0');
+			unifiedDashboardProvider.refresh();
+			vscode.window.showInformationMessage('SLATE onboarding reset. Refresh the SLATE panel to restart.');
+		})
+	);
+
 	// Register the status command
 	context.subscriptions.push(
 		vscode.commands.registerCommand('slate.showStatus', async () => {

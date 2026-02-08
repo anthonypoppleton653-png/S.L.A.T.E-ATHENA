@@ -88,13 +88,14 @@ SLATE is layered. Fix the LOWEST broken layer first. Progress upward.
 | 1 | Foundation | slate_systemStatus, slate_runtimeCheck, slate_checkDeps |
 | 2 | Hardware | slate_hardwareInfo, slate_gpuManager |
 | 3 | Infrastructure | slate_runnerStatus, slate_orchestrator, slate_startServices |
-| 4 | AI Pipeline | slate_gpuManager(preload), slate_runtimeCheck |
+| 4 | AI Pipeline | slate_gpuManager(preload), slate_runtimeCheck, slate_githubModels |
 | 5 | Agent Registry | slate_agentStatus, slate_agentBridge |
 | 6 | Services | slate_orchestrator, slate_startServices |
 | 7 | Task Mgmt | slate_workflow, slate_autonomous, slate_executeWork, slate_handoff |
 | 8 | Quality | slate_securityAudit, slate_benchmark, slate_forkCheck |
 | + | Roadmap | slate_planContext, slate_devCycle, slate_specKit, slate_codeGuidance |
 | + | GitHub | slate_ciMonitor, slate_prManager, slate_issueTracker, slate_gitOps |
+| + | AI Cloud | slate_githubModels, slate_semanticKernel |
 
 ## TOOL USAGE — 20 rounds available
 

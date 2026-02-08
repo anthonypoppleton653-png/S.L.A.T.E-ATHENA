@@ -76,6 +76,8 @@ jobs:
             pattern: 'test_agent_registry or test_agent_plugins or test_slate_runner_manager or test_slate_runner_benchmark or test_slate_real_multi_runner or test_copilot_slate_runner or test_slate_discussion_manager or test_slate_project_board'
           - suite: ml
             pattern: 'test_ml_orchestrator or test_slate_model_trainer or test_slate_gpu_manager or test_slate_warmup or test_slate_unified_autonomous or test_integrated_autonomous_loop or test_slate_hardware_optimizer'
+          - suite: semantic-kernel
+            pattern: 'test_slate_semantic_kernel'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -191,6 +193,50 @@ jobs:
         run: |
           python tests/test_gpu_compute.py
 
+  # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s manifest validation job
+  k8s-validation:
+    name: K8s Manifest Validation
+    runs-on: [self-hosted, slate]
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
+      - name: Validate YAML manifests
+        run: |
+          python -c @"
+          import yaml, pathlib, sys
+          errors = 0
+          for f in pathlib.Path('k8s').rglob('*.yaml'):
+              try:
+                  list(yaml.safe_load_all(f.read_text(encoding='utf-8')))
+                  print(f'  OK  {f}')
+              except Exception as e:
+                  print(f'  FAIL {f}: {e}')
+                  errors += 1
+          print(f'\\nValidated {len(list(pathlib.Path("k8s").rglob("*.yaml")))} manifests, {errors} errors')
+          sys.exit(1 if errors else 0)
+          "@
+      - name: Validate Helm chart
+        run: |
+          $helmPath = "$env:GITHUB_WORKSPACE\tools\helm.exe"
+          if (Test-Path $helmPath) {
+            & $helmPath lint helm/ --strict
+          } else {
+            Write-Host "::warning::Helm not found, skipping chart validation"
+          }
+        continue-on-error: true
+      - name: K8s cluster connectivity
+        run: |
+          kubectl cluster-info 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            python slate/slate_k8s_deploy.py --health
+          } else {
+            Write-Host "::warning::No K8s cluster available, skipping health check"
+          }
+        continue-on-error: true
+
   ai-code-review:
     name: AI Code Review
     runs-on: [self-hosted, slate]
@@ -294,6 +340,64 @@ jobs:
           path: ai_inference.json
           retention-days: 30
           if-no-files-found: ignore
+
+  # Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Add Semantic Kernel validation job
+  # ------------ Semantic Kernel Validation ------------
+  semantic-kernel:
+    name: Semantic Kernel Validation
+    runs-on: [self-hosted, slate]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
+      - name: Verify SK Import
+        run: |
+          python -c @"
+          import semantic_kernel
+          print(f'Semantic Kernel: v{semantic_kernel.__version__}')
+          assert int(semantic_kernel.__version__.split('.')[0]) >= 1
+          print('SK import: PASSED')
+          "@
+      - name: Verify SK Module
+        run: |
+          python -c @"
+          from slate.slate_semantic_kernel import get_sk_status
+          import json
+          status = get_sk_status()
+          print(json.dumps(status, indent=2))
+          assert status['semantic_kernel']['available'], 'SK not available'
+          assert len(status['plugins']) >= 3, 'Missing SK plugins'
+          assert 'ActionGuard' in status['security'], 'ActionGuard not enforced'
+          print('SK module validation: PASSED')
+          "@
+      - name: Verify SK Plugins
+        run: |
+          python -c @"
+          from semantic_kernel import Kernel
+          from slate.slate_semantic_kernel import _register_slate_plugins
+          kernel = Kernel()
+          _register_slate_plugins(kernel)
+          plugin_names = list(kernel.plugins.keys())
+          assert 'slate_system' in plugin_names, 'Missing slate_system plugin'
+          assert 'slate_search' in plugin_names, 'Missing slate_search plugin'
+          assert 'slate_agents' in plugin_names, 'Missing slate_agents plugin'
+          total_funcs = sum(len(p) for p in kernel.plugins.values())
+          print(f'SK Plugins: {len(plugin_names)} plugins, {total_funcs} functions')
+          print('SK plugin validation: PASSED')
+          "@
+      - name: SK Model Resolution
+        run: |
+          python -c @"
+          from slate.slate_semantic_kernel import _resolve_model, SK_MODEL_MAP
+          for role in SK_MODEL_MAP:
+              model = _resolve_model(role)
+              print(f'  {role:12s} -> {model}')
+          print('SK model resolution: PASSED')
+          "@
+      - name: SK Status Summary
+        run: python slate/slate_semantic_kernel.py --status
 
   # ------------ Copilot SDK Validation ------------
   copilot-sdk:
@@ -440,7 +544,7 @@ jobs:
   summary:
     name: CI Summary
     runs-on: [self-hosted, slate]
-    needs: [lint, unit-tests, sdk-validation, security, slate-checks, gpu-validation, ai-code-review, ai-inference, copilot-sdk, transformer-analysis]
+    needs: [lint, unit-tests, sdk-validation, security, slate-checks, gpu-validation, ai-code-review, ai-inference, copilot-sdk, semantic-kernel, transformer-analysis]
     if: always()
     steps:
       - name: Generate summary
@@ -457,4 +561,5 @@ jobs:
           "| AI Code Review | ${{ needs.ai-code-review.result || 'skipped' }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "| AI Inference | ${{ needs.ai-inference.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "| Copilot SDK | ${{ needs.copilot-sdk.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Semantic Kernel | ${{ needs.semantic-kernel.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "| Transformer Analysis (matrix) | ${{ needs.transformer-analysis.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
