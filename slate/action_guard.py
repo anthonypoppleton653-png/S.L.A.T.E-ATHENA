@@ -77,7 +77,9 @@ ALLOWED_GITHUB_DOMAINS = [
     "api.github.com",
     "github.com",
     "raw.githubusercontent.com",
+    "models.inference.ai.azure.com",  # GitHub Models free-tier AI endpoint
 ]
+# Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Add GitHub Models endpoint to allowed domains
 
 # Rate limiting: max calls per minute per action type
 RATE_LIMITS = {

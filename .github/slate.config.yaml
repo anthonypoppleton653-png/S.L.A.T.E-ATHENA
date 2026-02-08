@@ -314,6 +314,8 @@ workflow_integration:
       - fork-sync.yml          # Dependency fork sync (daily)
       - sync-copilot-sdk.yml   # Copilot SDK sync (daily)
       - dependency-update.yml  # Pip dependency updates (weekly)
+      # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s workflow to operations chain
+      - k8s.yml               # Kubernetes deployment management
     
     community:
       - fork-validation.yml     # Fork PR security
@@ -323,6 +325,11 @@ workflow_integration:
       - stale.yml               # Stale issue/PR management
       - label-sync.yml          # Label consistency
       - dependabot-auto-merge.yml # Dependabot auto-merge
+
+    # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s deployment chain
+    kubernetes:
+      - docker.yml        # Build: container images first
+      - k8s.yml           # Deploy: apply manifests to cluster
     
     docs:
       - docs.yml          # Documentation validation
@@ -358,6 +365,8 @@ workflow_integration:
       - label-sync.yml
       - dependabot-auto-merge.yml
       - dependency-update.yml
+      # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s to self-hosted runners
+      - k8s.yml
     
     github_hosted:  # Only for operations that MUST run on GitHub infra
       - pages.yml          # GitHub Pages requires ubuntu-latest

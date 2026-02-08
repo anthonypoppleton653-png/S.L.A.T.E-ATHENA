@@ -55,6 +55,7 @@ Usage:
 """
 
 import argparse
+import io
 import json
 import os
 import subprocess
@@ -62,6 +63,11 @@ import sys
 import time
 import webbrowser
 from pathlib import Path
+
+# Fix Windows console Unicode output
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # Modified: 2026-02-07T12:00:00Z | Author: COPILOT | Change: Add dependency resolver for scan-first install ethos
 
@@ -1397,6 +1403,41 @@ def step_chromadb_check(tracker, args):
     return True
 
 
+# Modified: 2026-02-08T10:00:00Z | Author: COPILOT | Change: Add Semantic Kernel installation check step
+def step_sk_check(tracker, args):
+    """Step: Verify Semantic Kernel (SK) integration."""
+    tracker.start_step("sk_check")
+    tracker.update_progress("sk_check", 20, "Checking Semantic Kernel")
+
+    python_exe = _get_python_exe()
+    if not python_exe.exists():
+        tracker.skip_step("sk_check", "Python venv not available")
+        return True
+
+    try:
+        result = _run_cmd([python_exe, "-c",
+            "import semantic_kernel; print(f'semantic-kernel {semantic_kernel.__version__}')"], timeout=15)
+        if result.returncode == 0 and "semantic-kernel" in result.stdout:
+            version_info = result.stdout.strip()
+            # Also verify Ollama connectivity for SK
+            ollama_check = _run_cmd([python_exe, "-c",
+                "from slate.slate_semantic_kernel import get_sk_status; "
+                "result = get_sk_status(); "
+                "print('ollama_ok' if result.get('ollama', {}).get('available') else 'ollama_fail')"
+            ], timeout=20)
+            ollama_ok = ollama_check.returncode == 0 and "ollama_ok" in ollama_check.stdout
+            detail = f"{version_info} (Ollama: {'connected' if ollama_ok else 'not connected'})"
+            tracker.complete_step("sk_check", success=True,
+                                  warning=not ollama_ok, details=detail)
+        else:
+            tracker.complete_step("sk_check", success=True, warning=True,
+                                  details="Semantic Kernel not importable -- pip install semantic-kernel")
+    except Exception as e:
+        tracker.complete_step("sk_check", success=True, warning=True,
+                              details=f"Semantic Kernel check failed: {e}")
+    return True
+
+
 def step_gpu_manager(tracker, args):
     """Step: Configure dual-GPU load balancing."""
     tracker.start_step("gpu_manager")
@@ -2056,6 +2097,7 @@ def main():
         ("slate_models",   step_slate_models),
         ("skills_validate", step_skills_validate),
         ("chromadb_check", step_chromadb_check),
+        ("sk_check",       step_sk_check),
         ("gpu_manager",    step_gpu_manager),
         ("runner_check",   step_runner_check),
         ("watchdog_setup", step_watchdog_setup),

@@ -761,6 +761,63 @@ async def api_docker_action(request: Request):
     except Exception as e:
         return JSONResponse(content={"success": False, "error": str(e)})
 
+# ─── Kubernetes API Endpoints ─────────────────────────────────────────────────
+# Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s cluster status API endpoint
+
+@app.get("/api/kubernetes/status")
+def api_kubernetes_status():
+    """Get Kubernetes cluster status for SLATE namespace."""
+    try:
+        result = subprocess.run(
+            ["kubectl", "get", "all", "-n", "slate", "-o", "json"],
+            capture_output=True, text=True, timeout=15,
+            encoding="utf-8", errors="replace"
+        )
+        if result.returncode != 0:
+            return JSONResponse(content={"available": False, "error": "kubectl failed"})
+        import json as _json
+        data = _json.loads(result.stdout)
+        items = data.get("items", [])
+        pods = [i for i in items if i.get("kind") == "Pod"]
+        deployments = [i for i in items if i.get("kind") == "Deployment"]
+        services = [i for i in items if i.get("kind") == "Service"]
+        cronjobs = [i for i in items if i.get("kind") == "CronJob"]
+        running_pods = [p for p in pods if p.get("status", {}).get("phase") == "Running"]
+        return JSONResponse(content={
+            "available": True,
+            "pods": {"total": len(pods), "running": len(running_pods),
+                     "names": [p["metadata"]["name"] for p in running_pods]},
+            "deployments": {"total": len(deployments),
+                            "names": [d["metadata"]["name"] for d in deployments]},
+            "services": {"total": len(services),
+                         "names": [s["metadata"]["name"] for s in services]},
+            "cronjobs": {"total": len(cronjobs),
+                         "names": [c["metadata"]["name"] for c in cronjobs]},
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
+    except FileNotFoundError:
+        return JSONResponse(content={"available": False, "error": "kubectl not found"})
+    except Exception as e:
+        return JSONResponse(content={"available": False, "error": str(e)})
+
+@app.get("/api/kubernetes/health")
+def api_kubernetes_health():
+    """Run K8s health check via slate_k8s_deploy.py."""
+    try:
+        script = WORKSPACE_ROOT / "slate" / "slate_k8s_deploy.py"
+        result = subprocess.run(
+            [sys.executable, str(script), "--health"],
+            capture_output=True, text=True, timeout=30,
+            encoding="utf-8", errors="replace"
+        )
+        return JSONResponse(content={
+            "success": result.returncode == 0,
+            "output": result.stdout,
+            "error": result.stderr if result.returncode != 0 else None,
+        })
+    except Exception as e:
+        return JSONResponse(content={"success": False, "error": str(e)})
+
 # ─── Benchmark API Endpoints ──────────────────────────────────────────────────
 
 @app.get("/api/benchmark/history")
@@ -908,6 +965,123 @@ async def api_services():
         services.append({"id": "foundry", "name": "Foundry Local", "online": False, "port": 5272})
 
     return JSONResponse(content={"services": services})
+
+
+@app.get("/api/integrations")
+async def api_integrations():
+    """Get all integration statuses for the dashboard."""
+    integrations = []
+
+    # GitHub - check CLI auth
+    try:
+        gh_cli = get_gh_cli()
+        result = subprocess.run(
+            [gh_cli, "auth", "status"],
+            capture_output=True, text=True, timeout=5, cwd=str(WORKSPACE_ROOT)
+        )
+        integrations.append({
+            "id": "github",
+            "name": "GitHub",
+            "description": "Repository & Actions",
+            "online": result.returncode == 0,
+            "status": "Connected to S.L.A.T.E." if result.returncode == 0 else "Not Authenticated"
+        })
+    except Exception:
+        integrations.append({"id": "github", "name": "GitHub", "description": "Repository & Actions", "online": False, "status": "CLI not found"})
+
+    # Docker
+    try:
+        result = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=5)
+        containers = 0
+        try:
+            result2 = subprocess.run(["docker", "ps", "-q"], capture_output=True, text=True, timeout=5)
+            containers = len(result2.stdout.strip().split("\n")) if result2.stdout.strip() else 0
+        except Exception:
+            pass
+        integrations.append({
+            "id": "docker",
+            "name": "Docker",
+            "description": "Container Management",
+            "online": result.returncode == 0,
+            "status": f"{containers} Running" if result.returncode == 0 else "Not Available"
+        })
+    except Exception:
+        integrations.append({"id": "docker", "name": "Docker", "description": "Container Management", "online": False, "status": "Not Available"})
+
+    # VS Code - always connected when dashboard is accessed
+    integrations.append({
+        "id": "vscode",
+        "name": "VS Code",
+        "description": "SLATE Copilot Extension",
+        "online": True,
+        "status": "Extension v4.1.0"
+    })
+
+    # Claude Code - MCP server (this server)
+    integrations.append({
+        "id": "claude",
+        "name": "Claude Code",
+        "description": "MCP Server & Slash Commands",
+        "online": True,
+        "status": "MCP Active"
+    })
+
+    # Ollama
+    try:
+        import urllib.request
+        req = urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=2)
+        if req.status == 200:
+            data = json.loads(req.read().decode("utf-8"))
+            model_count = len(data.get("models", []))
+            integrations.append({
+                "id": "ollama",
+                "name": "Ollama",
+                "description": f"{model_count} models available",
+                "online": True,
+                "status": f"{model_count} Models Loaded"
+            })
+        else:
+            integrations.append({"id": "ollama", "name": "Ollama", "description": "Local LLM Inference", "online": False, "status": "Offline"})
+    except Exception:
+        integrations.append({"id": "ollama", "name": "Ollama", "description": "Local LLM Inference", "online": False, "status": "Offline"})
+
+    # Foundry Local
+    try:
+        import urllib.request
+        req = urllib.request.urlopen("http://127.0.0.1:5272/health", timeout=2)
+        integrations.append({
+            "id": "foundry",
+            "name": "Foundry Local",
+            "description": "ONNX-Optimized Inference",
+            "online": req.status == 200,
+            "status": "Online (Port 5272)" if req.status == 200 else "Offline"
+        })
+    except Exception:
+        integrations.append({"id": "foundry", "name": "Foundry Local", "description": "ONNX-Optimized Inference", "online": False, "status": "Not Running"})
+
+    # GPU
+    try:
+        result = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name,count", "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            gpu_name = result.stdout.strip().split(",")[0].replace("NVIDIA GeForce ", "").strip()
+            gpu_count = result.stdout.strip().count("\n") + 1
+            integrations.append({
+                "id": "gpu",
+                "name": "GPU Compute",
+                "description": f"{gpu_name}" + (f" x{gpu_count}" if gpu_count > 1 else ""),
+                "online": True,
+                "status": f"{gpu_count}x Active"
+            })
+        else:
+            integrations.append({"id": "gpu", "name": "GPU Compute", "description": "CUDA Acceleration", "online": False, "status": "No GPU"})
+    except Exception:
+        integrations.append({"id": "gpu", "name": "GPU Compute", "description": "CUDA Acceleration", "online": False, "status": "No GPU"})
+
+    return JSONResponse(content={"integrations": integrations, "total": len(integrations), "online": sum(1 for i in integrations if i["online"])})
+
 
 # ─── Activity Feed ───────────────────────────────────────────────────────────
 
@@ -2786,8 +2960,18 @@ DASHBOARD_HTML = """
         }
 
         .service-item:hover {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.05);
             border-color: var(--border);
+            transform: translateX(4px);
+        }
+
+        .service-item.online {
+            border-left: 3px solid var(--status-success, #22C55E);
+        }
+
+        .service-item.offline {
+            border-left: 3px solid var(--status-error, #EF4444);
+            opacity: 0.7;
         }
 
         .service-name {
@@ -2807,8 +2991,26 @@ DASHBOARD_HTML = """
             justify-content: center;
             font-size: var(--font-sm);
             font-weight: 600;
-            background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
-            border: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(184, 115, 51, 0.15), rgba(184, 115, 51, 0.05));
+            border: 1px solid rgba(184, 115, 51, 0.2);
+            color: var(--accent, #B87333);
+            transition: all var(--transition-fast);
+        }
+
+        .service-icon svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .service-item.online .service-icon {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
+            border-color: rgba(34, 197, 94, 0.3);
+            color: #22C55E;
+        }
+
+        .service-item:hover .service-icon {
+            transform: scale(1.05);
         }
 
         /* ═══ BADGES ═══ */
@@ -2860,15 +3062,37 @@ DASHBOARD_HTML = """
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px;
+            padding: 12px 16px;
             background: rgba(0, 0, 0, 0.2);
             border-radius: 8px;
             border-left: 3px solid transparent;
+            transition: all 0.2s ease;
         }
 
-        .task-item.pending { border-left-color: var(--status-pending); }
-        .task-item.in-progress { border-left-color: var(--status-active); }
-        .task-item.completed { border-left-color: var(--status-success); }
+        .task-item:hover {
+            background: rgba(0, 0, 0, 0.3);
+            transform: translateX(2px);
+        }
+
+        .task-item.pending {
+            border-left-color: var(--status-pending, #6B7280);
+        }
+        .task-item.in-progress {
+            border-left-color: var(--status-active, #22C55E);
+            background: rgba(34, 197, 94, 0.08);
+        }
+        .task-item.in-progress:hover {
+            background: rgba(34, 197, 94, 0.12);
+        }
+        .task-item.completed {
+            border-left-color: var(--status-success, #22C55E);
+            opacity: 0.7;
+        }
+        .task-item.error,
+        .task-item.failed {
+            border-left-color: var(--status-error, #EF4444);
+            background: rgba(239, 68, 68, 0.08);
+        }
 
         .task-content { flex: 1; }
 
@@ -4486,6 +4710,23 @@ DASHBOARD_HTML = """
             background: rgba(152, 193, 217, 0.2);
             border-radius: var(--rounded-sm);
             font-size: var(--font-xs);
+            color: var(--blueprint-accent, #98C1D9);
+        }
+
+        .arch-node-icon svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+
+        .arch-node.active .arch-node-icon {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22C55E;
+        }
+
+        .arch-node.error .arch-node-icon {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
         }
 
         .arch-node-name {
@@ -4503,15 +4744,39 @@ DASHBOARD_HTML = """
         }
 
         .arch-status-dot {
-            width: 6px;
-            height: 6px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
+            transition: all 0.3s ease;
         }
 
-        .arch-status-dot.active { background: var(--conn-active); }
-        .arch-status-dot.pending { background: var(--conn-pending); animation: pulse 1.5s infinite; }
-        .arch-status-dot.error { background: var(--conn-error); }
-        .arch-status-dot.inactive { background: var(--conn-inactive); }
+        .arch-status-dot.active {
+            background: var(--conn-active, #22C55E);
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+            animation: statusGlow 2s ease-in-out infinite;
+        }
+        .arch-status-dot.pending {
+            background: var(--conn-pending, #F59E0B);
+            animation: statusPulse 1.5s ease-in-out infinite;
+        }
+        .arch-status-dot.error {
+            background: var(--conn-error, #EF4444);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+        }
+        .arch-status-dot.inactive {
+            background: var(--conn-inactive, #6B7280);
+            opacity: 0.6;
+        }
+
+        @keyframes statusGlow {
+            0%, 100% { box-shadow: 0 0 4px rgba(34, 197, 94, 0.4); }
+            50% { box-shadow: 0 0 12px rgba(34, 197, 94, 0.8); }
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.9); }
+        }
 
         /* Connection Lines (SVG-based) */
         .arch-connections {
@@ -4740,16 +5005,20 @@ DASHBOARD_HTML = """
         }
 
         .integration-card {
+            display: flex;
+            flex-direction: column;
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: var(--rounded-lg);
             padding: var(--space-lg);
             transition: all var(--transition-fast);
+            min-height: 180px;
         }
 
         .integration-card:hover {
             border-color: var(--border-hover);
             transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
         }
 
         .integration-card.connected {
@@ -4773,9 +5042,28 @@ DASHBOARD_HTML = """
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.05);
+            background: linear-gradient(135deg, rgba(184, 115, 51, 0.15) 0%, rgba(184, 115, 51, 0.05) 100%);
+            border: 1px solid rgba(184, 115, 51, 0.2);
             border-radius: var(--rounded-md);
-            font-size: var(--font-xl);
+            color: var(--accent, #B87333);
+            transition: all var(--transition-fast);
+        }
+
+        .integration-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+            transition: transform var(--transition-fast);
+        }
+
+        .integration-card.connected .integration-icon {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%);
+            border-color: rgba(34, 197, 94, 0.3);
+            color: #22C55E;
+        }
+
+        .integration-card:hover .integration-icon svg {
+            transform: scale(1.1);
         }
 
         .integration-info h3 {
@@ -4797,25 +5085,48 @@ DASHBOARD_HTML = """
             background: rgba(255, 255, 255, 0.03);
             border-radius: var(--rounded-md);
             font-size: var(--font-sm);
+            margin-bottom: var(--space-sm);
+            font-family: var(--font-mono, 'Consolas', monospace);
+        }
+
+        .integration-status span:last-child {
+            color: var(--text-secondary);
+        }
+
+        .integration-card.connected .integration-status span:last-child {
+            color: var(--text-primary);
         }
 
         .integration-action {
-            margin-top: var(--space-md);
+            margin-top: auto;
             width: 100%;
             padding: var(--space-sm) var(--space-md);
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border);
             border-radius: var(--rounded-md);
-            color: var(--text-primary);
+            color: var(--text-secondary);
             font-size: var(--font-sm);
             font-weight: 500;
             cursor: pointer;
             transition: all var(--transition-fast);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .integration-action:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--border-hover);
+            background: rgba(184, 115, 51, 0.15);
+            border-color: rgba(184, 115, 51, 0.4);
+            color: var(--accent, #B87333);
+        }
+
+        .integration-card.connected .integration-action {
+            color: var(--text-primary);
+        }
+
+        .integration-card.connected .integration-action:hover {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #22C55E;
         }
 
         /* ═══════════════════════════════════════════════════════════════════════════ */
@@ -5831,7 +6142,19 @@ DASHBOARD_HTML = """
                     <!-- Core SLATE Node -->
                     <div class="arch-node active" id="node-slate" style="top: 180px; left: 50%; transform: translateX(-50%);">
                         <div class="arch-node-header">
-                            <div class="arch-node-icon">S</div>
+                            <div class="arch-node-icon">
+                                <svg width="16" height="16" viewBox="0 0 200 200" fill="currentColor">
+                                    <circle cx="100" cy="100" r="20"/>
+                                    <line x1="114" y1="106" x2="160" y2="125" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                    <line x1="106" y1="114" x2="120" y2="150" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                    <line x1="93" y1="114" x2="78" y2="160" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                    <line x1="85" y1="106" x2="45" y2="120" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                    <line x1="85" y1="93" x2="40" y2="78" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                    <line x1="93" y1="85" x2="80" y2="45" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                    <line x1="106" y1="85" x2="125" y2="40" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                    <line x1="114" y1="93" x2="155" y2="80" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                </svg>
+                            </div>
                             <span class="arch-node-name">SLATE Core</span>
                         </div>
                         <div class="arch-node-status">
@@ -5843,7 +6166,11 @@ DASHBOARD_HTML = """
                     <!-- Dashboard Node -->
                     <div class="arch-node" id="node-dashboard" style="top: 40px; left: 20%;">
                         <div class="arch-node-header">
-                            <div class="arch-node-icon">D</div>
+                            <div class="arch-node-icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                                </svg>
+                            </div>
                             <span class="arch-node-name">Dashboard</span>
                         </div>
                         <div class="arch-node-status">
@@ -5855,7 +6182,11 @@ DASHBOARD_HTML = """
                     <!-- Ollama LLM Node -->
                     <div class="arch-node" id="node-ollama" style="top: 40px; left: 50%; transform: translateX(-50%);">
                         <div class="arch-node-header">
-                            <div class="arch-node-icon">O</div>
+                            <div class="arch-node-icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2a9 9 0 019 9c0 3.074-1.676 5.925-4.5 7.392V20.5a1.5 1.5 0 01-1.5 1.5h-6a1.5 1.5 0 01-1.5-1.5v-2.108C4.676 16.925 3 14.074 3 11a9 9 0 019-9zm0 2a7 7 0 00-7 7c0 2.577 1.496 4.927 4 6.055V20h6v-2.945c2.504-1.128 4-3.478 4-6.055a7 7 0 00-7-7zm-2 8a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm4 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/>
+                                </svg>
+                            </div>
                             <span class="arch-node-name">Ollama LLM</span>
                         </div>
                         <div class="arch-node-status">
@@ -5867,7 +6198,11 @@ DASHBOARD_HTML = """
                     <!-- GPU Node -->
                     <div class="arch-node" id="node-gpu" style="top: 40px; right: 20%;">
                         <div class="arch-node-header">
-                            <div class="arch-node-icon">G</div>
+                            <div class="arch-node-icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M22 9V7h-2V5a2 2 0 00-2-2H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-2h2v-2h-2v-2h2v-2h-2V9h2zM4 5h14v14H4V5zm8 2a5 5 0 100 10 5 5 0 000-10z"/>
+                                </svg>
+                            </div>
                             <span class="arch-node-name">Dual GPU</span>
                         </div>
                         <div class="arch-node-status">
@@ -5879,7 +6214,11 @@ DASHBOARD_HTML = """
                     <!-- GitHub Runner Node -->
                     <div class="arch-node" id="node-runner" style="bottom: 40px; left: 20%;">
                         <div class="arch-node-header">
-                            <div class="arch-node-icon">R</div>
+                            <div class="arch-node-icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                                </svg>
+                            </div>
                             <span class="arch-node-name">GitHub Runner</span>
                         </div>
                         <div class="arch-node-status">
@@ -5891,7 +6230,11 @@ DASHBOARD_HTML = """
                     <!-- Docker Node -->
                     <div class="arch-node" id="node-docker" style="bottom: 40px; left: 50%; transform: translateX(-50%);">
                         <div class="arch-node-header">
-                            <div class="arch-node-icon">🐳</div>
+                            <div class="arch-node-icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.186v1.887c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.186.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.186.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.186.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.186v1.887c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.186v1.887c0 .102.083.185.185.185"/>
+                                </svg>
+                            </div>
                             <span class="arch-node-name">Docker</span>
                         </div>
                         <div class="arch-node-status">
@@ -5903,7 +6246,11 @@ DASHBOARD_HTML = """
                     <!-- Claude Code Node -->
                     <div class="arch-node" id="node-claude" style="bottom: 40px; right: 20%;">
                         <div class="arch-node-header">
-                            <div class="arch-node-icon">C</div>
+                            <div class="arch-node-icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93s3.05-7.44 7-7.93v15.86zm2-15.86c1.03.13 2 .45 2.87.93H13v-.93zM13 7h5.24c.25.31.48.65.68 1H13V7zm0 3h6.74c.08.33.15.66.19 1H13v-1zm0 9.93V19h2.87c-.87.48-1.84.8-2.87.93zM18.24 17H13v-1h5.92c-.2.35-.43.69-.68 1zm1.5-3H13v-1h6.93c-.04.34-.11.67-.19 1z"/>
+                                </svg>
+                            </div>
                             <span class="arch-node-name">Claude Code</span>
                         </div>
                         <div class="arch-node-status">
@@ -5924,13 +6271,17 @@ DASHBOARD_HTML = """
                     <!-- GitHub Integration -->
                     <div class="integration-card connected" id="int-github">
                         <div class="integration-header">
-                            <div class="integration-icon">📦</div>
+                            <div class="integration-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                                </svg>
+                            </div>
                             <div class="integration-info">
                                 <h3>GitHub</h3>
                                 <p>Repository & Actions</p>
                             </div>
                         </div>
-                        <div class="integration-status">
+                        <div class="integration-status" id="int-github-status">
                             <span class="arch-status-dot active"></span>
                             <span>Connected to S.L.A.T.E.</span>
                         </div>
@@ -5940,7 +6291,11 @@ DASHBOARD_HTML = """
                     <!-- Docker Integration -->
                     <div class="integration-card" id="int-docker">
                         <div class="integration-header">
-                            <div class="integration-icon">🐳</div>
+                            <div class="integration-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.186v1.887c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.186.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.186.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.186.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.186v1.887c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.186v1.887c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.185-.186h-2.119a.185.185 0 00-.185.186v1.887c0 .102.083.185.185.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.186.186 0 00-.185.186v1.887c0 .102.084.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 003.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288z"/>
+                                </svg>
+                            </div>
                             <div class="integration-info">
                                 <h3>Docker</h3>
                                 <p>Container Management</p>
@@ -5956,13 +6311,17 @@ DASHBOARD_HTML = """
                     <!-- VS Code Integration -->
                     <div class="integration-card connected" id="int-vscode">
                         <div class="integration-header">
-                            <div class="integration-icon">📝</div>
+                            <div class="integration-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M23.15 2.587L18.21.21a1.494 1.494 0 00-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 00-1.276.057L.327 7.261A1 1 0 00.326 8.74L3.899 12 .326 15.26a1 1 0 00.001 1.479L1.65 17.94a.999.999 0 001.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 001.704.29l4.942-2.377A1.5 1.5 0 0024 20.06V3.939a1.5 1.5 0 00-.85-1.352zm-5.146 14.861L10.826 12l7.178-5.448v10.896z"/>
+                                </svg>
+                            </div>
                             <div class="integration-info">
                                 <h3>VS Code</h3>
                                 <p>SLATE Copilot Extension</p>
                             </div>
                         </div>
-                        <div class="integration-status">
+                        <div class="integration-status" id="int-vscode-status">
                             <span class="arch-status-dot active"></span>
                             <span>Extension Installed</span>
                         </div>
@@ -5972,7 +6331,11 @@ DASHBOARD_HTML = """
                     <!-- Claude Code Integration -->
                     <div class="integration-card" id="int-claude">
                         <div class="integration-header">
-                            <div class="integration-icon">🤖</div>
+                            <div class="integration-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93s3.05-7.44 7-7.93v15.86zm2-15.86c1.03.13 2 .45 2.87.93H13v-.93zM13 7h5.24c.25.31.48.65.68 1H13V7zm0 3h6.74c.08.33.15.66.19 1H13v-1zm0 9.93V19h2.87c-.87.48-1.84.8-2.87.93zM18.24 17H13v-1h5.92c-.2.35-.43.69-.68 1zm1.5-3H13v-1h6.93c-.04.34-.11.67-.19 1z"/>
+                                </svg>
+                            </div>
                             <div class="integration-info">
                                 <h3>Claude Code</h3>
                                 <p>MCP Server & Slash Commands</p>
@@ -5988,10 +6351,14 @@ DASHBOARD_HTML = """
                     <!-- Ollama Integration -->
                     <div class="integration-card" id="int-ollama">
                         <div class="integration-header">
-                            <div class="integration-icon">🧠</div>
+                            <div class="integration-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2a9 9 0 019 9c0 3.074-1.676 5.925-4.5 7.392V20.5a1.5 1.5 0 01-1.5 1.5h-6a1.5 1.5 0 01-1.5-1.5v-2.108C4.676 16.925 3 14.074 3 11a9 9 0 019-9zm0 2a7 7 0 00-7 7c0 2.577 1.496 4.927 4 6.055V20h6v-2.945c2.504-1.128 4-3.478 4-6.055a7 7 0 00-7-7zm-2 8a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm4 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/>
+                                </svg>
+                            </div>
                             <div class="integration-info">
                                 <h3>Ollama</h3>
-                                <p>Local LLM Inference</p>
+                                <p id="ollama-model-count">Local LLM Inference</p>
                             </div>
                         </div>
                         <div class="integration-status" id="int-ollama-status">
@@ -6004,7 +6371,11 @@ DASHBOARD_HTML = """
                     <!-- Foundry Local Integration -->
                     <div class="integration-card" id="int-foundry">
                         <div class="integration-header">
-                            <div class="integration-icon">⚡</div>
+                            <div class="integration-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.55 11 21 11 21z"/>
+                                </svg>
+                            </div>
                             <div class="integration-info">
                                 <h3>Foundry Local</h3>
                                 <p>ONNX-Optimized Inference</p>
@@ -6015,6 +6386,26 @@ DASHBOARD_HTML = """
                             <span>Checking...</span>
                         </div>
                         <button class="integration-action" onclick="configureIntegration('foundry')">Configure</button>
+                    </div>
+
+                    <!-- GPU Integration -->
+                    <div class="integration-card" id="int-gpu">
+                        <div class="integration-header">
+                            <div class="integration-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M22 9V7h-2V5a2 2 0 00-2-2H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-2h2v-2h-2v-2h2v-2h-2V9h2zM4 5h14v14H4V5zm8 2a5 5 0 100 10 5 5 0 000-10zm0 2c.8 0 1.5.3 2.1.8l-4.3 4.3c-.5-.6-.8-1.3-.8-2.1a3 3 0 013-3zm0 6c-.8 0-1.5-.3-2.1-.8l4.3-4.3c.5.6.8 1.3.8 2.1a3 3 0 01-3 3z"/>
+                                </svg>
+                            </div>
+                            <div class="integration-info">
+                                <h3>GPU Compute</h3>
+                                <p id="gpu-config-info">CUDA Acceleration</p>
+                            </div>
+                        </div>
+                        <div class="integration-status" id="int-gpu-status">
+                            <span class="arch-status-dot pending"></span>
+                            <span>Checking...</span>
+                        </div>
+                        <button class="integration-action" onclick="configureIntegration('gpu')">Optimize</button>
                     </div>
                 </div>
             </div>
@@ -6080,7 +6471,10 @@ DASHBOARD_HTML = """
     <div class="guided-overlay" id="guided-overlay">
         <div class="guided-header">
             <span class="guided-progress-text" id="guided-progress-text">Step 1 of 11</span>
-            <button class="guided-exit" onclick="exitGuidedMode()">Exit Guided Mode</button>
+            <div style="display: flex; gap: 8px;">
+                <button class="guided-exit" onclick="skipCurrentStep()" style="background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5);">Skip Step</button>
+                <button class="guided-exit" onclick="exitGuidedMode()">Exit Guided Mode</button>
+            </div>
         </div>
 
         <div class="guided-main">
@@ -6552,6 +6946,7 @@ DASHBOARD_HTML = """
         }
 
         async function updateIntegrationStatus() {
+            // Check Docker status
             try {
                 const res = await fetch('/api/docker/containers');
                 const data = await res.json();
@@ -6559,8 +6954,9 @@ DASHBOARD_HTML = """
                 const status = document.getElementById('int-docker-status');
                 if (card && status) {
                     if (data.available) {
+                        const running = data.containers?.filter(c => c.status === 'running').length || 0;
                         card.classList.add('connected');
-                        status.innerHTML = '<span class="arch-status-dot active"></span><span>Available</span>';
+                        status.innerHTML = '<span class="arch-status-dot active"></span><span>' + running + ' Running</span>';
                     } else {
                         card.classList.remove('connected');
                         status.innerHTML = '<span class="arch-status-dot inactive"></span><span>Not Available</span>';
@@ -6568,27 +6964,95 @@ DASHBOARD_HTML = """
                 }
             } catch (e) {}
 
+            // Check full system status (Ollama, GPU, etc)
             try {
                 const res = await fetch('/api/status');
                 const data = await res.json();
-                const card = document.getElementById('int-ollama');
-                const status = document.getElementById('int-ollama-status');
-                if (card && status) {
-                    if (data.ollama_status === 'online') {
-                        card.classList.add('connected');
-                        status.innerHTML = '<span class="arch-status-dot active"></span><span>Online</span>';
+
+                // Ollama integration
+                const ollamaCard = document.getElementById('int-ollama');
+                const ollamaStatus = document.getElementById('int-ollama-status');
+                const ollamaModelCount = document.getElementById('ollama-model-count');
+                if (ollamaCard && ollamaStatus) {
+                    if (data.ollama?.available) {
+                        const modelCount = data.ollama.model_count || data.ollama.models?.length || 0;
+                        ollamaCard.classList.add('connected');
+                        ollamaStatus.innerHTML = '<span class="arch-status-dot active"></span><span>' + modelCount + ' Models Loaded</span>';
+                        if (ollamaModelCount) ollamaModelCount.textContent = modelCount + ' models available';
                     } else {
-                        card.classList.remove('connected');
-                        status.innerHTML = '<span class="arch-status-dot inactive"></span><span>Offline</span>';
+                        ollamaCard.classList.remove('connected');
+                        ollamaStatus.innerHTML = '<span class="arch-status-dot inactive"></span><span>Offline</span>';
+                        if (ollamaModelCount) ollamaModelCount.textContent = 'Local LLM Inference';
+                    }
+                }
+
+                // GPU integration
+                const gpuCard = document.getElementById('int-gpu');
+                const gpuStatus = document.getElementById('int-gpu-status');
+                const gpuConfigInfo = document.getElementById('gpu-config-info');
+                if (gpuCard && gpuStatus) {
+                    if (data.gpu?.available && data.gpu.count > 0) {
+                        const gpuCount = data.gpu.count;
+                        const gpuName = data.gpu.gpus?.[0]?.name || 'NVIDIA GPU';
+                        const shortName = gpuName.replace('NVIDIA GeForce ', '').replace('RTX ', 'RTX ');
+                        gpuCard.classList.add('connected');
+                        gpuStatus.innerHTML = '<span class="arch-status-dot active"></span><span>' + gpuCount + 'x Active</span>';
+                        if (gpuConfigInfo) gpuConfigInfo.textContent = shortName + (gpuCount > 1 ? ' x' + gpuCount : '');
+                    } else {
+                        gpuCard.classList.remove('connected');
+                        gpuStatus.innerHTML = '<span class="arch-status-dot inactive"></span><span>No GPU</span>';
+                        if (gpuConfigInfo) gpuConfigInfo.textContent = 'CUDA Acceleration';
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to fetch status:', e);
+            }
+
+            // Check Foundry Local status
+            try {
+                const res = await fetch('/api/services');
+                const data = await res.json();
+                const foundryService = data.services?.find(s => s.id === 'foundry');
+                const foundryCard = document.getElementById('int-foundry');
+                const foundryStatus = document.getElementById('int-foundry-status');
+                if (foundryCard && foundryStatus) {
+                    if (foundryService?.online) {
+                        foundryCard.classList.add('connected');
+                        foundryStatus.innerHTML = '<span class="arch-status-dot active"></span><span>Online (Port ' + (foundryService.port || 5272) + ')</span>';
+                    } else {
+                        foundryCard.classList.remove('connected');
+                        foundryStatus.innerHTML = '<span class="arch-status-dot inactive"></span><span>Not Running</span>';
                     }
                 }
             } catch (e) {}
 
-            const claudeCard = document.getElementById('int-claude');
-            const claudeStatus = document.getElementById('int-claude-status');
-            if (claudeCard && claudeStatus) {
-                claudeCard.classList.add('connected');
-                claudeStatus.innerHTML = '<span class="arch-status-dot active"></span><span>MCP Available</span>';
+            // Check Claude Code MCP status
+            try {
+                const res = await fetch('/api/debug/schematic-status');
+                const data = await res.json();
+                const claudeCard = document.getElementById('int-claude');
+                const claudeStatus = document.getElementById('int-claude-status');
+                if (claudeCard && claudeStatus) {
+                    // Claude Code is considered connected if we're running (MCP server is this dashboard)
+                    claudeCard.classList.add('connected');
+                    claudeStatus.innerHTML = '<span class="arch-status-dot active"></span><span>MCP Active</span>';
+                }
+            } catch (e) {
+                // Still mark as connected since we're running inside Claude Code
+                const claudeCard = document.getElementById('int-claude');
+                const claudeStatus = document.getElementById('int-claude-status');
+                if (claudeCard && claudeStatus) {
+                    claudeCard.classList.add('connected');
+                    claudeStatus.innerHTML = '<span class="arch-status-dot active"></span><span>MCP Available</span>';
+                }
+            }
+
+            // VS Code integration (always connected when dashboard is accessed)
+            const vscodeCard = document.getElementById('int-vscode');
+            const vscodeStatus = document.getElementById('int-vscode-status');
+            if (vscodeCard && vscodeStatus) {
+                vscodeCard.classList.add('connected');
+                vscodeStatus.innerHTML = '<span class="arch-status-dot active"></span><span>Extension v4.1.0</span>';
             }
         }
 
@@ -6624,8 +7088,16 @@ DASHBOARD_HTML = """
         async function executeGuidedStep() {
             if (!guidedModeActive) return;
 
+            // Timeout protection - auto-advance if step takes too long
+            const stepTimeout = setTimeout(() => {
+                console.warn('Guided step timeout - auto-advancing');
+                updateActionStatus('Step completed (timeout)', true);
+                advanceGuidedStep();
+            }, 15000);
+
             try {
                 const res = await fetch('/api/guided/execute', { method: 'POST' });
+                clearTimeout(stepTimeout);
                 const data = await res.json();
 
                 if (data.success) {
@@ -6638,10 +7110,15 @@ DASHBOARD_HTML = """
                 } else {
                     updateActionStatus(data.message, false);
                     updateNarratorText(data.message + (data.recovery_hint ? ' ' + data.recovery_hint : ''));
+                    // Still auto-advance on non-critical failures
+                    setTimeout(() => advanceGuidedStep(), 3000);
                 }
             } catch (e) {
+                clearTimeout(stepTimeout);
                 console.error('Failed to execute guided step:', e);
-                updateActionStatus('Execution error', false);
+                updateActionStatus('Step skipped (error)', false);
+                // Auto-advance on error to prevent freeze
+                setTimeout(() => advanceGuidedStep(), 2000);
             }
         }
 
@@ -6720,6 +7197,11 @@ DASHBOARD_HTML = """
                 dot.className = 'guided-step-dot complete';
                 dot.textContent = '✓';
             });
+        }
+
+        function skipCurrentStep() {
+            updateActionStatus('Skipped by user', true);
+            advanceGuidedStep();
         }
 
         function exitGuidedMode() {

@@ -297,10 +297,11 @@ jobs:
         if: matrix.artifact == 'exe'
         run: |
           pip install pyinstaller --quiet 2>$null
+          # Modified: 2026-02-08T08:00:00Z | Author: COPILOT | Change: Unify SLATEPI → SLATE naming
           if (Test-Path "slate.spec") {
             pyinstaller slate.spec --noconfirm
-            if (Test-Path "dist_v2/SLATEPI/SLATEPI.exe") {
-              $size = (Get-Item "dist_v2/SLATEPI/SLATEPI.exe").Length / 1MB
+            if (Test-Path "dist_v2/SLATE/SLATE.exe") {
+              $size = (Get-Item "dist_v2/SLATE/SLATE.exe").Length / 1MB
               Write-Host "✓ EXE built: $([math]::Round($size, 2)) MB"
             }
           } else {
@@ -322,8 +323,9 @@ jobs:
         uses: actions/upload-artifact@v4
         if: matrix.artifact == 'exe'
         with:
-          name: SLATEPI-exe-${{ needs.gate-validate.outputs.version }}
-          path: dist_v2/SLATEPI/
+          # Modified: 2026-02-08T08:00:00Z | Author: COPILOT | Change: Unify SLATEPI → SLATE naming
+          name: SLATE-exe-${{ needs.gate-validate.outputs.version }}
+          path: dist_v2/SLATE/
           retention-days: 90
           if-no-files-found: ignore
 

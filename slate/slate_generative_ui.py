@@ -218,25 +218,6 @@ class SchematicProtocol:
     highlight_components: List[str] = field(default_factory=list)
     status_overrides: Dict[str, str] = field(default_factory=dict)
 
-
-# Modified: 2026-02-09T06:20:00Z | Author: COPILOT | Change: Add SchematicGenerator for Generative UI protocol
-class SchematicGenerator:
-    """Generate schematics as part of Generative UI protocol."""
-
-    async def generate_onboarding_schematic(self, step: OnboardingStep) -> str:
-        """Generate schematic showing current onboarding state."""
-        return get_step_schematic(step)
-
-    async def generate_system_state_schematic(self) -> str:
-        """Generate schematic from live system state."""
-        if not SCHEMATIC_SDK_AVAILABLE:
-            return SchematicProtocol(template="system-state").generate_svg()
-        try:
-            return generate_from_system_state()
-        except Exception as e:
-            logger.warning(f"System state schematic failed: {e}")
-            return SchematicProtocol(template="system-state").generate_svg()
-
     def generate_svg(self) -> str:
         """Generate SVG for this schematic configuration."""
         if not SCHEMATIC_SDK_AVAILABLE:
@@ -298,6 +279,25 @@ class SchematicGenerator:
                 Schematic SDK Loading...
             </text>
         </svg>'''
+
+
+# Modified: 2026-02-08T12:00:00Z | Author: Claude Opus 4.5 | Change: Fix SchematicGenerator to use SchematicProtocol methods
+class SchematicGenerator:
+    """Generate schematics as part of Generative UI protocol."""
+
+    async def generate_onboarding_schematic(self, step: OnboardingStep) -> str:
+        """Generate schematic showing current onboarding state."""
+        return get_step_schematic(step)
+
+    async def generate_system_state_schematic(self) -> str:
+        """Generate schematic from live system state."""
+        if not SCHEMATIC_SDK_AVAILABLE:
+            return SchematicProtocol(template="system-state").generate_svg()
+        try:
+            return generate_from_system_state()
+        except Exception as e:
+            logger.warning(f"System state schematic failed: {e}")
+            return SchematicProtocol(template="system-state").generate_svg()
 
 
 # Step-specific schematic configurations

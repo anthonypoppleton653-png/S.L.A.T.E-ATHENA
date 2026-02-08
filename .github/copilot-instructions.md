@@ -135,6 +135,15 @@ python slate/copilot_slate_runner.py --status        # Copilot runner bridge sta
 python slate/integrated_autonomous_loop.py --status  # Integrated loop status
 ```
 
+### Kubernetes Deployment
+```bash
+python slate/slate_k8s_deploy.py --status            # K8s cluster status
+python slate/slate_k8s_deploy.py --deploy             # Deploy manifests
+python slate/slate_k8s_deploy.py --health             # Health check all pods
+python slate/slate_k8s_deploy.py --logs <component>   # Component logs
+python slate/slate_k8s_deploy.py --teardown           # Remove SLATE from cluster
+```
+
 ### Benchmarks
 ```bash
 python slate/slate_benchmark.py                # System benchmarks (CPU, memory, disk, GPU)
@@ -215,6 +224,8 @@ skills/             # Copilot Chat skill definitions
     multi-runner.yml        # Multi-runner parallelism
     docker.yml              # Container builds
     release.yml             # Release management
+    # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s workflow
+    k8s.yml                 # Kubernetes deployment management
   slate.config.yaml         # Master SLATE configuration
 ```
 
@@ -363,6 +374,7 @@ aggressively for execution rather than falling back to raw terminal commands or 
 | `slate_gpuManager` | Dual-GPU load balancing |
 | `slate_learningProgress` | Learning/XP tracking |
 | `slate_runCommand` | Escape hatch — run any SLATE Python script |
+| `slate_kubernetes` | K8s cluster status, deploy, health, logs, teardown |
 
 ### Enforcement Rules
 

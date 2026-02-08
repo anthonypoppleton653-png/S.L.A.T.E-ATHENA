@@ -550,6 +550,7 @@ PARAMETER num_ctx 4096
 class AIOrchestrator:
     """Central AI orchestrator for SLATE."""
 
+    # Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Add GitHub Models cloud backend alongside Ollama
     def __init__(self):
         self.workspace = WORKSPACE_ROOT
         self.ollama = OllamaClient()
@@ -558,6 +559,19 @@ class AIOrchestrator:
         self.github = GitHubIntegrationMonitor(self.ollama)
         self.training = TrainingScheduler(self.ollama)
         self.state = self._load_state()
+        # GitHub Models — free-tier cloud inference (fallback + augmentation)
+        self._github_models = None
+
+    @property
+    def github_models(self):
+        """Lazy-load GitHub Models client."""
+        if self._github_models is None:
+            try:
+                from slate.slate_github_models import GitHubModelsWithFallback
+                self._github_models = GitHubModelsWithFallback()
+            except Exception:
+                self._github_models = None
+        return self._github_models
 
     def _load_state(self) -> Dict[str, Any]:
         if STATE_FILE.exists():
@@ -658,6 +672,7 @@ class AIOrchestrator:
 
     def print_status(self):
         """Print orchestrator status."""
+        # Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Show GitHub Models status in orchestrator
         print()
         print("=" * 70)
         print("  SLATE AI Orchestrator Status")
@@ -665,6 +680,13 @@ class AIOrchestrator:
         print()
         print(f"  Ollama: {'Available' if self.ollama.available else 'Not available'}")
         print(f"  Models: {', '.join(self.ollama.list_models())}")
+        # GitHub Models status
+        gh = self.github_models
+        if gh and gh.github_client.authenticated:
+            s = gh.github_client.status()
+            print(f"  GitHub Models: Available ({s['catalog_size']} models, {s['total_calls']} calls)")
+        else:
+            print("  GitHub Models: Not available")
         print(f"  Last Run: {self.state.get('last_run', 'Never')}")
         print(f"  Tasks Completed: {self.state.get('tasks_completed', 0)}")
         print()

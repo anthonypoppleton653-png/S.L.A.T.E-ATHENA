@@ -15,7 +15,8 @@
 		"${workspaceFolder}",
 		"${workspaceFolder}/plugins/slate-sdk",
 		"${workspaceFolder}/plugins/slate-copilot",
-		"${workspaceFolder}/slate_core"
+		"${workspaceFolder}/slate_core",
+		"c:\\Users\\Dan\\.vscode-insiders\\extensions\\ms-security.ms-sentinel-1.1.6\\python"
 	],
 	"python.analysis.autoSearchPaths": true,
 
@@ -94,5 +95,14 @@
 		"PYTHONIOENCODING": "utf-8",
 		"CUDA_VISIBLE_DEVICES": "0,1",
 		"SLATE_MULTI_RUNNER": "true"
-	}
+	},
+	"python.testing.unittestArgs": [
+		"-v",
+		"-s",
+		".",
+		"-p",
+		"*test.py"
+	],
+	"python.testing.pytestEnabled": false,
+	"python.testing.unittestEnabled": true
 }

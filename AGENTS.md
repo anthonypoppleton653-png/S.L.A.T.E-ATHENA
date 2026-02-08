@@ -133,6 +133,18 @@ python slate/slate_chromadb.py --reset         # Reset all collections
 python slate/slate_benchmark.py                # Run benchmarks
 ```
 
+### Kubernetes Deployment
+```bash
+# Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s commands to AGENTS.md
+python slate/slate_k8s_deploy.py --status            # K8s cluster overview
+python slate/slate_k8s_deploy.py --deploy             # Deploy all manifests
+python slate/slate_k8s_deploy.py --deploy-kustomize local  # Deploy with overlay
+python slate/slate_k8s_deploy.py --health             # Health check
+python slate/slate_k8s_deploy.py --logs <component>   # View component logs
+python slate/slate_k8s_deploy.py --port-forward       # Port forwarding
+python slate/slate_k8s_deploy.py --teardown           # Remove from cluster
+```
+
 ## Project Structure
 ```
 slate/              # Core SDK modules (30+ Python files)
@@ -159,6 +171,8 @@ slate/              # Core SDK modules (30+ Python files)
   pii_scanner.py            # PII detection
   slate_terminal_monitor.py # Terminal activity tracking
   install_tracker.py        # Installation tracking
+  # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s deploy to project structure
+  slate_k8s_deploy.py       # Kubernetes deployment manager
 
 agents/             # API servers & agent modules
   runner_api.py             # RunnerAPI class for CI integration
@@ -197,7 +211,7 @@ skills/             # Copilot Chat skill definitions
 - Default shell: `powershell`
 - Python setup step: `"$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH`
 - YAML paths: Always single-quoted (avoid backslash escape issues)
-- Workflows: ci.yml, slate.yml, pr.yml, nightly.yml, cd.yml, docs.yml, fork-validation.yml, contributor-pr.yml, agentic.yml, docker.yml, release.yml
+- Workflows: ci.yml, slate.yml, pr.yml, nightly.yml, cd.yml, docs.yml, fork-validation.yml, contributor-pr.yml, agentic.yml, docker.yml, release.yml, k8s.yml
 
 ## Security Rules
 - ALL network bindings: `127.0.0.1` ONLY  never `0.0.0.0`

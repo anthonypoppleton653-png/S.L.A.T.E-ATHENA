@@ -232,7 +232,7 @@ jobs:
   summary:
     name: SLATE Summary
     runs-on: [self-hosted, slate]
-    needs: [slate-status, sdk-validation, tech-tree, dashboard, agents, slate-agent, extension-build, task-queue, ai-inference-validation]
+    needs: [slate-status, sdk-validation, tech-tree, dashboard, agents, slate-agent, extension-build, task-queue, ai-inference-validation, semantic-kernel-integration]
     if: always()
     steps:
       - name: Generate summary
@@ -249,6 +249,116 @@ jobs:
           "| Extension Build | ${{ needs.extension-build.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "| Task Queue | ${{ needs.task-queue.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "| AI Inference | ${{ needs.ai-inference-validation.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Semantic Kernel | ${{ needs.semantic-kernel-integration.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+
+  # Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Add Semantic Kernel integration validation
+  # ------------ Semantic Kernel Integration ------------
+  semantic-kernel-integration:
+    name: Semantic Kernel Integration
+    runs-on: [self-hosted, slate, gpu, gpu-2]
+    timeout-minutes: 15
+    env:
+      CUDA_VISIBLE_DEVICES: '0,1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
+      - name: Verify SK Installation
+        run: |
+          python -c @"
+          import semantic_kernel
+          from slate.slate_semantic_kernel import get_sk_status
+          import json
+          status = get_sk_status()
+          print(f'SK v{status["semantic_kernel"]["version"]}')
+          print(f'Ollama: {"connected" if status["ollama"]["available"] else "offline"}')
+          print(f'Models: {status["ollama"]["models_count"]}')
+          print(f'ChromaDB: {status["chromadb_memory"]["documents"]} docs')
+          print(f'Plugins: {len(status["plugins"])}')
+          "@
+      - name: SK Plugin Registration Test
+        run: |
+          python -c @"
+          from semantic_kernel import Kernel
+          from slate.slate_semantic_kernel import _register_slate_plugins
+          kernel = Kernel()
+          _register_slate_plugins(kernel)
+          for name, plugin in kernel.plugins.items():
+              funcs = list(plugin.keys()) if hasattr(plugin, 'keys') else []
+              print(f'  Plugin {name}: {len(funcs)} functions')
+              for f in funcs:
+                  print(f'    - {f}')
+          print('Plugin registration: PASSED')
+          "@
+      - name: SK Agent Routing Validation
+        run: |
+          python -c @"
+          from semantic_kernel import Kernel
+          from slate.slate_semantic_kernel import _register_slate_plugins
+          kernel = Kernel()
+          _register_slate_plugins(kernel)
+          agent_plugin = kernel.plugins['slate_agents']
+          
+          test_cases = [
+              ('implement a new feature', 'ALPHA'),
+              ('test the workflow', 'BETA'),
+              ('analyze architecture', 'GAMMA'),
+              ('mcp integration', 'DELTA'),
+              ('troubleshoot GPU', 'COPILOT_CHAT'),
+          ]
+          for desc, expected in test_cases:
+              result = str(agent_plugin['route_task'].invoke(kernel, task_description=desc))
+              assert expected in result, f'Expected {expected} for \"{desc}\", got {result}'
+              print(f'  OK: \"{desc}\" -> {expected}')
+          print('Agent routing: PASSED')
+          "@
+      - name: SK Kernel Creation (Live Ollama)
+        id: sk_kernel
+        run: |
+          python -c @"
+          import asyncio
+          from slate.slate_semantic_kernel import create_slate_kernel
+          async def test_kernel():
+              kernel = await create_slate_kernel(
+                  model_role='fast',
+                  enable_memory=True,
+                  enable_plugins=True,
+              )
+              plugins = list(kernel.plugins.keys())
+              print(f'Kernel created: {len(plugins)} plugins')
+              print(f'Plugins: {plugins}')
+              assert len(plugins) >= 3
+              return True
+          result = asyncio.run(test_kernel())
+          print('Kernel creation: PASSED')
+          "@
+        continue-on-error: true
+      - name: SK Inference Test (Live GPU)
+        if: steps.sk_kernel.outcome == 'success'
+        run: |
+          python -c @"
+          import asyncio, time
+          from slate.slate_semantic_kernel import invoke_sk
+          async def test_inference():
+              start = time.perf_counter()
+              result = await invoke_sk(
+                  prompt='What is SLATE in one sentence?',
+                  model_role='fast',
+                  enable_memory=False,
+                  enable_plugins=False,
+              )
+              elapsed = time.perf_counter() - start
+              print(f'Inference ({elapsed:.1f}s): {result[:200]}')
+              assert len(result) > 10, 'Response too short'
+              assert '[SK Error]' not in result, f'SK error: {result}'
+              return True
+          asyncio.run(test_inference())
+          print('SK inference: PASSED')
+          "@
+        continue-on-error: true
+      - name: SK Status Report
+        run: python slate/slate_semantic_kernel.py --status --json
 
   # ------------ AI Inference Validation (GPU) ------------
   ai-inference-validation:
