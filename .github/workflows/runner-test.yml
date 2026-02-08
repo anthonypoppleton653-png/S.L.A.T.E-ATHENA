@@ -1,0 +1,23 @@
+# Modified: 2026-02-08T04:55:00Z | Author: COPILOT | Change: Simple runner connectivity test
+name: Runner Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test Runner
+    runs-on: [self-hosted, slate]
+    timeout-minutes: 5
+    steps:
+      - name: Runner info
+        run: |
+          Write-Host "Runner is working!"
+          Write-Host "OS: $(Get-WmiObject Win32_OperatingSystem | Select-Object -ExpandProperty Caption)"
+          Write-Host "PowerShell: $($PSVersionTable.PSVersion)"
+          Write-Host "Workspace: $env:GITHUB_WORKSPACE"
+      
+      - name: GPU check
+        run: |
+          nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader
+        continue-on-error: true
