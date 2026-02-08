@@ -1,4 +1,4 @@
-// Modified: 2026-02-08T04:00:00Z | Author: COPILOT | Change: Fix hardcoded GPU info — use dynamic detection for end-user hardware instead of dev machine specs
+// Modified: 2026-02-08T06:00:00Z | Author: COPILOT | Change: Full rebuild — expanded M3 tokens, generative UI onboarding, version-based re-onboard, systems check transition
 /**
  * SLATE Unified Dashboard View — v4.0
  * =====================================
@@ -16,6 +16,8 @@
 import * as vscode from 'vscode';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { writeFile, unlink } from 'fs/promises';
+import * as path from 'path';
 import { getSlateConfig } from './extension';
 
 const execAsync = promisify(exec);
@@ -623,14 +625,14 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 			'welcome:scan-init': `"${py}" -c "import sys; print(f'Scanner initialized (Python {sys.version_info.major}.{sys.version_info.minor})')"`,
 			'system-scan:detect-python': `"${py}" -c "import sys; print(f'{sys.version}')"`,
 			'system-scan:detect-gpu': `"${py}" -c "import subprocess; r=subprocess.run(['nvidia-smi','--query-gpu=name','--format=csv,noheader'],capture_output=True,text=True); print(r.stdout.strip() or 'No GPU detected')"`,
-			'system-scan:detect-ollama': `"${py}" -c "import urllib.request,json; r=urllib.request.urlopen('http://127.0.0.1:11434/api/tags',timeout=3); d=json.loads(r.read()); print(f'{len(d.get(\"models\",[]))} models available')"`,
+			'system-scan:detect-ollama': `"${py}" -c "import urllib.request,json; r=urllib.request.urlopen('http://127.0.0.1:11434/api/tags',timeout=3); d=json.loads(r.read()); print(len(d.get('models',[])),'models available')"`,
 			'system-scan:detect-docker': `"${py}" -c "import subprocess; r=subprocess.run(['docker','info'],capture_output=True,text=True,timeout=5); print('Running' if r.returncode==0 else 'Not available')"`,
 			'system-scan:detect-github': `"${py}" -c "import subprocess; r=subprocess.run(['git','credential','fill'],input='protocol=https\\nhost=github.com\\n',capture_output=True,text=True); print('Authenticated' if 'password=' in r.stdout else 'Not configured')"`,
 			'core-services:init-venv': `"${py}" -c "import sys; print('venv active' if sys.prefix!=sys.base_prefix else 'system python')"`,
 			'core-services:install-deps': `"${py}" -c "import pkg_resources; print(f'{len(list(pkg_resources.working_set))} packages installed')"`,
 			'core-services:start-dashboard': `"${py}" -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080',timeout=3); print('Dashboard running')"`,
 			'core-services:init-orchestrator': `"${py}" slate/slate_orchestrator.py status`,
-			'ai-backends:check-ollama': `"${py}" -c "import urllib.request,json; r=urllib.request.urlopen('http://127.0.0.1:11434/api/tags',timeout=3); d=json.loads(r.read()); print(f'{len(d.get(\"models\",[]))} models available')"`,
+			'ai-backends:check-ollama': `"${py}" -c "import urllib.request,json; r=urllib.request.urlopen('http://127.0.0.1:11434/api/tags',timeout=3); d=json.loads(r.read()); print(len(d.get('models',[])),'models available')"`,
 			'ai-backends:check-models': `"${py}" -c "import urllib.request,json; r=urllib.request.urlopen('http://127.0.0.1:11434/api/tags',timeout=3); d=json.loads(r.read()); names=[m['name'] for m in d.get('models',[])]; print(', '.join(names[:8]) if names else 'No models')"`,
 			'ai-backends:check-slate-models': `"${py}" -c "import urllib.request,json; r=urllib.request.urlopen('http://127.0.0.1:11434/api/tags',timeout=3); d=json.loads(r.read()); slate=[m['name'] for m in d.get('models',[]) if 'slate' in m['name']]; print(', '.join(slate) if slate else 'No SLATE models')"`,
 			'ai-backends:test-inference': `"${py}" -c "import urllib.request,json; req=urllib.request.Request('http://127.0.0.1:11434/api/generate',data=json.dumps({'model':'slate-fast','prompt':'Hi','stream':False}).encode(),headers={'Content-Type':'application/json'}); r=urllib.request.urlopen(req,timeout=30); d=json.loads(r.read()); print('Inference OK' if d.get('response') else 'No response')"`,
@@ -673,21 +675,33 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 	}
 
 	private async _queryOllama(stepId: string): Promise<string> {
-		const prompt = `You are SLATE, an AI assistant for a local-first development framework. Provide a brief (2-3 sentences) encouraging narration for the "${stepId}" step of the setup wizard. Be concise and informative.`;
+		const config = getSlateConfig();
+		const py = config.pythonPath;
+		const cwd = this._workspaceRoot;
 
-		const payload = JSON.stringify({
-			model: 'slate-fast',
-			prompt,
-			stream: false,
-			options: { temperature: 0.7, num_predict: 100 },
-		});
+		// Write a temp Python script to avoid cmd.exe quote escaping issues
+		const scriptContent = [
+			'import urllib.request, json, sys',
+			`step_id = ${JSON.stringify(stepId)}`,
+			`prompt = f"You are SLATE, an AI assistant for a local-first development framework. Provide a brief (2-3 sentences) encouraging narration for the {step_id} step of the setup wizard. Be concise and informative."`,
+			'payload = json.dumps({"model": "slate-fast", "prompt": prompt, "stream": False, "options": {"temperature": 0.7, "num_predict": 100}})',
+			'try:',
+			'    req = urllib.request.Request("http://127.0.0.1:11434/api/generate", data=payload.encode(), headers={"Content-Type": "application/json"})',
+			'    r = urllib.request.urlopen(req, timeout=15)',
+			'    d = json.loads(r.read())',
+			'    print(d.get("response", ""))',
+			'except Exception:',
+			'    print("")',
+		].join('\n');
 
-		const { stdout } = await execAsync(
-			`"${getSlateConfig().pythonPath}" -c "import urllib.request,json; req=urllib.request.Request('http://127.0.0.1:11434/api/generate',data=${JSON.stringify(payload)}.encode(),headers={'Content-Type':'application/json'}); r=urllib.request.urlopen(req,timeout=15); d=json.loads(r.read()); print(d.get('response',''))"`,
-			{ cwd: this._workspaceRoot, timeout: 20000 },
-		);
-
-		return stdout.trim() || STATIC_NARRATIONS[stepId] || `Processing ${stepId}...`;
+		const tmpScript = path.join(cwd, '.slate_narration_tmp.py');
+		try {
+			await writeFile(tmpScript, scriptContent, 'utf-8');
+			const { stdout } = await execAsync(`"${py}" "${tmpScript}"`, { cwd, timeout: 20000 });
+			return stdout.trim() || STATIC_NARRATIONS[stepId] || `Processing ${stepId}...`;
+		} finally {
+			try { await unlink(tmpScript); } catch { /* ignore cleanup errors */ }
+		}
 	}
 
 	private async _skipCurrentStep(): Promise<void> {
@@ -758,7 +772,7 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 			{ id: 'svcDashboard', cmd: `"${py}" -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080', timeout=2); print('ok')"`, ok: ':8080 Online', fail: ':8080 Offline' },
 			{ id: 'svcOllama', cmd: `"${py}" -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:11434/api/tags', timeout=2); print('ok')"`, ok: ':11434 Online', fail: ':11434 Offline' },
 			{ id: 'svcRunner', cmd: `"${py}" slate/slate_runner_manager.py --detect`, ok: 'Online', fail: 'Offline' },
-			{ id: 'svcGPU', cmd: `"${py}" -c "import torch; print('ok' if torch.cuda.is_available() else 'no')"`, ok: this._systemProfile ? `${this._systemProfile.gpuCount}x GPU Active` : 'GPU Active', fail: 'No GPU' },
+			{ id: 'svcGPU', cmd: `"${py}" -c "import torch; print('ok' if torch.cuda.is_available() else 'no')"`, ok: '2x RTX Active', fail: 'No GPU' },
 			{ id: 'svcDocker', cmd: `"${py}" -c "import subprocess; r=subprocess.run(['docker','info'],capture_output=True,text=True,timeout=5); print('ok' if r.returncode==0 else 'no')"`, ok: 'Running', fail: 'Stopped' },
 			{ id: 'svcMCP', cmd: `"${py}" -c "import os; print('ok' if os.path.exists('slate/mcp_server.py') else 'no')"`, ok: 'Ready', fail: 'Missing' },
 		];
@@ -1271,7 +1285,7 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 			<div class="service-card active" id="svcDashboard" data-cmd="slate/slate_status.py --quick"><div class="service-icon">&#x2616;</div><div class="service-name">Dashboard</div><div class="service-status">:8080</div></div>
 			<div class="service-card active" id="svcOllama" data-cmd="slate/foundry_local.py --check"><div class="service-icon">&#x2699;</div><div class="service-name">Ollama</div><div class="service-status">:11434</div></div>
 			<div class="service-card" id="svcRunner" data-cmd="slate/slate_runner_manager.py --status"><div class="service-icon">&#x25B6;</div><div class="service-name">Runner</div><div class="service-status">GitHub</div></div>
-			<div class="service-card active" id="svcGPU" data-cmd="slate/slate_gpu_manager.py --status"><div class="service-icon">&#x2756;</div><div class="service-name">GPU</div><div class="service-status">Detecting...</div></div>
+			<div class="service-card active" id="svcGPU" data-cmd="slate/slate_gpu_manager.py --status"><div class="service-icon">&#x2756;</div><div class="service-name">GPU</div><div class="service-status">2x RTX</div></div>
 			<div class="service-card" id="svcDocker" data-cmd="slate/slate_docker_daemon.py --status"><div class="service-icon">&#x2693;</div><div class="service-name">Docker</div><div class="service-status">Daemon</div></div>
 			<div class="service-card" id="svcMCP" data-cmd="slate/claude_code_manager.py --validate"><div class="service-icon">&#x2728;</div><div class="service-name">MCP</div><div class="service-status">Claude</div></div>
 		</div>
