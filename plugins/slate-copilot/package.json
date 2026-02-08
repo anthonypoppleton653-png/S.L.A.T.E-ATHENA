@@ -932,6 +932,25 @@
 						}
 					}
 				}
+			},
+			{
+				"name": "slate_adaptiveInstructions",
+				"tags": ["slate", "instructions", "adaptive", "k8s", "configmap", "agent", "copilot"],
+				"toolReferenceName": "slateAdaptiveInstructions",
+				"displayName": "SLATE Adaptive Instructions",
+				"modelDescription": "Adaptive Instruction Layer — K8s-driven dynamic instruction controller. Evaluates system state (K8s pods, GPUs, services, workflows) and generates context-aware instruction overrides stored in the slate-instructions ConfigMap. Controls operating mode (normal/degraded/maintenance/emergency/autonomous), agent availability (full/gpu-only/cpu-only/minimal), tool routing, and behavioral directives. The source of truth for all SLATE agent and Copilot instruction behaviors.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Instruction action: 'status' (current state), 'evaluate' (analyze system), 'sync' (evaluate+apply to K8s), 'get-context' (instruction block for sessions), 'get-active' (active set from K8s), 'apply' (push to ConfigMap)",
+							"enum": ["status", "evaluate", "sync", "get-context", "get-active", "apply"],
+							"default": "status"
+						}
+					}
+				}
 			}
 		],
 		"commands": [

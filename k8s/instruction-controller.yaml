@@ -1,0 +1,246 @@
+# Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Create instruction controller K8s deployment
+# SLATE Instruction Controller
+# ==============================
+# Runs the adaptive instruction layer as a K8s CronJob + Deployment.
+# The controller periodically evaluates system state and updates the
+# slate-instructions ConfigMap with context-aware instruction overrides.
+#
+# Architecture:
+#   CronJob (every 5min) → evaluate system → patch ConfigMap → pods react
+#   Deployment (always on) → HTTP API for @slate extension queries
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Deployment: Instruction Controller API
+# Serves the adaptive instruction API for the @slate VS Code extension
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slate-instruction-controller
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: instruction-controller
+    app.kubernetes.io/part-of: slate-system
+  annotations:
+    slate.io/description: "Adaptive instruction controller — K8s-driven dynamic instructions"
+    slate.io/version: "2.4.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: slate
+      app.kubernetes.io/component: instruction-controller
+  strategy:
+    type: Recreate  # Single instance — no rolling update needed
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: slate
+        app.kubernetes.io/component: instruction-controller
+        app.kubernetes.io/part-of: slate-system
+    spec:
+      serviceAccountName: slate-core
+      automountServiceAccountToken: true  # Needed for kubectl ConfigMap operations
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: controller
+          image: slate:local
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-c"]
+          args:
+            - |
+              import time, json, subprocess, http.server, threading, os
+
+              # Instruction controller HTTP API
+              class InstructionHandler(http.server.BaseHTTPRequestHandler):
+                  def do_GET(self):
+                      self.send_response(200)
+                      self.send_header('Content-Type', 'application/json')
+                      self.end_headers()
+
+                      if self.path == '/health':
+                          self.wfile.write(json.dumps({
+                              "status": "ok",
+                              "component": "instruction-controller",
+                              "mode": "adaptive"
+                          }).encode())
+                      elif self.path == '/instructions':
+                          # Read active state from ConfigMap mount
+                          try:
+                              with open('/config/instructions/active-state.yaml', 'r') as f:
+                                  data = f.read()
+                              self.wfile.write(json.dumps({
+                                  "source": "k8s-configmap",
+                                  "active_state": data,
+                                  "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+                              }).encode())
+                          except FileNotFoundError:
+                              self.wfile.write(json.dumps({
+                                  "source": "default",
+                                  "mode": "normal",
+                                  "error": "ConfigMap not mounted"
+                              }).encode())
+                      elif self.path == '/instruction-block':
+                          try:
+                              with open('/config/instructions/instruction-block.md', 'r') as f:
+                                  block = f.read()
+                              self.wfile.write(json.dumps({
+                                  "instruction_block": block,
+                                  "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+                              }).encode())
+                          except FileNotFoundError:
+                              self.wfile.write(json.dumps({
+                                  "error": "Instruction block not available"
+                              }).encode())
+                      elif self.path == '/copilot-rules':
+                          try:
+                              with open('/config/instructions/copilot-rules.yaml', 'r') as f:
+                                  rules = f.read()
+                              self.wfile.write(json.dumps({
+                                  "copilot_rules": rules,
+                                  "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+                              }).encode())
+                          except FileNotFoundError:
+                              self.wfile.write(json.dumps({
+                                  "error": "Copilot rules not available"
+                              }).encode())
+                      elif self.path == '/agents':
+                          try:
+                              with open('/config/instructions/agent-prompts.yaml', 'r') as f:
+                                  prompts = f.read()
+                              self.wfile.write(json.dumps({
+                                  "agent_prompts": prompts,
+                                  "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+                              }).encode())
+                          except FileNotFoundError:
+                              self.wfile.write(json.dumps({
+                                  "error": "Agent prompts not available"
+                              }).encode())
+                      else:
+                          self.wfile.write(json.dumps({
+                              "endpoints": ["/health", "/instructions", "/instruction-block", "/copilot-rules", "/agents"],
+                              "component": "slate-instruction-controller"
+                          }).encode())
+
+                  def log_message(self, *a):
+                      pass
+
+              # Start HTTP server
+              server = http.server.HTTPServer(('0.0.0.0', 8085), InstructionHandler)
+              t = threading.Thread(target=server.serve_forever, daemon=True)
+              t.start()
+              print('SLATE Instruction Controller ready on :8085')
+              print('Endpoints: /health /instructions /instruction-block /copilot-rules /agents')
+
+              # Main loop: periodic sync check
+              while True:
+                  time.sleep(300)  # Check every 5 minutes
+                  print(f'[{time.strftime("%H:%M:%S")}] Instruction controller heartbeat')
+          ports:
+            - containerPort: 8085
+              name: http
+              protocol: TCP
+          volumeMounts:
+            - name: instructions
+              mountPath: /config/instructions
+              readOnly: true
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8085
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8085
+            initialDelaySeconds: 3
+            periodSeconds: 10
+      volumes:
+        - name: instructions
+          configMap:
+            name: slate-instructions
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Service: Instruction Controller
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: slate-instruction-controller-svc
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: instruction-controller
+    app.kubernetes.io/part-of: slate-system
+spec:
+  selector:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: instruction-controller
+  ports:
+    - port: 8085
+      targetPort: 8085
+      protocol: TCP
+      name: http
+  type: ClusterIP
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# CronJob: Instruction Sync
+# Periodically evaluates system state and patches the ConfigMap
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: slate-instruction-sync
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: instruction-sync
+    app.kubernetes.io/part-of: slate-system
+  annotations:
+    slate.io/description: "Periodic instruction sync — evaluates system state and updates ConfigMap"
+spec:
+  schedule: "*/5 * * * *"  # Every 5 minutes
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 120
+      template:
+        spec:
+          serviceAccountName: slate-core
+          automountServiceAccountToken: true
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+          containers:
+            - name: sync
+              image: slate:local
+              imagePullPolicy: IfNotPresent
+              command: ["python", "slate/adaptive_instructions.py", "--sync"]
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "128Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "256Mi"

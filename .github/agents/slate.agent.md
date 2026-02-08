@@ -334,3 +334,57 @@ When reporting system state, use structured output:
 7. **Benchmarks**: Run `slate_benchmark.py`, present results in a table
 8. **Code changes**: Follow format rules, route to appropriate agent (ALPHA for coding, BETA for testing)
 9. **Unknown**: Check available commands, search the codebase, or ask for clarification
+
+## Adaptive Instruction Layer (K8s-Driven)
+<!-- Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Add adaptive instruction commands to slate agent -->
+
+SLATE instructions are dynamically controlled by the Kubernetes-driven Adaptive Instruction Layer.
+The K8s ConfigMap `slate-instructions` is the source of truth for all instruction behaviors.
+
+### Adaptive Instruction Commands
+```powershell
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/adaptive_instructions.py --status        # Current instruction state
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/adaptive_instructions.py --evaluate      # Evaluate system & generate context
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/adaptive_instructions.py --sync           # Full sync: evaluate + apply to K8s
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/adaptive_instructions.py --get-context    # Get context-aware instruction block
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/adaptive_instructions.py --get-active     # Get active set (K8s → local fallback)
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/adaptive_instructions.py --apply          # Push instructions to ConfigMap
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/adaptive_instructions.py --json           # JSON output
+```
+
+### Operating Modes
+
+| Mode | Condition | Behavior |
+|------|-----------|----------|
+| `NORMAL` | All systems healthy | Full operations, all agents active |
+| `DEGRADED` | Some services down | Adjust routing, warn about unavailable tools |
+| `MAINTENANCE` | K8s pods unhealthy | Focus on restoration, limit new tasks |
+| `AUTONOMOUS` | Autonomous loop active | Coordinate with AI loop, poll bridge |
+| `EMERGENCY` | K8s cluster unreachable | Recovery mode, minimal operations |
+| `DEVELOPMENT` | Active coding session | Prioritize coding/testing agents |
+
+### Agent Availability Levels
+
+| Level | Condition | Available Agents |
+|-------|-----------|-----------------|
+| `full` | GPU + Ollama + K8s ready | ALPHA, BETA, GAMMA, DELTA, COPILOT |
+| `gpu-only` | GPU available, Ollama down | ALPHA (no LLM), BETA (no LLM) |
+| `cpu-only` | No GPU access | GAMMA, DELTA only |
+| `minimal` | Cluster unreachable | Status/health checks only |
+
+### Session Protocol (AUGMENTED)
+
+Every agent session MUST now include adaptive instruction check:
+
+```powershell
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/slate_status.py --quick                    # 1. System health
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/adaptive_instructions.py --get-active      # 2. Get K8s-driven instruction state
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/slate_runtime.py --check-all               # 3. Verify integrations
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/slate_workflow_manager.py --status          # 4. Check task queue
+```
+
+### Handling Adaptive Instructions
+
+10. **Instructions / Adaptive**: Run `adaptive_instructions.py --status`, report mode, agent availability, active directives
+11. **Instruction Sync**: Run `adaptive_instructions.py --sync`, report K8s ConfigMap patch result
+12. **Instruction Override**: Run `adaptive_instructions.py --evaluate`, generate and display instruction context

@@ -13,7 +13,10 @@ resources:
   - network-policy.yaml
   - storage.yaml
   - secrets.yaml
+  - slate-instructions.yaml  # Adaptive agent instructions ConfigMap
+  - instruction-controller.yaml  # Adaptive instruction controller (Deployment + CronJob)
   - deployments.yaml
+  - slate-dashboard.yaml  # Full SLATE Dashboard UI with integrations
   - hpa-monitoring.yaml
   - pdb.yaml
   - agentic-system.yaml

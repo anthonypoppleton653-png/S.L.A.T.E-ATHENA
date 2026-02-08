@@ -117,6 +117,8 @@ interface IPlanContextParams { scope?: string }
 interface ICodeGuidanceParams { file?: string; context?: string }
 // Modified: 2026-02-09T04:00:00Z | Author: COPILOT | Change: Add Kubernetes deployment tool interface
 interface IKubernetesParams { action?: string; component?: string; overlay?: string }
+// Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Add Adaptive Instructions tool interface
+interface IAdaptiveInstructionsParams { action?: string }
 
 class SystemStatusTool implements vscode.LanguageModelTool<IStatusParams> {
 	async invoke(options: vscode.LanguageModelToolInvocationOptions<IStatusParams>, token: vscode.CancellationToken) {
@@ -1215,6 +1217,34 @@ class GitHubModelsTool implements vscode.LanguageModelTool<IGitHubModelsParams> 
 	}
 }
 
+// Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Add Adaptive Instruction Layer tool — K8s-driven dynamic instructions
+class AdaptiveInstructionsTool implements vscode.LanguageModelTool<IAdaptiveInstructionsParams> {
+	async invoke(options: vscode.LanguageModelToolInvocationOptions<IAdaptiveInstructionsParams>, token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		let cmd = 'slate/adaptive_instructions.py';
+		if (action === 'status') {
+			cmd += ' --status --json';
+		} else if (action === 'evaluate') {
+			cmd += ' --evaluate --json';
+		} else if (action === 'sync') {
+			cmd += ' --sync --json';
+		} else if (action === 'get-context') {
+			cmd += ' --get-context';
+		} else if (action === 'get-active') {
+			cmd += ' --get-active --json';
+		} else if (action === 'apply') {
+			cmd += ' --apply --json';
+		}
+		const output = await execSlateCommandLong(cmd, token);
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(output)]);
+	}
+
+	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<IAdaptiveInstructionsParams>, _token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		return { invocationMessage: `Adaptive Instructions: ${action}...` };
+	}
+}
+
 // Modified: 2026-02-09T04:00:00Z | Author: COPILOT | Change: Add Kubernetes deployment management tool
 class KubernetesTool implements vscode.LanguageModelTool<IKubernetesParams> {
 	async invoke(options: vscode.LanguageModelToolInvocationOptions<IKubernetesParams>, token: vscode.CancellationToken) {
@@ -1282,4 +1312,7 @@ export function registerSlateTools(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.lm.registerTool('slate_githubModels', new GitHubModelsTool()));
 	// Kubernetes deployment management
 	context.subscriptions.push(vscode.lm.registerTool('slate_kubernetes', new KubernetesTool()));
+	// Adaptive Instruction Layer — K8s-driven dynamic instructions
+	// Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Register adaptive instructions tool
+	context.subscriptions.push(vscode.lm.registerTool('slate_adaptiveInstructions', new AdaptiveInstructionsTool()));
 }

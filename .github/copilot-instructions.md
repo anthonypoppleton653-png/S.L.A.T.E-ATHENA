@@ -514,3 +514,134 @@ For simpler scenarios, Docker Compose is still available:
 - **Prod:** `docker-compose -f docker-compose.prod.yml up -d`
 
 But K8s is the **standard** for release deployments.
+
+## Adaptive Instruction Layer (K8s-Driven) — MANDATORY
+# Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Add adaptive instruction layer — instructions are now K8s-driven
+
+SLATE instructions are no longer static files. They are **dynamically generated and controlled**
+by the Kubernetes-driven Adaptive Instruction Layer. The K8s ConfigMap `slate-instructions`
+is the **source of truth** for all agent and Copilot instruction behaviors.
+
+### Architecture
+
+```
+┌───────────────────────────────────────────────────────────────────────┐
+│                   ADAPTIVE INSTRUCTION LAYER                          │
+│                                                                       │
+│  System State        Instruction           K8s ConfigMap              │
+│  (GPU, K8s, services) → Controller     →  slate-instructions         │
+│                        (adaptive_          ├── active-state.yaml      │
+│  GitHub Workflows  →   instructions.py)    ├── instruction-block.md   │
+│  (instructions.yml)                        ├── copilot-rules.yaml     │
+│                                            ├── agent-prompts.yaml     │
+│  @slate Extension  ←  Instruction API      └── mcp-tools.yaml        │
+│  (queries live      ← (port 8085)                                     │
+│   instructions)                                                       │
+└───────────────────────────────────────────────────────────────────────┘
+```
+
+### Operating Modes (Set by Controller)
+
+| Mode | Condition | Behavior |
+|------|-----------|----------|
+| `NORMAL` | All systems healthy | Full operations, all agents active |
+| `DEGRADED` | Some services down | Adjust routing, warn about unavailable tools |
+| `MAINTENANCE` | K8s pods unhealthy | Focus on restoration, limit new tasks |
+| `AUTONOMOUS` | Autonomous loop active | Coordinate with AI loop, poll bridge |
+| `EMERGENCY` | K8s cluster unreachable | Recovery mode, minimal operations |
+| `DEVELOPMENT` | Active coding session | Prioritize coding/testing agents |
+
+### Agent Availability (Set by Controller)
+
+| Level | Condition | Available Agents |
+|-------|-----------|-----------------|
+| `full` | GPU + Ollama + K8s ready | ALPHA, BETA, GAMMA, DELTA, COPILOT |
+| `gpu-only` | GPU available, Ollama down | ALPHA (no LLM), BETA (no LLM) |
+| `cpu-only` | No GPU access | GAMMA, DELTA only |
+| `minimal` | Cluster unreachable | Status/health checks only |
+
+### Protocol Commands
+
+```bash
+# Adaptive instruction management
+python slate/adaptive_instructions.py --status        # Current instruction state
+python slate/adaptive_instructions.py --evaluate      # Evaluate system & generate context
+python slate/adaptive_instructions.py --sync           # Full sync: evaluate + apply to K8s
+python slate/adaptive_instructions.py --get-context    # Get context-aware instruction block
+python slate/adaptive_instructions.py --get-active     # Get active set (K8s → local fallback)
+python slate/adaptive_instructions.py --apply          # Push instructions to ConfigMap
+python slate/adaptive_instructions.py --json           # JSON output
+```
+
+### @slate Extension Integration
+
+The `slate_adaptiveInstructions` tool in the @slate VS Code extension queries the
+instruction controller for live instruction state:
+
+| Action | Description |
+|--------|-------------|
+| `status` | Get current instruction state from K8s ConfigMap |
+| `evaluate` | Analyze system and generate instruction context |
+| `sync` | Full sync: evaluate + apply + report |
+| `get-context` | Get markdown instruction block for sessions |
+| `get-active` | Get active instruction set (K8s → local fallback) |
+| `apply` | Push evaluated instructions to K8s ConfigMap |
+
+### K8s Resources
+
+| Resource | Type | Purpose |
+|----------|------|---------|
+| `slate-instructions` | ConfigMap | Stores all instructions, prompts, active state |
+| `slate-instruction-controller` | Deployment | HTTP API for instruction queries (port 8085) |
+| `slate-instruction-controller-svc` | Service | ClusterIP service for internal access |
+| `slate-instruction-sync` | CronJob | Every 5min: evaluate → patch ConfigMap |
+
+### GitHub Workflow
+
+`instructions.yml` triggers instruction sync on:
+- Push to `main` (changes to `slate/`, `k8s/`, `.github/copilot-instructions.md`, `AGENTS.md`)
+- Manual dispatch with mode selection (sync/evaluate-only/apply-only/validate)
+- Nightly at 03:00 UTC
+
+### Session Protocol (AUGMENTED)
+
+Every Copilot session MUST now include adaptive instruction check alongside static protocols:
+
+```bash
+python slate/slate_status.py --quick                    # 1. System health
+python slate/adaptive_instructions.py --get-active      # 2. Get K8s-driven instruction state
+python slate/slate_runtime.py --check-all               # 3. Verify integrations
+python slate/slate_workflow_manager.py --status          # 4. Check task queue
+```
+
+Step 2 is NEW — it queries the K8s ConfigMap for the current instruction mode,
+agent availability, active directives, and tool routing. If K8s is unavailable,
+it falls back to the local state file.
+
+### Instruction Flow
+
+```
+1. System event (push, timer, dispatch)
+     ↓
+2. Instruction Controller evaluates:
+   - K8s cluster health (pods, deployments)
+   - GPU availability (nvidia-smi)
+   - Service health (Ollama, Dashboard, Runner)
+   - Workflow state (pending/stale tasks)
+     ↓
+3. Controller generates instruction context:
+   - Operating mode (NORMAL/DEGRADED/etc.)
+   - Agent availability (full/gpu-only/etc.)
+   - Active protocols, tools, directives
+     ↓
+4. Context applied to K8s ConfigMap:
+   - active-state.yaml (machine-readable)
+   - instruction-block.md (human-readable)
+   - copilot-rules.yaml (session rules)
+     ↓
+5. Consumers read live instructions:
+   - @slate extension (via slate_adaptiveInstructions tool)
+   - K8s pods (via ConfigMap volume mount, ~90s propagation)
+   - Copilot sessions (via get-context at session start)
+   - GitHub workflows (via slate_workflow triggers)
+```
