@@ -772,3 +772,14 @@ PAGE ARCHITECTURE (LOCKED)
 ║                                                                        ║
 +═══════════════════════════════════════════════════════════════════════+
 ```
+
+<!-- Modified: 2026-02-09T06:35:00Z | Author: COPILOT | Change: Add Phase 7 documentation update notes -->
+### Documentation Update (Phase 7)
+
+This specification now includes the operational documentation for the watchmaker information architecture:
+
+- **Breadcrumb + tier navigation**: Tracks current section and depth tier with surface-mechanism-components-internals-core labels.
+- **Drill-down interactions**: Clickable `.drilldown-trigger` expands `.drilldown-detail` panels and updates breadcrumb context.
+- **Zoom/focus interactions**: Double-click focus containers to isolate a panel; click outside to clear focus.
+- **Schematic alignment**: Information architecture maps to schematic sections for consistent navigation and UI semantics.
+- **Generative UI alignment**: Watchmaker surfaces are compatible with the schematic SDK protocol in Generative UI flows.
