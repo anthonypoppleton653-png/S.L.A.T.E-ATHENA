@@ -1231,9 +1231,9 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 			</div>
 			<div class="sys-detect active" id="sysDetect"><span class="sys-detect-spinner"></span><span class="sys-detect-text">Scanning your system...</span></div>
 			<div class="cta-container" id="ctaContainer" style="display:none;">
-				<button class="cta-primary" onclick="startGuided()">Start Guided Setup</button>
-				<button class="cta-theme" onclick="applySlateTheme()">Apply SLATE Default Theme</button>
-				<button class="cta-secondary" onclick="skipOnboarding()">Skip to Dashboard</button>
+				<button class="cta-primary" id="btnStartGuided">Start Guided Setup</button>
+				<button class="cta-theme" id="btnApplyTheme">Apply SLATE Default Theme</button>
+				<button class="cta-secondary" id="btnSkipOnboarding">Skip to Dashboard</button>
 			</div>
 			<div class="features" id="featureCards" style="display:none;">
 				<div class="feature-card"><div class="feature-icon">&#x1F9E0;</div><div class="feature-title">Local AI</div><div class="feature-desc" id="featAi">Ollama + Models</div></div>
@@ -1250,12 +1250,12 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 				<div class="step-description" id="stepDescription">Getting ready to configure your SLATE environment.</div>
 				<div class="substeps" id="substeps"></div>
 			</div>
-			<div class="guided-controls"><button class="control-btn" onclick="skipStep()">Skip</button><button class="control-btn" onclick="exitGuided()">Exit</button></div>
+			<div class="guided-controls"><button class="control-btn" id="btnSkipStep">Skip</button><button class="control-btn" id="btnExitGuided">Exit</button></div>
 			<div class="complete-screen" id="completeScreen">
 				<div class="complete-icon">&#x1F389;</div>
 				<div class="complete-title">Setup Complete!</div>
 				<div class="complete-summary" id="completeSummary">Your SLATE system is fully operational. The onboarding view will now transform into your Systems Check dashboard.</div>
-				<div class="cta-container"><button class="cta-primary" onclick="finishOnboarding()">Open Dashboard</button><button class="cta-secondary" onclick="exitGuided()">Close</button></div>
+				<div class="cta-container"><button class="cta-primary" id="btnFinishOnboarding">Open Dashboard</button><button class="cta-secondary" id="btnCloseGuided">Close</button></div>
 			</div>
 		</div>
 	</div>
@@ -1269,7 +1269,7 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 			<div class="status-badge"><div class="status-dot" id="systemStatus"></div><span id="statusText">Online</span></div>
 		</div>
 		<div class="systems-check">
-			<div class="systems-check-header"><span class="systems-check-title">Systems Check</span><button class="systems-check-btn" id="btnRunCheck" onclick="runSystemsCheck()">Run Check</button></div>
+			<div class="systems-check-header"><span class="systems-check-title">Systems Check</span><button class="systems-check-btn" id="btnRunCheck">Run Check</button></div>
 			<div class="check-grid" id="checkGrid">
 				<div class="check-item" id="check-python"><div class="check-dot idle"></div><div class="check-label">Python</div><div class="check-result">\u2014</div></div>
 				<div class="check-item" id="check-venv"><div class="check-dot idle"></div><div class="check-label">Venv</div><div class="check-result">\u2014</div></div>
@@ -1321,9 +1321,9 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 		<div class="dashboard-frame-section">
 			<div class="dashboard-frame-header"><span class="section-title">Dashboard</span><div class="frame-actions"><button class="frame-btn" id="btnRefreshFrame" title="Refresh">&#x21BB;</button><button class="frame-btn" id="btnExpandFrame" title="Open in panel">&#x2197;</button><button class="frame-btn" id="btnExternalFrame" title="Open in browser">&#x2756;</button></div></div>
 			<iframe class="dashboard-iframe" id="dashboardFrame" src="${DASHBOARD_URL}" title="SLATE Dashboard"></iframe>
-			<div class="offline-notice" id="offlineNotice"><p>Dashboard server not reachable at ${DASHBOARD_URL}</p><button class="cta-secondary" onclick="retryDashboard()" style="margin-top:10px;">Retry Connection</button></div>
+			<div class="offline-notice" id="offlineNotice"><p>Dashboard server not reachable at ${DASHBOARD_URL}</p><button class="cta-secondary" id="btnRetryDashboard" style="margin-top:10px;">Retry Connection</button></div>
 		</div>
-		<div class="dash-footer"><span class="version-text">v${EXTENSION_VERSION}</span><button class="reset-btn" onclick="resetOnboarding()">Re-run guided setup</button></div>
+		<div class="dash-footer"><span class="version-text">v${EXTENSION_VERSION}</span><button class="reset-btn" id="btnResetOnboarding">Re-run guided setup</button></div>
 	</div>
 
 	<!-- ═══════════════════════════════════════════════════════════════════
@@ -1435,7 +1435,29 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 			var res = item.querySelector('.check-result'); if(res) res.textContent = result || '\\u2014';
 		}
 
-		/* Dashboard event listeners */
+		/* ── Onboarding button listeners (CSP blocks inline onclick) ── */
+		var bsg = document.getElementById('btnStartGuided');
+		if(bsg) bsg.addEventListener('click', function() { startGuided(); });
+		var bat = document.getElementById('btnApplyTheme');
+		if(bat) bat.addEventListener('click', function() { applySlateTheme(); });
+		var bso = document.getElementById('btnSkipOnboarding');
+		if(bso) bso.addEventListener('click', function() { skipOnboarding(); });
+		var bss = document.getElementById('btnSkipStep');
+		if(bss) bss.addEventListener('click', function() { skipStep(); });
+		var beg = document.getElementById('btnExitGuided');
+		if(beg) beg.addEventListener('click', function() { exitGuided(); });
+		var bfo = document.getElementById('btnFinishOnboarding');
+		if(bfo) bfo.addEventListener('click', function() { finishOnboarding(); });
+		var bcg = document.getElementById('btnCloseGuided');
+		if(bcg) bcg.addEventListener('click', function() { exitGuided(); });
+		var brc = document.getElementById('btnRunCheck');
+		if(brc) brc.addEventListener('click', function() { runSystemsCheck(); });
+		var brd = document.getElementById('btnRetryDashboard');
+		if(brd) brd.addEventListener('click', function() { retryDashboard(); });
+		var bro = document.getElementById('btnResetOnboarding');
+		if(bro) bro.addEventListener('click', function() { resetOnboarding(); });
+
+		/* ── Dashboard event listeners ── */
 		document.querySelectorAll('.service-card').forEach(function(c) { c.addEventListener('click', function() { var cmd = c.dataset.cmd; if(cmd) vscode.postMessage({type:'runCommand',command:cmd}); }); });
 
 		var bs = document.getElementById('btnStartServices');
