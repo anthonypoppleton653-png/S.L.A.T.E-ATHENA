@@ -1,7 +1,8 @@
 <!-- SEO: Local AI Development Environment | GitHub Actions AI Integration | Self-Hosted AI Runner | Free Local LLM | VS Code AI Automation -->
 <!-- Keywords: local ai, github actions, self-hosted runner, ollama, ai automation, devops ai, free ai development, local llm, ai workflow -->
 
-# Turn Your Local Hardware Into an AI Operations Center for GitHub
+# THIS CODEBASE IS EXPERIMENTAL - NOT PRODUCTION READY - THIS IS A HOBBY PROJECT FOR LEARNING AI - IT IS INTENDED AS A CREATION PLATFORM
+TO PROVIDE A COMPREHENSIVE AND STRUCTURED WORKFLOW THAT ONBOARDS LOCAL AI TO THE END USER BASED ON AN INFERENCE BASED INSTALL PACKAGE. 
 
 **Stop paying for cloud AI. Stop sending your code to external servers. Run AI operations locally and integrate seamlessly with GitHub.**
 
