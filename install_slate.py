@@ -11,11 +11,24 @@ Installs and configures the complete SLATE ecosystem with real-time dashboard
 progress tracking. The dashboard is the FIRST system installed — every
 subsequent step is visible in the browser at http://127.0.0.1:8080.
 
+Installation Ethos (Scan-First):
+    Before installing ANY dependency, SLATE scans ALL drives and folders on your
+    system for existing compatible Python environments and packages. If a package
+    already exists somewhere (e.g. in another venv), SLATE creates a symlink/junction
+    to it rather than downloading a duplicate copy. This saves gigabytes of disk space
+    (PyTorch alone is ~3GB) and dramatically speeds up installation.
+
+    Pipeline: SCAN → MATCH → LINK → INSTALL (only if not found anywhere)
+
+    Use --no-scan to disable this behavior and always install fresh.
+
 Full ecosystem setup includes:
     - Git repository clone/verify
     - Python virtual environment
-    - pip dependencies (requirements.txt)
-    - PyTorch (GPU-aware — auto-detects CUDA compute capability)
+    - Dependency scanning (finds existing packages across all drives)
+    - Package linking (symlinks heavy packages from existing venvs)
+    - pip install (only for packages not found anywhere on the system)
+    - PyTorch (GPU-aware — links existing CUDA install or downloads fresh)
     - Ollama (local LLM inference — auto-installs via winget)
     - Docker (container deployment — detection + guidance)
     - VS Code extension (@slate chat participant)
@@ -23,12 +36,16 @@ Full ecosystem setup includes:
     - Workspace configuration + .env
 
 Architecture:
-    install_slate.py → SlateInstaller → InstallTracker → install_state.json
-                                      → SSE broadcast  → Dashboard listens
+    install_slate.py → DependencyResolver → EnvironmentScanner → scan all drives
+                                          → DependencyLinker   → symlink packages
+                                          → pip install         → only missing pkgs
+                     → SlateInstaller     → InstallTracker     → install_state.json
+                                          → SSE broadcast       → Dashboard listens
 
 Usage:
     python install_slate.py                     # Full ecosystem install with dashboard
     python install_slate.py --no-dashboard      # CLI-only (no browser)
+    python install_slate.py --no-scan           # Skip dependency scanning (always fresh)
     python install_slate.py --skip-gpu          # Skip GPU detection
     python install_slate.py --beta              # Init from S.L.A.T.E.-BETA fork
     python install_slate.py --dev               # Developer mode (editable install)
@@ -46,9 +63,14 @@ import time
 import webbrowser
 from pathlib import Path
 
+# Modified: 2026-02-07T12:00:00Z | Author: COPILOT | Change: Add dependency resolver for scan-first install ethos
+
 WORKSPACE_ROOT = Path(__file__).parent
 DASHBOARD_PORT = 8080
 DASHBOARD_URL = f"http://127.0.0.1:{DASHBOARD_PORT}"
+
+# Global resolver instance — initialized in main() after venv exists
+_dependency_resolver = None
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -152,7 +174,14 @@ def step_python_check(tracker, args):
 
 
 def step_venv_setup(tracker, args):
-    """Step 2: Create or verify virtual environment."""
+    # Modified: 2026-02-07T12:00:00Z | Author: COPILOT | Change: Scan-first venv — detect existing venvs before creating
+    """Step 2: Create or verify virtual environment.
+
+    NEW ETHOS: Scans the system for existing compatible Python venvs.
+    If one is found with matching Python version, we create a lightweight
+    venv and prepare to link heavy packages from the existing one instead
+    of installing everything from scratch.
+    """
     tracker.start_step("venv_setup")
     venv_path = WORKSPACE_ROOT / ".venv"
 
@@ -170,7 +199,29 @@ def step_venv_setup(tracker, args):
         # Exists but broken — recreate
         tracker.update_progress("venv_setup", 30, "Venv broken, recreating...")
 
-    tracker.update_progress("venv_setup", 20, "Creating virtual environment")
+    # Scan for existing venvs if scan is enabled
+    if not getattr(args, 'no_scan', False):
+        tracker.update_progress("venv_setup", 10, "Scanning system for existing Python environments...")
+        try:
+            from slate.dependency_resolver import EnvironmentScanner
+            scanner = EnvironmentScanner(WORKSPACE_ROOT, scan_timeout=20.0)
+            scan_result = scanner.scan(
+                lambda pct, msg: tracker.update_progress("venv_setup", 10 + int((pct or 0) * 0.15), msg)
+            )
+            venv_count = scan_result['venvs_found']
+            pkg_count = scan_result['packages_indexed']
+            heavy = scan_result.get('heavy_packages_found', {})
+            tracker.update_progress("venv_setup", 25,
+                f"Found {venv_count} existing venv(s) with {pkg_count} packages "
+                f"({len(heavy)} heavy packages available for linking)")
+        except ImportError:
+            tracker.update_progress("venv_setup", 15,
+                "Dependency resolver not available — standard install")
+        except Exception as e:
+            tracker.update_progress("venv_setup", 15,
+                f"Scan skipped: {e}")
+
+    tracker.update_progress("venv_setup", 30, "Creating virtual environment")
     try:
         subprocess.run([sys.executable, "-m", "venv", str(venv_path)],
                        check=True, timeout=60)
@@ -187,7 +238,17 @@ def step_venv_setup(tracker, args):
 
 
 def step_deps_install(tracker, args):
-    """Step 3: Install core dependencies from requirements.txt."""
+    # Modified: 2026-02-07T12:00:00Z | Author: COPILOT | Change: Scan-first dependency resolution — link existing, install only missing
+    """Step 3: Install core dependencies — SCAN FIRST, LINK IF FOUND, INSTALL ONLY IF MISSING.
+
+    NEW ETHOS:
+        1. Scan all drives for existing Python venvs with compatible packages
+        2. For heavy packages (PyTorch, chromadb, numpy, etc.), create symlinks/junctions
+           from an existing installation rather than downloading again
+        3. Only pip-install packages that don't exist anywhere on the system
+        4. This saves gigabytes of disk space and minutes of download time
+    """
+    global _dependency_resolver
     tracker.start_step("deps_install")
     pip = _get_pip_exe()
 
@@ -197,7 +258,7 @@ def step_deps_install(tracker, args):
         return False
 
     # Upgrade pip first
-    tracker.update_progress("deps_install", 10, "Upgrading pip")
+    tracker.update_progress("deps_install", 5, "Upgrading pip")
     try:
         _run_cmd([pip, "install", "--upgrade", "pip", "--quiet"], timeout=60)
     except Exception:
@@ -210,11 +271,83 @@ def step_deps_install(tracker, args):
         return False
 
     # Count packages for progress estimation
-    pkg_count = sum(1 for line in req_file.read_text().splitlines()
-                    if line.strip() and not line.strip().startswith("#"))
+    pkg_count = sum(1 for line in req_file.read_text(encoding='utf-8').splitlines()
+                    if line.strip() and not line.strip().startswith("#")
+                    and not line.strip().startswith("-"))
+
+    # ── TRY SCAN-FIRST RESOLUTION ──────────────────────────────────────────
+    if not getattr(args, 'no_scan', False):
+        tracker.update_progress("deps_install", 10,
+            f"Scanning system for {pkg_count} dependencies (link existing, install missing)...")
+        try:
+            from slate.dependency_resolver import DependencyResolver
+            resolver = DependencyResolver(WORKSPACE_ROOT, scan_timeout=30.0)
+            _dependency_resolver = resolver  # Store for PyTorch step
+
+            result = resolver.resolve_all(
+                req_file, pip,
+                lambda pct, msg: tracker.update_progress(
+                    "deps_install", 10 + int((pct or 0) * 0.75), msg
+                )
+            )
+
+            linked_count = result.get('packages_saved', 0)
+            fresh_count = result.get('installed_fresh', 0)
+            present_count = len(result.get('already_present', []))
+            install_ok = result.get('install_result', {}).get('success', False)
+
+            # Save resolution log
+            log_dir = WORKSPACE_ROOT / ".slate_install"
+            log_dir.mkdir(parents=True, exist_ok=True)
+            log_file = log_dir / "dependency_resolution.json"
+            try:
+                log_file.write_text(json.dumps(result, indent=2, default=str),
+                                    encoding='utf-8')
+            except Exception:
+                pass
+
+            tracker.update_progress("deps_install", 90, "Verifying core imports")
+            verify = _run_cmd([_get_python_exe(), "-c",
+                               "import fastapi; import uvicorn; print('core OK')"], timeout=15)
+
+            details_parts = []
+            if present_count:
+                details_parts.append(f"{present_count} already present")
+            if linked_count:
+                details_parts.append(f"{linked_count} linked from existing envs")
+            if fresh_count:
+                details_parts.append(f"{fresh_count} installed fresh")
+            details_str = ", ".join(details_parts) if details_parts else f"{pkg_count} packages processed"
+
+            if linked_count > 0:
+                # Show what was linked
+                linked_names = [p['name'] for p in result.get('linked', [])]
+                details_str += f" [linked: {', '.join(linked_names[:5])}]"
+                if len(linked_names) > 5:
+                    details_str += f" +{len(linked_names)-5} more"
+
+            if verify.returncode == 0:
+                tracker.complete_step("deps_install", success=True,
+                                      details=details_str + " — core imports OK")
+            elif install_ok or linked_count > 0:
+                tracker.complete_step("deps_install", success=True, warning=True,
+                                      details=details_str + " (some optional imports missing)")
+            else:
+                tracker.complete_step("deps_install", success=False,
+                                      error=f"Dependency resolution failed: {result.get('install_result', {}).get('details', 'unknown')}")
+                return False
+            return True
+
+        except ImportError:
+            tracker.update_progress("deps_install", 15,
+                "Dependency resolver not available — falling back to standard pip install")
+        except Exception as e:
+            tracker.update_progress("deps_install", 15,
+                f"Scan-first resolution failed ({e}) — falling back to pip install")
+
+    # ── FALLBACK: Standard pip install (no scanning) ───────────────────────
     tracker.update_progress("deps_install", 20,
                             f"Installing {pkg_count} packages from requirements.txt")
-
     try:
         install_args = [str(pip), "install", "-r", str(req_file)]
         if not args.dev:
@@ -223,19 +356,17 @@ def step_deps_install(tracker, args):
                                 timeout=600, cwd=str(WORKSPACE_ROOT))
 
         if result.returncode != 0:
-            # Try to extract useful error
             err_lines = [line for line in (result.stderr or "").splitlines() if "ERROR" in line]
             error_msg = err_lines[-1] if err_lines else "pip install failed"
             tracker.complete_step("deps_install", success=False, error=error_msg)
             return False
 
         tracker.update_progress("deps_install", 90, "Verifying core imports")
-        # Quick verification — can we import key packages?
         verify = _run_cmd([_get_python_exe(), "-c",
                            "import fastapi; import uvicorn; print('core OK')"], timeout=15)
         if verify.returncode == 0:
             tracker.complete_step("deps_install", success=True,
-                                  details=f"{pkg_count} packages installed, core imports OK")
+                                  details=f"{pkg_count} packages installed (standard mode), core imports OK")
         else:
             tracker.complete_step("deps_install", success=True, warning=True,
                                   details=f"{pkg_count} packages installed (some optional imports missing)")
@@ -298,15 +429,65 @@ def step_gpu_detect(tracker, args):
 # Modified: 2026-02-06T22:30:00Z | Author: COPILOT | Change: New ecosystem setup steps
 
 def step_pytorch_setup(tracker, args):
-    """Step 4b: Install PyTorch with GPU support if available."""
+    # Modified: 2026-02-07T15:30:00Z | Author: COPILOT | Change: Add GPU compute capability check — reject sm_120 incompatible PyTorch
+    """Step 4b: Install PyTorch with GPU support if available.
+
+    NEW ETHOS: PyTorch is ~3GB. Before downloading, scan all drives for an
+    existing CUDA-enabled PyTorch installation and symlink it into our venv.
+    Only downloads if no compatible installation is found anywhere.
+
+    GPU COMPATIBILITY: Checks that the installed/linked PyTorch's CUDA toolkit
+    version actually supports the GPU's compute capability. E.g., Blackwell
+    (sm_120) requires CUDA 12.8+, so PyTorch+cu124 is rejected.
+    """
+    global _dependency_resolver
     tracker.start_step("pytorch_setup")
 
     if args.skip_gpu:
         tracker.skip_step("pytorch_setup", "Skipped (--skip-gpu)")
         return True
 
-    # Check if already installed
-    tracker.update_progress("pytorch_setup", 20, "Checking PyTorch installation")
+    # Detect GPU compute capability upfront for compatibility checks
+    gpu_cc = None
+    min_cuda_ver = None
+    try:
+        gpu_result = _run_cmd(
+            ["nvidia-smi", "--query-gpu=compute_cap", "--format=csv,noheader"],
+            timeout=15)
+        if gpu_result.returncode == 0 and gpu_result.stdout.strip():
+            ccs = gpu_result.stdout.strip().splitlines()
+            gpu_cc = max(float(cc.strip()) for cc in ccs if cc.strip())
+    except Exception:
+        pass
+
+    # Map compute capability to minimum CUDA toolkit version
+    cc_to_min_cuda = {
+        12.0: "12.8",  # Blackwell (RTX 50xx)
+        9.0: "12.0",   # Hopper (H100)
+        8.9: "11.8",   # Ada Lovelace (RTX 40xx)
+        8.6: "11.1",   # Ampere GA10x (RTX 30xx)
+        8.0: "11.0",   # Ampere GA100 (A100)
+        7.5: "10.0",   # Turing (RTX 20xx)
+    }
+    if gpu_cc:
+        for cc_threshold in sorted(cc_to_min_cuda.keys(), reverse=True):
+            if gpu_cc >= cc_threshold:
+                min_cuda_ver = cc_to_min_cuda[cc_threshold]
+                break
+
+    def _check_cuda_compat(cuda_ver_str: str) -> bool:
+        """Check if a CUDA toolkit version meets the GPU's minimum requirement."""
+        if not min_cuda_ver or not cuda_ver_str or cuda_ver_str == "N/A":
+            return True  # No check possible, assume OK
+        try:
+            a = [int(x) for x in cuda_ver_str.split(".")]
+            b = [int(x) for x in min_cuda_ver.split(".")]
+            return a >= b
+        except (ValueError, IndexError):
+            return True
+
+    # Check if already installed in our venv
+    tracker.update_progress("pytorch_setup", 10, "Checking PyTorch in workspace venv")
     try:
         check = _run_cmd([_get_python_exe(), "-c",
                           "import torch; print(torch.__version__); "
@@ -318,39 +499,121 @@ def step_pytorch_setup(tracker, args):
                 version = lines[0]
                 cuda_ok = lines[1].strip().lower() == "true"
                 cuda_ver = lines[2] if lines[2] != "none" else "N/A"
-                if cuda_ok:
+
+                if cuda_ok and _check_cuda_compat(cuda_ver):
                     tracker.complete_step("pytorch_setup", success=True,
                                           details=f"PyTorch {version} with CUDA {cuda_ver}")
                     return True
+                elif cuda_ok and not _check_cuda_compat(cuda_ver):
+                    tracker.update_progress("pytorch_setup", 15,
+                        f"PyTorch {version} CUDA {cuda_ver} incompatible with GPU sm_{int(gpu_cc * 10)} "
+                        f"(needs CUDA {min_cuda_ver}+) — replacing...")
+                    # Remove the incompatible PyTorch
+                    _run_cmd([_get_pip_exe(), "uninstall", "torch", "torchvision",
+                              "torchaudio", "-y"], timeout=60)
                 else:
-                    tracker.update_progress("pytorch_setup", 30,
-                                            f"PyTorch {version} found but no CUDA — upgrading")
+                    tracker.update_progress("pytorch_setup", 15,
+                                            f"PyTorch {version} found but no CUDA — looking for CUDA build...")
     except Exception:
         pass
 
-    # Detect GPU compute capability for correct CUDA wheel
-    tracker.update_progress("pytorch_setup", 40, "Detecting GPU for PyTorch CUDA version")
+    # ── TRY SCAN-FIRST: Find existing PyTorch on the system ────────────────
+    if not getattr(args, 'no_scan', False):
+        tracker.update_progress("pytorch_setup", 20,
+            "Scanning system for existing PyTorch with CUDA (saves ~3GB download)...")
+        try:
+            from slate.dependency_resolver import DependencyResolver, DependencyLinker
+
+            # Use the resolver from deps_install if available, otherwise create new
+            resolver = _dependency_resolver
+            if resolver is None:
+                resolver = DependencyResolver(WORKSPACE_ROOT, scan_timeout=20.0)
+                resolver.scan_system(
+                    lambda pct, msg: tracker.update_progress("pytorch_setup",
+                        20 + int((pct or 0) * 0.15), msg)
+                )
+
+            # Look for PyTorch specifically
+            torch_info = resolver.find_pytorch()
+            if torch_info and torch_info.get("has_cuda"):
+                # Check GPU compatibility on the found PyTorch
+                if torch_info.get("gpu_compatible") is False:
+                    warning = torch_info.get("_warning", "Incompatible CUDA version")
+                    tracker.update_progress("pytorch_setup", 40,
+                        f"Skipping linked PyTorch — {warning}")
+                    # Fall through to fresh install
+                else:
+                    source_venv = torch_info.get("venv_root", "unknown")
+                    torch_ver = torch_info.get("version", "unknown")
+                    cuda_toolkit = torch_info.get("cuda_toolkit_version", "?")
+                    tracker.update_progress("pytorch_setup", 40,
+                        f"Found PyTorch {torch_ver} (CUDA {cuda_toolkit}) at {source_venv} — linking...")
+
+                # Link torch, torchvision, torchaudio
+                linker = DependencyLinker(WORKSPACE_ROOT)
+                linked_pkgs = []
+                for pkg_name in ["torch", "torchvision", "torchaudio"]:
+                    pkg_entry = resolver.scanner.find_package(pkg_name)
+                    if pkg_entry:
+                        success = linker.link_package(pkg_name, pkg_entry)
+                        if success:
+                            linked_pkgs.append(pkg_name)
+
+                if "torch" in linked_pkgs:
+                    # Verify the linked torch works
+                    verify = _run_cmd([_get_python_exe(), "-c",
+                        "import torch; print(torch.__version__, "
+                        "'CUDA' if torch.cuda.is_available() else 'CPU')"], timeout=30)
+                    if verify.returncode == 0 and "CUDA" in verify.stdout:
+                        details = (f"PyTorch {verify.stdout.strip()} — LINKED from {source_venv} "
+                                   f"({', '.join(linked_pkgs)})")
+                        tracker.complete_step("pytorch_setup", success=True, details=details)
+                        return True
+                    else:
+                        tracker.update_progress("pytorch_setup", 50,
+                            "Linked PyTorch didn't pass CUDA verification — installing fresh")
+                else:
+                    tracker.update_progress("pytorch_setup", 45,
+                        "Could not link PyTorch — installing fresh")
+            else:
+                tracker.update_progress("pytorch_setup", 35,
+                    "No existing CUDA PyTorch found — installing fresh")
+
+        except ImportError:
+            tracker.update_progress("pytorch_setup", 25,
+                "Dependency resolver not available — standard PyTorch install")
+        except Exception as e:
+            tracker.update_progress("pytorch_setup", 25,
+                f"PyTorch scan failed ({e}) — installing fresh")
+
+    # ── FALLBACK: Standard PyTorch install ─────────────────────────────────
+    tracker.update_progress("pytorch_setup", 50, "Detecting GPU for PyTorch CUDA version")
     pip = _get_pip_exe()
     cuda_tag = "cpu"
 
     try:
-        gpu_result = _run_cmd(
-            ["nvidia-smi", "--query-gpu=compute_cap", "--format=csv,noheader"],
-            timeout=15,
-        )
-        if gpu_result.returncode == 0 and gpu_result.stdout.strip():
-            ccs = gpu_result.stdout.strip().splitlines()
-            max_cc = max(float(cc.strip()) for cc in ccs if cc.strip())
-            if max_cc >= 8.9:  # Ada Lovelace / Blackwell
+        if gpu_cc is None:
+            gpu_result = _run_cmd(
+                ["nvidia-smi", "--query-gpu=compute_cap", "--format=csv,noheader"],
+                timeout=15,
+            )
+            if gpu_result.returncode == 0 and gpu_result.stdout.strip():
+                ccs = gpu_result.stdout.strip().splitlines()
+                gpu_cc = max(float(cc.strip()) for cc in ccs if cc.strip())
+
+        if gpu_cc:
+            if gpu_cc >= 12.0:    # Blackwell (RTX 50xx) — needs CUDA 12.8
+                cuda_tag = "cu128"
+            elif gpu_cc >= 8.9:   # Ada Lovelace (RTX 40xx)
                 cuda_tag = "cu124"
-            elif max_cc >= 8.0:  # Ampere
+            elif gpu_cc >= 8.0:   # Ampere
                 cuda_tag = "cu121"
             else:
                 cuda_tag = "cu118"
-            tracker.update_progress("pytorch_setup", 50,
-                                    f"GPU compute {max_cc} → installing with {cuda_tag}")
+            tracker.update_progress("pytorch_setup", 55,
+                                    f"GPU compute {gpu_cc} → installing with {cuda_tag}")
     except Exception:
-        tracker.update_progress("pytorch_setup", 50, "No GPU detected — installing CPU version")
+        tracker.update_progress("pytorch_setup", 55, "No GPU detected — installing CPU version")
 
     # Install PyTorch
     tracker.update_progress("pytorch_setup", 60, f"Installing PyTorch ({cuda_tag})...")
@@ -369,7 +632,7 @@ def step_pytorch_setup(tracker, args):
                                "'CUDA' if torch.cuda.is_available() else 'CPU')"], timeout=15)
             details = verify.stdout.strip() if verify.returncode == 0 else "installed"
             tracker.complete_step("pytorch_setup", success=True,
-                                  details=f"PyTorch {details}")
+                                  details=f"PyTorch {details} (fresh install)")
         else:
             tracker.complete_step("pytorch_setup", success=True, warning=True,
                                   details="PyTorch install failed (non-fatal)")
@@ -1277,8 +1540,9 @@ def parse_args():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python install_slate.py                   Full install with live dashboard
+  python install_slate.py                   Full install (scan-first: links existing, installs missing)
   python install_slate.py --no-dashboard    CLI-only installation
+  python install_slate.py --no-scan         Skip scanning — always install fresh copies
   python install_slate.py --skip-gpu        Skip GPU detection step
   python install_slate.py --beta            Initialize from S.L.A.T.E.-BETA fork
   python install_slate.py --resume          Resume a previously failed install
@@ -1304,6 +1568,8 @@ Examples:
                         help="Check ecosystem dependencies only")
     parser.add_argument("--full", action="store_true",
                         help="Full ecosystem install (PyTorch, Ollama, Docker, VS Code extension)")
+    parser.add_argument("--no-scan", action="store_true",
+                        help="Disable dependency scanning — always install fresh (skip link-from-existing)")
     return parser.parse_args()
 
 
