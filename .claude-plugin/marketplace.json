@@ -1,6 +1,6 @@
 {
   "name": "slate-marketplace",
-  "description": "S.L.A.T.E. - Local development plugins for AI-powered orchestration",
+  "description": "S.L.A.T.E. - Claude Code plugins for AI-powered development orchestration",
   "owner": {
     "name": "SynchronizedLivingArchitecture",
     "email": "slate@github.com"
@@ -8,9 +8,15 @@
   "plugins": [
     {
       "name": "slate-sdk",
+      "version": "1.2.0",
+      "source": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git",
+      "description": "Full SLATE integration: slash commands, skills, MCP server, GPU management, workflow orchestration"
+    },
+    {
+      "name": "slate-kubernetes",
       "version": "1.0.0",
-      "source": "./",
-      "description": "SLATE orchestration, workflow management, and AI tools for Claude Code"
+      "source": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git#plugins/slate-kubernetes",
+      "description": "Deploy and manage SLATE on Kubernetes clusters"
     }
   ]
 }
