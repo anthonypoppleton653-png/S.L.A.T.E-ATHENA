@@ -113,6 +113,10 @@ class IntegratedAutonomousLoop:
         # 7. Project board
         checks["project_board"] = self._check_component("slate_project_board", ["--status"])
 
+        # 8. Kubernetes cluster
+        # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s health check to integrated autonomous loop
+        checks["kubernetes"] = self._check_kubernetes()
+
         healthy = sum(1 for v in checks.values() if v.get("healthy", False))
         self.state["components_healthy"] = healthy
         self.state["components_total"] = len(checks)
@@ -153,6 +157,27 @@ class IntegratedAutonomousLoop:
         except Exception as e:
             return {"healthy": False, "error": str(e)[:80]}
         return {"healthy": False}
+
+    # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s cluster health check
+    def _check_kubernetes(self) -> dict:
+        """Check if Kubernetes cluster is reachable and SLATE namespace is healthy."""
+        try:
+            r = subprocess.run(
+                ["kubectl", "get", "deployments", "-n", "slate",
+                 "-o", "jsonpath={range .items[*]}{.status.readyReplicas}/{.status.replicas} {end}"],
+                capture_output=True, text=True, timeout=10,
+                encoding="utf-8", errors="replace"
+            )
+            if r.returncode == 0 and r.stdout.strip():
+                pairs = r.stdout.strip().split()
+                total = len(pairs)
+                ready = sum(1 for p in pairs if p.split("/")[0] == p.split("/")[1])
+                return {"healthy": ready == total, "ready": ready, "total": total}
+            return {"healthy": False, "error": "no deployments found"}
+        except FileNotFoundError:
+            return {"healthy": False, "error": "kubectl not found"}
+        except Exception as e:
+            return {"healthy": False, "error": str(e)[:80]}
 
     def _check_component(self, module: str, args: list) -> dict:
         """Check a SLATE component by running it."""

@@ -205,6 +205,55 @@ def benchmark_gpu():
         return {"name": "gpu", "available": False, "error": str(e)}
 
 
+# Modified: 2026-02-09T05:00:00Z | Author: COPILOT | Change: Add K8s cluster benchmark
+def benchmark_kubernetes():
+    """Benchmark Kubernetes cluster — pod readiness latency and deployment health."""
+    try:
+        import subprocess as _sp
+        import time as _time
+
+        # Check kubectl availability
+        r = _sp.run(["kubectl", "version", "--client"],
+                    capture_output=True, text=True, timeout=10)
+        if r.returncode != 0:
+            return {"name": "kubernetes", "available": False, "reason": "kubectl not found"}
+
+        # Measure deployment query latency
+        start = _time.perf_counter()
+        r = _sp.run(["kubectl", "get", "deployments", "-n", "slate", "-o", "json"],
+                    capture_output=True, text=True, timeout=15)
+        query_time = _time.perf_counter() - start
+
+        if r.returncode != 0:
+            return {"name": "kubernetes", "available": False, "reason": "cluster unreachable"}
+
+        deploys = json.loads(r.stdout).get("items", [])
+        total = len(deploys)
+        ready = sum(1 for d in deploys
+                    if d.get("status", {}).get("readyReplicas", 0) == d.get("spec", {}).get("replicas", 1))
+
+        # Measure pod query latency
+        start2 = _time.perf_counter()
+        r2 = _sp.run(["kubectl", "get", "pods", "-n", "slate", "--no-headers"],
+                     capture_output=True, text=True, timeout=15)
+        pod_query_time = _time.perf_counter() - start2
+        pod_count = len([l for l in r2.stdout.strip().splitlines() if l.strip()]) if r2.returncode == 0 else 0
+
+        return {
+            "name": "kubernetes",
+            "available": True,
+            "deployments_total": total,
+            "deployments_ready": ready,
+            "pods": pod_count,
+            "deploy_query_sec": round(query_time, 4),
+            "pod_query_sec": round(pod_query_time, 4),
+        }
+    except FileNotFoundError:
+        return {"name": "kubernetes", "available": False, "reason": "kubectl not installed"}
+    except Exception as e:
+        return {"name": "kubernetes", "available": False, "error": str(e)}
+
+
 def run_benchmarks():
     """Run all benchmarks."""
     results = {
@@ -214,21 +263,24 @@ def run_benchmarks():
 
     print("Running benchmarks...")
 
-    # Modified: 2026-02-07T19:22:00Z | Author: COPILOT | Change: Fix benchmark step count after GPU memory addition
-    print("  [1/5] CPU single-threaded...")
+    # Modified: 2026-02-09T05:00:00Z | Author: COPILOT | Change: Add K8s benchmark step
+    print("  [1/6] CPU single-threaded...")
     results["benchmarks"].append(benchmark_cpu_single())
 
-    print("  [2/5] Memory allocation (CPU)...")
+    print("  [2/6] Memory allocation (CPU)...")
     results["benchmarks"].append(benchmark_memory())
 
-    print("  [3/5] Memory allocation (GPU target)...")
+    print("  [3/6] Memory allocation (GPU target)...")
     results["benchmarks"].append(benchmark_gpu_memory())
 
-    print("  [4/5] Disk I/O...")
+    print("  [4/6] Disk I/O...")
     results["benchmarks"].append(benchmark_disk())
 
-    print("  [5/5] GPU compute...")
+    print("  [5/6] GPU compute...")
     results["benchmarks"].append(benchmark_gpu())
+
+    print("  [6/6] Kubernetes cluster...")
+    results["benchmarks"].append(benchmark_kubernetes())
 
     return results
 
@@ -275,6 +327,12 @@ def print_results(results: dict):
             print(f"  GPU:    {b['gflops']} GFLOPS on {b['device']}")
         elif name == "gpu" and not b.get("available"):
             print("  GPU:    Not available")
+        # Modified: 2026-02-09T05:00:00Z | Author: COPILOT | Change: Add K8s benchmark rendering
+        elif name == "kubernetes" and b.get("available"):
+            print(f"  K8s:    {b['deployments_ready']}/{b['deployments_total']} deploys, {b['pods']} pods (query {b['deploy_query_sec']}s)")
+        elif name == "kubernetes" and not b.get("available"):
+            reason = b.get("reason", b.get("error", "unavailable"))
+            print(f"  K8s:    Not available ({reason})")
 
     print()
     print("=" * 50)

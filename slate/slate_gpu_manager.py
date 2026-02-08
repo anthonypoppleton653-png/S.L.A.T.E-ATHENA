@@ -222,6 +222,34 @@ class GPUManager:
         else:
             print("\n  No models currently loaded in VRAM")
 
+        # Modified: 2026-02-09T05:30:00Z | Author: COPILOT | Change: Add K8s GPU resource awareness
+        try:
+            import subprocess as _sp
+            r = _sp.run(["kubectl", "get", "pods", "-n", "slate",
+                         "-l", "app.kubernetes.io/component=ollama",
+                         "--field-selector=status.phase=Running",
+                         "-o", "jsonpath={.items[*].metadata.name}"],
+                        capture_output=True, text=True, timeout=10)
+            if r.returncode == 0 and r.stdout.strip():
+                gpu_pods = r.stdout.strip().split()
+                print(f"\n  K8s Ollama Pods: {len(gpu_pods)}")
+                for p in gpu_pods:
+                    print(f"    {p}")
+            else:
+                # Also check for any GPU-related pods
+                r2 = _sp.run(["kubectl", "get", "pods", "-n", "slate",
+                              "-l", "app.kubernetes.io/part-of=slate-system",
+                              "--field-selector=status.phase=Running",
+                              "-o", "jsonpath={.items[*].metadata.name}"],
+                             capture_output=True, text=True, timeout=10)
+                if r2.returncode == 0 and r2.stdout.strip():
+                    pods = r2.stdout.strip().split()
+                    print(f"\n  K8s SLATE Pods: {len(pods)} running")
+                if r2.returncode == 0 and r2.stdout.strip():
+                    print(f"\n  K8s Ollama Pods: {r2.stdout.strip()}")
+        except Exception:
+            pass  # K8s not available
+
         print("\n" + "=" * 65)
 
 

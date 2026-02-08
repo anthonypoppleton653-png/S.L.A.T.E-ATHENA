@@ -55,7 +55,7 @@ AGENT_PATTERNS = {
     "DELTA": ["claude", "mcp", "sdk", "integration", "api", "plugin"],
     "EPSILON": ["spec", "specification", "architecture", "blueprint", "schema", "rfc", "capacity"],
     "ZETA": ["benchmark", "performance", "profile", "throughput", "latency", "optimize", "capacity"],
-    "COPILOT": ["complex", "multi-step", "orchestrate", "deploy", "release"],
+    "COPILOT": ["complex", "multi-step", "orchestrate", "deploy", "release", "kubernetes", "k8s", "pod", "cluster"],
     "COPILOT_CHAT": ["diagnose", "investigate", "troubleshoot", "interactive", "explain", "full protocol", "comprehensive"],
 }
 
@@ -69,6 +69,7 @@ class UnifiedAutonomousLoop:
         self.state = self._load_state()
         self.ml = None  # Lazy-loaded ML orchestrator
         self._slate_models_checked = False
+        self._github_models = None  # Lazy-loaded GitHub Models client
         LOG_DIR.mkdir(parents=True, exist_ok=True)
 
     def _get_ml(self):
@@ -88,6 +89,67 @@ class UnifiedAutonomousLoop:
                 except Exception as e:
                     self._log(f"SLATE model check failed: {e}", "WARN")
         return self.ml
+
+    # Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Add GitHub Models cloud fallback for autonomous inference
+    def _get_github_models(self):
+        """Lazy-load GitHub Models client for cloud inference fallback."""
+        if self._github_models is None:
+            try:
+                from slate.slate_github_models import GitHubModelsWithFallback
+                client = GitHubModelsWithFallback()
+                if client.github_client.authenticated:
+                    self._github_models = client
+                    self._log("GitHub Models client initialized for cloud fallback")
+                else:
+                    self._github_models = False  # Mark as unavailable
+            except Exception:
+                self._github_models = False
+        return self._github_models if self._github_models else None
+
+    def _infer_with_fallback(self, prompt: str, task_type: str = "general",
+                             system: str = "", max_tokens: int = 1024,
+                             temperature: float = 0.5) -> dict:
+        """Run inference with Ollama -> GitHub Models fallback chain.
+
+        Returns dict with keys: response, model, tokens, tok_per_sec, source.
+        """
+        # Try Ollama first (fastest, local, no rate limits)
+        try:
+            ml = self._get_ml()
+            if ml.ollama.is_running():
+                result = ml.infer(prompt, task_type=task_type, system=system,
+                                  max_tokens=max_tokens, temperature=temperature)
+                if result.get("response"):
+                    result["source"] = "ollama"
+                    return result
+        except Exception as e:
+            self._log(f"  Ollama inference failed: {e}", "WARN")
+
+        # Fallback to GitHub Models (free cloud)
+        gh = self._get_github_models()
+        if gh:
+            try:
+                # Map task_type to SLATE role
+                role_map = {
+                    "code_generation": "code", "code_review": "code",
+                    "planning": "planner", "analysis": "analysis",
+                    "general": "general",
+                }
+                role = role_map.get(task_type, "general")
+                resp = gh.chat(prompt, role=role, system=system,
+                               max_tokens=max_tokens, temperature=temperature)
+                return {
+                    "response": resp.content,
+                    "model": resp.model,
+                    "tokens": resp.tokens,
+                    "tok_per_sec": 0,
+                    "source": "github_models",
+                }
+            except Exception as e:
+                self._log(f"  GitHub Models fallback failed: {e}", "WARN")
+
+        return {"response": "", "model": "none", "tokens": 0, "tok_per_sec": 0,
+                "source": "none", "error": "All inference backends unavailable"}
 
     def _load_state(self) -> dict:
         """Load autonomous loop state."""
@@ -140,6 +202,10 @@ class UnifiedAutonomousLoop:
 
         # Source 5: Test coverage gaps
         tasks.extend(self._discover_from_coverage())
+
+        # Source 6: Kubernetes pod health issues
+        # Modified: 2026-02-09T04:00:00Z | Author: COPILOT | Change: Add K8s health discovery
+        tasks.extend(self._discover_from_kubernetes())
 
         # Deduplicate by title similarity
         seen_titles = set()
@@ -347,6 +413,75 @@ class UnifiedAutonomousLoop:
                 })
         return tasks[:5]
 
+    # Modified: 2026-02-09T04:00:00Z | Author: COPILOT | Change: Add K8s pod health discovery source
+    def _discover_from_kubernetes(self) -> list[dict]:
+        """Discover unhealthy K8s pods and failed CronJobs in the SLATE namespace."""
+        tasks = []
+        try:
+            # Check for non-Running pods
+            result = subprocess.run(
+                ["kubectl", "get", "pods", "-n", "slate",
+                 "-o", "jsonpath={range .items[*]}{.metadata.name}|{.status.phase}|{.status.containerStatuses[0].restartCount}\n{end}"],
+                capture_output=True, text=True, timeout=10,
+                encoding="utf-8", errors="replace"
+            )
+            if result.returncode == 0:
+                for line in result.stdout.strip().split("\n"):
+                    if not line.strip():
+                        continue
+                    parts = line.strip().split("|")
+                    if len(parts) >= 2:
+                        name, phase = parts[0], parts[1]
+                        restarts = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 0
+                        if phase not in ("Running", "Succeeded"):
+                            tasks.append({
+                                "id": f"k8s_pod_{name}",
+                                "title": f"Fix K8s pod {name} (status: {phase})",
+                                "description": f"Pod {name} in slate namespace is {phase} with {restarts} restarts",
+                                "priority": "high",
+                                "source": "kubernetes",
+                                "status": "pending",
+                            })
+                        elif restarts > 5:
+                            tasks.append({
+                                "id": f"k8s_restart_{name}",
+                                "title": f"Investigate K8s pod {name} ({restarts} restarts)",
+                                "description": f"Pod {name} is Running but has {restarts} container restarts",
+                                "priority": "medium",
+                                "source": "kubernetes",
+                                "status": "pending",
+                            })
+
+            # Check for failed CronJobs
+            cj_result = subprocess.run(
+                ["kubectl", "get", "jobs", "-n", "slate",
+                 "-o", "jsonpath={range .items[*]}{.metadata.name}|{.status.succeeded}|{.status.failed}\n{end}"],
+                capture_output=True, text=True, timeout=10,
+                encoding="utf-8", errors="replace"
+            )
+            if cj_result.returncode == 0:
+                for line in cj_result.stdout.strip().split("\n"):
+                    if not line.strip():
+                        continue
+                    parts = line.strip().split("|")
+                    if len(parts) >= 3:
+                        name = parts[0]
+                        failed = int(parts[2]) if parts[2].isdigit() else 0
+                        if failed > 0:
+                            tasks.append({
+                                "id": f"k8s_job_{name}",
+                                "title": f"Fix failed K8s job {name}",
+                                "description": f"Job {name} has {failed} failure(s) in slate namespace",
+                                "priority": "medium",
+                                "source": "kubernetes",
+                                "status": "pending",
+                            })
+        except FileNotFoundError:
+            pass  # kubectl not available
+        except Exception as e:
+            self._log(f"K8s discovery error: {e}", "WARN")
+        return tasks[:5]
+
     def _is_stale(self, task: dict) -> bool:
         """Check if a task is stale (in-progress too long)."""
         started = task.get("started_at")
@@ -374,6 +509,33 @@ class UnifiedAutonomousLoop:
             for pattern in patterns:
                 if pattern in combined.lower():
                     return {"agent": agent, "method": "pattern", "confidence": 0.9}
+
+        # Modified: 2026-02-08T10:00:00Z | Author: COPILOT | Change: Add Semantic Kernel as enhanced classification backend
+        # Try Semantic Kernel agent routing (higher quality with function-calling)
+        try:
+            from slate.slate_semantic_kernel import get_sk_status
+            sk_info = get_sk_status()
+            if sk_info.get("semantic_kernel", {}).get("available"):
+                import asyncio
+                from slate.slate_semantic_kernel import create_slate_kernel
+                kernel = asyncio.get_event_loop().run_until_complete(create_slate_kernel())
+                if kernel:
+                    # Use SK's SlateAgentPlugin.route_task
+                    plugins = kernel.plugins
+                    if "SlateAgent" in plugins:
+                        route_fn = plugins["SlateAgent"]["route_task"]
+                        result_text = route_fn.method(task_description=combined)
+                        # Parse the agent name from SK response
+                        for agent_name in AGENT_PATTERNS.keys():
+                            if agent_name in str(result_text).upper():
+                                return {
+                                    "agent": agent_name,
+                                    "method": "semantic_kernel",
+                                    "confidence": 0.85,
+                                    "sk_response": str(result_text)[:200],
+                                }
+        except Exception:
+            pass
 
         # Fall back to ML inference if Ollama available
         try:
@@ -459,17 +621,13 @@ class UnifiedAutonomousLoop:
 
     def _execute_code_task(self, task: dict, agent: str) -> dict:
         """Execute a coding/testing task using SLATE ML inference with real output."""
-        # Modified: 2026-02-07T06:00:00Z | Author: COPILOT | Change: real code task execution
+        # Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Use _infer_with_fallback for Ollama+GitHub Models
         start = time.time()
         title = task.get("title", "")
         desc = task.get("description", "")
         file_paths = task.get("file_paths", "")
 
         try:
-            ml = self._get_ml()
-            if not ml.ollama.is_running():
-                return {"success": False, "error": "Ollama not running"}
-
             # Read relevant files for context
             context = ""
             target_files = []
@@ -485,7 +643,7 @@ class UnifiedAutonomousLoop:
                         except Exception:
                             pass
 
-            # Generate solution using SLATE model
+            # Generate solution using SLATE model with fallback
             task_type = "code_generation" if agent == "ALPHA" else "code_review"
             system_prompt = (
                 "You are SLATE-CODER, an autonomous coding agent for the S.L.A.T.E. framework. "
@@ -499,8 +657,9 @@ class UnifiedAutonomousLoop:
                 prompt += f"\nRelevant code:\n{context[:6000]}"
 
             self._log(f"  Running inference ({task_type}) on '{title[:50]}...'")
-            result = ml.infer(prompt, task_type=task_type, system=system_prompt,
-                              max_tokens=4096, temperature=0.3)
+            result = self._infer_with_fallback(prompt, task_type=task_type,
+                                               system=system_prompt,
+                                               max_tokens=4096, temperature=0.3)
 
             response = result.get("response", "")
             tokens = result.get("tokens", 0)
@@ -553,10 +712,10 @@ class UnifiedAutonomousLoop:
 
     def _execute_analysis_task(self, task: dict) -> dict:
         """Execute an analysis/planning task."""
+        # Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Use _infer_with_fallback
         start = time.time()
         try:
-            ml = self._get_ml()
-            result = ml.infer(
+            result = self._infer_with_fallback(
                 f"Analyze: {task.get('title', '')}. {task.get('description', '')}",
                 task_type="planning",
                 system="You are a senior architect. Provide a structured analysis with recommendations.",
@@ -566,6 +725,8 @@ class UnifiedAutonomousLoop:
                 "success": True,
                 "agent": "GAMMA",
                 "response": result.get("response", "")[:500],
+                "model": result.get("model", ""),
+                "source": result.get("source", ""),
                 "duration_s": round(time.time() - start, 1),
             }
         except Exception as e:
@@ -573,10 +734,10 @@ class UnifiedAutonomousLoop:
 
     def _execute_integration_task(self, task: dict) -> dict:
         """Execute an integration task."""
+        # Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Use _infer_with_fallback
         start = time.time()
         try:
-            ml = self._get_ml()
-            result = ml.infer(
+            result = self._infer_with_fallback(
                 f"Integration task: {task.get('title', '')}. {task.get('description', '')}",
                 task_type="general",
                 system="You are an integration specialist. Describe the integration steps needed.",
@@ -586,6 +747,8 @@ class UnifiedAutonomousLoop:
                 "success": True,
                 "agent": "DELTA",
                 "response": result.get("response", "")[:500],
+                "model": result.get("model", ""),
+                "source": result.get("source", ""),
                 "duration_s": round(time.time() - start, 1),
             }
         except Exception as e:
@@ -593,11 +756,11 @@ class UnifiedAutonomousLoop:
 
     def _execute_complex_task(self, task: dict) -> dict:
         """Execute a complex multi-step task."""
+        # Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Use _infer_with_fallback
         start = time.time()
         try:
-            ml = self._get_ml()
             # Break down into steps
-            plan_result = ml.infer(
+            plan_result = self._infer_with_fallback(
                 f"Break this task into 3-5 concrete steps:\n{task.get('title', '')}\n{task.get('description', '')}",
                 task_type="planning",
                 system="Output a numbered list of steps. Be specific and actionable.",
@@ -607,6 +770,8 @@ class UnifiedAutonomousLoop:
                 "success": True,
                 "agent": "COPILOT",
                 "plan": plan_result.get("response", ""),
+                "model": plan_result.get("model", ""),
+                "source": plan_result.get("source", ""),
                 "duration_s": round(time.time() - start, 1),
             }
         except Exception as e:

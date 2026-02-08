@@ -863,6 +863,29 @@ class SlateDockerDaemon:
             if state.get("updated_at"):
                 print(f"  Updated:       {state['updated_at']}")
 
+        # Modified: 2026-02-09T05:00:00Z | Author: COPILOT | Change: Add K8s cluster cross-reference
+        try:
+            import subprocess as _sp
+            r = _sp.run(["kubectl", "cluster-info"], capture_output=True, text=True, timeout=10)
+            if r.returncode == 0:
+                print()
+                print("  Kubernetes (Docker Desktop):")
+                r2 = _sp.run(["kubectl", "get", "deployments", "-n", "slate",
+                              "--no-headers", "-o", "custom-columns=NAME:.metadata.name,READY:.status.readyReplicas,DESIRED:.spec.replicas"],
+                             capture_output=True, text=True, timeout=10)
+                if r2.returncode == 0 and r2.stdout.strip():
+                    lines = [l.strip() for l in r2.stdout.strip().splitlines() if l.strip()]
+                    ready = sum(1 for l in lines if l.split()[-2] == l.split()[-1])
+                    print(f"    Deployments: {ready}/{len(lines)} ready")
+                r3 = _sp.run(["kubectl", "get", "pods", "-n", "slate",
+                              "--field-selector=status.phase=Running", "--no-headers"],
+                             capture_output=True, text=True, timeout=10)
+                if r3.returncode == 0:
+                    pod_lines = [l for l in r3.stdout.strip().splitlines() if l.strip()]
+                    print(f"    Running Pods: {len(pod_lines)}")
+        except Exception:
+            pass  # K8s not available
+
         print()
         print("=" * 60)
         print()

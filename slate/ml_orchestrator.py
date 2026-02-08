@@ -624,6 +624,33 @@ Categories: implement, test, analyze, integrate, complex"""
                 avg_tps = ms["tokens"] / max(ms["time"], 0.001)
                 print(f"    {model}: {ms['calls']} calls, {ms['tokens']} tokens, {avg_tps:.0f} avg tok/s")
 
+        # Modified: 2026-02-09T05:00:00Z | Author: COPILOT | Change: Add K8s CronJob awareness to ML status
+        try:
+            import subprocess as _sp
+            r = _sp.run(["kubectl", "get", "cronjobs", "-n", "slate", "-o", "json"],
+                        capture_output=True, text=True, timeout=10)
+            if r.returncode == 0:
+                import json as _json
+                cj_data = _json.loads(r.stdout)
+                cj_items = cj_data.get("items", [])
+                ml_cronjobs = [c for c in cj_items if c["metadata"]["name"] in
+                               ("model-trainer", "codebase-indexer", "inference-benchmarks",
+                                "nightly-health", "workflow-cleanup",
+                                "slate-model-trainer", "slate-codebase-indexer",
+                                "slate-inference-benchmarks", "slate-nightly-health",
+                                "slate-workflow-cleanup")]
+                if ml_cronjobs:
+                    print("\n  K8s CronJobs:")
+                    for cj in ml_cronjobs:
+                        name = cj["metadata"]["name"]
+                        schedule = cj["spec"]["schedule"]
+                        suspended = cj["spec"].get("suspend", False)
+                        status_str = "suspended" if suspended else "active"
+                        last_run = cj.get("status", {}).get("lastScheduleTime", "never")
+                        print(f"    {name}: {schedule} ({status_str}, last: {last_run})")
+        except Exception:
+            pass  # K8s not available — skip silently
+
         print("\n" + "=" * 60)
 
     def print_benchmarks(self):

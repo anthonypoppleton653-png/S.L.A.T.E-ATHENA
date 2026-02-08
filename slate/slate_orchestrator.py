@@ -566,6 +566,7 @@ class SlateOrchestrator:
             "workflow": {"task_count": 0, "healthy": False},
             "file_watcher": {"running": False, "mode": self.mode},
             "docker": {"available": False, "daemon_running": False, "containers": 0},
+            "semantic_kernel": {"available": False, "version": None},
         }
 
         # Check orchestrator
@@ -647,6 +648,44 @@ class SlateOrchestrator:
         except Exception:
             pass
 
+        # Modified: 2026-02-08T10:00:00Z | Author: COPILOT | Change: Add Semantic Kernel status to orchestrator
+        # Check Semantic Kernel
+        try:
+            from slate.slate_semantic_kernel import get_sk_status
+            sk_info = get_sk_status()
+            sk_core = sk_info.get("semantic_kernel", {})
+            result["semantic_kernel"]["available"] = sk_core.get("available", False)
+            result["semantic_kernel"]["version"] = sk_core.get("version")
+            result["semantic_kernel"]["ollama_connected"] = sk_info.get("ollama", {}).get("available", False)
+        except Exception:
+            pass
+
+        # Modified: 2026-02-09T03:00:00Z | Author: COPILOT | Change: Add Kubernetes cluster status to orchestrator
+        # Check Kubernetes
+        result["kubernetes"] = {"available": False, "namespace": False, "pods": 0, "deployments": 0}
+        try:
+            r = subprocess.run(['kubectl', 'cluster-info'], capture_output=True, text=True, timeout=10)
+            result["kubernetes"]["available"] = r.returncode == 0
+            if r.returncode == 0:
+                r2 = subprocess.run(['kubectl', '-n', 'slate', 'get', 'deployments', '-o', 'json'],
+                                   capture_output=True, text=True, timeout=10)
+                if r2.returncode == 0:
+                    import json as _json
+                    deps = _json.loads(r2.stdout).get('items', [])
+                    result["kubernetes"]["namespace"] = True
+                    result["kubernetes"]["deployments"] = len(deps)
+                    ready = sum(1 for d in deps if (d.get('status', {}).get('readyReplicas', 0) or 0) >= d['spec'].get('replicas', 1))
+                    result["kubernetes"]["ready"] = ready
+                r3 = subprocess.run(['kubectl', '-n', 'slate', 'get', 'pods', '--no-headers'],
+                                   capture_output=True, text=True, timeout=10)
+                if r3.returncode == 0:
+                    pods = [l for l in r3.stdout.strip().split('\n') if l.strip()]
+                    running = sum(1 for l in pods if 'Running' in l)
+                    result["kubernetes"]["pods"] = len(pods)
+                    result["kubernetes"]["pods_running"] = running
+        except Exception:
+            pass
+
         return result
 
     def print_status(self):
@@ -712,6 +751,30 @@ class SlateOrchestrator:
                 print(f"  Docker:        Installed v{docker.get('version', '?')} (daemon stopped)")
         else:
             print("  Docker:        Not installed")
+
+        # Modified: 2026-02-08T10:00:00Z | Author: COPILOT | Change: Display Semantic Kernel status
+        # Semantic Kernel
+        sk = status.get("semantic_kernel", {})
+        if sk.get("available"):
+            ollama_tag = " [Ollama]" if sk.get("ollama_connected") else ""
+            print(f"  Semantic Kernel: v{sk.get('version', '?')}{ollama_tag}")
+        else:
+            print("  Semantic Kernel: Not installed")
+
+        # Modified: 2026-02-09T03:00:00Z | Author: COPILOT | Change: Display Kubernetes status in orchestrator output
+        # Kubernetes
+        k8s = status.get("kubernetes", {})
+        if k8s.get("available"):
+            if k8s.get("namespace"):
+                ready = k8s.get('ready', 0)
+                total = k8s.get('deployments', 0)
+                pods_running = k8s.get('pods_running', 0)
+                pods_total = k8s.get('pods', 0)
+                print(f"  Kubernetes:    {ready}/{total} deployments ready ({pods_running}/{pods_total} pods)")
+            else:
+                print("  Kubernetes:    Connected (no SLATE namespace)")
+        else:
+            print("  Kubernetes:    Not connected")
 
         print(f"  Mode:          {mode.upper()}")
         print()

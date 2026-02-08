@@ -695,6 +695,20 @@ class SLATESessionManager:
         print(f"  Hooks Enabled:      {s['hooks_enabled']}")
         print(f"  Permission Handler: {s['permission_handler']}")
         print(f"  Workspace:          {s['workspace']}")
+
+        # Modified: 2026-02-09T05:30:00Z | Author: COPILOT | Change: Add K8s cluster connectivity to session status
+        try:
+            import subprocess as _sp
+            r = _sp.run(["kubectl", "get", "deployments", "-n", "slate", "--no-headers",
+                         "-o", "custom-columns=READY:.status.readyReplicas,DESIRED:.spec.replicas"],
+                        capture_output=True, text=True, timeout=10)
+            if r.returncode == 0 and r.stdout.strip():
+                lines = [l for l in r.stdout.strip().splitlines() if l.strip()]
+                ready = sum(1 for l in lines if l.split()[0] == l.split()[1])
+                print(f"\n  K8s Cluster:        {ready}/{len(lines)} deployments ready")
+        except Exception:
+            pass  # K8s not available
+
         print()
         print("=" * 60)
 

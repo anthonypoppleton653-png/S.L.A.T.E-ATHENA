@@ -118,6 +118,71 @@ def get_ollama_info():
         return {"available": False, "model_count": 0}
 
 
+# Modified: 2026-02-08T10:00:00Z | Author: COPILOT | Change: Add Semantic Kernel status to system health check
+def get_sk_info():
+    """Check Semantic Kernel installation."""
+    try:
+        import semantic_kernel
+        return {
+            "installed": True,
+            "version": semantic_kernel.__version__,
+        }
+    except ImportError:
+        return {"installed": False}
+
+
+# Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Add GitHub Models to system status
+def get_github_models_info():
+    """Check GitHub Models integration."""
+    try:
+        from slate.slate_github_models import GitHubModelsClient
+        client = GitHubModelsClient()
+        if client.authenticated:
+            return {
+                "available": True,
+                "catalog_size": len(client.list_available_models()),
+                "total_calls": client.status().get("total_calls", 0),
+            }
+        return {"available": False, "reason": "no token"}
+    except Exception:
+        return {"available": False, "reason": "not installed"}
+
+
+# Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add Kubernetes cluster info to system status
+def get_kubernetes_info():
+    """Check Kubernetes cluster status."""
+    try:
+        r = subprocess.run(
+            ["kubectl", "get", "deployments", "-n", "slate",
+             "-o", "jsonpath={range .items[*]}{.status.readyReplicas}/{.status.replicas} {end}"],
+            capture_output=True, text=True, timeout=10,
+            encoding="utf-8", errors="replace"
+        )
+        if r.returncode == 0 and r.stdout.strip():
+            pairs = r.stdout.strip().split()
+            total = len(pairs)
+            ready = sum(1 for p in pairs if p.split("/")[0] == p.split("/")[1])
+            # Get pod count
+            pods = subprocess.run(
+                ["kubectl", "get", "pods", "-n", "slate", "--field-selector=status.phase=Running",
+                 "-o", "jsonpath={.items[*].metadata.name}"],
+                capture_output=True, text=True, timeout=10,
+                encoding="utf-8", errors="replace"
+            )
+            pod_count = len(pods.stdout.strip().split()) if pods.stdout.strip() else 0
+            return {
+                "available": True,
+                "deployments_ready": ready,
+                "deployments_total": total,
+                "pods_running": pod_count,
+            }
+        return {"available": False, "reason": "no slate namespace"}
+    except FileNotFoundError:
+        return {"available": False, "reason": "kubectl not found"}
+    except Exception:
+        return {"available": False, "reason": "cluster unreachable"}
+
+
 def get_status():
     """Get full system status."""
     return {
@@ -126,7 +191,10 @@ def get_status():
         "gpu": get_gpu_info(),
         "system": get_system_info(),
         "pytorch": get_pytorch_info(),
-        "ollama": get_ollama_info()
+        "ollama": get_ollama_info(),
+        "semantic_kernel": get_sk_info(),
+        "github_models": get_github_models_info(),
+        "kubernetes": get_kubernetes_info(),
     }
 
 
@@ -178,6 +246,30 @@ def print_quick_status(status: dict):
         print(f"  Ollama:   {OK} {ollama['model_count']} models")
     else:
         print(f"  Ollama:   {NONE} Not available")
+
+    # Modified: 2026-02-08T10:00:00Z | Author: COPILOT | Change: Display Semantic Kernel in quick status
+    # Semantic Kernel
+    sk = status.get("semantic_kernel", {})
+    if sk.get("installed"):
+        print(f"  SK:       {OK} v{sk['version']}")
+    else:
+        print(f"  SK:       {NONE} Not installed")
+
+    # Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Display GitHub Models in quick status
+    # GitHub Models
+    gm = status.get("github_models", {})
+    if gm.get("available"):
+        print(f"  GH Model: {OK} {gm.get('catalog_size', 0)} models ({gm.get('total_calls', 0)} calls)")
+    else:
+        print(f"  GH Model: {NONE} Not available")
+
+    # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Display Kubernetes in quick status
+    # Kubernetes
+    k8s = status.get("kubernetes", {})
+    if k8s.get("available"):
+        print(f"  K8s:      {OK} {k8s.get('deployments_ready', 0)}/{k8s.get('deployments_total', 0)} deploys ({k8s.get('pods_running', 0)} pods)")
+    else:
+        print(f"  K8s:      {NONE} Not available")
 
     print()
     print("=" * 50)

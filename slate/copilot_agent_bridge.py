@@ -250,6 +250,20 @@ class CopilotAgentBridge:
         print(f"  Total Results:   {s['total_results']}")
         print(f"\n  Queue File:      {s['queue_file']}")
         print(f"  Last Updated:    {s.get('last_updated', 'N/A')}")
+
+        # Modified: 2026-02-09T05:30:00Z | Author: COPILOT | Change: Add K8s copilot-bridge pod awareness
+        try:
+            import subprocess as _sp
+            r = _sp.run(["kubectl", "get", "pods", "-n", "slate",
+                         "-l", "app.kubernetes.io/component=copilot-bridge",
+                         "--field-selector=status.phase=Running",
+                         "-o", "jsonpath={.items[*].metadata.name}"],
+                        capture_output=True, text=True, timeout=10)
+            if r.returncode == 0 and r.stdout.strip():
+                print(f"\n  K8s Bridge Pod:  {r.stdout.strip()}")
+        except Exception:
+            pass  # K8s not available
+
         print("\n" + "=" * 60)
 
     def print_pending(self):

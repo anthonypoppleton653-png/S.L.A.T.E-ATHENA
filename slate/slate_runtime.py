@@ -125,6 +125,83 @@ def copilot_sdk_details():
     return "unknown"
 
 
+# Modified: 2026-02-09T09:00:00Z | Author: COPILOT | Change: Add Semantic Kernel integration check (9th integration)
+def check_semantic_kernel():
+    """Check if Microsoft Semantic Kernel is installed and importable."""
+    try:
+        import semantic_kernel  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+def semantic_kernel_details():
+    """Get Semantic Kernel version and Ollama connectivity."""
+    import semantic_kernel
+    version = semantic_kernel.__version__
+    # Quick check if Ollama is reachable for SK
+    try:
+        from slate.slate_semantic_kernel import get_sk_status
+        status = get_sk_status()
+        if status.get("ollama", {}).get("available"):
+            return f"{version} (Ollama connected)"
+    except Exception:
+        pass
+    return version
+
+
+# Modified: 2026-02-09T03:00:00Z | Author: COPILOT | Change: Add Kubernetes integration check (11th integration)
+def check_kubernetes():
+    """Check if Kubernetes cluster is connected and SLATE namespace exists."""
+    try:
+        r = subprocess.run(['kubectl', 'cluster-info'], capture_output=True, text=True, timeout=10)
+        if r.returncode != 0:
+            return False
+        r2 = subprocess.run(['kubectl', '-n', 'slate', 'get', 'namespace', 'slate', '-o', 'name'],
+                           capture_output=True, text=True, timeout=10)
+        return r2.returncode == 0
+    except Exception:
+        return False
+
+
+def kubernetes_details():
+    """Get Kubernetes deployment details."""
+    try:
+        r = subprocess.run(['kubectl', '-n', 'slate', 'get', 'deployments', '--no-headers'],
+                          capture_output=True, text=True, timeout=10)
+        if r.returncode != 0:
+            return 'no namespace'
+        lines = [l for l in r.stdout.strip().split('\n') if l.strip()]
+        ready = sum(1 for l in lines if l.split()[1].split('/')[0] == l.split()[1].split('/')[1])
+        return f'{ready}/{len(lines)} deployments ready'
+    except Exception:
+        return 'kubectl unavailable'
+
+
+# Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Add GitHub Models free-tier integration check (10th integration)
+def check_github_models():
+    """Check if GitHub Models integration is available (auth + endpoint)."""
+    try:
+        from slate.slate_github_models import GitHubModelsClient
+        client = GitHubModelsClient()
+        return client.authenticated
+    except Exception:
+        return False
+
+
+def github_models_details():
+    """Get GitHub Models status and catalog info."""
+    try:
+        from slate.slate_github_models import GitHubModelsClient
+        client = GitHubModelsClient()
+        s = client.status()
+        if s["authenticated"]:
+            return f"{s['catalog_size']} models, {s['total_calls']} calls"
+        return "no token"
+    except Exception:
+        return "not available"
+
+
 INTEGRATIONS = [
     ("Python 3.11+", check_python, python_details),
     ("Virtual Env", check_venv, None),
@@ -134,6 +211,9 @@ INTEGRATIONS = [
     ("Ollama", check_ollama, None),
     ("ChromaDB", check_chromadb, chromadb_details),
     ("Copilot SDK", check_copilot_sdk, copilot_sdk_details),
+    ("Semantic Kernel", check_semantic_kernel, semantic_kernel_details),
+    ("GitHub Models", check_github_models, github_models_details),
+    ("Kubernetes", check_kubernetes, kubernetes_details),
 ]
 
 def check_all():

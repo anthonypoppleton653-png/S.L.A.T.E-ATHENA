@@ -2904,6 +2904,15 @@ def build_template() -> str:
                         </div>
                     </div>
 
+                    <!-- Modified: 2026-02-09T05:30:00Z | Author: COPILOT | Change: Add K8s cluster card to dashboard -->
+                    <div class="card col-6">
+                        <div class="card-header">
+                            <span class="card-title">Kubernetes</span>
+                            <button class="card-action" onclick="refreshKubernetes()">Refresh</button>
+                        </div>
+                        <div id="k8s-status"><div class="empty">Loading...</div></div>
+                    </div>
+
                     <div class="card col-6">
                         <div class="card-header">
                             <span class="card-title">Multi-Runner</span>
@@ -3952,6 +3961,37 @@ def build_template_js() -> str:
             // Placeholder for workflow analytics
         }
 
+        // Modified: 2026-02-09T05:30:00Z | Author: COPILOT | Change: Add K8s cluster refresh function
+        async function refreshKubernetes() {
+            try {
+                const res = await fetch('/api/kubernetes/status');
+                const data = await res.json();
+                const el = document.getElementById('k8s-status');
+                if (data.deployments) {
+                    const deploys = data.deployments || [];
+                    const pods = data.pods || 0;
+                    const ready = deploys.filter(d => d.ready).length;
+                    let html = '<div class="svc-item"><div class="svc-name"><div class="svc-icon">&#9781;</div><span>Deployments</span></div><span class="badge ' + (ready === deploys.length ? 'online' : 'warning') + '">' + ready + '/' + deploys.length + '</span></div>';
+                    html += '<div class="svc-item"><div class="svc-name"><div class="svc-icon">&#128230;</div><span>Pods</span></div><span class="badge online">' + pods + '</span></div>';
+                    deploys.forEach(d => {
+                        const cls = d.ready ? 'online' : 'offline';
+                        html += '<div class="svc-item"><div class="svc-name"><span style="font-size:0.7rem;padding-left:var(--sl-space-3);">' + d.name + '</span></div><span class="badge ' + cls + '" style="font-size:0.55rem;">' + (d.ready_replicas || 0) + '/' + (d.replicas || 1) + '</span></div>';
+                    });
+                    if (data.cronjobs && data.cronjobs.length > 0) {
+                        html += '<div class="svc-item" style="margin-top:var(--sl-space-2);"><div class="svc-name"><div class="svc-icon">&#9200;</div><span>CronJobs</span></div><span class="badge online">' + data.cronjobs.length + '</span></div>';
+                    }
+                    el.innerHTML = html;
+                } else if (data.error) {
+                    el.innerHTML = '<div class="empty">' + data.error + '</div>';
+                } else {
+                    el.innerHTML = '<div class="empty">No K8s data</div>';
+                }
+            } catch (e) {
+                const el = document.getElementById('k8s-status');
+                if (el) el.innerHTML = '<div class="empty">K8s unavailable</div>';
+            }
+        }
+
         async function refreshDocker() {
             try {
                 const res = await fetch('/api/docker');
@@ -4025,6 +4065,7 @@ def build_template_js() -> str:
             refreshSpecs();
             refreshForks();
             refreshDocker();
+            refreshKubernetes();
         }
 
         // ─── Schematic Hero Widget ──────────────────────────────────────
