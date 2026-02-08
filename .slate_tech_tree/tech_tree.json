@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0",
-  "last_updated": "2026-02-06T22:45:00Z",
+  "version": "2.1.0",
+  "last_updated": "2026-02-08T06:10:00Z",
   "metadata": {
     "project": "S.L.A.T.E.",
     "description": "Synchronized Living Architecture for Transformation and Evolution",
@@ -68,29 +68,29 @@
     {
       "id": "copilot-dev",
       "name": "Copilot Development",
-      "status": "available",
+      "status": "complete",
       "phase": 2,
-      "description": "GitHub Copilot instructions, prompts, and skills",
+      "description": "GitHub Copilot instructions, prompts, skills, and @slate chat participant",
       "workflow": "ci.yml",
-      "paths": [".github/copilot-instructions.md", ".github/prompts/", "skills/"]
+      "paths": [".github/copilot-instructions.md", "skills/", "plugins/slate-copilot/"]
     },
     {
       "id": "claude-dev",
       "name": "Claude Integration",
-      "status": "available",
+      "status": "complete",
       "phase": 2,
-      "description": "Claude Code commands, MCP server, CLAUDE.md",
+      "description": "Claude Code commands, MCP server, CLAUDE.md, plugin SDK",
       "workflow": "ci.yml",
-      "paths": [".claude/commands/", "slate/mcp_server.py", "CLAUDE.md"]
+      "paths": [".claude/commands/", "slate/mcp_server.py", "plugins/slate-sdk/"]
     },
     {
       "id": "ui-dev",
       "name": "UI Development",
-      "status": "available",
+      "status": "in_progress",
       "phase": 2,
-      "description": "Dashboard frontend, tech tree viz, glassmorphism theme",
+      "description": "Dashboard frontend, tech tree viz, glassmorphism theme, design tokens",
       "workflow": "slate.yml",
-      "paths": ["agents/slate_dashboard_server.py", "src/frontend/"]
+      "paths": ["agents/slate_dashboard_server.py", "slate/design_tokens.py", "slate_web/"]
     },
     {
       "id": "meta-workflow",
@@ -104,11 +104,11 @@
     {
       "id": "agent-system",
       "name": "Agent System",
-      "status": "available",
+      "status": "complete",
       "phase": 2,
-      "description": "GitHub Copilot agents (.github/agents/)",
+      "description": "8-agent registry (ALPHA-ZETA, COPILOT, COPILOT_CHAT) with classification and routing",
       "workflow": "ci.yml",
-      "paths": [".github/agents/slate.agent.md"]
+      "paths": ["slate_core/plugins/agent_registry.py", "AGENTS.md"]
     },
     {
       "id": "uv-migration",
@@ -152,6 +152,56 @@
       "description": "Circuit-board style diagram generation for system visualization",
       "workflow": "ci.yml",
       "paths": ["slate/schematic_sdk/", "specs/011-schematic-diagram-sdk/"]
+    },
+    {
+      "id": "copilot-sdk",
+      "name": "Copilot SDK Integration",
+      "status": "complete",
+      "phase": 2,
+      "description": "GitHub Copilot SDK submodule with 14 SLATE tools, session manager, BYOK providers, MCP configs",
+      "workflow": "ci.yml",
+      "paths": ["vendor/copilot-sdk/", "slate/copilot_sdk_tools.py", "slate/copilot_sdk_session.py", "slate/slate_copilot_sdk_bridge.py"]
+    },
+    {
+      "id": "autonomous-loop",
+      "name": "Autonomous Task Loop",
+      "status": "complete",
+      "phase": 2,
+      "description": "Unified autonomous loop with 5-source discovery, ML classification, agent routing, self-healing",
+      "workflow": "agentic.yml",
+      "paths": ["slate/slate_unified_autonomous.py", "slate/integrated_autonomous_loop.py", "slate/copilot_slate_runner.py"]
+    },
+    {
+      "id": "spec-system",
+      "name": "Specification System",
+      "status": "complete",
+      "phase": 2,
+      "description": "Spec-driven development with spec-kit processing, wiki generation, and roadmap tracking",
+      "paths": ["slate/slate_spec_kit.py", "specs/", "docs/wiki/"]
+    },
+    {
+      "id": "k8s-infra",
+      "name": "Kubernetes Infrastructure",
+      "status": "available",
+      "phase": 2,
+      "description": "Kubernetes manifests for SLATE deployment — namespace, RBAC, deployments, network policies",
+      "paths": ["k8s/"]
+    },
+    {
+      "id": "gpu-manager",
+      "name": "Dual-GPU Manager",
+      "status": "complete",
+      "phase": 2,
+      "description": "Load-balanced dual-GPU management with Ollama model placement and warmup",
+      "paths": ["slate/slate_gpu_manager.py", "slate/slate_warmup.py"]
+    },
+    {
+      "id": "custom-models",
+      "name": "Custom SLATE Models",
+      "status": "complete",
+      "phase": 2,
+      "description": "Ollama-based custom models: slate-coder (12B), slate-fast (3B), slate-planner (7B)",
+      "paths": ["models/Modelfile.slate-coder", "models/Modelfile.slate-fast", "models/Modelfile.slate-planner", "slate/slate_model_trainer.py"]
     }
   ],
   "edges": [
@@ -174,6 +224,16 @@
     {"from": "core-sdk", "to": "vscode-sdk"},
     {"from": "multi-runner", "to": "docker-infra"},
     {"from": "dashboard", "to": "schematic-sdk"},
-    {"from": "ui-dev", "to": "schematic-sdk"}
+    {"from": "ui-dev", "to": "schematic-sdk"},
+    {"from": "copilot-dev", "to": "copilot-sdk"},
+    {"from": "vscode-sdk", "to": "copilot-sdk"},
+    {"from": "workflow-pipeline", "to": "autonomous-loop"},
+    {"from": "agent-system", "to": "autonomous-loop"},
+    {"from": "core-sdk", "to": "spec-system"},
+    {"from": "spec-system", "to": "schematic-sdk"},
+    {"from": "docker-infra", "to": "k8s-infra"},
+    {"from": "github-runner", "to": "gpu-manager"},
+    {"from": "gpu-manager", "to": "custom-models"},
+    {"from": "custom-models", "to": "autonomous-loop"}
   ]
 }

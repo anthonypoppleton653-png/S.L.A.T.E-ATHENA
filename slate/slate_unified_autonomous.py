@@ -171,20 +171,52 @@ class UnifiedAutonomousLoop:
             self._log(f"Error reading task file: {e}", "WARN")
             return []
 
+    # Modified: 2026-02-08T06:00:00Z | Author: COPILOT | Change: Fix KANBAN discovery to return only newly synced items, not duplicate task file
     def _discover_from_kanban(self) -> list[dict]:
-        """Sync pending items from KANBAN board."""
+        """Sync pending items from KANBAN board and return only new items.
+
+        Previous implementation re-called _discover_from_task_file() after sync,
+        which duplicated Source 1 results and missed items already in the file
+        with completed/stale status.  Now we snapshot task IDs before sync,
+        re-read after sync, and return only genuinely new pending items.
+        """
+        # Snapshot existing task IDs before sync
+        existing_ids: set[str] = set()
+        if TASK_FILE.exists():
+            try:
+                data = json.loads(TASK_FILE.read_text(encoding="utf-8"))
+                for t in data.get("tasks", []):
+                    existing_ids.add(t.get("id", ""))
+            except Exception:
+                pass
+
         try:
             result = subprocess.run(
                 [sys.executable, str(self.workspace / "slate" / "slate_project_board.py"), "--sync"],
                 capture_output=True, text=True, timeout=30, cwd=str(self.workspace),
                 encoding="utf-8", errors="replace"
             )
-            if result.returncode == 0:
-                # Re-read task file after sync
-                return self._discover_from_task_file()
+            if result.returncode != 0:
+                return []
         except Exception as e:
             self._log(f"KANBAN sync failed: {e}", "WARN")
-        return []
+            return []
+
+        # Re-read and return ONLY items that were added by the sync
+        if not TASK_FILE.exists():
+            return []
+        try:
+            data = json.loads(TASK_FILE.read_text(encoding="utf-8"))
+            new_tasks = [
+                t for t in data.get("tasks", [])
+                if t.get("id", "") not in existing_ids
+                and t.get("status") in ("pending", "in_progress")
+                and not self._is_stale(t)
+            ]
+            return new_tasks
+        except Exception as e:
+            self._log(f"Error reading task file after KANBAN sync: {e}", "WARN")
+            return []
 
     # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: GitHub Issues task discovery
     def _discover_from_github_issues(self) -> list[dict]:

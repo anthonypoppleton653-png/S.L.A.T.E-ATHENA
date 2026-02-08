@@ -7663,23 +7663,76 @@ async def dashboard():
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
+# Modified: 2026-02-08T06:00:00Z | Author: COPILOT | Change: Add port-in-use detection with fallback ports, graceful error handling
+def _is_port_available(host: str, port: int) -> bool:
+    """Check if a port is available for binding."""
+    import socket
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind((host, port))
+            return True
+    except OSError:
+        return False
+
+
+def _find_available_port(host: str = "127.0.0.1", preferred: int = 8080,
+                          fallbacks: list = None) -> int:
+    """Find an available port, trying preferred first then fallbacks."""
+    if fallbacks is None:
+        fallbacks = [8081, 8082, 8083, 8084, 8085]
+
+    if _is_port_available(host, preferred):
+        return preferred
+
+    for port in fallbacks:
+        if _is_port_available(host, port):
+            return port
+
+    return 0  # No available port found
+
+
 def main():
     """Run the dashboard server."""
+    import argparse
+    parser = argparse.ArgumentParser(description="SLATE Dashboard Server")
+    parser.add_argument("--port", type=int, default=8080, help="Port to bind to (default: 8080)")
+    parser.add_argument("--no-fallback", action="store_true", help="Don't try fallback ports")
+    args = parser.parse_args()
+
+    host = "127.0.0.1"
+    preferred_port = args.port
+
+    if args.no_fallback:
+        if not _is_port_available(host, preferred_port):
+            print(f"\n  [ERROR] Port {preferred_port} is already in use.")
+            print(f"  Check with: Get-NetTCPConnection -LocalPort {preferred_port}")
+            print(f"  Kill the process or use --port <other> to specify a different port.\n")
+            sys.exit(1)
+        port = preferred_port
+    else:
+        port = _find_available_port(host, preferred_port)
+        if port == 0:
+            print("\n  [ERROR] No available ports found (tried 8080-8085).")
+            print("  Free a port or specify one with --port <number>\n")
+            sys.exit(1)
+        if port != preferred_port:
+            print(f"\n  [NOTE] Port {preferred_port} in use, using port {port} instead.")
+
     print()
     print("=" * 60)
     print("  S.L.A.T.E. Dashboard Server")
     print("=" * 60)
     print()
-    print("  URL:      http://127.0.0.1:8080")
-    print("  WebSocket: ws://127.0.0.1:8080/ws")
+    print(f"  URL:      http://{host}:{port}")
+    print(f"  WebSocket: ws://{host}:{port}/ws")
     print()
     print("  Press Ctrl+C to stop")
     print()
 
     uvicorn.run(
         app,
-        host="127.0.0.1",
-        port=8080,
+        host=host,
+        port=port,
         log_level="warning",
         access_log=False
     )
