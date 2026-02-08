@@ -9,13 +9,20 @@
     {
       "name": "slate-sdk",
       "version": "1.2.0",
-      "source": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git",
+      "source": {
+        "type": "github",
+        "repo": "SynchronizedLivingArchitecture/S.L.A.T.E"
+      },
       "description": "Full SLATE integration: slash commands, skills, MCP server, GPU management, workflow orchestration"
     },
     {
       "name": "slate-kubernetes",
       "version": "1.0.0",
-      "source": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git#plugins/slate-kubernetes",
+      "source": {
+        "type": "github",
+        "repo": "SynchronizedLivingArchitecture/S.L.A.T.E",
+        "path": "plugins/slate-kubernetes"
+      },
       "description": "Deploy and manage SLATE on Kubernetes clusters"
     }
   ]
