@@ -237,6 +237,39 @@ python slate/slate_hardware_optimizer.py --install-pytorch
 python slate/slate_hardware_optimizer.py --optimize
 ```
 
+## Container & Kubernetes Deployment
+<!-- Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add container/K8s quick start to Getting-Started -->
+
+For production stability, SLATE can run as a **local cloud** via Kubernetes:
+
+### Docker Release Image
+
+```bash
+# Build the release image (CUDA 12.8, full runtime)
+docker build -t slate:local .
+
+# Quick start with Docker Compose (GPU)
+docker-compose up -d
+```
+
+### Kubernetes Local Cloud
+
+```bash
+# Deploy with Kustomize
+kubectl apply -k k8s/overlays/local/
+
+# Check deployment
+python slate/slate_k8s_deploy.py --status
+
+# Health check
+python slate/slate_k8s_deploy.py --health
+
+# Port-forward services to localhost
+python slate/slate_k8s_deploy.py --port-forward
+```
+
+See [Architecture > Kubernetes](Architecture#kubernetes--container-architecture) for full details.
+
 ## Next Steps
 
 - [Learn about the Architecture](Architecture)

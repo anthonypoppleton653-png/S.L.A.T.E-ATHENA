@@ -142,6 +142,25 @@ Project board mapping:
 & "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/slate_runner_manager.py --agentic build-models     # Build SLATE models via CI
 ```
 
+### Kubernetes & Container Management
+<!-- Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s protocol commands to slate.agent.md -->
+```powershell
+# Kubernetes deployment manager
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/slate_k8s_deploy.py --status            # K8s cluster overview
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/slate_k8s_deploy.py --deploy             # Deploy all manifests
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/slate_k8s_deploy.py --deploy-kustomize local  # Deploy with Kustomize overlay
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/slate_k8s_deploy.py --health             # Health check all pods
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/slate_k8s_deploy.py --logs <component>   # View component logs
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/slate_k8s_deploy.py --port-forward       # Port-forward all services
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/slate_k8s_deploy.py --preload-models     # Trigger model preload job
+& "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" slate/slate_k8s_deploy.py --teardown           # Remove from cluster
+
+# Docker release image
+docker build -t slate:local .                                                                     # Build release image (CUDA 12.8)
+docker-compose up -d                                                                              # Start via Compose (GPU)
+docker-compose -f docker-compose.dev.yml up                                                       # Start dev mode
+```
+
 ### RunnerAPI (Python)
 ```powershell
 & "$env:SLATE_WORKSPACE\.venv\Scripts\python.exe" -c "from agents.runner_api import RunnerAPI; api = RunnerAPI(); api.print_full_status()"
@@ -163,6 +182,7 @@ All workflows run on `runs-on: [self-hosted, slate]` with `shell: powershell`.
 | Nightly | `nightly.yml` | Health checks |
 | Fork Validation | `fork-validation.yml` | Fork security gate |
 | Contributor PR | `contributor-pr.yml` | External contributor PRs |
+| **Kubernetes** | `k8s.yml` | **K8s deployment, health checks, teardown** |
 
 ### Dispatching a Workflow via GitHub API
 ```powershell
@@ -208,6 +228,8 @@ slate/                    # Core SDK modules
   pii_scanner.py          # PII detection
   runner_cost_tracker.py  # Runner cost tracking
   runner_fallback.py      # Runner fallback logic
+  # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s deploy to agent project structure
+  slate_k8s_deploy.py     # Kubernetes deployment manager
 
 agents/                   # API servers & agent modules
   runner_api.py           # RunnerAPI class (GitHub API integration)

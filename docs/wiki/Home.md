@@ -32,7 +32,7 @@ GitHub Actions is powerful. But if you want AI in your pipeline, you're paying p
 </tr>
 <tr>
 <td align="center"><strong>GitHub Bridge</strong><br><sub>Self-hosted runner<br>Issues, PRs, Projects</sub></td>
-<td align="center"><strong>Claude Code Integration</strong><br><sub>MCP server + 26 tools<br>Slash commands</sub></td>
+<td align="center"><strong>Kubernetes Local Cloud</strong><br><sub>7 deployments, 9 pods<br>Release image + Helm</sub></td>
 <td align="center"><strong>Guided Experience</strong><br><sub>AI-driven setup<br>Zero-config onboarding</sub></td>
 </tr>
 </table>
@@ -45,6 +45,7 @@ GitHub Actions is powerful. But if you want AI in your pipeline, you're paying p
 | [Architecture](Architecture) | System design and components |
 | [CLI Reference](CLI-Reference) | Command-line tools and options |
 | [Configuration](Configuration) | Settings and customization |
+| [Kubernetes & Containers](Architecture#kubernetes--container-architecture) | K8s local cloud deployment |
 | [Development](Development) | Contributing and extending SLATE |
 | [Troubleshooting](Troubleshooting) | Common issues and solutions |
 

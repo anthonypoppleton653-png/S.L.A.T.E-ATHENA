@@ -55,10 +55,13 @@ htmlcov/
 .tox
 .nox
 
-# Documentation (not needed in runtime)
+# Documentation (not needed in runtime — except AGENTS.md for agent routing)
 docs/
-*.md
-!README.md
+CONTRIBUTING.md
+SECURITY.md
+AUTHOR.md
+LICENSE
+CLAUDE.md
 
 # Specs (development only)
 specs/
@@ -96,10 +99,11 @@ actions-runner-4/
 .slate_orchestrator_state.json
 .slate_docker_state.json
 
-# Plugin builds
+# Plugin builds (keep source, exclude artifacts)
 plugins/slate-copilot/out/
 plugins/slate-copilot/node_modules/
 plugins/slate-copilot/*.vsix
+plugins/slate-sdk/node_modules/
 
 # Aurora logs
 aurora_logs/

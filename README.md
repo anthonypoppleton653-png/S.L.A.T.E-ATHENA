@@ -108,7 +108,7 @@ Your local hardware runs the AI. Your cloud stays in sync. SLATE monitors GitHub
 - [Copilot Integration](#copilot-integration)
 - [GitHub Project Boards](#github-project-boards)
 - [Multi-Runner System](#multi-runner-system)
-- [Docker Deployment](#docker-deployment)
+- [Docker & Kubernetes Deployment](#docker--kubernetes-deployment)
 - [Local AI Providers](#local-ai-providers)
 - [CLI Reference](#cli-reference)
 - [Security](#security)
@@ -704,6 +704,21 @@ python slate/slate_hardware_optimizer.py --optimize   # Apply optimizations
 python slate/slate_benchmark.py                       # Run benchmarks
 ```
 
+### Kubernetes & Containers
+
+<!-- Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s CLI commands to README -->
+
+```bash
+python slate/slate_k8s_deploy.py --status             # K8s cluster status
+python slate/slate_k8s_deploy.py --deploy              # Deploy all manifests
+python slate/slate_k8s_deploy.py --deploy-kustomize local  # Deploy with Kustomize overlay
+python slate/slate_k8s_deploy.py --health              # Health check all pods
+python slate/slate_k8s_deploy.py --logs <component>    # Component logs
+python slate/slate_k8s_deploy.py --port-forward        # Port-forward services
+python slate/slate_k8s_deploy.py --teardown            # Remove from cluster
+docker build -t slate:local .                          # Build release image
+```
+
 ## Security
 
 ### Local-Only Architecture
@@ -797,9 +812,11 @@ SLATE won't run your GPU into the ground:
 | **Claude Code** | MCP Server | Active | 26 Tools |
 | **GitHub Copilot** | Participant | Active | @slate |
 | **GitHub Actions** | Runner | Self-hosted | GPU Labels |
-| **Docker** | Container | Compose | GPU/CPU |
+| **Docker** | Container | Release Image | GPU/CPU |
+| **Kubernetes** | Orchestration | Local Cloud | 7 Deployments, 9 Pods |
+| **Helm** | Package Manager | v3.17+ | Chart v1.0.0 |
 | **ChromaDB** | Vector Store | Local | RAG Memory |
-| **PyTorch** | ML Framework | 2.7+ | CUDA 12.4 |
+| **PyTorch** | ML Framework | 2.10+ | CUDA 12.8 |
 | **NVIDIA GPU** | Hardware | Auto-Detected | RTX 20xx+ Recommended |
 
 ---

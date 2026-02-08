@@ -1,4 +1,5 @@
 # S.L.A.T.E. Docker Compose Configuration
+# Modified: 2026-02-08T19:00:00Z | Author: COPILOT | Change: Use slate:local as release image, add full runtime ports
 # Author: SLATE | Created: 2026-02-06
 #
 # Usage:
@@ -10,9 +11,9 @@
 #   - NVIDIA Container Toolkit (for GPU mode)
 
 services:
-  # SLATE Core Service (GPU)
+  # SLATE Core Service (GPU) — Release Runtime
   slate:
-    image: ghcr.io/synchronizedlivingarchitecture/slate:latest-gpu
+    image: slate:local
     build:
       context: .
       dockerfile: Dockerfile

@@ -13,12 +13,15 @@ Show this help information:
 
 ## SLATE Commands
 
+<!-- Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s commands to help skill -->
+
 | Command | Description |
 |---------|-------------|
 | `/slate-sdk:slate-orchestrator [start\|stop\|status]` | Manage SLATE orchestrator |
 | `/slate-sdk:slate-status [--quick\|--json]` | Check system and service status |
 | `/slate-sdk:slate-workflow [--status\|--cleanup]` | Manage task workflow queue |
 | `/slate-sdk:slate-runner [--status\|--setup]` | Manage GitHub Actions runner |
+| `/slate-sdk:slate-k8s [--status\|--deploy\|--health\|--teardown]` | Kubernetes cluster management |
 | `/slate-sdk:slate-help` | Show this help |
 
 ## Quick Examples
@@ -41,3 +44,4 @@ The SLATE MCP server also provides these tools:
 - `slate_orchestrator` - Start/stop services
 - `slate_runner` - Manage GitHub runner
 - `slate_ai` - Execute AI tasks via local LLMs
+- `slate_kubernetes` - K8s cluster status, deploy, health, teardown

@@ -55,6 +55,15 @@ Complete reference for SLATE command-line tools.
 <td><code>slate_multi_runner.py</code></td>
 <td>Multi-runner coordination</td>
 </tr>
+<tr>
+<td rowspan="2"><strong>Kubernetes</strong></td>
+<td><code>slate_k8s_deploy.py</code></td>
+<td>K8s cluster deploy, status, health, teardown</td>
+</tr>
+<tr>
+<td><code>docker build</code></td>
+<td>Build release/dev/CPU images</td>
+</tr>
 </table>
 
 ---
@@ -318,6 +327,74 @@ python agents/slate_dashboard_server.py --debug
 | `SLATE_DASHBOARD_PORT` | Dashboard port | 8080 |
 | `SLATE_LOG_LEVEL` | Log verbosity | INFO |
 | `SLATE_GPU_DEVICE` | Force GPU device | auto |
+| `SLATE_K8S` | Enable K8s mode | false |
+| `SLATE_DOCKER` | Running in container | 0 |
+| `SLATE_MODE` | Runtime mode (dev/prod) | dev |
+
+## Kubernetes & Containers
+<!-- Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s CLI section to wiki -->
+
+### slate_k8s_deploy.py
+
+Manage Kubernetes deployments for the SLATE local cloud.
+
+```bash
+# Cluster status overview
+python slate/slate_k8s_deploy.py --status
+
+# Deploy all manifests (auto-detect Helm or Kustomize)
+python slate/slate_k8s_deploy.py --deploy
+
+# Deploy with Kustomize overlay
+python slate/slate_k8s_deploy.py --deploy-kustomize local
+
+# Health check all pods and deployments
+python slate/slate_k8s_deploy.py --health
+
+# View logs for a specific component
+python slate/slate_k8s_deploy.py --logs slate-core
+python slate/slate_k8s_deploy.py --logs ollama
+python slate/slate_k8s_deploy.py --logs chromadb
+
+# Port-forward all SLATE services to localhost
+python slate/slate_k8s_deploy.py --port-forward
+
+# Preload SLATE models into K8s Ollama
+python slate/slate_k8s_deploy.py --preload-models
+
+# Remove all SLATE resources from cluster
+python slate/slate_k8s_deploy.py --teardown
+```
+
+### Docker Commands
+
+```bash
+# Build release image (CUDA 12.8)
+docker build -t slate:local .
+
+# Build CPU-only image
+docker build -f Dockerfile.cpu -t slate:cpu .
+
+# Build dev image
+docker build -f Dockerfile.dev -t slate-dev:local .
+
+# Docker Compose
+docker-compose up -d                         # GPU production
+docker-compose -f docker-compose.dev.yml up  # Dev mode
+docker-compose -f docker-compose.prod.yml up -d  # Prod
+```
+
+### K8s Component Names
+
+| Component | Description |
+|-----------|-------------|
+| `slate-core` | Core SDK + Dashboard |
+| `ollama` | LLM inference (GPU) |
+| `chromadb` | Vector store |
+| `slate-agent-router` | Agent task routing |
+| `slate-autonomous-loop` | Autonomous execution |
+| `slate-copilot-bridge` | Copilot ↔ agent bridge |
+| `slate-workflow-manager` | Task lifecycle |
 
 ## Common Patterns
 

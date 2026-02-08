@@ -350,6 +350,50 @@ python slate/slate_runtime.py --check ollama
 - Review existing specs in `specs/`
 - Read the constitution at `.specify/memory/constitution.md`
 
+## Container & Kubernetes Development
+<!-- Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add container/K8s development workflow to wiki -->
+
+SLATE runs as a **local cloud** using Kubernetes. Local development improves the codebase,
+then builds the release image that K8s deploys.
+
+### Development Workflow (Local Cloud)
+
+```
+1. Edit code locally (slate/, agents/, etc.)
+2. Build release image:  docker build -t slate:local .
+3. Deploy to K8s:        kubectl apply -k k8s/overlays/local/
+4. Verify in VS Code:    Kubernetes sidebar → slate namespace → pods
+5. View logs:            Right-click pod → Logs
+6. Port forward:         Right-click service → Port Forward
+7. Iterate:              Repeat from step 1
+```
+
+### Required VS Code Extensions
+
+| Extension | ID | Purpose |
+|-----------|-----|---------|
+| Docker | `ms-azuretools.vscode-docker` | Build, manage, inspect containers |
+| Kubernetes | `ms-kubernetes-tools.vscode-kubernetes-tools` | K8s cluster management |
+| Helm Intellisense | `tim-koehler.helm-intellisense` | Helm chart editing |
+| YAML | `redhat.vscode-yaml` | K8s schema validation |
+
+### K8s CLI Commands
+
+```bash
+python slate/slate_k8s_deploy.py --status       # Cluster overview
+python slate/slate_k8s_deploy.py --deploy        # Deploy manifests
+python slate/slate_k8s_deploy.py --health        # Health check
+python slate/slate_k8s_deploy.py --logs <comp>   # Component logs
+python slate/slate_k8s_deploy.py --teardown      # Remove from cluster
+```
+
+### Docker Compose (Alternative)
+
+```bash
+docker-compose -f docker-compose.dev.yml up      # Dev mode
+docker-compose -f docker-compose.prod.yml up -d   # Production
+```
+
 ## Next Steps
 
 - [Troubleshooting](Troubleshooting) - Common issues and solutions

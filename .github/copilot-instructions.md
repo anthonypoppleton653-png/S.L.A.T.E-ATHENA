@@ -426,3 +426,91 @@ When using `runSubagent`, always specify the appropriate agent:
 | Code research, file analysis | Default | `@vscode` |
 | Planning, architecture | `Plan` | N/A |
 
+## Container & Kubernetes Management (STANDARD PRACTICE)
+# Modified: 2026-02-08T19:00:00Z | Author: COPILOT | Change: Add container/K8s extension enforcement as standard practice
+
+SLATE runs as a **local cloud** using Kubernetes for system stability. The Docker image
+built from `Dockerfile` is the **release/stable runtime** — the containerized version of
+all SLATE runtimes. Local development improves the codebase, then builds the release image
+that K8s deploys and manages.
+
+### Release Image Architecture
+
+```
+Local Codebase (E:\11132025)
+       │
+       ▼  docker build -t slate:local .
+   ┌──────────────────────────────────┐
+   │  Dockerfile (Release Image)      │
+   │  CUDA 12.8 + Python 3.11        │
+   │  Full SLATE runtime:            │
+   │   - Core + Dashboard            │
+   │   - Agent Router + Workers      │
+   │   - Autonomous Loop             │
+   │   - Copilot Bridge              │
+   │   - Workflow Manager             │
+   │   - ML Pipeline                  │
+   │   - GPU Manager                  │
+   │   - Semantic Kernel              │
+   │   - Security Guards              │
+   │   - Models + Skills              │
+   └──────────────────────────────────┘
+       │
+       ▼  kubectl apply -k k8s/overlays/local/
+   ┌──────────────────────────────────┐
+   │  Kubernetes (Local Cloud)        │
+   │   namespace: slate               │
+   │   7 deployments, 9+ pods        │
+   │   HPAs, PDBs, NetworkPolicies   │
+   │   CronJobs (ML, indexing)       │
+   └──────────────────────────────────┘
+```
+
+### Required VS Code Extensions
+
+Container and Kubernetes management MUST use the following VS Code extensions:
+
+| Extension | ID | Purpose |
+|-----------|-----|---------|
+| Docker | `ms-azuretools.vscode-docker` | Build, manage, inspect containers and images |
+| Container Tools | `ms-azuretools.vscode-containers` | Container lifecycle, compose, language model tools |
+| Dev Containers | `ms-vscode-remote.remote-containers` | Develop inside containers |
+| Kubernetes | `ms-kubernetes-tools.vscode-kubernetes-tools` | K8s cluster management, pod inspection, log viewing |
+| Helm Intellisense | `tim-koehler.helm-intellisense` | Helm chart editing with autocomplete |
+| YAML | `redhat.vscode-yaml` | K8s schema validation for manifests |
+
+### Enforcement Rules
+
+1. **Image builds** — Use Docker extension (right-click Dockerfile → Build Image) or `docker build -t slate:local .`
+2. **Container management** — Use Docker extension sidebar for start/stop/inspect/logs
+3. **K8s cluster management** — Use Kubernetes extension sidebar to browse pods, deployments, services
+4. **Pod logs** — Use Kubernetes extension (right-click pod → Logs) instead of `kubectl logs`
+5. **K8s apply/delete** — Use Kubernetes extension (right-click YAML → Apply) or `kubectl apply -k k8s/overlays/local/`
+6. **Helm deploys** — Use Kubernetes extension or `helm install slate ./helm -f helm/values.yaml`
+7. **Port forwarding** — Use Kubernetes extension (right-click service → Port Forward)
+8. **NEVER bypass extensions** — If the extension supports the operation, USE IT over raw CLI
+
+### Development Workflow (Local Cloud)
+
+```
+1. Edit code locally (slate/, agents/, etc.)
+2. Build release image:  docker build -t slate:local .
+3. Deploy to K8s:        kubectl apply -k k8s/overlays/local/
+4. Verify in VS Code:    Kubernetes sidebar → slate namespace → pods
+5. View logs:            Right-click pod → Logs
+6. Port forward:         Right-click service → Port Forward
+7. Iterate:              Repeat from step 1
+```
+
+### K8s Namespace: `slate`
+
+All SLATE workloads run in the `slate` namespace. The Kubernetes extension defaults
+to this namespace via workspace settings.
+
+### Docker Compose (Alternative to K8s)
+
+For simpler scenarios, Docker Compose is still available:
+- **Dev:**  `docker-compose -f docker-compose.dev.yml up`
+- **Prod:** `docker-compose -f docker-compose.prod.yml up -d`
+
+But K8s is the **standard** for release deployments.

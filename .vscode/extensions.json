@@ -1,4 +1,4 @@
-// Modified: 2026-02-08T06:00:00Z | Author: COPILOT | Change: Add NVIDIA, Docker, and testing extensions
+// Modified: 2026-02-08T19:00:00Z | Author: COPILOT | Change: Add K8s, Container Tools, Helm extensions — standard practice for local cloud management
 {
 	"recommendations": [
 		"slate.slate-copilot",
@@ -13,7 +13,10 @@
 		"eamodio.gitlens",
 		"ms-vscode.powershell",
 		"ms-azuretools.vscode-docker",
+		"ms-azuretools.vscode-containers",
 		"ms-vscode-remote.remote-containers",
+		"ms-kubernetes-tools.vscode-kubernetes-tools",
+		"tim-koehler.helm-intellisense",
 		"ms-toolsai.jupyter",
 		"littlefoxteam.vscode-python-test-adapter"
 	],

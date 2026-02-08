@@ -22,6 +22,11 @@
 - [Configuration](Configuration)
 - [API Reference](API-Reference)
 
+## Deployment
+- [Kubernetes](Architecture#kubernetes--container-architecture)
+- [Docker Images](CLI-Reference#kubernetes--containers)
+- [Helm Charts](Architecture#deployment-options)
+
 ## Contributing
 - [Contributor Guide](Contributor-Guide)
 - [Fork Setup](Contributor-Guide#getting-started)

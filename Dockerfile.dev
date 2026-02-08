@@ -1,8 +1,8 @@
 # S.L.A.T.E. Docker Image (Dev Variant - GPU with Hot-Reload)
-# Modified: 2026-02-07T06:00:00Z | Author: COPILOT | Change: Dev Dockerfile with watchfiles for hot-reload
-# Base: NVIDIA CUDA 12.4 Runtime on Ubuntu 22.04
+# Modified: 2026-02-08T19:00:00Z | Author: COPILOT | Change: Upgrade to CUDA 12.8, add full runtime with watchfiles
+# Base: NVIDIA CUDA 12.8 Runtime on Ubuntu 22.04
 
-FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
 
 LABEL org.opencontainers.image.source="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E"
 LABEL org.opencontainers.image.description="SLATE - Dev Mode with Hot-Reload (GPU)"

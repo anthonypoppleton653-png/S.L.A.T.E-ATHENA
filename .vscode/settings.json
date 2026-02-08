@@ -96,6 +96,51 @@
 		"CUDA_VISIBLE_DEVICES": "0,1",
 		"SLATE_MULTI_RUNNER": "true"
 	},
+
+	// ========================================
+	// Modified: 2026-02-08T19:00:00Z | Author: COPILOT | Change: Add Docker, Kubernetes, Helm extension settings — standard practice
+	// DOCKER / CONTAINERS (ms-azuretools.vscode-docker, ms-azuretools.vscode-containers)
+	// ========================================
+	"docker.dockerComposeBuild": true,
+	"docker.showStartPage": false,
+	"docker.containers.label": "Status",
+	"docker.containers.sortBy": "Label",
+	"docker.images.label": "Tag",
+	"docker.commands.build": "docker build --tag slate:local -f ${file} ${workspaceFolder}",
+	"docker.environment": {
+		"SLATE_WORKSPACE": "${workspaceFolder}",
+		"SLATE_DOCKER": "1",
+		"DOCKER_BUILDKIT": "1"
+	},
+
+	// ========================================
+	// KUBERNETES (ms-kubernetes-tools.vscode-kubernetes-tools)
+	// ========================================
+	"vs-kubernetes": {
+		"vs-kubernetes.namespace": "slate",
+		"vs-kubernetes.knownKubeconfigs": [],
+		"vs-kubernetes.helm-path-windows": "",
+		"vs-kubernetes.kubectl-path-windows": "",
+		"vs-kubernetes.autoCleanupOnDebugTerminate": true,
+		"vs-kubernetes.outputFormat": "yaml"
+	},
+
+	// ========================================
+	// HELM INTELLISENSE (tim-koehler.helm-intellisense)
+	// ========================================
+	"helm-intellisense.chartRootPath": "${workspaceFolder}/helm",
+
+	// ========================================
+	// YAML (redhat.vscode-yaml) — K8s schema validation
+	// ========================================
+	"yaml.schemas": {
+		"kubernetes": [
+			"k8s/*.yaml",
+			"k8s/**/*.yaml"
+		]
+	},
+	"yaml.format.enable": true,
+	"yaml.validate": true,
 	"python.testing.unittestArgs": [
 		"-v",
 		"-s",
