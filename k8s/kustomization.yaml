@@ -1,6 +1,7 @@
 # Modified: 2026-02-07T09:00:00Z | Author: COPILOT | Change: Create Kustomize base for SLATE K8s deployment
 # Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Add HPA, monitoring, PDB resources for Pass 3 stability
 # Modified: 2026-02-09T07:00:00Z | Author: COPILOT | Change: Remove CRD-dependent resources — runners-arc.yaml and monitoring-crds.yaml are optional extras
+# Modified: 2026-02-09T22:00:00Z | Author: Claude Opus 4.6 | Change: Add discord-bot.yaml to Kustomize resources
 # SLATE Kustomize Configuration
 # Deploy with: kubectl apply -k k8s/
 #
@@ -28,6 +29,7 @@ resources:
   - ml-pipeline.yaml
   - runners.yaml
   - ingress-gpu.yaml
+  - discord-bot.yaml          # Discord community bot (slate.bot)
 
 # Modified: 2026-02-08T23:25:00Z | Author: COPILOT | Change: Migrate commonLabels/commonAnnotations to labels for kustomize v5 compat
 labels:

@@ -701,6 +701,26 @@ class SlateBot:
 
     async def _check_access(self, interaction) -> bool:
         """Check if user has access (guild-lock + emergency lockdown via .json)."""
+        # Block DMs — slate.bot is community-only
+        if not interaction.guild:
+            await interaction.response.send_message(
+                "🏛️ **slate.bot is a community-only bot!**\n\n"
+                "I don't work in DMs — come use me in the SLATE server instead!\n\n"
+                f"**Join here:** {INVITE_URL}\n\n"
+                "**Available commands in server:**\n"
+                "• `/slate-support` — AI-powered answers\n"
+                "• `/slate-status` — System health\n"
+                "• `/slate-feedback` — Submit ideas\n"
+                "• `/slate-help` — See all commands\n"
+                "• **@slate.bot** your question in any channel",
+                ephemeral=True,
+            )
+            self.security.audit_log(
+                "dm_slash_rejected", str(interaction.user.id),
+                interaction.command.name if interaction.command else "unknown",
+            )
+            return False
+
         # Guild lock: reject commands from unauthorized guilds
         if GUILD_LOCK_ENABLED and interaction.guild:
             if interaction.guild.id != ALLOWED_GUILD_ID:

@@ -1,4 +1,5 @@
 # Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Add PodDisruptionBudget for 99.9% availability during rollouts
+# Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Add PDBs for agent-router, copilot-bridge, workflow-manager, instruction-controller
 # SLATE Pod Disruption Budgets
 # Ensures minimum availability during voluntary disruptions (node upgrades, rollouts)
 ---
@@ -32,3 +33,71 @@ spec:
     matchLabels:
       app.kubernetes.io/name: ollama
       app.kubernetes.io/component: ollama
+
+---
+# Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Add PDB for agent-router (2 replicas, keep 1 min)
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: slate-agent-router-pdb
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: availability
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: slate
+      app.kubernetes.io/component: agent-router
+
+---
+# Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Add PDB for copilot-bridge
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: slate-copilot-bridge-pdb
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: availability
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: slate
+      app.kubernetes.io/component: copilot-bridge
+
+---
+# Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Add PDB for workflow-manager
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: slate-workflow-manager-pdb
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: availability
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: slate
+      app.kubernetes.io/component: workflow-manager
+
+---
+# Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Add PDB for instruction-controller
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: slate-instruction-controller-pdb
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: availability
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: slate
+      app.kubernetes.io/component: instruction-controller

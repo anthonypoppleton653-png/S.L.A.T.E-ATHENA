@@ -170,6 +170,45 @@ services:
       retries: 3
       start_period: 10s
 
+  # ─── SLATE Discord Bot — Community Integration ────────────────────────
+  # Modified: 2026-02-09T22:00:00Z | Author: Claude Opus 4.6 | Change: Add Discord bot service
+  discord-bot:
+    <<: *slate-common
+    image: slate-discord-bot:local
+    build:
+      context: .
+      dockerfile: docker/discord-bot/Dockerfile
+    container_name: slate-discord-bot
+    hostname: discord-bot
+    ports:
+      - "127.0.0.1:8086:8086" # Health/Federation API — local only
+    volumes:
+      - discord_feedback:/app/.slate_discussions
+      - discord_logs:/app/slate_logs
+      - discord_community:/app/.slate_community
+    environment:
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_APP_ID=1470475063386964153
+      - DISCORD_PORT=8086
+      - SLATE_MODE=prod
+      - SLATE_DOCKER=1
+      - OLLAMA_HOST=ollama:11434
+      - LOG_LEVEL=INFO
+    depends_on:
+      ollama:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8086/health', timeout=3)" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
   # ─── Grafana Monitoring ────────────────────────────────────────────────
   grafana:
     <<: *slate-common
@@ -228,6 +267,12 @@ volumes:
     name: grafana_data
   prometheus_data:
     name: prometheus_data
+  discord_feedback:
+    name: discord_feedback
+  discord_logs:
+    name: discord_logs
+  discord_community:
+    name: discord_community
 
 networks:
   slate_network:

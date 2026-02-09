@@ -1256,11 +1256,13 @@ SLATE has a Discord bot for community interaction at the SLATE-Community server.
 | Setting | Value |
 |---------|-------|
 | Application | SLATE.GIT (`1470475063386964153`) |
-| Server | SLATE-Community (`1469890015780933786`) |
+| Bot Username | slate.bot#9383 |
+| Server | slate.git (`1469890015780933786`) |
 | Port | 8086 |
-| Install | Guild-only (private, owner-installable) |
-| Intents | Minimal (no message content, no presences, no members) |
-| Rate Limit | 1 command per user per minute |
+| Install | Guild-only (guild-locked, local-only) |
+| Intents | Members + Message Content (no presences) |
+| Rate Limit | Tier-based (1-20 commands/day by tier) |
+| @mention | Users can @slate.bot in any channel for AI help |
 
 ### Slash Commands
 
@@ -1270,6 +1272,11 @@ SLATE has a Discord bot for community interaction at the SLATE-Community server.
 | `/slate-feedback` | Submit feature requests, bug reports, ideas |
 | `/slate-tree` | Tech tree progress (public-safe info only) |
 | `/slate-about` | Static project info, links to GitHub/docs |
+| `/slate-support` | Ask questions (agentic AI via local Ollama) |
+| `/slate-register` | Link GitHub account (privacy-driven, fork-based tiers) |
+| `/slate-unregister` | Remove all your data (GDPR deletion) |
+| `/slate-profile` | View your community profile and tier |
+| `/slate-unlock` | Owner command to open/lock bot access |
 
 ### Security Architecture (7-Layer Defense)
 

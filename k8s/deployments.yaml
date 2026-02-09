@@ -57,8 +57,9 @@ spec:
           env:
             - name: SLATE_WORKSPACE
               value: /workspace
+            # Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Route to host GPU Ollama via host.docker.internal
             - name: OLLAMA_HOST
-              value: ollama-svc:11434
+              value: host.docker.internal:11434
             # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio host env for K8s pods
             # Modified: 2026-02-11T06:00:00Z | Author: COPILOT | Change: Document host.docker.internal requirement
             # NOTE: host.docker.internal resolves ONLY when running K8s via Docker Desktop.
@@ -114,6 +115,14 @@ spec:
               mountPath: /slate/prompts
             - name: tmp
               mountPath: /tmp
+          # Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Add startupProbe for resilient GPU model loading
+          startupProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
           livenessProbe:
             httpGet:
               path: /
@@ -270,6 +279,13 @@ spec:
               value: "0.0.0.0"
               # NOTE: 0.0.0.0 is required inside K8s pod for inter-pod communication.
               # The NetworkPolicy restricts actual access to slate-namespace pods only.
+            # Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Add GPU env vars for dual-GPU Ollama
+            - name: OLLAMA_NUM_PARALLEL
+              value: "4"
+            - name: OLLAMA_MAX_LOADED_MODELS
+              value: "4"
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: all
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -290,18 +306,30 @@ spec:
               mountPath: /root/.ollama
             - name: tmp
               mountPath: /tmp
+          # Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Add startupProbe for Ollama model loading
+          startupProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 60
+            timeoutSeconds: 5
           livenessProbe:
             httpGet:
               path: /api/tags
               port: 11434
             initialDelaySeconds: 30
             periodSeconds: 30
+            timeoutSeconds: 5
           readinessProbe:
             httpGet:
               path: /api/tags
               port: 11434
             initialDelaySeconds: 10
             periodSeconds: 10
+      # Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Graceful shutdown for model unloading
+      terminationGracePeriodSeconds: 60
       volumes:
         - name: ollama-data
           persistentVolumeClaim:

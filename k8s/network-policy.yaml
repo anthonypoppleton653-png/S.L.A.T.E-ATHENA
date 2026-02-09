@@ -1,7 +1,8 @@
 # Modified: 2026-02-07T09:00:00Z | Author: COPILOT | Change: Create network isolation policies for SLATE pods
+# Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Add host GPU Ollama + LM Studio egress for Docker Desktop K8s
 # SLATE Network Policies
 # Enforces local-only networking: pods can only talk to each other within slate namespace
-# No external egress except for GitHub API (required for CI/CD)
+# No external egress except for GitHub API (required for CI/CD) and host GPU services
 ---
 # Default deny all ingress and egress for the slate namespace
 apiVersion: networking.k8s.io/v1
@@ -217,3 +218,106 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
+
+---
+# Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Allow SLATE pods to reach host GPU Ollama + LM Studio
+# Docker Desktop K8s: host.docker.internal resolves to the Docker host gateway
+# This enables K8s pods to use the host's GPU-accelerated Ollama instance
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-host-gpu-egress
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: security
+  annotations:
+    slate.io/description: "Allow SLATE pods to reach host GPU services (Ollama, LM Studio) via Docker Desktop gateway"
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: slate-system
+  policyTypes:
+    - Egress
+  egress:
+    # Docker Desktop host gateway (192.168.65.0/24 covers standard Docker Desktop ranges)
+    # host.docker.internal resolves to an IP in this range
+    - to:
+        - ipBlock:
+            cidr: 192.168.65.0/24
+      ports:
+        # Ollama (GPU inference)
+        - protocol: TCP
+          port: 11434
+        # LM Studio (GPU inference, if available)
+        - protocol: TCP
+          port: 1234
+
+---
+# Modified: 2026-02-09T22:00:00Z | Author: Claude Opus 4.6 | Change: Add Discord bot network policy
+# Discord bot: egress to Discord Gateway (HTTPS) + Ollama (inference) + DNS only
+# No ingress needed from outside — bot connects outbound to Discord Gateway
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-discord-bot-egress
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: security
+  annotations:
+    slate.io/description: "Discord bot: egress to Discord API, Ollama, DNS. Ingress from SLATE pods (health checks)."
+spec:
+  podSelector:
+    matchLabels:
+      app: slate-discord-bot
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Health check access from other SLATE pods only
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: slate-system
+      ports:
+        - protocol: TCP
+          port: 8086
+  egress:
+    # DNS resolution (kube-system CoreDNS)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Discord Gateway + API (discord.com, gateway.discord.gg, cdn.discordapp.com)
+    # Discord uses Cloudflare — HTTPS only
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+    # Ollama (in-cluster inference for /slate-support AI responses)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: ollama
+      ports:
+        - protocol: TCP
+          port: 11434
+    # Host GPU Ollama (Docker Desktop)
+    - to:
+        - ipBlock:
+            cidr: 192.168.65.0/24
+      ports:
+        - protocol: TCP
+          port: 11434
