@@ -231,16 +231,38 @@ class UnifiedAutonomousLoop:
 
         return unique
 
+    # Modified: 2026-02-10T12:15:00Z | Author: COPILOT | Change: Reset stale tasks to pending instead of silently dropping them, preventing short-circuit on stale tasks
     def _discover_from_task_file(self) -> list[dict]:
-        """Load pending tasks from current_tasks.json."""
+        """Load pending tasks from current_tasks.json.
+        
+        Stale tasks (in_progress > 4h) are automatically reset to 'pending'
+        so they can be re-attempted rather than silently filtered out.
+        """
         if not TASK_FILE.exists():
             return []
         try:
             data = json.loads(TASK_FILE.read_text(encoding="utf-8"))
+            all_tasks = data.get("tasks", [])
+            
+            # Reset stale tasks back to pending
+            stale_reset = False
+            for t in all_tasks:
+                if t.get("status") == "in_progress" and self._is_stale(t):
+                    self._log(f"Resetting stale task: {t.get('title', t.get('id', 'unknown'))}", "WARN")
+                    t["status"] = "pending"
+                    t["started_at"] = None
+                    t["stale_reset_count"] = t.get("stale_reset_count", 0) + 1
+                    stale_reset = True
+            
+            # Persist the reset
+            if stale_reset:
+                data["tasks"] = all_tasks
+                TASK_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+            
             pending = [
-                t for t in data.get("tasks", [])
+                t for t in all_tasks
                 if t.get("status") in ("pending", "in_progress")
-                and not self._is_stale(t)
+                and t.get("stale_reset_count", 0) < 3  # Max 3 resets before giving up
             ]
             return pending
         except Exception as e:

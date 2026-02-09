@@ -8315,9 +8315,14 @@ def _is_port_available(host: str, port: int) -> bool:
 
 def _find_available_port(host: str = "127.0.0.1", preferred: int = 8080,
                           fallbacks: list = None) -> int:
-    """Find an available port, trying preferred first then fallbacks."""
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Extend fallback range beyond K8s service ports (8080-8085) to avoid conflicts when port-forwarding is active
+    """Find an available port, trying preferred first then fallbacks.
+    
+    K8s service port range is 8080-8085, so fallbacks extend to 8090
+    to avoid conflicts when K8s port-forwarding is active.
+    """
     if fallbacks is None:
-        fallbacks = [8081, 8082, 8083, 8084, 8085]
+        fallbacks = [8081, 8082, 8083, 8084, 8085, 8086, 8087, 8088, 8089, 8090]
 
     if _is_port_available(host, preferred):
         return preferred
@@ -8350,7 +8355,8 @@ def main():
     else:
         port = _find_available_port(host, preferred_port)
         if port == 0:
-            print("\n  [ERROR] No available ports found (tried 8080-8085).")
+            print("\n  [ERROR] No available ports found (tried 8080-8090).")
+            print("  This may happen when K8s port-forwarding is active (ports 8080-8085).")
             print("  Free a port or specify one with --port <number>\n")
             sys.exit(1)
         if port != preferred_port:
