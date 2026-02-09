@@ -5,6 +5,12 @@
 # Modified: 2026-02-07T05:00:00Z | Author: COPILOT | Change: Mono theme refinement, WCAG AAA accessibility, missing JS functions
 # Modified: 2026-02-07T06:00:00Z | Author: COPILOT | Change: Add /reload and /watcher-event endpoints, enhanced WebSocket broadcast
 # Modified: 2026-02-07T09:00:00Z | Author: COPILOT | Change: Add /api/slate/* control endpoints for dashboard button interface
+# Modified: 2026-02-10T02:00:00Z | Author: COPILOT | Change: Mark as DEPRECATED — dashboard now served by K8s/Docker runtime
+# DEPRECATED: 2026-02-10 | Reason: Dashboard is now served by K8s pods (slate-dashboard deployment)
+# or Docker Compose services. The VS Code extension now uses SlateRuntimeAdapter to detect
+# and connect to the K8s/Docker runtime instead of spawning this standalone server.
+# This file is retained for backward compatibility and local development fallback only.
+# See: plugins/slate-copilot/src/slateRuntimeAdapter.ts for the new runtime detection layer.
 # Purpose: SLATE Dashboard Server - Robust FastAPI server for agentic workflow management
 # ═══════════════════════════════════════════════════════════════════════════════
 """
@@ -1531,6 +1537,102 @@ async def slate_ai_recovery(request: Request):
         return JSONResponse(content={"suggestion": suggestion})
     except Exception as e:
         return JSONResponse(content={"suggestion": None, "error": str(e)})
+
+
+# Modified: 2026-02-08T12:00:00Z | Author: Claude Opus 4.5 | Change: Add K8s integration endpoints
+# ─── Kubernetes Integration Endpoints ────────────────────────────────────────
+
+@app.get("/api/k8s/status")
+async def k8s_status():
+    """Get Kubernetes integration status and service health."""
+    try:
+        from slate.k8s_integration import get_k8s_integration
+        integration = get_k8s_integration()
+        status = await integration.get_full_status()
+        return JSONResponse(content=status)
+    except ImportError:
+        return JSONResponse(content={
+            "environment": "local",
+            "k8s_available": False,
+            "message": "K8s integration module not available"
+        })
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@app.get("/api/k8s/services")
+async def k8s_services():
+    """List all SLATE services and their K8s endpoints."""
+    try:
+        from slate.k8s_integration import get_k8s_integration
+        integration = get_k8s_integration()
+        info = integration.get_integration_status()
+        return JSONResponse(content=info)
+    except ImportError:
+        return JSONResponse(content={
+            "environment": "local",
+            "services": {}
+        })
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@app.get("/api/k8s/health/{service_name}")
+async def k8s_service_health(service_name: str):
+    """Check health of a specific SLATE service."""
+    try:
+        from slate.k8s_integration import get_k8s_integration, ServiceStatus
+        integration = get_k8s_integration()
+
+        # Find the service
+        service = next(
+            (s for s in integration.services if s.name == service_name),
+            None
+        )
+        if not service:
+            return JSONResponse(
+                content={"error": f"Service '{service_name}' not found"},
+                status_code=404
+            )
+
+        health = await integration.check_service_health(service)
+        return JSONResponse(content={
+            "name": health.name,
+            "status": health.status.value,
+            "url": health.url,
+            "latency_ms": health.latency_ms,
+            "last_check": health.last_check,
+            "error": health.error,
+            "metadata": health.metadata,
+        })
+    except ImportError:
+        return JSONResponse(content={
+            "error": "K8s integration not available",
+            "environment": "local"
+        }, status_code=501)
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@app.get("/api/k8s/pod")
+async def k8s_pod_info():
+    """Get current pod information (when running in K8s)."""
+    try:
+        from slate.k8s_integration import get_k8s_integration
+        integration = get_k8s_integration()
+
+        if not integration.is_k8s_environment():
+            return JSONResponse(content={
+                "in_kubernetes": False,
+                "message": "Not running in Kubernetes environment"
+            })
+
+        return JSONResponse(content={
+            "in_kubernetes": True,
+            "pod": integration.get_pod_info()
+        })
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 
 # Modified: 2025-07-21T10:30:00Z | Author: COPILOT | Change: Add background CLI action endpoints

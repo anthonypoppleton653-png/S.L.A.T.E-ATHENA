@@ -43,8 +43,11 @@ spec:
             matchLabels:
               app.kubernetes.io/part-of: slate-system
   egress:
-    # Allow DNS resolution
-    - to: []
+    # DNS resolution (kube-system CoreDNS only)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
       ports:
         - protocol: UDP
           port: 53
@@ -80,7 +83,11 @@ spec:
           port: 8080
 
 ---
+# Modified: 2026-02-08T23:00:00Z | Author: COPILOT | Change: Restrict HTTPS egress to GitHub API IPs only, add ChromaDB isolation
 # Allow SLATE core egress to GitHub API (required for CI/CD runner management)
+# GitHub API IP ranges: https://api.github.com/meta
+# NOTE: Using CIDR blocks for GitHub's known API ranges.
+# If IPs change, update from: https://api.github.com/meta
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -88,6 +95,9 @@ metadata:
   namespace: slate
   labels:
     app.kubernetes.io/name: slate
+    app.kubernetes.io/component: security
+  annotations:
+    slate.io/description: "Restrict egress to GitHub API + DNS + intra-namespace only"
 spec:
   podSelector:
     matchLabels:
@@ -95,19 +105,34 @@ spec:
   policyTypes:
     - Egress
   egress:
-    # DNS
-    - to: []
+    # DNS resolution (kube-dns / CoreDNS)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
       ports:
         - protocol: UDP
           port: 53
         - protocol: TCP
           port: 53
-    # HTTPS to GitHub (443)
-    - to: []
+    # HTTPS to GitHub API only (known CIDR ranges)
+    - to:
+        - ipBlock:
+            cidr: 140.82.112.0/20
+        - ipBlock:
+            cidr: 143.55.64.0/20
+        - ipBlock:
+            cidr: 185.199.108.0/22
+        - ipBlock:
+            cidr: 192.30.252.0/22
+        - ipBlock:
+            cidr: 20.201.28.0/24
+        - ipBlock:
+            cidr: 4.208.26.0/24
       ports:
         - protocol: TCP
           port: 443
-    # Intra-namespace
+    # Intra-namespace (SLATE pods only)
     - to:
         - namespaceSelector:
             matchLabels:
@@ -122,6 +147,9 @@ metadata:
   namespace: slate
   labels:
     app.kubernetes.io/name: slate
+    app.kubernetes.io/component: security
+  annotations:
+    slate.io/description: "Ollama accepts connections from SLATE pods only, no external egress"
 spec:
   podSelector:
     matchLabels:
@@ -138,8 +166,52 @@ spec:
         - protocol: TCP
           port: 11434
   egress:
-    # DNS only — Ollama should NOT have external internet access
-    - to: []
+    # DNS only (kube-system) — Ollama should NOT have external internet access
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# Modified: 2026-02-08T23:00:00Z | Author: COPILOT | Change: Add ChromaDB network isolation policy
+# Allow ChromaDB pod to accept connections from SLATE pods only — no external egress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-chromadb-from-slate
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: security
+  annotations:
+    slate.io/description: "ChromaDB accepts connections from SLATE pods only, no external egress"
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: vectorstore
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: slate-system
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    # DNS only — ChromaDB should NOT have external internet access
+    # (ANONYMIZED_TELEMETRY=FALSE already set, this enforces it at network level)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
       ports:
         - protocol: UDP
           port: 53

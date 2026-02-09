@@ -7,6 +7,60 @@ global:
   namespace: slate
   imageRegistry: ghcr.io/synchronizedlivingarchitecture
 
+# ─── SLATE Dashboard UI ─────────────────────────────────────────────────────
+# Full FastAPI dashboard with WebSocket, GPU monitoring, and all integrations
+dashboard:
+  enabled: true
+  replicas: 2
+  image:
+    repository: ghcr.io/synchronizedlivingarchitecture/slate
+    tag: latest-gpu
+    pullPolicy: Always
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  service:
+    type: ClusterIP
+    port: 8080
+  env:
+    SLATE_DASHBOARD_HOST: "0.0.0.0"
+    SLATE_DASHBOARD_PORT: "8080"
+    SLATE_LOG_LEVEL: INFO
+    OLLAMA_HOST: "http://ollama-svc:11434"
+    CHROMADB_HOST: "http://chromadb-svc:8000"
+    SLATE_ENABLE_WEBSOCKET: "true"
+    SLATE_ENABLE_GPU_MONITORING: "true"
+    SLATE_ENABLE_WORKFLOW_DISPATCH: "true"
+    SLATE_ENABLE_TASK_QUEUE: "true"
+    SLATE_ENABLE_SCHEMATIC_API: "true"
+    SLATE_ENABLE_INTERACTIVE_API: "true"
+    SLATE_THEME: watchmaker
+    SLATE_GLASS_OPACITY: "0.75"
+    GITHUB_OWNER: SynchronizedLivingArchitecture
+    GITHUB_REPO: S.L.A.T.E
+    SLATE_K8S: "true"
+    SLATE_MODE: prod
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilization: 70
+    targetMemoryUtilization: 80
+  ingress:
+    enabled: true
+    host: slate.local
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+  # Session affinity for WebSocket sticky sessions
+  sessionAffinity: ClientIP
+  sessionAffinityTimeout: 3600
+
 # ─── SLATE Core ──────────────────────────────────────────────────────────────
 core:
   enabled: true

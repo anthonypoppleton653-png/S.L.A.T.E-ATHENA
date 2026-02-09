@@ -1,4 +1,6 @@
 # Modified: 2026-02-08T07:10:00Z | Author: COPILOT | Change: Create Kustomize local overlay for Docker Desktop K8s / minikube / k3s
+# Modified: 2026-02-09T10:00:00Z | Author: COPILOT | Change: Add instruction-controller, HPA, PDB, ingress resources to local overlay
+# Modified: 2026-02-08T23:15:00Z | Author: COPILOT | Change: Document --load-restrictor flag required for cross-directory references
 # SLATE Local Overlay — Kustomize
 #
 # Adapts the base K8s manifests for local development:
@@ -7,21 +9,30 @@
 #   - Relaxed GPU nodeSelector (Docker Desktop K8s doesn't label GPU nodes)
 #   - Dev mode config
 #
-# Deploy:  kubectl apply -k k8s/overlays/local/
-# Teardown: kubectl delete -k k8s/overlays/local/
+# Deploy:  kubectl kustomize k8s/overlays/local/ --load-restrictor LoadRestrictionsNone | kubectl apply -f -
+# Teardown: kubectl kustomize k8s/overlays/local/ --load-restrictor LoadRestrictionsNone | kubectl delete -f -
+# NOTE: --load-restrictor is required because overlay references base files via ../../
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 namespace: slate
 
+# Modified: 2026-02-08T23:15:00Z | Author: COPILOT | Change: Explicit base file references to avoid kustomize cycle detection
 resources:
   - ../../namespace.yaml
   - ../../rbac.yaml
   - ../../network-policy.yaml
   - ../../secrets.yaml
+  - ../../slate-instructions.yaml
+  - ../../instruction-controller.yaml
   - ../../deployments.yaml
+  - ../../slate-dashboard.yaml
+  - ../../hpa-monitoring.yaml
+  - ../../pdb.yaml
   - ../../agentic-system.yaml
   - ../../ml-pipeline.yaml
+  - ../../runners.yaml
+  - ../../ingress-gpu.yaml
   - local-storage.yaml
 
 # Override base storage with local hostPath volumes
@@ -110,6 +121,110 @@ patches:
             containers:
               - name: chromadb
                 imagePullPolicy: IfNotPresent
+
+  # ── instruction-controller: use local image, never pull ──
+  - target:
+      kind: Deployment
+      name: slate-instruction-controller
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: slate-instruction-controller
+      spec:
+        template:
+          spec:
+            containers:
+              - name: controller
+                image: slate:local
+                imagePullPolicy: Never
+
+  # ── instruction-sync CronJob: use local image ──
+  - target:
+      kind: CronJob
+      name: slate-instruction-sync
+    patch: |
+      apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: slate-instruction-sync
+      spec:
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: sync
+                    image: slate:local
+                    imagePullPolicy: Never
+
+  # ── agent-router: local image ──
+  - target:
+      kind: Deployment
+      name: slate-agent-router
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: slate-agent-router
+      spec:
+        template:
+          spec:
+            containers:
+              - name: router
+                image: slate:local
+                imagePullPolicy: Never
+
+  # ── autonomous-loop: local image ──
+  - target:
+      kind: Deployment
+      name: slate-autonomous-loop
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: slate-autonomous-loop
+      spec:
+        template:
+          spec:
+            containers:
+              - name: autonomous
+                image: slate:local
+                imagePullPolicy: Never
+
+  # ── copilot-bridge: local image ──
+  - target:
+      kind: Deployment
+      name: slate-copilot-bridge
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: slate-copilot-bridge
+      spec:
+        template:
+          spec:
+            containers:
+              - name: bridge
+                image: slate:local
+                imagePullPolicy: Never
+
+  # ── workflow-manager: local image ──
+  - target:
+      kind: Deployment
+      name: slate-workflow-manager
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: slate-workflow-manager
+      spec:
+        template:
+          spec:
+            containers:
+              - name: workflow
+                image: slate:local
+                imagePullPolicy: Never
 
 commonLabels:
   app.kubernetes.io/managed-by: slate

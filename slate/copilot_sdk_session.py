@@ -66,6 +66,9 @@ from copilot.types import (
 # Modified: 2026-02-09T03:15:00Z | Author: COPILOT | Change: Import SLATE SDK tools
 from slate.copilot_sdk_tools import get_all_slate_tools, get_tool_manifest
 
+# Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Import instruction loader for dynamic agent configs
+from slate.instruction_loader import get_instruction_loader
+
 logger = logging.getLogger("slate.copilot_sdk_session")
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -126,6 +129,28 @@ SLATE_AGENT_CONFIGS: list[CustomAgentConfig] = [
         "tools": ["slate_system_status", "slate_runtime_check", "slate_security_audit"],
     },
 ]
+
+
+# Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Add dynamic agent config loader
+def get_slate_agent_configs() -> list[CustomAgentConfig]:
+    """
+    Get SLATE agent configs from instruction loader (K8s ConfigMap or local files).
+
+    Returns dynamic configs when available, falls back to SLATE_AGENT_CONFIGS constant.
+    This enables hot-reloading of agent prompts via K8s ConfigMap updates.
+    """
+    try:
+        loader = get_instruction_loader()
+        configs = loader.get_agent_configs()
+        if configs:
+            logger.debug(f"Loaded {len(configs)} agent configs from {loader.get_source()}")
+            return configs
+    except Exception as e:
+        logger.warning(f"Failed to load dynamic agent configs: {e}")
+
+    # Fallback to hardcoded configs
+    return SLATE_AGENT_CONFIGS
+
 
 # SLATE services as MCP servers
 SLATE_MCP_SERVERS: dict[str, MCPServerConfig] = {
@@ -457,9 +482,9 @@ class SLATESessionManager:
         if include_mcp:
             config["mcp_servers"] = SLATE_MCP_SERVERS
 
-        # Custom agents
+        # Custom agents (loaded dynamically from K8s ConfigMap or local files)
         if include_agents:
-            config["custom_agents"] = SLATE_AGENT_CONFIGS
+            config["custom_agents"] = get_slate_agent_configs()
 
         # Provider (BYOK)
         if provider:
@@ -666,7 +691,7 @@ class SLATESessionManager:
             "session_ids": session_ids,
             "tools_registered": len(get_all_slate_tools()),
             "mcp_servers": list(SLATE_MCP_SERVERS.keys()),
-            "custom_agents": [a["name"] for a in SLATE_AGENT_CONFIGS],
+            "custom_agents": [a["name"] for a in get_slate_agent_configs()],
             "hooks_enabled": True,
             "permission_handler": "ActionGuard",
             "workspace": str(self.workspace_root),
@@ -786,12 +811,13 @@ def main():
         return
 
     if args.agents:
+        agent_configs = get_slate_agent_configs()
         if args.json:
-            print(json.dumps(SLATE_AGENT_CONFIGS, indent=2))
+            print(json.dumps(agent_configs, indent=2))
         else:
-            print(f"\n  Custom Agent Configs: {len(SLATE_AGENT_CONFIGS)}")
+            print(f"\n  Custom Agent Configs: {len(agent_configs)}")
             print("  " + "─" * 50)
-            for a in SLATE_AGENT_CONFIGS:
+            for a in agent_configs:
                 print(f"  • {a['name']}: {a.get('display_name', '')}")
                 print(f"    {a.get('description', '')[:70]}...")
         return

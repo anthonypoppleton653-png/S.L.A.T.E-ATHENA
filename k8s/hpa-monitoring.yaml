@@ -1,6 +1,7 @@
 # Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Add HPA for auto-scaling SLATE pods, ServiceMonitor for Prometheus
-# SLATE Horizontal Pod Autoscaler
-# Scales pods based on CPU utilization — targets 99.9% availability via elastic scaling
+# Modified: 2026-02-09T07:00:00Z | Author: COPILOT | Change: Split CRD-dependent Prometheus resources to monitoring-crds.yaml
+# SLATE Horizontal Pod Autoscaler & Metrics Service
+# CRD-dependent resources (ServiceMonitor, PrometheusRule) are in monitoring-crds.yaml
 # Requires: metrics-server installed in cluster
 ---
 # HPA for SLATE Core
@@ -78,30 +79,7 @@ spec:
           averageUtilization: 80
 
 ---
-# ServiceMonitor for Prometheus (requires Kube-Prometheus-Stack)
-# Scrapes SLATE metrics endpoint at :9090/metrics
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: slate-metrics
-  namespace: slate
-  labels:
-    app.kubernetes.io/name: slate
-    app.kubernetes.io/component: monitoring
-    app.kubernetes.io/part-of: slate-system
-    release: prometheus  # Match kube-prometheus-stack default selector
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: slate-metrics
-  endpoints:
-    - port: metrics
-      interval: 30s
-      path: /metrics
-      scrapeTimeout: 10s
-
----
-# Metrics Service (expose metrics port for ServiceMonitor)
+# Metrics Service (expose metrics port for monitoring)
 apiVersion: v1
 kind: Service
 metadata:
@@ -120,74 +98,3 @@ spec:
       targetPort: 9090
       protocol: TCP
       name: metrics
-
----
-# PrometheusRule for SLATE alerts
-apiVersion: monitoring.coreos.com/v1
-kind: PrometheusRule
-metadata:
-  name: slate-alerts
-  namespace: slate
-  labels:
-    app.kubernetes.io/name: slate
-    app.kubernetes.io/component: monitoring
-    release: prometheus
-spec:
-  groups:
-    - name: slate.rules
-      interval: 30s
-      rules:
-        # Alert if availability drops below 99.9%
-        - alert: SlateAvailabilityLow
-          expr: slate_availability_ratio < 0.999
-          for: 5m
-          labels:
-            severity: critical
-          annotations:
-            summary: "SLATE availability below SLO target"
-            description: "Availability is {{ $value | humanizePercentage }} (target: 99.9%)"
-
-        # Alert if GPU memory exceeds 90%
-        - alert: SlateGpuMemoryHigh
-          expr: slate_gpu_memory_used_mb / slate_gpu_memory_total_mb > 0.9
-          for: 2m
-          labels:
-            severity: warning
-          annotations:
-            summary: "GPU {{ $labels.gpu }} memory usage above 90%"
-
-        # Alert if CPU exceeds 80% sustained
-        - alert: SlateCpuHigh
-          expr: slate_cpu_usage_percent > 80
-          for: 5m
-          labels:
-            severity: warning
-          annotations:
-            summary: "SLATE CPU usage above 80% for 5 minutes"
-
-        # Alert if Ollama is down
-        - alert: SlateOllamaDown
-          expr: slate_ollama_healthy == 0
-          for: 2m
-          labels:
-            severity: critical
-          annotations:
-            summary: "Ollama LLM service is unhealthy"
-
-        # Alert if circuit breaker is open
-        - alert: SlateCircuitBreakerOpen
-          expr: slate_circuit_breaker_state == 2
-          for: 1m
-          labels:
-            severity: warning
-          annotations:
-            summary: "Circuit breaker for {{ $labels.service }} is OPEN"
-
-        # Alert if inference error rate exceeds 5%
-        - alert: SlateInferenceErrorRate
-          expr: rate(slate_inference_errors_total[5m]) / rate(slate_inference_total[5m]) > 0.05
-          for: 5m
-          labels:
-            severity: warning
-          annotations:
-            summary: "Inference error rate exceeds 5% for {{ $labels.model }}"

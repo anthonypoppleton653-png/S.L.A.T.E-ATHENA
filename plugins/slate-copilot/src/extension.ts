@@ -1,9 +1,11 @@
-// Modified: 2026-02-07T23:00:00Z | Author: COPILOT | Change: Add VS Code + GitHub deep integrations — diagnostics, test explorer, task provider, CodeLens, CI monitor, PR/issue tools
+// Modified: 2026-02-10T02:00:00Z | Author: COPILOT | Change: Replace static DASHBOARD_URL with K8s/Docker runtime adapter — dashboard served by K8s or Docker, not hardcoded local
+// Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Add K8s/Docker runtime backend — hybrid execution engine, deprecate local-only execution
 import * as vscode from 'vscode';
 import { registerSlateParticipant } from './slateParticipant';
 import { registerSlateTools } from './tools';
 import { SlateUnifiedDashboardViewProvider } from './slateUnifiedDashboardView';
 import { registerServiceMonitor } from './slateServiceMonitor';
+import { registerAgentSdkHooks } from './slateAgentSdkHooks';
 import {
 	applySchematicBackground,
 	registerBackgroundCommands,
@@ -14,9 +16,30 @@ import { SlateTestController } from './slateTestController';
 import { SlateTaskProvider } from './slateTaskProvider';
 import { SlateCodeLensProvider } from './slateCodeLens';
 import { registerGitHubTools } from './slateGitHubIntegration';
+import { activateSlateRuntime, getSlateRuntime } from './slateRuntimeBackend';
+import { SlateRuntimeAdapter } from './slateRuntimeAdapter';
 
-const DASHBOARD_URL = 'http://127.0.0.1:8080';
+// DEPRECATED: 2026-02-10 | Reason: Static DASHBOARD_URL replaced by runtime adapter dynamic URL
+// const DASHBOARD_URL = 'http://127.0.0.1:8080';
 const SLATE_THEME_ID = 'SLATE Dark';
+
+/** Global runtime adapter — provides dynamic URLs for K8s/Docker/local backends */
+let slateRuntimeAdapter: SlateRuntimeAdapter | undefined;
+
+/** Get the active runtime adapter */
+export function getRuntimeAdapter(): SlateRuntimeAdapter | undefined {
+	return slateRuntimeAdapter;
+}
+
+/** Get the current dashboard URL from the runtime adapter (falls back to default) */
+export function getDashboardUrl(): string {
+	return slateRuntimeAdapter?.dashboardUrl ?? 'http://127.0.0.1:8080';
+}
+
+/** Get the current Ollama URL from the runtime adapter (falls back to default) */
+export function getOllamaUrl(): string {
+	return slateRuntimeAdapter?.ollamaUrl ?? 'http://127.0.0.1:11434';
+}
 
 /** Status bar item showing SLATE is installed */
 let slateStatusBarItem: vscode.StatusBarItem;
@@ -24,6 +47,25 @@ let slateStatusBarItem: vscode.StatusBarItem;
 export function activate(context: vscode.ExtensionContext) {
 	registerSlateTools(context);
 	registerSlateParticipant(context);
+	registerAgentSdkHooks(context);
+
+	// ─── K8s/Docker Runtime Backend (v5.1.0) ────────────────────────────────
+	// Modified: 2026-02-10T06:00:00Z | Author: COPILOT | Change: Update comment to reflect v5.1.0 container-only architecture
+	// Container-first execution: auto-detects K8s → Docker backends (no local)
+	activateSlateRuntime(context).then((runtime) => {
+		const status = runtime.status;
+		console.log(`SLATE Runtime: ${status.backend} (healthy: ${status.healthy})`);
+
+		// Log runtime changes
+		runtime.onStatusChange((newStatus) => {
+			console.log(`SLATE Runtime changed: ${newStatus.backend} (healthy: ${newStatus.healthy})`);
+			if (newStatus.backend === 'kubernetes') {
+				vscode.window.setStatusBarMessage('$(cloud) SLATE: Connected to K8s cluster', 5000);
+			} else if (newStatus.backend === 'docker') {
+				vscode.window.setStatusBarMessage('$(package) SLATE: Connected to Docker runtime', 5000);
+			}
+		});
+	});
 
 	// ─── VS Code Deep Integrations ─────────────────────────────────────────
 	// These hook SLATE into native VS Code systems for seamless DX
@@ -63,10 +105,12 @@ export function activate(context: vscode.ExtensionContext) {
 	slateStatusBarItem.show();
 	context.subscriptions.push(slateStatusBarItem);
 
-	// Register service monitor for auto-restart
+	// Register service monitor for auto-restart — now K8s/Docker runtime aware
 	const serviceMonitor = registerServiceMonitor(context);
+	slateRuntimeAdapter = serviceMonitor.runtimeAdapter;
 
 	// Register the unified dashboard (combines guided setup, control board, and dashboard)
+	// Dashboard URL is now dynamic — provided by the runtime adapter
 	const unifiedDashboardProvider = new SlateUnifiedDashboardViewProvider(context.extensionUri, context);
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(
@@ -114,6 +158,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('slate.openDashboard', async () => {
+			const dashboardUrl = getDashboardUrl();
 			const panel = vscode.window.createWebviewPanel(
 				'slateDashboard',
 				'SLATE Dashboard',
@@ -126,11 +171,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 			panel.webview.onDidReceiveMessage((message) => {
 				if (message?.type === 'openExternal') {
-					void vscode.env.openExternal(vscode.Uri.parse(DASHBOARD_URL));
+					void vscode.env.openExternal(vscode.Uri.parse(dashboardUrl));
 				}
 			});
 
-			panel.webview.html = getDashboardHtml(panel.webview);
+			panel.webview.html = getDashboardHtml(panel.webview, dashboardUrl);
 		})
 	);
 }
@@ -247,12 +292,13 @@ export function getSlateConfig(): SlateConfig {
 	};
 }
 
-function getDashboardHtml(webview: vscode.Webview): string {
+function getDashboardHtml(webview: vscode.Webview, dashboardUrl: string): string {
 	const nonce = getNonce();
+	const runtimeLabel = slateRuntimeAdapter?.state.backend ?? 'unknown';
 	const csp = [
 		"default-src 'none'",
-		`frame-src ${DASHBOARD_URL}`,
-		`img-src ${DASHBOARD_URL} data:`,
+		`frame-src ${dashboardUrl}`,
+		`img-src ${dashboardUrl} data:`,
 		"style-src 'unsafe-inline'",
 		`script-src 'nonce-${nonce}'`,
 	].join('; ');
@@ -289,6 +335,17 @@ function getDashboardHtml(webview: vscode.Webview): string {
 			color: #B87333;
 			font-weight: 600;
 		}
+		.runtime-badge {
+			font-size: 10px;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+			color: #7EC8E3;
+			background: rgba(126, 200, 227, 0.1);
+			border: 1px solid rgba(126, 200, 227, 0.2);
+			border-radius: 4px;
+			padding: 2px 8px;
+			margin-left: 8px;
+		}
 		.actions {
 			display: flex;
 			gap: 8px;
@@ -319,12 +376,15 @@ function getDashboardHtml(webview: vscode.Webview): string {
 </head>
 <body>
 	<div class="toolbar">
-		<div class="title">SLATE Dashboard (127.0.0.1:8080)</div>
+		<div style="display:flex;align-items:center">
+			<div class="title">SLATE Dashboard</div>
+			<span class="runtime-badge">${runtimeLabel}</span>
+		</div>
 		<div class="actions">
 			<button id="openExternal">Open in Browser</button>
 		</div>
 	</div>
-	<iframe class="frame" src="${DASHBOARD_URL}" title="SLATE Dashboard"></iframe>
+	<iframe class="frame" src="${dashboardUrl}" title="SLATE Dashboard"></iframe>
 	<script nonce="${nonce}">
 		const vscode = acquireVsCodeApi();
 		document.getElementById('openExternal').addEventListener('click', () => {

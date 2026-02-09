@@ -495,7 +495,8 @@ class GrokHeavySlateProcedure:
 
     def _should_skip(self, path: Path) -> bool:
         """Check if a file should be skipped during audit."""
-        rel = str(path.relative_to(WORKSPACE_ROOT))
+        # Normalize to forward slashes for cross-platform pattern matching
+        rel = str(path.relative_to(WORKSPACE_ROOT)).replace("\\", "/")
         for pattern in SKIP_PATTERNS:
             if re.search(pattern, rel):
                 return True

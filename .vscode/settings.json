@@ -16,7 +16,8 @@
 		"${workspaceFolder}/plugins/slate-sdk",
 		"${workspaceFolder}/plugins/slate-copilot",
 		"${workspaceFolder}/slate_core",
-		"c:\\Users\\Dan\\.vscode-insiders\\extensions\\ms-security.ms-sentinel-1.1.6\\python"
+		"c:\\Users\\Dan\\.vscode-insiders\\extensions\\ms-security.ms-sentinel-1.1.6\\python",
+		"c:\\Users\\Dan\\.vscode\\extensions\\ms-security.ms-sentinel-1.1.1\\python"
 	],
 	"python.analysis.autoSearchPaths": true,
 
@@ -87,8 +88,23 @@
 
 	// ========================================
 	// TERMINAL
+	// Modified: 2026-02-08T18:00:00Z | Author: COPILOT | Change: Add pwsh 7.5 as default terminal profile
 	// ========================================
 	"terminal.integrated.defaultProfile.windows": "PowerShell",
+	"terminal.integrated.profiles.windows": {
+		"PowerShell": {
+			"source": "PowerShell",
+			"icon": "terminal-powershell"
+		},
+		"Windows PowerShell": {
+			"path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+			"icon": "terminal-powershell"
+		},
+		"Command Prompt": {
+			"path": "C:\\Windows\\System32\\cmd.exe",
+			"icon": "terminal-cmd"
+		}
+	},
 	"terminal.integrated.env.windows": {
 		"PYTHONPATH": "${workspaceFolder}",
 		"SLATE_WORKSPACE": "${workspaceFolder}",

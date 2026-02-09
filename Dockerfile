@@ -95,7 +95,7 @@ EXPOSE 8081
 EXPOSE 8082  
 # 8082 = Autonomous Loop API
 EXPOSE 8083  
-# 8083 = Copilot Bridge API
+# 8083 = Copilot Bridge API (extension v5.0.0 runtime backend)
 EXPOSE 8084  
 # 8084 = Workflow Manager API
 EXPOSE 9090  

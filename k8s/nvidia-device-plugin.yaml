@@ -1,0 +1,66 @@
+# Modified: 2026-02-09T10:00:00Z | Author: COPILOT | Change: Add NVIDIA GPU device plugin DaemonSet for K8s GPU support
+# NVIDIA GPU Device Plugin for Kubernetes
+# =========================================
+# Exposes host GPUs to K8s pods via nvidia.com/gpu resource.
+# Required for GPU workloads in the SLATE K8s cluster.
+#
+# Prerequisites:
+#   - NVIDIA drivers installed on host (already present: 2x RTX 5070 Ti)
+#   - Docker Desktop configured with NVIDIA Container Toolkit
+#   - Or: containerd with nvidia-container-runtime
+#
+# Installation:
+#   kubectl apply -f k8s/nvidia-device-plugin.yaml
+#
+# Verification:
+#   kubectl get nodes -o jsonpath='{.items[*].status.capacity.nvidia\.com/gpu}'
+#   kubectl describe node | findstr nvidia
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin-daemonset
+  namespace: kube-system
+  labels:
+    app: nvidia-device-plugin
+    app.kubernetes.io/name: nvidia-device-plugin
+    app.kubernetes.io/part-of: slate-system
+spec:
+  selector:
+    matchLabels:
+      app: nvidia-device-plugin
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: nvidia-device-plugin
+    spec:
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      priorityClassName: system-node-critical
+      containers:
+        - name: nvidia-device-plugin-ctr
+          image: nvcr.io/nvidia/k8s-device-plugin:v0.17.0
+          env:
+            - name: FAIL_ON_INIT_ERROR
+              value: "false"  # Don't crash if no GPU — allows graceful fallback
+            - name: PASS_DEVICE_SPECS
+              value: "true"
+            - name: DEVICE_LIST_STRATEGY
+              value: "envvar"
+            - name: DEVICE_ID_STRATEGY
+              value: "uuid"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins

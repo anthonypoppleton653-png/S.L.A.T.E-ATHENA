@@ -11,10 +11,11 @@ LABEL org.opencontainers.image.licenses="MIT"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
+# Modified: 2026-02-08T23:00:00Z | Author: COPILOT | Change: Remove curl (blocked by SLATE security policy), add wget for healthchecks
 # Install minimal system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
-    curl \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory

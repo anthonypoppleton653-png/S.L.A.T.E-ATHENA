@@ -105,11 +105,12 @@ class TestK8sManifestValidity:
             for i, line in enumerate(lines):
                 stripped = line.strip()
                 if "0.0.0.0" in stripped:
-                    # Allow in: env var values, container commands/args, comments
+                    # Allow in: env var values, container commands/args, comments, CIDR blocks
                     if any(kw in stripped for kw in [
                         "value:", "OLLAMA_HOST", "CHROMA_SERVER",
                         "HOST", "LISTEN", "#", "HTTPServer", "command:",
-                        "args:", "http.server", "serve_forever", "lambda"
+                        "args:", "http.server", "serve_forever", "lambda",
+                        "cidr:", "0.0.0.0/0",  # CIDR for ingress rules is allowed
                     ]):
                         continue
                     assert False, f"{f.name}:{i+1} contains 0.0.0.0 binding: {stripped}"

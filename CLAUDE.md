@@ -52,45 +52,118 @@ The background is generated from real system state:
 - **Foundry Local** (ONNX-optimized local inference) - localhost:5272
 - ChromaDB (local vector store for RAG memory)
 
-## Claude Code Integration
+## Claude Code Plugin
 
-SLATE provides slash commands and MCP tools for Claude Code integration.
+SLATE is distributed as a **Claude Code plugin** with commands, skills, and MCP tools. Plugins load dynamically without restart.
 
-### Slash Commands (Project-Level)
+### Installation
 
-Commands are defined in `.claude/commands/` and available when working in this project:
+**Option 1: From GitHub (Recommended)**
+```bash
+# Add SLATE marketplace
+/plugin marketplace add SynchronizedLivingArchitecture/S.L.A.T.E
+
+# Install SLATE plugin
+/plugin install slate@slate
+```
+
+**Option 2: Local Workspace (Auto-loads)**
+```bash
+# Plugin auto-loads when working in SLATE workspace
+# Or run installer to register marketplace:
+python install_claude_plugin.py
+```
+
+**Option 3: Development Mode**
+```bash
+claude --plugin-dir /path/to/S.L.A.T.E
+```
+
+### Plugin Structure
+
+```
+.claude-plugin/
+├── plugin.json       # Plugin manifest (name, version, component paths)
+└── marketplace.json  # Distribution catalog for /plugin install
+.claude/commands/     # Slash commands
+skills/               # Agent skills (skills/*/SKILL.md)
+.mcp.json             # MCP server configuration
+```
+
+### Commands
+
+Commands are available as `/slate:<command>` or `/slate-<command>`:
 
 | Command | Description |
 |---------|-------------|
-| `/slate [start\|stop\|status]` | Manage SLATE orchestrator |
-| `/slate-status` | Check system and service status |
-| `/slate-workflow` | Manage task workflow queue |
-| `/slate-runner` | Manage GitHub Actions runner |
-| `/slate-discussions` | Manage GitHub Discussions |
-| `/slate-multirunner` | Manage multi-runner system |
-| `/slate-gpu` | Manage dual-GPU load balancing |
-| `/slate-claude` | Validate Claude Code integration |
-| `/slate-spec-kit` | Process specs, run AI analysis, generate wiki |
-| `/slate-help` | Show all available commands |
+| `/slate:status` | Check system and service status |
+| `/slate:workflow` | Manage task workflow queue |
+| `/slate:runner` | Manage GitHub Actions runner |
+| `/slate:gpu` | Manage dual-GPU load balancing |
+| `/slate:help` | Show all available commands |
 
-### MCP Server Setup
+### MCP Tools
 
-The SLATE MCP server provides AI tools. Add to `~/.claude/config.json`:
+MCP tools are auto-configured via `.mcp.json`:
 
-```json
-{
-  "mcpServers": {
-      "slate": {
-         "command": "<workspace>\\.venv\\Scripts\\python.exe",
-         "args": ["<workspace>\\slate\\mcp_server.py"],
-         "env": {
-            "SLATE_WORKSPACE": "<workspace>",
-            "PYTHONPATH": "<workspace>"
-         }
-      }
-  }
-}
+| Tool | Description |
+|------|-------------|
+| `slate_status` | Check all services and GPU status |
+| `slate_workflow` | Manage task queue |
+| `slate_orchestrator` | Start/stop services |
+| `slate_runner` | Manage GitHub runner |
+| `slate_ai` | Execute AI tasks via local LLMs |
+| `slate_gpu` | Manage dual-GPU load balancing |
+
+## SLATE Operator Behavior (Permission Bypass Mode)
+
+SLATE provides a **locked-in behavior profile** that enables permission bypass while maintaining security through ActionGuard.
+
+### Behavior Configuration
+
+```yaml
+Profile: slate-operator
+Security: ActionGuard (Python-side validation)
+Permissions: Bypass with ActionGuard protection
+Runtime: K8s > Docker (container-first)
 ```
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `.claude/settings.json` | Main configuration with behavior reference |
+| `.claude/settings.local.json` | Permission overrides (bypass all) |
+| `.claude/behaviors/slate-operator.md` | Behavior profile definition |
+| `.claude/behaviors/slate-protocols.md` | Operational protocols (P001-P010) |
+| `.claude/hooks.json` | ActionGuard hook integration |
+
+### Key Protocols
+
+| Protocol | Trigger | Description |
+|----------|---------|-------------|
+| P001-INIT | Session start | Check runtime, load instructions |
+| P002-EXECUTE | Task request | DIAGNOSE → ACT → VERIFY pattern |
+| P003-WORKFLOW | Queue ops | Task management, stale cleanup |
+| P005-SECURITY | Bash commands | ActionGuard validation |
+| P009-K8S | K8s deploy | Kustomize/Helm deployment |
+
+### Permission Bypass
+
+With SLATE Operator behavior, Claude Code operates without confirmation prompts because:
+
+1. **ActionGuard validates all commands** before execution (Python-side)
+2. **SDK Source Guard** ensures trusted package publishers
+3. **PII Scanner** blocks credential exposure
+4. **Container isolation** runs commands in K8s/Docker, not host
+5. **K8s RBAC** provides minimal service account permissions
+
+### Activation
+
+The behavior activates automatically when:
+- Working in SLATE workspace
+- `settings.json` has `"behavior": { "profile": "slate-operator" }`
+- `settings.local.json` has permission bypass rules
 
 ## Built-In Safeguards
 
@@ -395,6 +468,108 @@ Phase 3: Agentic      → agentic.yml (task execution with updated models)
 Phase 4: Validation   → ci.yml, nightly.yml (parallel)
 Phase 5: Services     → service-management.yml (always last)
 ```
+
+## Kubernetes Deployment (Containerized Local Cloud)
+
+SLATE runs as a complete containerized local cloud in Kubernetes. The entire system is deployed as microservices with full integration.
+
+### Quick Deploy
+
+```powershell
+# Deploy SLATE to Kubernetes
+.\k8s\deploy.ps1 -Environment local
+
+# Check status
+.\k8s\status.ps1
+
+# Access dashboard
+kubectl port-forward -n slate svc/slate-dashboard-svc 8080:8080
+# Open: http://localhost:8080
+```
+
+### K8s Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Ingress (slate.local)                        │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │
+    ┌──────────────────────────┼──────────────────────────────────┐
+    │                          │                                  │
+    ▼                          ▼                                  ▼
+┌─────────────┐     ┌─────────────────┐     ┌──────────────────────┐
+│  Dashboard  │     │  Agent Router   │     │  Autonomous Loop     │
+│  (HPA 2-6)  │     │    (2 pods)     │     │   (1 pod + GPU)      │
+└──────┬──────┘     └────────┬────────┘     └──────────┬───────────┘
+       │                     │                         │
+       └─────────────────────┼─────────────────────────┘
+                             │
+         ┌───────────────────┼───────────────────┐
+         │                   │                   │
+         ▼                   ▼                   ▼
+   ┌──────────┐       ┌──────────┐       ┌──────────────┐
+   │  Ollama  │       │ ChromaDB │       │ GitHub Runner│
+   │  (GPU)   │       │ (Vector) │       │   (GPU)      │
+   └──────────┘       └──────────┘       └──────────────┘
+```
+
+### Services & Ports
+
+| Service | K8s Service | Port | Purpose |
+|---------|-------------|------|---------|
+| Dashboard | `slate-dashboard-svc` | 8080 | Full UI + WebSocket + K8s API |
+| Ollama | `ollama-svc` | 11434 | Local LLM inference |
+| ChromaDB | `chromadb-svc` | 8000 | Vector store for RAG |
+| Agent Router | `slate-agent-router-svc` | 8081 | Task routing |
+| Autonomous | `slate-autonomous-svc` | 8082 | Self-healing loop |
+| Copilot Bridge | `slate-copilot-bridge-svc` | 8083 | VS Code integration |
+| Workflow | `slate-workflow-svc` | 8084 | Task lifecycle |
+| Metrics | `slate-metrics-svc` | 9090 | Prometheus scrape |
+
+### K8s Integration API
+
+When running in Kubernetes, the dashboard exposes K8s-aware endpoints:
+
+```powershell
+# Check K8s service health
+curl http://localhost:8080/api/k8s/status
+
+# List all SLATE services
+curl http://localhost:8080/api/k8s/services
+
+# Check specific service
+curl http://localhost:8080/api/k8s/health/ollama
+
+# Get pod info
+curl http://localhost:8080/api/k8s/pod
+```
+
+### Deployment Methods
+
+```powershell
+# Kustomize (recommended)
+kubectl apply -k k8s/
+
+# Environment-specific
+kubectl apply -k k8s/overlays/local/   # Minikube/kind
+kubectl apply -k k8s/overlays/dev/     # Development
+kubectl apply -k k8s/overlays/prod/    # Production
+
+# Helm
+helm install slate ./helm -n slate --create-namespace
+helm upgrade slate ./helm -n slate -f custom-values.yaml
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `k8s/slate-dashboard.yaml` | Full dashboard deployment with WebSocket |
+| `k8s/agentic-system.yaml` | Agent router, autonomous loop, bridges |
+| `k8s/ml-pipeline.yaml` | Training CronJobs, model preloading |
+| `k8s/runners.yaml` | GitHub Actions runners |
+| `slate/k8s_integration.py` | K8s-aware service discovery |
+| `helm/values.yaml` | Helm configuration |
 
 ## Project Structure
 

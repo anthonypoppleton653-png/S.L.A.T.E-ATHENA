@@ -26,7 +26,7 @@ You manage a local-first AI agent orchestration system running on a self-hosted 
 - **Runner**: `slate-runner` at `$env:SLATE_WORKSPACE\actions-runner`
 - **Labels**: `[self-hosted, Windows, X64, slate, gpu, cuda, gpu-2, blackwell]`
 - **GPUs**: 2x NVIDIA GeForce RTX 5070 Ti (Blackwell, compute 12.0, 16GB each)
-- **Shell**: Windows PowerShell 5.1 (`powershell`, NOT `pwsh`)
+- **Shell**: PowerShell 7.5+ (`pwsh`) — also compatible with Windows PowerShell 5.1 (`powershell`)
 
 ## SLATE Protocol Commands
 
@@ -236,11 +236,22 @@ agents/                   # API servers & agent modules
   slate_dashboard_server.py   # FastAPI dashboard (127.0.0.1:8080)
   install_api.py          # Installation API
 
-plugins/slate-copilot/    # VS Code @slate chat participant extension
-  src/extension.ts        # Extension entry point
-  src/slateParticipant.ts # Chat participant handler
-  src/tools.ts            # 8 LM tool implementations
-  src/slateRunner.ts      # Python process executor
+plugins/slate-copilot/    # VS Code @slate chat participant extension (v5.1.0)
+  src/extension.ts              # Entry point — activates runtime backend + adapter
+  src/slateRuntimeBackend.ts    # K8s/Docker command execution engine (no local)
+  src/slateRuntimeAdapter.ts    # Service URLs, K8s port-forwarding, health monitoring
+  src/slateRunner.ts            # Thin wrapper — routes to runtime backend (33 lines)
+  src/slateParticipant.ts       # @slate chat participant (SYSTEM_PROMPT, commands)
+  src/tools.ts                  # 30 LanguageModelTool implementations
+  src/slateAgentSdkHooks.ts     # GitHub Copilot SDK Agent hooks (ActionGuard)
+  src/slateServiceMonitor.ts    # Service monitor — delegates to adapter
+  src/slateDiagnostics.ts       # Security scan → Problems panel
+  src/slateTestController.ts    # SLATE tests → Test Explorer
+  src/slateTaskProvider.ts      # Dynamic SLATE tasks → Run Task
+  src/slateCodeLens.ts          # Inline actions on Python/YAML files
+  src/slateGitHubIntegration.ts # CI monitor, PR manager, issue tracker
+  src/slateSchematicBackground.ts # Evolving SLATE background
+  src/slateUnifiedDashboardView.ts # Guided setup + dashboard webview
 
 skills/                   # Copilot Chat skill definitions
   slate-status/           # Status checking skill
@@ -292,7 +303,7 @@ SLATE workflows are self-documenting and self-maintaining:
 5. **Never bind to `0.0.0.0`**  always `127.0.0.1`
 6. **All code edits** must include: `# Modified: YYYY-MM-DDTHH:MM:SSZ | Author: COPILOT | Change: description`
 7. **YAML paths** use single quotes to avoid backslash escape issues
-8. **Shell** is `powershell` (5.1), NOT `pwsh` (not installed)
+8. **Shell** is `pwsh` (7.5+) preferred, `powershell` (5.1) also available. Both are supported.
 9. **File encoding**: Always use `encoding='utf-8'` when opening files in Python on Windows
 10. **Blocked patterns**: `eval(`, `exec(os`, `rm -rf /`, `base64.b64decode`
 
@@ -388,3 +399,77 @@ Every agent session MUST now include adaptive instruction check:
 10. **Instructions / Adaptive**: Run `adaptive_instructions.py --status`, report mode, agent availability, active directives
 11. **Instruction Sync**: Run `adaptive_instructions.py --sync`, report K8s ConfigMap patch result
 12. **Instruction Override**: Run `adaptive_instructions.py --evaluate`, generate and display instruction context
+
+## @slate Extension v5.1.0 — Container-First Architecture
+<!-- Modified: 2026-02-10T06:00:00Z | Author: COPILOT | Change: Add v5.1.0 container-first extension architecture to slate agent -->
+
+The `@slate` VS Code chat participant extension (v5.1.0) runs **exclusively** on K8s or Docker
+backends. All local Python execution fallback has been removed.
+
+### Execution Backends
+
+| Backend | Priority | Method | Endpoint |
+|---------|----------|--------|----------|
+| **Kubernetes** | Primary | HTTP POST to copilot-bridge-svc | `http://127.0.0.1:8083/api/exec` |
+| **Docker** | Secondary | `docker exec slate python ...` | Container: `slate` |
+| **None** | Offline | Shows deploy prompt (K8s Deploy / Docker Up tasks) | N/A |
+
+### Runtime Backend Settings
+
+| Setting | Default | Options |
+|---------|---------|---------|
+| `slate.runtime.backend` | `auto` | `auto`, `kubernetes`, `docker` |
+| `slate.runtime.k8sEndpoint` | `http://127.0.0.1:8083` | Custom K8s bridge URL |
+| `slate.runtime.dockerContainer` | `slate` | Docker container name |
+
+### 30 LM Tools (tools.ts)
+
+All tools execute via K8s copilot-bridge or Docker backend — no local Python:
+
+| Tool | Purpose |
+|------|---------|
+| `slate_systemStatus` | System health check |
+| `slate_runtimeCheck` | Integration verification |
+| `slate_hardwareInfo` | GPU detection & optimization |
+| `slate_runnerStatus` | Runner management |
+| `slate_orchestrator` | Service lifecycle |
+| `slate_workflow` | Task management |
+| `slate_benchmark` | Performance benchmarks |
+| `slate_runCommand` | Escape hatch — any SLATE script |
+| `slate_install` | SLATE installation |
+| `slate_update` | Live updates |
+| `slate_checkDeps` | Dependency checking |
+| `slate_forkCheck` | Fork sync and security |
+| `slate_securityAudit` | Security scanning |
+| `slate_agentStatus` | Agent registry status |
+| `slate_gpuManager` | Dual-GPU load balancing |
+| `slate_autonomous` | Autonomous task execution |
+| `slate_runProtocol` | Protocol command execution |
+| `slate_handoff` | Task delegation between agents |
+| `slate_executeWork` | Direct work execution |
+| `slate_startServices` | Service startup |
+| `slate_agentBridge` | Autonomous loop ↔ chat bridge |
+| `slate_devCycle` | Development stage management |
+| `slate_specKit` | Spec processing, wiki generation |
+| `slate_learningProgress` | Learning/XP tracking |
+| `slate_planContext` | Compressed context for token efficiency |
+| `slate_codeGuidance` | Stage-aligned code guidance |
+| `slate_semanticKernel` | Semantic kernel integration |
+| `slate_githubModels` | GitHub Models integration |
+| `slate_adaptiveInstructions` | K8s-driven instruction management |
+| `slate_kubernetes` | K8s cluster status, deploy, health, logs, teardown |
+
+### GitHub Copilot SDK Integration
+
+The Copilot SDK (`@github/copilot-sdk` v0.1.8) is vendored at `vendor/copilot-sdk`.
+SLATE integrates via `slateAgentSdkHooks.ts` (294 lines):
+
+| Hook | Purpose |
+|------|---------|
+| `PreToolUse` | Validates tool calls through ActionGuard before execution |
+| `PostToolUse` | Logs and audits tool execution results |
+| `UserPromptSubmit` | Scans prompts for security issues (PII, blocked patterns) |
+| `validateBashCommand` | Quick ActionGuard check for shell commands |
+| `validateFilePath` | File access validation (read/write/edit) |
+
+Registered VS Code commands: `slate.validateToolCall`, `slate.validateBash`, `slate.scanPrompt`

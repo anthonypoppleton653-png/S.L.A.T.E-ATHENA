@@ -9,14 +9,14 @@
 		"url": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git"
 	},
 	"slateMetadata": {
-		"modified": "2026-02-07T23:00:00Z",
+		"modified": "2026-02-08T22:00:00Z",
 		"author": "COPILOT",
-		"change": "Add VS Code + GitHub deep integrations — diagnostics, test explorer, task provider, CodeLens, CI monitor, PR/issue/git tools"
+		"change": "v5.1.0 — Remove all local execution fallback, K8s/Docker-only architecture per SLATE container-first requirements"
 	},
-	"version": "4.1.0",
+	"version": "5.1.0",
 	"icon": "media/icon.png",
 	"engines": {
-		"vscode": "^1.100.0"
+		"vscode": "^1.95.0"
 	},
 	"categories": [
 		"AI",
@@ -1031,6 +1031,27 @@
 		"configuration": {
 			"title": "SLATE",
 			"properties": {
+				"slate.runtime.backend": {
+					"type": "string",
+					"default": "auto",
+					"enum": ["auto", "kubernetes", "docker"],
+					"enumDescriptions": [
+						"Auto-detect best available backend (K8s > Docker)",
+						"Route all commands to K8s copilot-bridge-svc",
+						"Execute inside Docker SLATE container"
+					],
+					"description": "SLATE runtime backend — controls where commands are executed. Auto-detect tries K8s first, then Docker. K8s or Docker deployment is required."
+				},
+				"slate.runtime.k8sEndpoint": {
+					"type": "string",
+					"default": "http://127.0.0.1:8083",
+					"description": "K8s copilot bridge service endpoint. Use kubectl port-forward or the SLATE K8s Port Forward task to expose this."
+				},
+				"slate.runtime.dockerContainer": {
+					"type": "string",
+					"default": "slate",
+					"description": "Docker container name for the SLATE runtime. Must match the container_name in docker-compose.yml."
+				},
 				"slate.background.enabled": {
 					"type": "boolean",
 					"default": false,
@@ -1054,7 +1075,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "^22",
-		"@types/vscode": "^1.100.0",
+		"@types/vscode": "^1.95.0",
 		"typescript": "^5.9.2"
 	}
 }

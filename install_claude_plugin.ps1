@@ -1,33 +1,35 @@
 # SLATE Claude Code Plugin Installer (PowerShell)
-# Registers SLATE as a Claude Code plugin with skills and MCP tools
+# Registers SLATE marketplace with Claude Code - plugins load dynamically
 
 param(
     [switch]$Uninstall,
-    [switch]$Validate
+    [switch]$Validate,
+    [switch]$Dev
 )
 
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-Write-Host "SLATE Claude Code Plugin Installer" -ForegroundColor Cyan
-Write-Host "===================================" -ForegroundColor Cyan
+Write-Host "SLATE Claude Code Plugin" -ForegroundColor Cyan
+Write-Host "========================" -ForegroundColor Cyan
 Write-Host ""
 
 # Check Python venv
 $PythonExe = Join-Path $ScriptDir ".venv\Scripts\python.exe"
 if (-not (Test-Path $PythonExe)) {
     Write-Host "ERROR: Python venv not found at $PythonExe" -ForegroundColor Red
-    Write-Host "Please run the SLATE installer first to create the venv." -ForegroundColor Yellow
+    Write-Host "Run: python -m venv .venv && .\.venv\Scripts\pip install -r requirements.txt" -ForegroundColor Yellow
     exit 1
 }
 
 # Build arguments
-$Args = @()
-if ($Uninstall) { $Args += "--uninstall" }
-if ($Validate) { $Args += "--validate" }
+$PyArgs = @()
+if ($Uninstall) { $PyArgs += "--uninstall" }
+if ($Validate) { $PyArgs += "--validate" }
+if ($Dev) { $PyArgs += "--dev" }
 
 # Run installer
-& $PythonExe (Join-Path $ScriptDir "install_claude_plugin.py") @Args
+& $PythonExe (Join-Path $ScriptDir "install_claude_plugin.py") @PyArgs
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Installation failed!" -ForegroundColor Red
@@ -35,9 +37,13 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host ""
-Write-Host "Done! The SLATE plugin is now available in Claude Code." -ForegroundColor Green
+Write-Host "Plugin ready! Commands are namespaced as /slate:<command>" -ForegroundColor Green
 Write-Host ""
 Write-Host "Quick Start:" -ForegroundColor Yellow
-Write-Host "  1. Open Claude Code in this directory"
-Write-Host "  2. Type /slate-help to see available commands"
-Write-Host "  3. Type /slate start to launch SLATE services"
+Write-Host "  /slate:help     - Show all SLATE commands"
+Write-Host "  /slate:status   - Check system status"
+Write-Host "  /slate:start    - Start SLATE services"
+Write-Host ""
+Write-Host "For GitHub distribution:" -ForegroundColor Yellow
+Write-Host "  /plugin marketplace add SynchronizedLivingArchitecture/S.L.A.T.E"
+Write-Host "  /plugin install slate@slate"

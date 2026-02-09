@@ -20,110 +20,162 @@ import json
 
 @dataclass
 class ColorTokens:
-    """Color token definitions."""
+    """
+    Color token definitions.
 
-    # Primary palette (Anthropic-inspired warm)
-    primary: str = "#B85A3C"
-    primary_light: str = "#D4785A"
-    primary_dark: str = "#8B4530"
-    primary_container: str = "#FFE4D9"
-    on_primary: str = "#FFFFFF"
-    on_primary_container: str = "#3D1E10"
+    Design Philosophy (2026 Premium Fintech - QT Capital Inspired):
+    - Pure black foundations for maximum contrast and premium feel
+    - Copper/bronze primary accent (Watchmaker heritage)
+    - Electric blue secondary for tech/data visualization
+    - Sophisticated glassmorphism with ambient lighting
+    - High contrast text hierarchy on dark surfaces
+    """
 
-    # Secondary palette
-    secondary: str = "#5D5D74"
-    secondary_light: str = "#7A7A94"
-    secondary_dark: str = "#424258"
-    secondary_container: str = "#E2E2F0"
+    # ═══════════════════════════════════════════════════════════════════════════
+    # PRIMARY PALETTE — Copper/Bronze (Watchmaker Precision)
+    # ═══════════════════════════════════════════════════════════════════════════
+    primary: str = "#B87333"              # Copper — signature accent
+    primary_light: str = "#D4956B"        # Light copper — hover states
+    primary_dark: str = "#8B5E2B"         # Dark copper — pressed states
+    primary_container: str = "rgba(184,115,51,0.12)"
+    on_primary: str = "#000000"
+    on_primary_container: str = "#F5DCC8"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # SECONDARY PALETTE — Electric Blue (Tech/Data)
+    # ═══════════════════════════════════════════════════════════════════════════
+    secondary: str = "#3B82F6"            # Electric blue — data viz, links
+    secondary_light: str = "#60A5FA"      # Light blue — hover
+    secondary_dark: str = "#2563EB"       # Dark blue — active
+    secondary_container: str = "rgba(59,130,246,0.12)"
     on_secondary: str = "#FFFFFF"
-    on_secondary_container: str = "#1A1A24"
+    on_secondary_container: str = "#DBEAFE"
 
-    # Tertiary palette
-    tertiary: str = "#6B8E23"
-    tertiary_light: str = "#8FBC3F"
-    tertiary_dark: str = "#4A6418"
-    tertiary_container: str = "#E8F0D8"
+    # ═══════════════════════════════════════════════════════════════════════════
+    # TERTIARY PALETTE — Neon Violet (Premium Accent)
+    # ═══════════════════════════════════════════════════════════════════════════
+    tertiary: str = "#8B5CF6"             # Violet — premium highlights
+    tertiary_light: str = "#A78BFA"       # Light violet
+    tertiary_dark: str = "#7C3AED"        # Dark violet
+    tertiary_container: str = "rgba(139,92,246,0.12)"
     on_tertiary: str = "#FFFFFF"
-    on_tertiary_container: str = "#1E2A0D"
+    on_tertiary_container: str = "#EDE9FE"
 
-    # Neutral surfaces (natural earth tones)
-    surface: str = "#FBF8F6"
-    surface_dim: str = "#DCD9D6"
+    # ═══════════════════════════════════════════════════════════════════════════
+    # DARK MODE SURFACES — Pure Black Foundation (QT Capital Style)
+    # ═══════════════════════════════════════════════════════════════════════════
+    surface_dark: str = "#000000"         # Pure black — root background
+    surface_dim_dark: str = "#030303"     # Near black — subtle depth
+    surface_bright_dark: str = "#0A0A0A"  # Elevated black
+    surface_container_lowest_dark: str = "#000000"
+    surface_container_low_dark: str = "#0A0A0A"
+    surface_container_dark: str = "#111111"
+    surface_container_high_dark: str = "#1A1A1A"
+    surface_container_highest_dark: str = "#222222"
+    on_surface_dark: str = "#FAFAFA"      # Pure white text
+    on_surface_variant_dark: str = "#A1A1AA"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # LIGHT MODE SURFACES — Warm White (Contrast Mode)
+    # ═══════════════════════════════════════════════════════════════════════════
+    surface: str = "#FAFAF9"
+    surface_dim: str = "#E7E5E4"
     surface_bright: str = "#FFFFFF"
     surface_container_lowest: str = "#FFFFFF"
-    surface_container_low: str = "#F5F2F0"
-    surface_container: str = "#F0EBE7"
-    surface_container_high: str = "#EAE6E2"
-    surface_container_highest: str = "#E4E0DC"
-    on_surface: str = "#1C1B1A"
-    on_surface_variant: str = "#4D4845"
+    surface_container_low: str = "#F5F5F4"
+    surface_container: str = "#E7E5E4"
+    surface_container_high: str = "#D6D3D1"
+    surface_container_highest: str = "#A8A29E"
+    on_surface: str = "#0C0A09"
+    on_surface_variant: str = "#44403C"
 
-    # Dark mode surfaces
-    surface_dark: str = "#1A1816"
-    surface_dim_dark: str = "#141210"
-    surface_bright_dark: str = "#3A3634"
-    surface_container_lowest_dark: str = "#0F0D0C"
-    surface_container_low_dark: str = "#221F1D"
-    surface_container_dark: str = "#2A2624"
-    surface_container_high_dark: str = "#34302E"
-    surface_container_highest_dark: str = "#3F3B38"
-    on_surface_dark: str = "#E8E2DE"
-    on_surface_variant_dark: str = "#CAC4BF"
+    # ═══════════════════════════════════════════════════════════════════════════
+    # OUTLINE — Subtle Borders
+    # ═══════════════════════════════════════════════════════════════════════════
+    outline: str = "#78716C"
+    outline_variant: str = "#D6D3D1"
+    outline_dark: str = "#3F3F46"
+    outline_variant_dark: str = "#27272A"
 
-    # Outline
-    outline: str = "#7D7873"
-    outline_variant: str = "#CFC8C3"
-    outline_dark: str = "#968F8A"
-    outline_variant_dark: str = "#4D4845"
+    # ═══════════════════════════════════════════════════════════════════════════
+    # SEMANTIC COLORS — Premium Fintech Status
+    # ═══════════════════════════════════════════════════════════════════════════
+    success: str = "#22C55E"              # Vibrant green — active/success
+    success_container: str = "rgba(34,197,94,0.12)"
+    on_success: str = "#000000"
+    on_success_container: str = "#DCFCE7"
 
-    # Semantic colors
-    success: str = "#4CAF50"
-    success_container: str = "#C8E6C9"
-    on_success: str = "#FFFFFF"
-    on_success_container: str = "#1B5E20"
-
-    warning: str = "#FF9800"
-    warning_container: str = "#FFE0B2"
+    warning: str = "#F59E0B"              # Amber — pending/warning
+    warning_container: str = "rgba(245,158,11,0.12)"
     on_warning: str = "#000000"
-    on_warning_container: str = "#E65100"
+    on_warning_container: str = "#FEF3C7"
 
-    error: str = "#F44336"
-    error_container: str = "#FFCDD2"
+    error: str = "#EF4444"                # Red — error/critical
+    error_container: str = "rgba(239,68,68,0.12)"
     on_error: str = "#FFFFFF"
-    on_error_container: str = "#B71C1C"
+    on_error_container: str = "#FEE2E2"
 
-    info: str = "#2196F3"
-    info_container: str = "#BBDEFB"
-    on_info: str = "#FFFFFF"
-    on_info_container: str = "#0D47A1"
+    info: str = "#06B6D4"                 # Cyan — informational
+    info_container: str = "rgba(6,182,212,0.12)"
+    on_info: str = "#000000"
+    on_info_container: str = "#CFFAFE"
 
-    # Engineering Blueprint Theme
-    blueprint_bg: str = "#0D1B2A"              # Deep technical blue
-    blueprint_grid: str = "#1B3A4B"            # Grid line color
-    blueprint_line: str = "#3D5A80"            # Connection lines
-    blueprint_accent: str = "#98C1D9"          # Highlighted connections
-    blueprint_node: str = "#E0FBFC"            # Node backgrounds
-    blueprint_text: str = "#EEF0F2"            # Text on blueprint
+    # ═══════════════════════════════════════════════════════════════════════════
+    # GLASSMORPHISM — 2026 Dark Glass Aesthetic
+    # ═══════════════════════════════════════════════════════════════════════════
+    glass_bg: str = "rgba(0,0,0,0.6)"     # Dark glass background
+    glass_bg_elevated: str = "rgba(10,10,10,0.8)"
+    glass_border: str = "rgba(255,255,255,0.06)"
+    glass_border_hover: str = "rgba(255,255,255,0.12)"
+    glass_shine: str = "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%)"
+    glass_blur: str = "24px"
+    glass_saturate: str = "1.2"
 
-    # Light mode engineering
-    blueprint_bg_light: str = "#F8FAFC"        # Light blueprint background
-    blueprint_grid_light: str = "#E2E8F0"      # Light grid lines
-    blueprint_line_light: str = "#64748B"      # Light connection lines
-    blueprint_accent_light: str = "#3B82F6"    # Light highlighted connections
-    blueprint_node_light: str = "#FFFFFF"      # Light node backgrounds
-    blueprint_text_light: str = "#1E293B"      # Text on light blueprint
+    # ═══════════════════════════════════════════════════════════════════════════
+    # AMBIENT GRADIENTS — Floating Light Orbs
+    # ═══════════════════════════════════════════════════════════════════════════
+    ambient_copper: str = "radial-gradient(ellipse 50% 50% at 50% 0%, rgba(184,115,51,0.15), transparent 70%)"
+    ambient_blue: str = "radial-gradient(ellipse 40% 40% at 80% 80%, rgba(59,130,246,0.1), transparent 60%)"
+    ambient_violet: str = "radial-gradient(ellipse 30% 30% at 20% 70%, rgba(139,92,246,0.08), transparent 50%)"
 
-    # Connection status colors
-    connection_active: str = "#22C55E"         # Active connection (green)
-    connection_pending: str = "#F59E0B"        # Pending connection (amber)
-    connection_error: str = "#EF4444"          # Error connection (red)
-    connection_inactive: str = "#6B7280"       # Inactive connection (gray)
+    # ═══════════════════════════════════════════════════════════════════════════
+    # HOLOGRAPHIC — Premium Gradient Effects
+    # ═══════════════════════════════════════════════════════════════════════════
+    holo_gradient: str = "linear-gradient(135deg, #B87333, #3B82F6, #8B5CF6)"
+    holo_text: str = "linear-gradient(90deg, #B87333 0%, #D4956B 25%, #3B82F6 50%, #8B5CF6 75%, #B87333 100%)"
 
-    # Wizard/Stepper colors
-    step_active: str = "#3B82F6"               # Current step
-    step_complete: str = "#22C55E"             # Completed step
-    step_pending: str = "#9CA3AF"              # Future step
-    step_error: str = "#EF4444"                # Error state
+    # ═══════════════════════════════════════════════════════════════════════════
+    # ENGINEERING BLUEPRINT THEME
+    # ═══════════════════════════════════════════════════════════════════════════
+    blueprint_bg: str = "#000000"         # Pure black (updated)
+    blueprint_grid: str = "#1A1A1A"       # Subtle grid
+    blueprint_line: str = "#27272A"       # Connection lines
+    blueprint_accent: str = "#B87333"     # Copper highlights
+    blueprint_node: str = "#111111"       # Node backgrounds
+    blueprint_text: str = "#FAFAFA"       # Text on blueprint
+
+    blueprint_bg_light: str = "#FAFAF9"
+    blueprint_grid_light: str = "#E7E5E4"
+    blueprint_line_light: str = "#A8A29E"
+    blueprint_accent_light: str = "#8B5E2B"
+    blueprint_node_light: str = "#FFFFFF"
+    blueprint_text_light: str = "#0C0A09"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CONNECTION STATUS — Live System States
+    # ═══════════════════════════════════════════════════════════════════════════
+    connection_active: str = "#22C55E"
+    connection_pending: str = "#F59E0B"
+    connection_error: str = "#EF4444"
+    connection_inactive: str = "#52525B"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # WIZARD/STEPPER — Installation Flow
+    # ═══════════════════════════════════════════════════════════════════════════
+    step_active: str = "#B87333"          # Copper — current step
+    step_complete: str = "#22C55E"        # Green — completed
+    step_pending: str = "#52525B"         # Gray — future
+    step_error: str = "#EF4444"           # Red — error
 
 
 @dataclass
@@ -190,14 +242,46 @@ class SpacingTokens:
 
 @dataclass
 class ElevationTokens:
-    """Elevation/shadow token definitions."""
+    """
+    Elevation/shadow token definitions.
 
+    2026 Glassmorphism Elevation:
+    - Darker shadows for true black backgrounds
+    - Subtle ambient glow from accent colors
+    - Inner shine for glass depth effect
+    """
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STANDARD ELEVATION — Dark Theme Optimized
+    # ═══════════════════════════════════════════════════════════════════════════
     elevation_0: str = "none"
-    elevation_1: str = "0 1px 2px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1)"
-    elevation_2: str = "0 2px 4px rgba(0,0,0,0.05), 0 4px 8px rgba(0,0,0,0.1)"
-    elevation_3: str = "0 4px 8px rgba(0,0,0,0.08), 0 8px 16px rgba(0,0,0,0.12)"
-    elevation_4: str = "0 8px 16px rgba(0,0,0,0.1), 0 16px 32px rgba(0,0,0,0.15)"
-    elevation_5: str = "0 16px 32px rgba(0,0,0,0.12), 0 32px 64px rgba(0,0,0,0.18)"
+    elevation_1: str = "0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3)"
+    elevation_2: str = "0 3px 6px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3)"
+    elevation_3: str = "0 6px 12px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.3)"
+    elevation_4: str = "0 12px 24px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.3)"
+    elevation_5: str = "0 24px 48px rgba(0,0,0,0.6), 0 12px 24px rgba(0,0,0,0.4)"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # GLASS ELEVATION — With Ambient Glow
+    # ═══════════════════════════════════════════════════════════════════════════
+    glass_elevation_1: str = "0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)"
+    glass_elevation_2: str = "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)"
+    glass_elevation_3: str = "0 16px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # ACCENT GLOW — Copper Ambient Light
+    # ═══════════════════════════════════════════════════════════════════════════
+    glow_copper_sm: str = "0 0 20px rgba(184,115,51,0.15)"
+    glow_copper_md: str = "0 0 40px rgba(184,115,51,0.2)"
+    glow_copper_lg: str = "0 0 60px rgba(184,115,51,0.25)"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STATUS GLOW — Semantic Ambient
+    # ═══════════════════════════════════════════════════════════════════════════
+    glow_success: str = "0 0 30px rgba(34,197,94,0.3)"
+    glow_warning: str = "0 0 30px rgba(245,158,11,0.3)"
+    glow_error: str = "0 0 30px rgba(239,68,68,0.3)"
+    glow_info: str = "0 0 30px rgba(6,182,212,0.3)"
 
 
 @dataclass
@@ -216,21 +300,52 @@ class RadiusTokens:
 
 @dataclass
 class MotionTokens:
-    """Animation/motion token definitions."""
+    """
+    Animation/motion token definitions.
 
-    # Easing curves (M3)
-    easing_standard: str = "cubic-bezier(0.4, 0, 0.2, 1)"
-    easing_decelerate: str = "cubic-bezier(0, 0, 0.2, 1)"
-    easing_accelerate: str = "cubic-bezier(0.4, 0, 1, 1)"
-    easing_spring: str = "cubic-bezier(0.34, 1.56, 0.64, 1)"
+    2026 Motion Design Principles:
+    - Expo easing for premium feel
+    - Spring physics for organic interactions
+    - Staggered reveals for depth
+    - Subtle parallax for immersion
+    """
 
-    # Durations
+    # ═══════════════════════════════════════════════════════════════════════════
+    # EASING CURVES — Premium 2026 Motion
+    # ═══════════════════════════════════════════════════════════════════════════
+    easing_standard: str = "cubic-bezier(0.4, 0, 0.2, 1)"      # M3 standard
+    easing_decelerate: str = "cubic-bezier(0, 0, 0.2, 1)"      # Enter
+    easing_accelerate: str = "cubic-bezier(0.4, 0, 1, 1)"      # Exit
+    easing_spring: str = "cubic-bezier(0.34, 1.56, 0.64, 1)"   # Bounce
+    easing_expo_out: str = "cubic-bezier(0.16, 1, 0.3, 1)"     # Premium expo
+    easing_expo_in_out: str = "cubic-bezier(0.87, 0, 0.13, 1)" # Dramatic
+    easing_back_out: str = "cubic-bezier(0.34, 1.4, 0.64, 1)"  # Overshoot
+    easing_smooth: str = "cubic-bezier(0.25, 0.1, 0.25, 1)"    # Smooth linear
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # DURATIONS — Hierarchical Timing
+    # ═══════════════════════════════════════════════════════════════════════════
     duration_instant: str = "50ms"
-    duration_fast: str = "100ms"
-    duration_normal: str = "200ms"
-    duration_slow: str = "300ms"
-    duration_slower: str = "400ms"
-    duration_slowest: str = "500ms"
+    duration_fast: str = "150ms"
+    duration_normal: str = "300ms"
+    duration_slow: str = "500ms"
+    duration_slower: str = "700ms"
+    duration_slowest: str = "1000ms"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # STAGGER — Sequential Reveals
+    # ═══════════════════════════════════════════════════════════════════════════
+    stagger_fast: str = "30ms"
+    stagger_normal: str = "50ms"
+    stagger_slow: str = "80ms"
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # AMBIENT MOTION — Background Animations
+    # ═══════════════════════════════════════════════════════════════════════════
+    ambient_float: str = "20s"           # Floating orbs
+    ambient_rotate: str = "60s"          # Slow rotation
+    ambient_pulse: str = "3s"            # Glow pulse
+    ambient_flow: str = "2s"             # Data flow lines
 
 
 @dataclass

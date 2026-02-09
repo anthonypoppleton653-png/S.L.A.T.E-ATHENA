@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <g transform="translate(96,108)" opacity="0.12">
+    <animateTransform attributeName="transform" type="rotate" from="0 60.0 60.0" to="360 60.0 60.0" dur="20s" repeatCount="indefinite" additive="sum"/>
+    <polygon points="60.0,-2.1 80.7,10.1 103.9,16.1 109.9,39.3 122.1,60.0 109.9,80.7 103.9,103.9 80.7,109.9 60.0,122.1 39.3,109.9 16.1,103.9 10.1,80.7 -2.1,60.0 10.1,39.3 16.1,16.1 39.3,10.1" fill="none" stroke="rgba(184,115,51,0.8)" stroke-width="3"/>
+    <circle cx="60.0" cy="60.0" r="18.0" fill="rgba(184,115,51,0.6)"/>
+</g>
+<g transform="translate(154,648)" opacity="0.12">
+    <animateTransform attributeName="transform" type="rotate" from="0 40.0 40.0" to="-360 40.0 40.0" dur="25s" repeatCount="indefinite" additive="sum"/>
+    <polygon points="40.0,-1.4 58.0,8.8 75.9,19.3 76.0,40.0 75.9,60.7 58.0,71.2 40.0,81.4 22.0,71.2 4.1,60.7 4.0,40.0 4.1,19.3 22.0,8.8" fill="none" stroke="rgba(184,115,51,0.8)" stroke-width="3"/>
+    <circle cx="40.0" cy="40.0" r="12.0" fill="rgba(184,115,51,0.6)"/>
+</g>
+<g transform="translate(1632,270)" opacity="0.12">
+    <animateTransform attributeName="transform" type="rotate" from="0 75.0 75.0" to="360 75.0 75.0" dur="30s" repeatCount="indefinite" additive="sum"/>
+    <polygon points="75.0,-2.6 95.9,10.8 120.6,12.2 129.6,35.3 148.8,51.0 142.5,75.0 148.8,99.0 129.6,114.7 120.6,137.8 95.9,139.2 75.0,152.6 54.1,139.2 29.4,137.8 20.4,114.7 1.2,99.0 7.5,75.0 1.2,51.0 20.4,35.3 29.4,12.2 54.1,10.8" fill="none" stroke="rgba(184,115,51,0.8)" stroke-width="3"/>
+    <circle cx="75.0" cy="75.0" r="22.5" fill="rgba(184,115,51,0.6)"/>
+</g>
+<g transform="translate(1728,864)" opacity="0.12">
+    <animateTransform attributeName="transform" type="rotate" from="0 50.0 50.0" to="-360 50.0 50.0" dur="35s" repeatCount="indefinite" additive="sum"/>
+    <polygon points="50.0,-1.8 67.2,8.4 86.6,13.4 91.6,32.8 101.8,50.0 91.6,67.2 86.6,86.6 67.2,91.6 50.0,101.8 32.8,91.6 13.4,86.6 8.4,67.2 -1.8,50.0 8.4,32.8 13.4,13.4 32.8,8.4" fill="none" stroke="rgba(184,115,51,0.8)" stroke-width="3"/>
+    <circle cx="50.0" cy="50.0" r="15.0" fill="rgba(184,115,51,0.6)"/>
+</g>
+<g transform="translate(768,918)" opacity="0.12">
+    <animateTransform attributeName="transform" type="rotate" from="0 30.0 30.0" to="360 30.0 30.0" dur="40s" repeatCount="indefinite" additive="sum"/>
+    <polygon points="30.0,-1.1 43.5,6.6 56.9,14.5 57.0,30.0 56.9,45.5 43.5,53.4 30.0,61.0 16.5,53.4 3.1,45.5 3.0,30.0 3.1,14.5 16.5,6.6" fill="none" stroke="rgba(184,115,51,0.8)" stroke-width="3"/>
+    <circle cx="30.0" cy="30.0" r="9.0" fill="rgba(184,115,51,0.6)"/>
+</g>
+</svg>

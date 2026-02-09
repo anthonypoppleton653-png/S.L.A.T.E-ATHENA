@@ -34,6 +34,9 @@ sys.path.insert(0, str(WORKSPACE_ROOT))
 from slate.action_guard import ActionGuard, ActionResult, get_guard
 from slate.claude_code_validator import ClaudeCodeValidator, ValidationResult
 
+# Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Import instruction loader for dynamic prompts
+from slate.instruction_loader import get_instruction_loader
+
 logger = logging.getLogger("slate.claude_code_manager")
 
 
@@ -540,11 +543,25 @@ class ClaudeCodeManager:
 
         tools = (allowed_tools or default_tools) + mcp_tools
 
-        # Load CLAUDE.md for system prompt
-        claude_md = self.workspace / "CLAUDE.md"
-        if system_prompt is None and claude_md.exists():
-            with open(claude_md) as f:
-                system_prompt = f.read()
+        # Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Use instruction loader for dynamic prompts
+        # Load system prompt from instruction loader (K8s ConfigMap or local files)
+        if system_prompt is None:
+            try:
+                loader = get_instruction_loader()
+                system_prompt = loader.get_claude_md()
+                if not system_prompt:
+                    # Fallback to local file
+                    claude_md = self.workspace / "CLAUDE.md"
+                    if claude_md.exists():
+                        with open(claude_md) as f:
+                            system_prompt = f.read()
+            except Exception as e:
+                logger.warning(f"Could not load dynamic system prompt: {e}")
+                # Fallback to local file
+                claude_md = self.workspace / "CLAUDE.md"
+                if claude_md.exists():
+                    with open(claude_md) as f:
+                        system_prompt = f.read()
 
         return {
             "allowed_tools": tools,

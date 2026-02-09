@@ -1,0 +1,397 @@
+# Modified: 2026-02-08T12:00:00Z | Author: Claude Opus 4.5 | Change: Create Helm template for SLATE Dashboard UI
+{{- if .Values.dashboard.enabled }}
+# ─────────────────────────────────────────────────────────────────────────────
+# ConfigMap: Dashboard Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "slate.fullname" . }}-dashboard-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+data:
+  {{- range $key, $value := .Values.dashboard.env }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ConfigMap: Dashboard Entrypoint Script
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "slate.fullname" . }}-dashboard-entrypoint
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+data:
+  start-dashboard.py: |
+    #!/usr/bin/env python3
+    """SLATE Dashboard K8s Entrypoint"""
+    import os, sys, time, urllib.request, urllib.error
+
+    def wait_for_service(url, name, timeout=60):
+        print(f"[*] Waiting for {name} at {url}...")
+        start = time.time()
+        while time.time() - start < timeout:
+            try:
+                req = urllib.request.Request(url, method="GET")
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    if resp.status == 200:
+                        print(f"[+] {name} is ready")
+                        return True
+            except Exception:
+                pass
+            time.sleep(2)
+        print(f"[-] {name} timeout after {timeout}s (continuing anyway)")
+        return False
+
+    def main():
+        ollama_host = os.environ.get("OLLAMA_HOST", "http://{{ include "slate.fullname" . }}-ollama:{{ .Values.ollama.service.port }}")
+        chroma_host = os.environ.get("CHROMADB_HOST", "http://{{ include "slate.fullname" . }}-chromadb:{{ .Values.chromadb.service.port }}")
+        wait_for_service(f"{ollama_host}/api/tags", "Ollama", timeout=30)
+        wait_for_service(f"{chroma_host}/api/v2/heartbeat", "ChromaDB", timeout=15)
+
+        workspace = os.environ.get("SLATE_WORKSPACE", "/workspace")
+        sys.path.insert(0, workspace)
+        sys.path.insert(0, os.path.join(workspace, "slate"))
+        os.chdir(workspace)
+
+        try:
+            import uvicorn
+            from agents.slate_dashboard_server import app
+            host = os.environ.get("SLATE_DASHBOARD_HOST", "0.0.0.0")
+            port = int(os.environ.get("SLATE_DASHBOARD_PORT", "8080"))
+            print(f"[+] Starting SLATE Dashboard on {host}:{port}")
+            uvicorn.run(app, host=host, port=port, log_level=os.environ.get("SLATE_LOG_LEVEL", "info").lower(), access_log=True)
+        except ImportError as e:
+            print(f"[-] Import error: {e}")
+            import http.server, json
+            class H(http.server.BaseHTTPRequestHandler):
+                def do_GET(self):
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"status": "degraded", "error": str(e)}).encode())
+                def log_message(self, *a): pass
+            port = int(os.environ.get("SLATE_DASHBOARD_PORT", "8080"))
+            http.server.HTTPServer(("0.0.0.0", port), H).serve_forever()
+
+    if __name__ == "__main__":
+        main()
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Deployment: SLATE Dashboard
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "slate.fullname" . }}-dashboard
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+  annotations:
+    slate.io/description: "Full SLATE Dashboard with WebSocket, GPU monitoring, and all integrations"
+spec:
+  replicas: {{ .Values.dashboard.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      {{- include "slate.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: dashboard
+  template:
+    metadata:
+      labels:
+        {{- include "slate.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: dashboard
+        app.kubernetes.io/part-of: slate-system
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.dashboard.service.port }}"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: slate-core
+      automountServiceAccountToken: false
+      securityContext:
+        {{- include "slate.podSecurityContext" . | nindent 8 }}
+      initContainers:
+        - name: wait-for-ollama
+          image: busybox:1.36
+          command: ['sh', '-c']
+          args:
+            - |
+              echo "Waiting for Ollama..."
+              until wget -q --spider http://{{ include "slate.fullname" . }}-ollama:{{ .Values.ollama.service.port }}/api/tags 2>/dev/null; do
+                echo "Ollama not ready, waiting..."
+                sleep 5
+              done
+              echo "Ollama is ready!"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+      containers:
+        - name: dashboard
+          image: "{{ .Values.dashboard.image.repository }}:{{ .Values.dashboard.image.tag }}"
+          imagePullPolicy: {{ .Values.dashboard.image.pullPolicy }}
+          command: ["python"]
+          args: ["/entrypoint/start-dashboard.py"]
+          ports:
+            - name: http
+              containerPort: {{ .Values.dashboard.service.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "slate.fullname" . }}-dashboard-config
+          env:
+            - name: SLATE_WORKSPACE
+              value: /workspace
+            - name: PYTHONPATH
+              value: /workspace:/workspace/slate
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "slate.fullname" . }}-github-secret
+                  key: token
+                  optional: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            {{- toYaml .Values.dashboard.resources | nindent 12 }}
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+              readOnly: true
+            - name: entrypoint
+              mountPath: /entrypoint
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /home/slate/.cache
+          startupProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.dashboard.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.dashboard.service.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.dashboard.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: {{ include "slate.fullname" . }}-workspace
+        - name: entrypoint
+          configMap:
+            name: {{ include "slate.fullname" . }}-dashboard-entrypoint
+            defaultMode: 0755
+        - name: tmp
+          emptyDir:
+            sizeLimit: 500Mi
+        - name: cache
+          emptyDir:
+            sizeLimit: 200Mi
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              {{- include "slate.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: dashboard
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Service: SLATE Dashboard
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "slate.fullname" . }}-dashboard-svc
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.dashboard.service.port }}"
+spec:
+  type: {{ .Values.dashboard.service.type }}
+  selector:
+    {{- include "slate.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+  ports:
+    - name: http
+      port: {{ .Values.dashboard.service.port }}
+      targetPort: {{ .Values.dashboard.service.port }}
+      protocol: TCP
+  {{- if .Values.dashboard.sessionAffinity }}
+  sessionAffinity: {{ .Values.dashboard.sessionAffinity }}
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: {{ .Values.dashboard.sessionAffinityTimeout }}
+  {{- end }}
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# HorizontalPodAutoscaler: Dashboard Auto-scaling
+# ─────────────────────────────────────────────────────────────────────────────
+{{- if .Values.dashboard.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "slate.fullname" . }}-dashboard-hpa
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "slate.fullname" . }}-dashboard
+  minReplicas: {{ .Values.dashboard.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.dashboard.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.dashboard.autoscaling.targetCPUUtilization }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.dashboard.autoscaling.targetMemoryUtilization }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+{{- end }}
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# PodDisruptionBudget: Dashboard High Availability
+# ─────────────────────────────────────────────────────────────────────────────
+{{- if .Values.security.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "slate.fullname" . }}-dashboard-pdb
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+spec:
+  minAvailable: {{ .Values.security.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "slate.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: dashboard
+{{- end }}
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Ingress: Dashboard with WebSocket support
+# ─────────────────────────────────────────────────────────────────────────────
+{{- if .Values.dashboard.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "slate.fullname" . }}-dashboard-ingress
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    {{- range $key, $value := .Values.dashboard.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: {{ .Values.dashboard.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "slate.fullname" . }}-dashboard-svc
+                port:
+                  number: {{ .Values.dashboard.service.port }}
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "slate.fullname" . }}-dashboard-svc
+                port:
+                  number: {{ .Values.dashboard.service.port }}
+          - path: /api/k8s
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "slate.fullname" . }}-dashboard-svc
+                port:
+                  number: {{ .Values.dashboard.service.port }}
+{{- end }}
+{{- end }}

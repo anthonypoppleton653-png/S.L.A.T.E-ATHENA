@@ -686,7 +686,7 @@ class StartServicesTool implements vscode.LanguageModelTool<IStartServicesParams
 				message: new vscode.MarkdownString(
 					`Start the following services?\n\n` +
 					(target === 'all'
-						? '- Dashboard (127.0.0.1:8080)\n- Orchestrator\n- Copilot Runner'
+						? '- Dashboard (K8s/Docker runtime)\n- Orchestrator\n- Copilot Runner'
 						: `- ${target}`)
 				),
 			},

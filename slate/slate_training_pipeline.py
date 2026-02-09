@@ -99,6 +99,7 @@ EXCLUDED_FILE_PATTERNS = [
     r'\.git/', r'\.ssh/',
     r'__pycache__/', r'\.pyc$',
     r'node_modules/',
+    r'\.venv/',  # Virtual environment
     r'\.slate_runner_costs\.json$',
     r'\.slate_.*\.pid$',
 ]

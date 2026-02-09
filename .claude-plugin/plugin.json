@@ -1,33 +1,18 @@
 {
   "name": "slate",
-  "description": "S.L.A.T.E. — Synchronized Living Architecture for Transformation and Evolution. Unified AI agent orchestration with GPU support, Kubernetes deployment, ActionGuard security, and 12 MCP tools.",
   "version": "5.3.0",
+  "description": "S.L.A.T.E. — Synchronized Living Architecture for Transformation and Evolution. AI agent orchestration with GPU support, K8s deployment, and ActionGuard security.",
   "author": {
     "name": "SynchronizedLivingArchitecture",
-    "email": "slate@github.com",
     "url": "https://github.com/SynchronizedLivingArchitecture"
   },
   "repository": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E",
   "homepage": "https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/",
   "license": "EOSL-1.0",
-  "keywords": [
-    "slate", "ai", "agents", "kubernetes", "docker",
-    "gpu", "llm", "ollama", "actionguard", "mcp", "orchestrator"
-  ],
+  "keywords": ["slate", "ai", "agents", "kubernetes", "gpu", "llm", "ollama", "mcp"],
 
-  "mcpServers": {
-    "slate": {
-      "command": ".venv/Scripts/python.exe",
-      "args": ["slate/mcp_server.py"],
-      "env": {
-        "SLATE_WORKSPACE": ".",
-        "PYTHONPATH": ".",
-        "SLATE_BEHAVIOR": "operator",
-        "SLATE_ACTIONGUARD": "enabled"
-      }
-    }
-  },
-
+  "commands": "./.claude/commands/",
   "skills": "./skills/",
-  "commands": "./.claude/commands/"
+  "hooks": "./.claude/hooks.json",
+  "mcpServers": "./.mcp.json"
 }

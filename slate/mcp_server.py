@@ -24,6 +24,9 @@ from typing import Any
 WORKSPACE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(WORKSPACE_ROOT))
 
+# Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Import instruction loader for dynamic tool definitions
+from slate.instruction_loader import get_instruction_loader
+
 # MCP Protocol imports
 try:
     from mcp.server import Server
@@ -77,9 +80,42 @@ def run_slate_command(module: str, *args: str) -> dict[str, Any]:
         }
 
 
+# Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Add dynamic tool loading from instruction loader
+def _get_dynamic_tools() -> list[Tool]:
+    """
+    Load MCP tool definitions from instruction loader.
+
+    Returns tools from K8s ConfigMap (if in cluster) or hardcoded defaults.
+    Enables hot-reloading of tool definitions via ConfigMap updates.
+    """
+    try:
+        loader = get_instruction_loader()
+        tool_defs = loader.get_mcp_tool_definitions()
+        if tool_defs:
+            return [
+                Tool(
+                    name=t["name"],
+                    description=t["description"],
+                    inputSchema=t.get("input_schema", {"type": "object", "properties": {}})
+                )
+                for t in tool_defs
+            ]
+    except Exception as e:
+        print(f"Warning: Could not load dynamic tools: {e}", file=sys.stderr)
+
+    # Return None to fall back to hardcoded tools
+    return []
+
+
 @server.list_tools()
 async def list_tools() -> list[Tool]:
-    """List available SLATE tools."""
+    """List available SLATE tools (dynamically loaded from ConfigMap or hardcoded)."""
+    # Try dynamic loading first
+    dynamic_tools = _get_dynamic_tools()
+    if dynamic_tools:
+        return dynamic_tools
+
+    # Fallback to hardcoded tools
     return [
         Tool(
             name="slate_status",

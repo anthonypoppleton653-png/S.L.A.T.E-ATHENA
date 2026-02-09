@@ -58,7 +58,8 @@ PORT_FORWARDS = {
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
-def run_cmd(cmd: list[str], check: bool = True, capture: bool = True, timeout: int = 120) -> subprocess.CompletedProcess:
+# Modified: 2026-02-08T23:20:00Z | Author: COPILOT | Change: Add input_data param for piping kustomize output to kubectl apply
+def run_cmd(cmd: list[str], check: bool = True, capture: bool = True, timeout: int = 120, input_data: str = None) -> subprocess.CompletedProcess:
     """Run a command and return result."""
     try:
         result = subprocess.run(
@@ -67,6 +68,7 @@ def run_cmd(cmd: list[str], check: bool = True, capture: bool = True, timeout: i
             text=True,
             timeout=timeout,
             encoding='utf-8',
+            input=input_data,
         )
         if check and result.returncode != 0:
             print(f"  ERROR: {' '.join(cmd)}")
@@ -227,6 +229,7 @@ def cmd_status():
     print()
 
 
+# Modified: 2026-02-08T23:20:00Z | Author: COPILOT | Change: Use kustomize pipe for overlays to handle cross-directory references
 def cmd_deploy_kustomize():
     """Deploy SLATE via Kustomize."""
     print_banner("Deploying SLATE via Kustomize")
@@ -240,10 +243,32 @@ def cmd_deploy_kustomize():
         print("  Start a local cluster: minikube start --gpus all --memory 32768 --cpus 12")
         return
     
-    print("Applying Kustomize manifests...")
-    r = run_cmd(['kubectl', 'apply', '-k', str(K8S_DIR)], check=False, timeout=120)
+    # Check for local overlay first
+    local_overlay = K8S_DIR / 'overlays' / 'local'
+    if local_overlay.exists():
+        print("Applying Kustomize manifests (local overlay)...")
+        # Use kustomize render + pipe to handle cross-directory references
+        render = run_cmd(
+            ['kubectl', 'kustomize', str(local_overlay), '--load-restrictor', 'LoadRestrictionsNone'],
+            check=False, timeout=120
+        )
+        if render.returncode != 0:
+            print(f"  ✗ Kustomize render failed: {render.stderr[:300]}")
+            print("  Falling back to base manifests...")
+            r = run_cmd(['kubectl', 'apply', '-k', str(K8S_DIR)], check=False, timeout=120)
+        else:
+            # Pipe rendered YAML to kubectl apply
+            r = run_cmd(
+                ['kubectl', 'apply', '-f', '-'],
+                check=False, timeout=120,
+                input_data=render.stdout
+            )
+    else:
+        print("Applying Kustomize manifests (base)...")
+        r = run_cmd(['kubectl', 'apply', '-k', str(K8S_DIR)], check=False, timeout=120)
+    
     if r.returncode == 0:
-        print("  ✓ Base manifests applied")
+        print("  ✓ Manifests applied")
     else:
         print(f"  ✗ Failed: {r.stderr[:300]}")
         return

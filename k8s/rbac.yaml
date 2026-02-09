@@ -1,4 +1,5 @@
 # Modified: 2026-02-07T09:00:00Z | Author: COPILOT | Change: Create SLATE RBAC with least-privilege access
+# Modified: 2026-02-09T10:00:00Z | Author: COPILOT | Change: Add batch/jobs and events permissions for instruction sync CronJobs
 # SLATE RBAC Configuration
 # Principle: Least privilege — agents get only the access they need
 ---
@@ -48,6 +49,12 @@ rules:
     verbs: ["get", "list", "watch"]
   - apiGroups: ["apps"]
     resources: ["deployments", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch", "create"]
+  - apiGroups: [""]
+    resources: ["events"]
     verbs: ["get", "list", "watch"]
 
 ---

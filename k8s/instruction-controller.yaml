@@ -1,4 +1,5 @@
 # Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Create instruction controller K8s deployment
+# Modified: 2026-02-09T07:15:00Z | Author: COPILOT | Change: Add PodSecurity-compliant securityContext to controller and sync containers
 # SLATE Instruction Controller
 # ==============================
 # Runs the adaptive instruction layer as a K8s CronJob + Deployment.
@@ -53,6 +54,11 @@ spec:
         - name: controller
           image: slate:local
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
           command: ["python", "-c"]
           args:
             - |
@@ -232,10 +238,17 @@ spec:
             runAsNonRoot: true
             runAsUser: 1000
             runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
           containers:
             - name: sync
               image: slate:local
               imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+                readOnlyRootFilesystem: true
               command: ["python", "slate/adaptive_instructions.py", "--sync"]
               resources:
                 requests:

@@ -1,324 +1,151 @@
-// Modified: 2026-02-07T06:00:00Z | Author: Claude | Change: Add service monitor for auto-restart of SLATE services
+// Modified: 2026-02-10T03:00:00Z | Author: Claude Opus 4.5 | Change: Add runtime state change notifications and event emitter
+// DEPRECATED: 2026-02-10 | Reason: SlateServiceMonitor standalone server spawning removed. Replaced by SlateRuntimeAdapter (slateRuntimeAdapter.ts)
 import * as vscode from 'vscode';
-import * as http from 'http';
-import * as cp from 'child_process';
-import { getSlateConfig } from './extension';
-
-const DASHBOARD_URL = 'http://127.0.0.1:8080/health';
-const HEALTH_CHECK_INTERVAL = 15000; // 15 seconds
-const MAX_RESTART_ATTEMPTS = 3;
-const RESTART_COOLDOWN = 60000; // 1 minute
-
-interface ServiceState {
-	running: boolean;
-	lastCheck: number;
-	restartAttempts: number;
-	lastRestart: number;
-}
+import { SlateRuntimeAdapter, RuntimeState } from './slateRuntimeAdapter';
 
 /**
- * Service Monitor for SLATE Dashboard
- * Automatically checks if dashboard is running and restarts it if needed.
+ * Service Monitor for SLATE — K8s/Docker Runtime Bridge
+ * =====================================================
+ * DEPRECATED: The old standalone server spawning has been removed.
+ * This module now delegates to SlateRuntimeAdapter which manages
+ * K8s port-forwarding and Docker runtime detection.
+ *
+ * The dashboard is NO LONGER served by a local Python process.
+ * It is served by the Kubernetes cluster (kubectl port-forward)
+ * or Docker Compose (WSL relay) runtime.
  */
 export class SlateServiceMonitor implements vscode.Disposable {
-	private _interval: NodeJS.Timeout | undefined;
-	private _state: ServiceState = {
-		running: false,
-		lastCheck: 0,
-		restartAttempts: 0,
-		lastRestart: 0,
-	};
-	private _statusBarItem: vscode.StatusBarItem;
-	private _outputChannel: vscode.OutputChannel;
-	private _dashboardProcess: cp.ChildProcess | undefined;
+	private _runtimeAdapter: SlateRuntimeAdapter;
+	private _disposables: vscode.Disposable[] = [];
+	private _onStateChange = new vscode.EventEmitter<RuntimeState>();
+	public readonly onStateChange = this._onStateChange.event;
+	private _lastBackend: string = 'none';
 
 	constructor() {
-		this._statusBarItem = vscode.window.createStatusBarItem(
-			vscode.StatusBarAlignment.Right,
-			100
+		this._runtimeAdapter = new SlateRuntimeAdapter();
+
+		// Forward state changes from runtime adapter
+		this._disposables.push(
+			this._runtimeAdapter.onStateChange((state) => {
+				this._onStateChange.fire(state);
+				this._handleStateChange(state);
+			})
 		);
-		this._statusBarItem.command = 'slate.toggleService';
-		this._outputChannel = vscode.window.createOutputChannel('SLATE Services');
 	}
 
 	/**
-	 * Start the service monitor
+	 * Handle runtime state changes with user notifications
 	 */
-	public start(): void {
-		this._log('Service monitor started');
-		this._updateStatusBar('checking');
+	private _handleStateChange(state: RuntimeState): void {
+		// Notify on backend change
+		if (state.backend !== this._lastBackend) {
+			if (state.backend === 'kubernetes') {
+				vscode.window.setStatusBarMessage('$(cloud) SLATE: Connected to K8s cluster', 5000);
+			} else if (state.backend === 'docker') {
+				vscode.window.setStatusBarMessage('$(package) SLATE: Connected to Docker runtime', 5000);
+			} else if (state.backend === 'none' && this._lastBackend !== 'none') {
+				vscode.window.setStatusBarMessage('$(circle-slash) SLATE: Runtime disconnected', 5000);
+			}
+			this._lastBackend = state.backend;
+		}
 
-		// Initial check
-		void this._checkHealth();
+		// Notify on health degradation
+		if (!state.healthy && this._lastBackend !== 'none') {
+			const unhealthy = state.services.filter(s => !s.healthy).map(s => s.name);
+			if (unhealthy.length > 0) {
+				vscode.window.setStatusBarMessage(`$(warning) SLATE: ${unhealthy.join(', ')} offline`, 5000);
+			}
+		}
+	}
 
-		// Start periodic checks
-		this._interval = setInterval(() => {
-			void this._checkHealth();
-		}, HEALTH_CHECK_INTERVAL);
+	/** Get the runtime adapter instance */
+	public get runtimeAdapter(): SlateRuntimeAdapter {
+		return this._runtimeAdapter;
+	}
 
-		this._statusBarItem.show();
+	/**
+	 * Start the service monitor — delegates to runtime adapter
+	 */
+	public async start(): Promise<void> {
+		await this._runtimeAdapter.initialize();
 	}
 
 	/**
 	 * Stop the service monitor
 	 */
-	public stop(): void {
-		if (this._interval) {
-			clearInterval(this._interval);
-			this._interval = undefined;
-		}
-		this._statusBarItem.hide();
-		this._log('Service monitor stopped');
+	public async stop(): Promise<void> {
+		await this._runtimeAdapter.shutdown();
 	}
 
 	/**
-	 * Check dashboard health
-	 */
-	private async _checkHealth(): Promise<void> {
-		const now = Date.now();
-		this._state.lastCheck = now;
-
-		try {
-			const healthy = await this._pingDashboard();
-			this._state.running = healthy;
-
-			if (healthy) {
-				// Reset restart counter on success
-				if (now - this._state.lastRestart > RESTART_COOLDOWN) {
-					this._state.restartAttempts = 0;
-				}
-				this._updateStatusBar('running');
-			} else {
-				this._updateStatusBar('stopped');
-				// Attempt auto-restart
-				await this._attemptRestart();
-			}
-		} catch {
-			this._state.running = false;
-			this._updateStatusBar('error');
-		}
-	}
-
-	/**
-	 * Ping the dashboard health endpoint
-	 */
-	private _pingDashboard(): Promise<boolean> {
-		return new Promise((resolve) => {
-			const req = http.get(DASHBOARD_URL, { timeout: 5000 }, (res) => {
-				resolve(res.statusCode === 200);
-			});
-			req.on('error', () => resolve(false));
-			req.on('timeout', () => {
-				req.destroy();
-				resolve(false);
-			});
-		});
-	}
-
-	/**
-	 * Attempt to restart the dashboard server
-	 */
-	private async _attemptRestart(): Promise<void> {
-		const now = Date.now();
-
-		// Check cooldown and max attempts
-		if (this._state.restartAttempts >= MAX_RESTART_ATTEMPTS) {
-			if (now - this._state.lastRestart < RESTART_COOLDOWN * 5) {
-				this._log('Max restart attempts reached, waiting for cooldown...');
-				return;
-			}
-			// Reset after extended cooldown
-			this._state.restartAttempts = 0;
-		}
-
-		// Exponential backoff
-		const backoff = Math.pow(2, this._state.restartAttempts) * 5000;
-		if (now - this._state.lastRestart < backoff) {
-			return;
-		}
-
-		this._state.restartAttempts++;
-		this._state.lastRestart = now;
-
-		this._log(`Attempting restart (${this._state.restartAttempts}/${MAX_RESTART_ATTEMPTS})...`);
-		this._updateStatusBar('restarting');
-
-		try {
-			await this._startDashboard();
-
-			// Wait and verify
-			await new Promise(resolve => setTimeout(resolve, 3000));
-			const running = await this._pingDashboard();
-
-			if (running) {
-				this._log('Dashboard restarted successfully');
-				this._state.running = true;
-				this._updateStatusBar('running');
-				void vscode.window.showInformationMessage('SLATE Dashboard auto-restarted');
-			} else {
-				this._log('Dashboard restart failed - not responding');
-				this._updateStatusBar('error');
-			}
-		} catch (err) {
-			this._log(`Restart error: ${err}`);
-			this._updateStatusBar('error');
-		}
-	}
-
-	/**
-	 * Start the dashboard server process
-	 */
-	private _startDashboard(): Promise<void> {
-		return new Promise((resolve, reject) => {
-			const config = getSlateConfig();
-			const dashboardScript = `${config.workspacePath}\\agents\\slate_dashboard_server.py`;
-
-			// Kill existing process if any
-			if (this._dashboardProcess && !this._dashboardProcess.killed) {
-				this._dashboardProcess.kill();
-			}
-
-			try {
-				this._dashboardProcess = cp.spawn(
-					config.pythonPath,
-					[dashboardScript],
-					{
-						cwd: config.workspacePath,
-						env: {
-							...process.env,
-							PYTHONPATH: config.workspacePath,
-							SLATE_WORKSPACE: config.workspacePath,
-						},
-						detached: true,
-						stdio: 'ignore',
-						windowsHide: true,
-					}
-				);
-
-				this._dashboardProcess.unref();
-				this._log(`Dashboard process started (PID: ${this._dashboardProcess.pid})`);
-				resolve();
-			} catch (err) {
-				reject(err);
-			}
-		});
-	}
-
-	/**
-	 * Toggle service (start if stopped, show status if running)
+	 * Toggle service — show runtime info
 	 */
 	public async toggleService(): Promise<void> {
-		if (this._state.running) {
+		const state = this._runtimeAdapter.state;
+		const summary = this._runtimeAdapter.getSummary();
+
+		if (state.healthy) {
 			const action = await vscode.window.showInformationMessage(
-				'SLATE Dashboard is running on http://127.0.0.1:8080',
+				`SLATE Runtime: ${summary}`,
 				'Open Dashboard',
-				'Restart',
-				'Stop'
+				'Re-detect Runtime',
+				'Runtime Details'
 			);
 
 			if (action === 'Open Dashboard') {
-				void vscode.env.openExternal(vscode.Uri.parse('http://127.0.0.1:8080'));
-			} else if (action === 'Restart') {
-				this._state.restartAttempts = 0;
-				await this._startDashboard();
-				void vscode.window.showInformationMessage('SLATE Dashboard restarting...');
-			} else if (action === 'Stop') {
-				if (this._dashboardProcess) {
-					this._dashboardProcess.kill();
-				}
-				this._state.running = false;
-				this._updateStatusBar('stopped');
+				void vscode.env.openExternal(vscode.Uri.parse(state.dashboardUrl));
+			} else if (action === 'Re-detect Runtime') {
+				await this._runtimeAdapter.redetect();
+				void vscode.window.showInformationMessage(`SLATE Runtime: ${this._runtimeAdapter.getSummary()}`);
+			} else if (action === 'Runtime Details') {
+				const detail = [
+					`Backend: ${state.backend}`,
+					`Dashboard: ${state.dashboardUrl}`,
+					`Ollama: ${state.ollamaUrl}`,
+					`ChromaDB: ${state.chromaDbUrl}`,
+					`Pods: ${state.podCount}`,
+					`Healthy: ${state.healthy}`,
+					`Port Forward PID: ${state.portForwardPid ?? 'N/A'}`,
+					'',
+					'Services:',
+					...state.services.map(s => `  ${s.healthy ? '●' : '○'} ${s.name} — ${s.url}`),
+				].join('\n');
+				void vscode.window.showInformationMessage(detail, { modal: true });
 			}
 		} else {
 			const action = await vscode.window.showWarningMessage(
-				'SLATE Dashboard is not running',
-				'Start Dashboard',
-				'Start with Watchdog'
+				`SLATE Runtime offline: ${summary}`,
+				'Re-detect Runtime',
+				'K8s Deploy',
+				'Docker Up'
 			);
 
-			if (action === 'Start Dashboard') {
-				await this._startDashboard();
-			} else if (action === 'Start with Watchdog') {
-				await this._startWatchdog();
+			if (action === 'Re-detect Runtime') {
+				await this._runtimeAdapter.redetect();
+			} else if (action === 'K8s Deploy') {
+				void vscode.commands.executeCommand('workbench.action.tasks.runTask', 'SLATE: K8s Deploy');
+			} else if (action === 'Docker Up') {
+				void vscode.commands.executeCommand('workbench.action.tasks.runTask', 'SLATE: Docker Up (Dev)');
 			}
 		}
 	}
 
 	/**
-	 * Start the watchdog service
-	 */
-	private async _startWatchdog(): Promise<void> {
-		const config = getSlateConfig();
-		const watchdogScript = `${config.workspacePath}\\slate\\slate_service_watchdog.py`;
-
-		const terminal = vscode.window.createTerminal('SLATE Watchdog');
-		terminal.show();
-		terminal.sendText(`"${config.pythonPath}" "${watchdogScript}" start`);
-	}
-
-	/**
-	 * Force restart the dashboard
+	 * Force re-detect runtime
 	 */
 	public async forceRestart(): Promise<void> {
-		this._log('Force restart requested');
-		this._state.restartAttempts = 0;
-		await this._startDashboard();
-
-		// Wait and check
-		await new Promise(resolve => setTimeout(resolve, 3000));
-		await this._checkHealth();
-	}
-
-	/**
-	 * Update status bar item
-	 */
-	private _updateStatusBar(status: 'running' | 'stopped' | 'checking' | 'restarting' | 'error'): void {
-		switch (status) {
-			case 'running':
-				this._statusBarItem.text = '$(check) SLATE';
-				this._statusBarItem.tooltip = 'SLATE Dashboard running - Click for options';
-				this._statusBarItem.backgroundColor = undefined;
-				break;
-			case 'stopped':
-				this._statusBarItem.text = '$(circle-slash) SLATE';
-				this._statusBarItem.tooltip = 'SLATE Dashboard stopped - Click to start';
-				this._statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
-				break;
-			case 'checking':
-				this._statusBarItem.text = '$(sync~spin) SLATE';
-				this._statusBarItem.tooltip = 'Checking SLATE Dashboard...';
-				this._statusBarItem.backgroundColor = undefined;
-				break;
-			case 'restarting':
-				this._statusBarItem.text = '$(sync~spin) SLATE';
-				this._statusBarItem.tooltip = 'Restarting SLATE Dashboard...';
-				this._statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
-				break;
-			case 'error':
-				this._statusBarItem.text = '$(error) SLATE';
-				this._statusBarItem.tooltip = 'SLATE Dashboard error - Click to restart';
-				this._statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
-				break;
-		}
-	}
-
-	private _log(message: string): void {
-		const timestamp = new Date().toISOString();
-		this._outputChannel.appendLine(`[${timestamp}] ${message}`);
+		await this._runtimeAdapter.redetect();
 	}
 
 	public dispose(): void {
-		this.stop();
-		this._statusBarItem.dispose();
-		this._outputChannel.dispose();
-		if (this._dashboardProcess && !this._dashboardProcess.killed) {
-			this._dashboardProcess.kill();
-		}
+		this._disposables.forEach(d => d.dispose());
+		this._onStateChange.dispose();
+		this._runtimeAdapter.dispose();
 	}
 }
 
 /**
- * Create and register the service monitor
+ * Create and register the service monitor (with runtime adapter)
  */
 export function registerServiceMonitor(context: vscode.ExtensionContext): SlateServiceMonitor {
 	const monitor = new SlateServiceMonitor();
@@ -338,8 +165,14 @@ export function registerServiceMonitor(context: vscode.ExtensionContext): SlateS
 		})
 	);
 
-	// Auto-start the monitor
-	monitor.start();
+	context.subscriptions.push(
+		vscode.commands.registerCommand('slate.runtimeInfo', () => {
+			void monitor.toggleService();
+		})
+	);
+
+	// Auto-start the monitor (async — detects runtime and sets up port-forwarding)
+	void monitor.start();
 
 	return monitor;
 }

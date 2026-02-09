@@ -27,6 +27,8 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:8080:8080"  # Dashboard (local only)
+      # Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Expose copilot bridge port for extension v5.0.0
+      - "127.0.0.1:8083:8083"  # Copilot Bridge API (extension runtime backend)
     volumes:
       # Bind-mount source for hot-reload — changes on host reflect instantly
       - ./slate:/slate/slate:rw
@@ -87,8 +89,9 @@ services:
               capabilities: [gpu]
     networks:
       - slate_network
+    # Modified: 2026-02-08T23:00:00Z | Author: COPILOT | Change: Use wget for Ollama healthcheck (python3 not in ollama image), fail properly
     healthcheck:
-      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:11434/api/tags', timeout=5)\" 2>/dev/null || exit 0"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:11434/api/tags || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -106,3 +109,8 @@ networks:
   slate_network:
     name: slate_dev_network
     driver: bridge
+    # Modified: 2026-02-08T23:00:00Z | Author: COPILOT | Change: Add IPAM config for network isolation
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16
+          gateway: 172.29.0.1

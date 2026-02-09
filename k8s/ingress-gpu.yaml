@@ -19,11 +19,21 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # WebSocket support for real-time dashboard updates
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$request_uri"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
     # Rate limiting for security
-    nginx.ingress.kubernetes.io/limit-connections: "10"
-    nginx.ingress.kubernetes.io/limit-rps: "20"
+    nginx.ingress.kubernetes.io/limit-connections: "20"
+    nginx.ingress.kubernetes.io/limit-rps: "50"
 spec:
   ingressClassName: nginx
   rules:
@@ -32,6 +42,22 @@ spec:
         paths:
           # Dashboard UI
           - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: slate-dashboard-svc
+                port:
+                  number: 8080
+          # WebSocket endpoint (real-time updates)
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: slate-dashboard-svc
+                port:
+                  number: 8080
+          # K8s integration API
+          - path: /api/k8s
             pathType: Prefix
             backend:
               service:

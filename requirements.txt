@@ -37,6 +37,9 @@ sentence-transformers>=5.0.0,<6
 msticpy>=2.18.0,<3
 azure-mgmt-security>=7.0.0,<8
 
+# ─── Copilot SDK (GitHub Copilot CLI Integration) ───────────────────────────
+github-copilot-sdk>=0.1.0
+
 # ─── Tracing/Observability ───────────────────────────────────────────────────
 opentelemetry-api>=1.20.0,<2
 opentelemetry-sdk>=1.20.0,<2

@@ -1,5 +1,96 @@
 # S.L.A.T.E. Copilot Instructions
-# Modified: 2026-02-07T22:00:00Z | Author: COPILOT | Change: Add document evolution rules, chat participant enforcement, aggressive execution patterns
+# Modified: 2026-02-10T04:30:00Z | Author: Claude Opus 4.5 | Change: Add SLATE Operator Behavior with permission bypass and ActionGuard security
+
+## SLATE Operator Behavior — LOCKED PROFILE
+
+**This workspace runs with SLATE Operator Behavior enabled.**
+
+Claude Code operates in **permission bypass mode** with security enforced by ActionGuard (Python-side).
+This is NOT a reduction in security — it's a shift from Claude-side confirmation to Python-side validation.
+
+### Behavior Configuration
+
+```yaml
+Profile: slate-operator
+Version: 1.0.0
+Security: ActionGuard (slate/action_guard.py)
+Permissions: Bypass with ActionGuard protection
+Runtime: K8s > Docker (container-first)
+```
+
+### Configuration Files
+
+| File | Purpose |
+|------|---------|
+| `.claude/settings.json` | Main config with behavior profile and MCP servers |
+| `.claude/settings.local.json` | Permission bypass rules (`Bash(*)`, `Read(*)`, etc.) |
+| `.claude/behaviors/slate-operator.md` | Behavior profile definition |
+| `.claude/behaviors/slate-protocols.md` | 10 operational protocols (P001-P010) |
+| `.claude/hooks.json` | ActionGuard hook integration |
+
+### Permission Bypass (Enabled)
+
+All tool calls are pre-approved:
+- `Bash(*)` — Validated by ActionGuard before execution
+- `Read(*)`, `Write(*)`, `Edit(*)` — File operations within workspace
+- `Glob(*)`, `Grep(*)` — Search operations
+- `mcp__slate__*(*)` — All SLATE MCP tools
+
+### Security Model
+
+Despite bypass mode, security is maintained through:
+1. **ActionGuard** — Python-side command validation (blocks `rm -rf`, `0.0.0.0`, `eval()`)
+2. **PreToolUse Hooks** — Validate Bash/Write before execution
+3. **SDK Source Guard** — Only trusted package publishers
+4. **Container Isolation** — Commands run in K8s/Docker, not host
+5. **K8s RBAC** — Minimal service account permissions
+
+### Operational Protocols (P001-P010)
+
+| Protocol | Trigger | Description |
+|----------|---------|-------------|
+| **P001-INIT** | Session start | System health check, load instructions |
+| **P002-EXECUTE** | Task request | DIAGNOSE → ACT → VERIFY pattern |
+| **P003-WORKFLOW** | Queue ops | Task management, stale cleanup |
+| **P004-GPU** | GPU ops | Dual-GPU load balancing |
+| **P005-SECURITY** | Bash commands | ActionGuard validation |
+| **P006-RECOVERY** | Failures | Error recovery and fallback |
+| **P007-CODE** | File ops | Read/write/edit operations |
+| **P008-GIT** | Git ops | Git operations with safety rules |
+| **P009-K8S** | K8s ops | Kubernetes deployment |
+| **P010-AUTONOMOUS** | Background | Autonomous task processing |
+
+### MCP Tools (Bypass Enabled)
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "mcp__slate__slate_status(*)",
+      "mcp__slate__slate_workflow(*)",
+      "mcp__slate__slate_orchestrator(*)",
+      "mcp__slate__slate_runner(*)",
+      "mcp__slate__slate_ai(*)",
+      "mcp__slate__slate_runtime(*)",
+      "mcp__slate__slate_hardware(*)",
+      "mcp__slate__slate_benchmark(*)",
+      "mcp__slate__slate_gpu(*)",
+      "mcp__slate__slate_claude_code(*)",
+      "mcp__slate__slate_spec_kit(*)",
+      "mcp__slate__slate_schematic(*)"
+    ]
+  }
+}
+```
+
+### Activation
+
+The behavior activates automatically when:
+- Working in SLATE workspace (`e:\11132025`)
+- `SLATE_BEHAVIOR=operator` environment variable is set
+- `.claude/settings.json` has `"behavior": { "profile": "slate-operator" }`
+
+---
 
 ## Workspace
 
@@ -239,7 +330,7 @@ skills/             # Copilot Chat skill definitions
 
 ## Workflow Conventions
 - All jobs use `runs-on: [self-hosted, slate]`
-- Default shell: `powershell`
+- Default shell: `powershell` (CI) / `pwsh` 7.5+ (local dev — installed via `dotnet tool install --global PowerShell`)
 - Python path step: `"$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH`
 - YAML paths use single quotes to avoid backslash escape issues
 
@@ -425,6 +516,111 @@ When using `runSubagent`, always specify the appropriate agent:
 | Multi-step complex operations | `slate` | `@slate` (full orchestration) |
 | Code research, file analysis | Default | `@vscode` |
 | Planning, architecture | `Plan` | N/A |
+
+## Background Agent Delegation (ENFORCED)
+# Modified: 2026-02-08T12:00:00Z | Author: COPILOT | Change: Add background agent delegation as standard pattern for subagents
+
+SLATE agents and subagents can delegate long-running, multi-step, or autonomous tasks to
+**background agents**. Background agents run asynchronously in a separate session, freeing
+the interactive chat for other work. This is the STANDARD pattern for complex operations.
+
+### When to Use Background Agents
+
+| Scenario | Use Background Agent? | Reason |
+|----------|-----------------------|--------|
+| Multi-step code changes across many files | Yes | Long-running, non-interactive |
+| Full CI/CD pipeline dispatch + monitoring | Yes | Async wait for results |
+| Autonomous task loop execution | Yes | Runs independently |
+| Docker build + K8s deploy + verify | Yes | Multi-stage pipeline |
+| Codebase indexing (ChromaDB) | Yes | Long-running GPU work |
+| Quick status check | No | Fast, interactive |
+| Single file edit | No | Immediate feedback needed |
+| Interactive troubleshooting | No | Requires user dialogue |
+
+### Delegation Pattern
+
+```
+User Request → Classify Complexity → Route Decision
+                                          │
+                    ┌─────────────────────┤
+                    ▼                     ▼
+              Interactive              Background
+              (immediate)             (async session)
+                    │                     │
+              @slate / terminal      "Delegate to Background Agent"
+                    │                     │
+              Direct response        Session continues independently
+                                          │
+                                     Reports back via:
+                                     - Session completion notification
+                                     - Bridge results file
+                                     - Workflow status update
+```
+
+### Subagent → Background Agent Escalation
+
+Subagents (via `runSubagent`) can escalate to background agents when:
+
+1. **Task exceeds interactive timeout** — Work that takes >2 minutes
+2. **Multi-branch operations** — Push to main, build Docker, deploy K8s, verify
+3. **Autonomous loops** — Task discovery + execution cycles
+4. **Full pipeline runs** — Lint → test → build → deploy → health check
+5. **Batch operations** — Processing multiple specs, files, or workflows
+
+### Background Agent Capabilities
+
+Background agents have FULL access to:
+- All SLATE protocol commands (`slate_status`, `slate_runtime`, etc.)
+- Terminal execution (`run_in_terminal` with `isBackground=true`)
+- File operations (read, write, edit, create)
+- Git operations (commit, push, branch management)
+- Docker/K8s operations (build, deploy, teardown)
+- GitHub API (workflow dispatch, PR creation, issue management)
+- All `@slate` participant tools (via subagent delegation)
+
+### Enforcement Rules
+
+1. **Complex multi-step tasks SHOULD use background agents** — When a task involves 3+
+   sequential stages (e.g., edit → commit → push → build → deploy → verify), delegate
+   to a background agent.
+2. **Subagents CAN delegate to background agents** — A subagent running via `runSubagent`
+   can itself request background delegation for long-running sub-tasks.
+3. **Background agents MUST follow SLATE protocols** — Session start protocol, pre-commit
+   protocol, code edit rules, and security safeguards all apply.
+4. **Background agents MUST update workflow status** — Use `slate_workflow_manager.py` to
+   track task progress and completion.
+5. **Results reporting** — Background agents report results via:
+   - Session completion summary
+   - `.slate_copilot_bridge_results.json` for autonomous loop integration
+   - `current_tasks.json` status updates
+6. **Never fire-and-forget** — Always ensure the background agent has clear success/failure
+   criteria and reporting mechanisms.
+
+### Integration with Existing Patterns
+
+Background agent delegation augments (does NOT replace) the existing escalation order:
+
+```
+1. Participant tool (e.g., slate_workflow, slate_specKit)
+2. Participant command (e.g., @slate /status)
+3. Subagent delegation (runSubagent with 'slate')
+4. Background agent delegation (for long-running/async work)
+5. Terminal (ONLY as last resort fallback)
+```
+
+### Subagent Delegation Table (AUGMENTED)
+
+| Task Type | Subagent | Execution Mode | When Background |
+|-----------|----------|----------------|-----------------|
+| System health, runner, CI | `slate` | Interactive | CI dispatch + wait |
+| Spec processing, roadmap | `slate` | Interactive | Batch spec processing |
+| Agent management, autonomous loops | `slate` | **Background** | Always (long-running) |
+| Multi-step complex operations | `slate` | **Background** | Always (multi-stage) |
+| Code research, file analysis | Default | Interactive | Large codebase scan |
+| Planning, architecture | `Plan` | Interactive | Multi-repo analysis |
+| Docker build + deploy | `slate` | **Background** | Always (pipeline) |
+| Full test suite | `slate` | **Background** | Coverage + reporting |
+| Git operations (push + PR) | `slate` | **Background** | Push + CI wait |
 
 ## Container & Kubernetes Management (STANDARD PRACTICE)
 # Modified: 2026-02-08T19:00:00Z | Author: COPILOT | Change: Add container/K8s extension enforcement as standard practice
@@ -645,3 +841,76 @@ it falls back to the local state file.
    - Copilot sessions (via get-context at session start)
    - GitHub workflows (via slate_workflow triggers)
 ```
+
+## @slate Extension v5.1.0 — Container-First Architecture (ENFORCED)
+# Modified: 2026-02-08T12:00:00Z | Author: COPILOT | Change: Add v5.1.0 container-first extension architecture, Copilot SDK integration
+
+The `@slate` VS Code chat participant extension (v5.1.0) runs **exclusively** on K8s or Docker
+backends. All local Python execution fallback has been removed. This is the STANDARD architecture.
+
+### Execution Backends
+
+| Backend | Priority | Method | Endpoint |
+|---------|----------|--------|----------|
+| **Kubernetes** | Primary | HTTP POST to copilot-bridge-svc | `http://127.0.0.1:8083/api/exec` |
+| **Docker** | Secondary | `docker exec slate python ...` | Container: `slate` |
+| **None** | Offline | Shows deploy prompt | N/A |
+
+There is NO local fallback. If neither K8s nor Docker is available, the extension prompts
+the user to deploy with "K8s Deploy" or "Docker Up" task buttons.
+
+### Extension Source Layout (15 files)
+
+```
+plugins/slate-copilot/src/
+  extension.ts              # Entry point — activates runtime backend + adapter
+  slateRuntimeBackend.ts    # K8s/Docker command execution engine (no local)
+  slateRuntimeAdapter.ts    # Service URLs, K8s port-forwarding, health monitoring
+  slateRunner.ts            # Thin wrapper — routes to runtime backend (33 lines)
+  slateParticipant.ts       # @slate chat participant (SYSTEM_PROMPT, commands)
+  tools.ts                  # 30+ LanguageModelTool implementations
+  slateAgentSdkHooks.ts     # GitHub Copilot SDK Agent hooks (ActionGuard)
+  slateServiceMonitor.ts    # Service monitor — delegates to adapter
+  slateDiagnostics.ts       # Security scan → Problems panel
+  slateTestController.ts    # SLATE tests → Test Explorer
+  slateTaskProvider.ts      # Dynamic SLATE tasks → Run Task
+  slateCodeLens.ts          # Inline actions on Python/YAML files
+  slateGitHubIntegration.ts # CI monitor, PR manager, issue tracker
+  slateSchematicBackground.ts # Evolving SLATE background
+  slateUnifiedDashboardView.ts # Guided setup + dashboard webview
+```
+
+### K8s Service Ports
+
+| Service | Port | Purpose |
+|---------|------|---------|
+| Dashboard | 8080 | FastAPI dashboard |
+| Agent Router | 8081 | Task classification & dispatch |
+| Autonomous Loop | 8082 | Autonomous task execution |
+| **Copilot Bridge** | **8083** | **Extension ↔ K8s command execution** |
+| Workflow Manager | 8084 | Task lifecycle |
+| Metrics | 9090 | Prometheus metrics |
+| Ollama | 11434 | LLM inference |
+| ChromaDB | 8000 | Vector store |
+
+### GitHub Copilot SDK Integration
+
+The Copilot SDK (`@github/copilot-sdk`) is vendored at `vendor/copilot-sdk` and provides:
+- **CopilotClient** — JSON-RPC connection to Copilot CLI
+- **CopilotSession** — Managed conversation sessions
+- **Tool definitions** — Function calling with Zod schemas
+
+SLATE integrates via `slateAgentSdkHooks.ts`:
+- **PreToolUse** — Validates tool calls through ActionGuard before execution
+- **PostToolUse** — Logs and audits tool execution results
+- **UserPromptSubmit** — Scans prompts for security issues (PII, blocked patterns)
+- **validateBashCommand** — Quick ActionGuard check for shell commands
+- **validateFilePath** — File access validation (read/write/edit)
+
+### Runtime Backend Settings (package.json)
+
+| Setting | Default | Options |
+|---------|---------|---------|
+| `slate.runtime.backend` | `auto` | `auto`, `kubernetes`, `docker` |
+| `slate.runtime.k8sEndpoint` | `http://127.0.0.1:8083` | Custom K8s bridge URL |
+| `slate.runtime.dockerContainer` | `slate` | Docker container name |

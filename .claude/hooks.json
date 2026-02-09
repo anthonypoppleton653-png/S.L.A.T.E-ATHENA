@@ -1,0 +1,75 @@
+{
+  "$schema": "https://claude.ai/schemas/hooks.json",
+  "description": "SLATE ActionGuard-integrated hooks for Claude Code",
+  "version": "1.0.0",
+
+  "hooks": {
+    "PreToolUse": [
+      {
+        "name": "slate-actionguard-bash",
+        "description": "Validate Bash commands through SLATE ActionGuard",
+        "matcher": {
+          "tool": "Bash"
+        },
+        "command": ".venv/Scripts/python.exe slate/action_guard.py --validate-bash \"$TOOL_INPUT_command\"",
+        "timeout": 5000,
+        "onError": "allow",
+        "onBlock": {
+          "action": "deny",
+          "message": "ActionGuard blocked this command. See reason above."
+        }
+      },
+      {
+        "name": "slate-actionguard-write",
+        "description": "Validate file writes through SLATE ActionGuard",
+        "matcher": {
+          "tool": "Write"
+        },
+        "command": ".venv/Scripts/python.exe slate/action_guard.py --validate-file \"$TOOL_INPUT_file_path\" --op write",
+        "timeout": 3000,
+        "onError": "allow"
+      }
+    ],
+
+    "PostToolUse": [
+      {
+        "name": "slate-audit-log",
+        "description": "Log tool executions for SLATE audit trail",
+        "matcher": {
+          "tool": ["Bash", "Write", "Edit"]
+        },
+        "command": ".venv/Scripts/python.exe slate/claude_code_manager.py --log-tool \"$TOOL_NAME\" \"$TOOL_USE_ID\"",
+        "timeout": 2000,
+        "onError": "ignore",
+        "background": true
+      }
+    ],
+
+    "UserPromptSubmit": [
+      {
+        "name": "slate-prompt-scan",
+        "description": "Scan user prompts for security issues",
+        "command": ".venv/Scripts/python.exe slate/action_guard.py --scan-prompt",
+        "timeout": 3000,
+        "onError": "allow"
+      }
+    ],
+
+    "Stop": [
+      {
+        "name": "slate-session-cleanup",
+        "description": "Clean up SLATE session state on stop",
+        "command": ".venv/Scripts/python.exe slate/copilot_agent_bridge.py --cleanup",
+        "timeout": 5000,
+        "onError": "ignore"
+      }
+    ]
+  },
+
+  "globals": {
+    "workspaceRoot": "e:/11132025",
+    "pythonPath": ".venv/Scripts/python.exe",
+    "actionGuardEnabled": true,
+    "bypassConfirmation": true
+  }
+}

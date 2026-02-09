@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <defs>
+    <radialGradient id="jewelGrad_error">
+      <stop offset="30%" stop-color="#EF4444" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#EF4444" stop-opacity="0.6"/>
+    </radialGradient>
+    <filter id="jewelGlow_error">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <circle cx="8.0" cy="8.0" r="6.4" fill="url(#jewelGrad_error)" filter="url(#jewelGlow_error)"/>
+  <circle cx="5.6" cy="5.6" r="1.6" fill="rgba(255,255,255,0.4)"/>
+</svg>

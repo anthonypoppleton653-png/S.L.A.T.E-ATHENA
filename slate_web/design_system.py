@@ -89,24 +89,48 @@ class SlateDesignTokens:
     - Semantic: Muted professional traffic-light system
     """
 
-    # Modified: 2026-02-07T12:00:00Z | Author: COPILOT | Change: ASUS ProArt black/white/copper palette
-    # SLATE Brand Colors — ASUS ProArt inspired (black + white + copper)
+    # Modified: 2026-02-08T08:30:00Z | Author: Claude Opus 4.5 | Change: QT Capital fintech + 2026 glassmorphism
+    # SLATE Brand Colors — Premium Fintech (QT Capital + Dark Glassmorphism 2026)
     BRAND = {
-        "primary": "#0a0a0a",       # True black — professional substrate
-        "accent": "#B87333",        # Copper — ProArt precision engineering
-        "accent_light": "#C9956B", # Light copper — hover/highlight states
-        "surface": "#111111",       # Near-black — card/container surfaces
-        "neutral": "#1a1a1a",       # Charcoal — subtle elevation
-        "white": "#F5F0EB",         # Warm white — primary text
-        "white_dim": "#A8A29E",    # Muted warm gray — secondary text
+        "primary": "#000000",       # Pure black — premium fintech substrate
+        "accent": "#B87333",        # Copper — Watchmaker signature
+        "accent_light": "#D4956B",  # Light copper — hover states
+        "accent_dark": "#8B5E2B",   # Dark copper — pressed states
+        "secondary": "#3B82F6",     # Electric blue — tech/data
+        "tertiary": "#8B5CF6",      # Neon violet — premium highlights
+        "surface": "#0A0A0A",       # Near-black — card surfaces
+        "surface_elevated": "#111111",
+        "surface_highest": "#1A1A1A",
+        "neutral": "#222222",       # Charcoal — subtle elevation
+        "white": "#FAFAFA",         # Pure white — primary text
+        "white_dim": "#A1A1AA",     # Cool gray — secondary text
+        "white_muted": "#52525B",   # Dark gray — tertiary text
     }
 
-    # Semantic Colors (muted, professional)
+    # Semantic Colors — Vibrant fintech status (high contrast on black)
     SEMANTIC = {
-        "success": "#78B89A",       # Muted sage green
-        "warning": "#D4A054",       # Warm amber
-        "error": "#C47070",         # Muted rose
-        "info": "#7EA8BE",          # Steel blue
+        "success": "#22C55E",       # Vibrant green — active/success
+        "warning": "#F59E0B",       # Amber — pending/caution
+        "error": "#EF4444",         # Red — error/critical
+        "info": "#06B6D4",          # Cyan — informational
+    }
+
+    # Glassmorphism tokens (2026 dark glass aesthetic)
+    GLASS = {
+        "bg": "rgba(0,0,0,0.6)",
+        "bg_elevated": "rgba(10,10,10,0.8)",
+        "border": "rgba(255,255,255,0.06)",
+        "border_hover": "rgba(255,255,255,0.12)",
+        "blur": "24px",
+        "saturate": "1.2",
+        "shine": "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%)",
+    }
+
+    # Ambient gradients (floating light orbs)
+    AMBIENT = {
+        "copper": "radial-gradient(ellipse 50% 50% at 50% 0%, rgba(184,115,51,0.15), transparent 70%)",
+        "blue": "radial-gradient(ellipse 40% 40% at 80% 80%, rgba(59,130,246,0.1), transparent 60%)",
+        "violet": "radial-gradient(ellipse 30% 30% at 20% 70%, rgba(139,92,246,0.08), transparent 50%)",
     }
 
     @classmethod
@@ -118,94 +142,154 @@ class SlateDesignTokens:
 
         if theme == "dark":
             return {
-                # Surfaces — true black foundation (ProArt inspired)
-                "--sl-bg-root": "#050505",
-                "--sl-bg-surface": "#0a0a0a",
+                # ═══════════════════════════════════════════════════════════════
+                # SURFACES — Pure Black Foundation (QT Capital Fintech)
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-bg-root": "#000000",
+                "--sl-bg-surface": "#0A0A0A",
                 "--sl-bg-surface-dim": "#030303",
-                "--sl-bg-surface-bright": "#161616",
-                "--sl-bg-container": "#111111",
-                "--sl-bg-container-high": "#1a1a1a",
-                "--sl-bg-container-highest": "#222222",
-                "--sl-bg-inverse": "#F5F0EB",
+                "--sl-bg-surface-bright": "#111111",
+                "--sl-bg-container": "#0A0A0A",
+                "--sl-bg-container-high": "#111111",
+                "--sl-bg-container-highest": "#1A1A1A",
+                "--sl-bg-inverse": "#FAFAFA",
 
-                # Elevation overlays — subtle copper-tinted shadows
-                "--sl-elevation-1": "0 1px 3px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(184,115,51,0.04)",
-                "--sl-elevation-2": "0 2px 6px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(184,115,51,0.06)",
-                "--sl-elevation-3": "0 4px 12px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.4)",
-                "--sl-elevation-4": "0 8px 24px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.4)",
-                "--sl-elevation-5": "0 12px 32px rgba(0,0,0,0.7), 0 4px 12px rgba(0,0,0,0.5)",
+                # ═══════════════════════════════════════════════════════════════
+                # ELEVATION — Dark Glass Shadows with Ambient Glow
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-elevation-1": "0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3)",
+                "--sl-elevation-2": "0 3px 6px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3)",
+                "--sl-elevation-3": "0 6px 12px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.3)",
+                "--sl-elevation-4": "0 12px 24px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.3)",
+                "--sl-elevation-5": "0 24px 48px rgba(0,0,0,0.6), 0 12px 24px rgba(0,0,0,0.4)",
+                "--sl-glass-elevation": "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
 
-                # Text — warm white hierarchy
-                "--sl-text-primary": "#F5F0EB",
-                "--sl-text-secondary": "#A8A29E",
-                "--sl-text-tertiary": "#78716C",
-                "--sl-text-disabled": "#44403C",
-                "--sl-text-on-primary": "#0a0a0a",
-                "--sl-text-on-accent": "#0a0a0a",
+                # ═══════════════════════════════════════════════════════════════
+                # TEXT — High Contrast White Hierarchy
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-text-primary": "#FAFAFA",
+                "--sl-text-secondary": "#A1A1AA",
+                "--sl-text-tertiary": "#71717A",
+                "--sl-text-disabled": "#3F3F46",
+                "--sl-text-on-primary": "#000000",
+                "--sl-text-on-accent": "#000000",
 
-                # Accent — copper/bronze (ProArt)
+                # ═══════════════════════════════════════════════════════════════
+                # PRIMARY ACCENT — Copper (Watchmaker Heritage)
+                # ═══════════════════════════════════════════════════════════════
                 "--sl-accent": "#B87333",
-                "--sl-accent-dim": "#8B5E2B",
-                "--sl-accent-light": "#C9956B",
+                "--sl-accent-light": "#D4956B",
+                "--sl-accent-dark": "#8B5E2B",
                 "--sl-accent-container": "rgba(184,115,51,0.12)",
-                "--sl-accent-on-container": "#D4A97A",
-                "--sl-accent-glow": "rgba(184,115,51,0.15)",
+                "--sl-accent-on-container": "#F5DCC8",
+                "--sl-accent-glow": "0 0 40px rgba(184,115,51,0.2)",
 
-                # Borders — subtle, monochrome
-                "--sl-border": "rgba(255,255,255,0.08)",
+                # ═══════════════════════════════════════════════════════════════
+                # SECONDARY — Electric Blue (Tech/Data)
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-secondary": "#3B82F6",
+                "--sl-secondary-light": "#60A5FA",
+                "--sl-secondary-dark": "#2563EB",
+                "--sl-secondary-container": "rgba(59,130,246,0.12)",
+                "--sl-secondary-glow": "0 0 30px rgba(59,130,246,0.25)",
+
+                # ═══════════════════════════════════════════════════════════════
+                # TERTIARY — Neon Violet (Premium)
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-tertiary": "#8B5CF6",
+                "--sl-tertiary-light": "#A78BFA",
+                "--sl-tertiary-dark": "#7C3AED",
+                "--sl-tertiary-container": "rgba(139,92,246,0.12)",
+
+                # ═══════════════════════════════════════════════════════════════
+                # BORDERS — Subtle Glass Edges
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-border": "rgba(255,255,255,0.06)",
                 "--sl-border-variant": "rgba(255,255,255,0.12)",
                 "--sl-border-focus": "#B87333",
-                "--sl-outline": "rgba(255,255,255,0.06)",
+                "--sl-outline": "rgba(255,255,255,0.04)",
 
-                # Semantic status (muted professional)
+                # ═══════════════════════════════════════════════════════════════
+                # SEMANTIC STATUS — Vibrant Fintech
+                # ═══════════════════════════════════════════════════════════════
                 "--sl-success": cls.SEMANTIC["success"],
                 "--sl-warning": cls.SEMANTIC["warning"],
                 "--sl-error": cls.SEMANTIC["error"],
                 "--sl-info": cls.SEMANTIC["info"],
-                "--sl-success-container": f"{cls.SEMANTIC['success']}15",
-                "--sl-warning-container": f"{cls.SEMANTIC['warning']}15",
-                "--sl-error-container": f"{cls.SEMANTIC['error']}15",
-                "--sl-info-container": f"{cls.SEMANTIC['info']}15",
+                "--sl-success-container": "rgba(34,197,94,0.12)",
+                "--sl-warning-container": "rgba(245,158,11,0.12)",
+                "--sl-error-container": "rgba(239,68,68,0.12)",
+                "--sl-info-container": "rgba(6,182,212,0.12)",
+                "--sl-success-glow": "0 0 30px rgba(34,197,94,0.3)",
+                "--sl-warning-glow": "0 0 30px rgba(245,158,11,0.3)",
+                "--sl-error-glow": "0 0 30px rgba(239,68,68,0.3)",
 
-                # Glass effects — dark, copper-tinged
-                "--sl-glass-bg": "rgba(10, 10, 10, 0.78)",
-                "--sl-glass-border": "rgba(184,115,51,0.08)",
-                "--sl-glass-blur": "20px",
-                "--sl-glass-saturate": "1.1",
+                # ═══════════════════════════════════════════════════════════════
+                # GLASSMORPHISM — 2026 Dark Glass Aesthetic
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-glass-bg": cls.GLASS["bg"],
+                "--sl-glass-bg-elevated": cls.GLASS["bg_elevated"],
+                "--sl-glass-border": cls.GLASS["border"],
+                "--sl-glass-border-hover": cls.GLASS["border_hover"],
+                "--sl-glass-blur": cls.GLASS["blur"],
+                "--sl-glass-saturate": cls.GLASS["saturate"],
+                "--sl-glass-shine": cls.GLASS["shine"],
 
-                # Typography
-                "--sl-font-sans": "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
-                "--sl-font-mono": "'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace",
-                "--sl-font-display": "'Inter', 'Segoe UI', system-ui, sans-serif",
+                # ═══════════════════════════════════════════════════════════════
+                # AMBIENT GRADIENTS — Floating Light Orbs
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-ambient-copper": cls.AMBIENT["copper"],
+                "--sl-ambient-blue": cls.AMBIENT["blue"],
+                "--sl-ambient-violet": cls.AMBIENT["violet"],
 
-                # Spacing (8px grid)
-                "--sl-space-1": "4px",
+                # ═══════════════════════════════════════════════════════════════
+                # HOLOGRAPHIC — Premium Gradient Effects
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-holo-gradient": "linear-gradient(135deg, #B87333, #3B82F6, #8B5CF6)",
+                "--sl-holo-text": "linear-gradient(90deg, #B87333 0%, #D4956B 25%, #3B82F6 50%, #8B5CF6 75%, #B87333 100%)",
+
+                # ═══════════════════════════════════════════════════════════════
+                # TYPOGRAPHY — Premium Fonts
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-font-sans": "'Inter', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif",
+                "--sl-font-mono": "'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace",
+                "--sl-font-display": "'Inter', 'SF Pro Display', system-ui, sans-serif",
+
+                # ═══════════════════════════════════════════════════════════════
+                # SPACING — Golden Ratio (Fibonacci)
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-space-1": "5px",
                 "--sl-space-2": "8px",
-                "--sl-space-3": "12px",
-                "--sl-space-4": "16px",
-                "--sl-space-5": "20px",
-                "--sl-space-6": "24px",
-                "--sl-space-8": "32px",
-                "--sl-space-10": "40px",
-                "--sl-space-12": "48px",
-                "--sl-space-16": "64px",
+                "--sl-space-3": "13px",
+                "--sl-space-4": "21px",
+                "--sl-space-5": "34px",
+                "--sl-space-6": "55px",
+                "--sl-space-8": "89px",
 
-                # Radii (M3 shape)
+                # ═══════════════════════════════════════════════════════════════
+                # RADII — Premium Curves
+                # ═══════════════════════════════════════════════════════════════
                 "--sl-radius-xs": "4px",
                 "--sl-radius-sm": "8px",
                 "--sl-radius-md": "12px",
                 "--sl-radius-lg": "16px",
-                "--sl-radius-xl": "28px",
+                "--sl-radius-xl": "24px",
+                "--sl-radius-2xl": "32px",
                 "--sl-radius-full": "9999px",
 
-                # Motion (M3 easing)
-                "--sl-ease-standard": "cubic-bezier(0.2, 0, 0, 1)",
-                "--sl-ease-decelerate": "cubic-bezier(0, 0, 0, 1)",
-                "--sl-ease-accelerate": "cubic-bezier(0.3, 0, 1, 1)",
+                # ═══════════════════════════════════════════════════════════════
+                # MOTION — Premium 2026 Easing
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-ease-standard": "cubic-bezier(0.4, 0, 0.2, 1)",
+                "--sl-ease-decelerate": "cubic-bezier(0, 0, 0.2, 1)",
+                "--sl-ease-accelerate": "cubic-bezier(0.4, 0, 1, 1)",
                 "--sl-ease-emphasized": "cubic-bezier(0.2, 0, 0, 1)",
-                "--sl-duration-short": "150ms",
-                "--sl-duration-medium": "300ms",
-                "--sl-duration-long": "500ms",
+                "--sl-ease-expo-out": "cubic-bezier(0.16, 1, 0.3, 1)",
+                "--sl-ease-spring": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+                "--sl-duration-fast": "150ms",
+                "--sl-duration-normal": "300ms",
+                "--sl-duration-slow": "500ms",
+                "--sl-duration-ambient": "20s",
             }
         else:
             # Light theme variant (warm white + copper)

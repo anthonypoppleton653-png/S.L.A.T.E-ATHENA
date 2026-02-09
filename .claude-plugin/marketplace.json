@@ -1,34 +1,27 @@
 {
   "$schema": "https://claude.ai/schemas/marketplace.json",
-  "name": "slate",
-  "displayName": "S.L.A.T.E.",
-  "description": "Synchronized Living Architecture for Transformation and Evolution — A unified AI agent orchestration framework with GPU support, Kubernetes deployment, and security-first design",
-  "version": "5.3.0",
+  "name": "slate-marketplace",
   "owner": {
     "name": "SynchronizedLivingArchitecture",
-    "email": "slate@github.com",
     "url": "https://github.com/SynchronizedLivingArchitecture"
   },
-  "repository": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E",
-  "homepage": "https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/",
-  "llmsTxt": "llms.txt",
-
+  "metadata": {
+    "description": "Official SLATE plugins for Claude Code — AI agent orchestration, K8s deployment, GPU management",
+    "version": "1.0.0",
+    "pluginRoot": "."
+  },
   "plugins": [
     {
       "name": "slate",
       "version": "5.3.0",
-      "source": "./.claude-plugin",
-      "description": "S.L.A.T.E. — Unified AI agent orchestration with GPU support, K8s deployment, ActionGuard security, and 12 MCP tools"
+      "source": ".",
+      "description": "S.L.A.T.E. — Unified AI agent orchestration with GPU support, K8s deployment, ActionGuard security, and 12 MCP tools",
+      "author": {
+        "name": "SynchronizedLivingArchitecture"
+      },
+      "category": "development",
+      "tags": ["ai", "agents", "kubernetes", "gpu", "llm", "mcp", "orchestrator"],
+      "strict": false
     }
-  ],
-
-  "installation": {
-    "method": "git-clone",
-    "command": "git clone https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git && cd S.L.A.T.E && python install_slate.py",
-    "dashboardUrl": "http://127.0.0.1:8080",
-    "requirements": {
-      "python": ">=3.11",
-      "optional": ["nvidia-gpu", "docker", "kubectl", "helm"]
-    }
-  }
+  ]
 }

@@ -134,10 +134,55 @@ copilot_sdk:
     nodejs:
       path: vendor/copilot-sdk/nodejs
       package: "@github/copilot-sdk"
+      version: 0.1.8
   sync:
     schedule: "0 6 * * *"  # Daily at 06:00 UTC
     auto_merge_threshold: 5  # Direct push if ≤5 commits
     pr_labels: [automated, sdk-sync, copilot-sdk]
+
+# Modified: 2026-02-10T06:00:00Z | Author: COPILOT | Change: Add @slate extension v5.1.0 container-first config
+# @slate Extension v5.1.0 — Container-First Architecture
+extension:
+  name: slate-copilot
+  publisher: slate
+  version: 5.1.0
+  execution_mode: container-only  # No local Python fallback
+  source_files: 15  # plugins/slate-copilot/src/
+  tool_count: 30    # LanguageModelTool implementations in tools.ts
+
+  backends:
+    kubernetes:
+      priority: 1  # Primary
+      endpoint: "http://127.0.0.1:8083/api/exec"
+      service: copilot-bridge-svc
+    docker:
+      priority: 2  # Secondary
+      container: slate
+      method: "docker exec"
+    local:
+      enabled: false  # REMOVED in v5.1.0
+
+  sdk_hooks:
+    file: src/slateAgentSdkHooks.ts
+    hooks:
+      - PreToolUse    # ActionGuard validation before execution
+      - PostToolUse   # Audit logging after execution
+      - UserPromptSubmit  # PII/security scanning
+    commands:
+      - slate.validateToolCall
+      - slate.validateBash
+      - slate.scanPrompt
+
+  service_ports:
+    dashboard: 8080
+    agent_router: 8081
+    autonomous_loop: 8082
+    copilot_bridge: 8083
+    workflow_manager: 8084
+    instruction_controller: 8085
+    metrics: 9090
+    ollama: 11434
+    chromadb: 8000
 
 # Release & Package System
 release:
@@ -188,8 +233,9 @@ participant_routing:
   participants:
     slate:
       extension: slate.slate-copilot
-      scope: [system, runner, ci, gpu, orchestrator, specs, agents, benchmarks, workflows]
-      tools: [slate_systemStatus, slate_runtimeCheck, slate_hardwareInfo, slate_runnerStatus, slate_orchestrator, slate_workflow, slate_benchmark, slate_securityAudit, slate_specKit, slate_planContext, slate_devCycle, slate_codeGuidance, slate_agentBridge, slate_autonomous, slate_executeWork, slate_handoff, slate_forkCheck, slate_gpuManager, slate_learningProgress, slate_runCommand]
+      version: 5.1.0  # Container-first, no local fallback
+      scope: [system, runner, ci, gpu, orchestrator, specs, agents, benchmarks, workflows, kubernetes, adaptive-instructions]
+      tools: [slate_systemStatus, slate_runtimeCheck, slate_hardwareInfo, slate_runnerStatus, slate_orchestrator, slate_workflow, slate_benchmark, slate_runCommand, slate_install, slate_update, slate_checkDeps, slate_forkCheck, slate_securityAudit, slate_agentStatus, slate_gpuManager, slate_autonomous, slate_runProtocol, slate_handoff, slate_executeWork, slate_startServices, slate_agentBridge, slate_devCycle, slate_specKit, slate_learningProgress, slate_planContext, slate_codeGuidance, slate_semanticKernel, slate_githubModels, slate_adaptiveInstructions, slate_kubernetes]
 
     vscode:
       extension: built-in
