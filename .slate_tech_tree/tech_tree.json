@@ -402,20 +402,22 @@
     {
       "id": "brand-identity",
       "name": "Brand Identity System",
-      "status": "in_progress",
+      "status": "complete",
       "phase": 3,
-      "description": "Complete SLATE brand system: design tokens, visual identity, watchmaker aesthetic, GitHub surface branding, 3D avatar",
+      "description": "Complete SLATE brand system: brand engine (slate_brand.py), design tokens (JSON/CSS/Python), 6 logo variants, 2 themes, brand dashboard page, color propagation validation, 18 brand assets, 127/127 tokens synced",
       "paths": [
         "specs/022-slate-brand-identity/",
-        ".slate_identity/"
+        ".slate_identity/",
+        "slate/slate_brand.py",
+        "docs/pages/brand.html"
       ]
     },
     {
       "id": "avatar-system",
       "name": "SLATE Avatar System",
-      "status": "in_progress",
+      "status": "complete",
       "phase": 3,
-      "description": "Living avatar representation: 2D D3.js orrery, 3D TRELLIS.2 mesh, state-reactive, evolution tracking",
+      "description": "Living avatar system: state engine (slate_avatar.py), 17 nodes/4 rings/22 connections, D3.js orrery visualization, orbital animation, health jewels, evolution levels 1-5, Level 3 achieved at 84.1% completion",
       "paths": [
         "specs/023-slate-avatar-system/",
         "slate/slate_avatar.py",

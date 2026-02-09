@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLATE Brand System</title>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #B85A3C;
+            --primary-light: #D4785A;
+            --primary-dark: #8B4530;
+            --secondary: #5D5D74;
+            --tertiary: #6B8E23;
+            --blueprint-bg: #0D1B2A;
+            --blueprint-grid: #1B3A4B;
+            --blueprint-accent: #4FC3F7;
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --error: #F44336;
+            --info: #2196F3;
+            --surface: #1A1816;
+            --surface-container: #2A2624;
+            --surface-high: #34302E;
+            --surface-highest: #3F3B38;
+            --on-surface: #E8E2DE;
+            --on-surface-dim: #CAC4BF;
+            --outline: #7D7873;
+            --font-display: 'Segoe UI', 'Inter', system-ui, sans-serif;
+            --font-mono: 'Consolas', 'JetBrains Mono', monospace;
+        }
+
+        body {
+            font-family: var(--font-display);
+            background: var(--surface);
+            color: var(--on-surface);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--surface-container);
+            border-bottom: 1px solid var(--outline);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .header a { color: var(--on-surface-dim); text-decoration: none; font-size: 14px; }
+        .header a:hover { color: var(--primary); }
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        .header .badge {
+            background: var(--primary);
+            color: #fff;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .header .back { margin-right: auto; }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 48px;
+        }
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--on-surface-dim);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--outline);
+        }
+
+        /* Color Grid */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 16px;
+        }
+        .color-card {
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--surface-container);
+            border: 1px solid var(--outline);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .color-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
+        .color-swatch {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .color-info {
+            padding: 10px 12px;
+        }
+        .color-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--on-surface);
+        }
+        .color-value {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--on-surface-dim);
+        }
+
+        /* Typography */
+        .type-sample {
+            background: var(--surface-container);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid var(--outline);
+        }
+        .type-label {
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--on-surface-dim);
+            margin-bottom: 8px;
+        }
+        .type-display { font-size: 48px; font-weight: 700; line-height: 1.1; }
+        .type-headline { font-size: 28px; font-weight: 600; line-height: 1.2; }
+        .type-title { font-size: 20px; font-weight: 500; line-height: 1.3; }
+        .type-body { font-size: 16px; font-weight: 400; line-height: 1.6; }
+        .type-mono { font-family: var(--font-mono); font-size: 14px; line-height: 1.5; color: var(--blueprint-accent); }
+
+        /* Spacing Scale */
+        .spacing-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+        .spacing-label {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--on-surface-dim);
+            width: 80px;
+            text-align: right;
+        }
+        .spacing-bar {
+            height: 24px;
+            background: var(--primary);
+            border-radius: 4px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .spacing-bar:hover { opacity: 1; }
+
+        /* Elevation */
+        .elevation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 24px;
+        }
+        .elevation-card {
+            background: var(--surface-container);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            border: 1px solid var(--outline);
+        }
+        .elevation-card .label {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--on-surface-dim);
+        }
+
+        /* Radius */
+        .radius-grid {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        .radius-item {
+            width: 80px;
+            height: 80px;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: #fff;
+        }
+
+        /* Logo Grid */
+        .logo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 24px;
+        }
+        .logo-card {
+            background: var(--surface-container);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            border: 1px solid var(--outline);
+        }
+        .logo-card img, .logo-card svg {
+            max-width: 80px;
+            max-height: 80px;
+            margin-bottom: 12px;
+        }
+        .logo-card .name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .logo-card .variant {
+            font-size: 11px;
+            color: var(--on-surface-dim);
+        }
+
+        /* Status Jewels */
+        .jewel-grid {
+            display: flex;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+        .jewel-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .jewel {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            box-shadow: 0 0 8px currentColor;
+        }
+        .jewel-label {
+            font-size: 13px;
+            color: var(--on-surface);
+        }
+
+        /* Brand Identity Card */
+        .identity-card {
+            background: linear-gradient(135deg, var(--surface-container), var(--surface-high));
+            border-radius: 16px;
+            padding: 32px;
+            border: 1px solid var(--outline);
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 32px;
+            align-items: center;
+            margin-bottom: 48px;
+        }
+        .identity-logo {
+            width: 96px;
+            height: 96px;
+        }
+        .identity-name {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+        }
+        .identity-full {
+            font-size: 14px;
+            color: var(--on-surface-dim);
+            margin-top: 4px;
+        }
+        .identity-tagline {
+            font-size: 16px;
+            color: var(--on-surface);
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        /* Motion Tokens */
+        .motion-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+        }
+        .motion-card {
+            background: var(--surface-container);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--outline);
+        }
+        .motion-name {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--blueprint-accent);
+        }
+        .motion-value {
+            font-size: 13px;
+            color: var(--on-surface-dim);
+            margin-top: 4px;
+        }
+        .motion-bar {
+            height: 4px;
+            background: var(--outline);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .motion-indicator {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 2px;
+            width: 0%;
+        }
+        .motion-card:hover .motion-indicator {
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .identity-card { grid-template-columns: 1fr; text-align: center; }
+            .color-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="index.html" class="back">&larr; Home</a>
+        <h1>Brand System</h1>
+        <span class="badge">SPEC 022</span>
+    </div>
+
+    <div class="container">
+
+        <!-- Identity Card -->
+        <div class="identity-card">
+            <img src="assets/slate-logo-v2.svg" class="identity-logo" alt="SLATE Logo">
+            <div>
+                <div class="identity-name">S.L.A.T.E.</div>
+                <div class="identity-full">Synchronized Living Architecture for Transformation and Evolution</div>
+                <div class="identity-tagline">"Systems evolve with progress"</div>
+            </div>
+        </div>
+
+        <!-- Color Palette -->
+        <div class="section">
+            <h2 class="section-title">Color Palette</h2>
+            <div class="color-grid" id="colors"></div>
+        </div>
+
+        <!-- Status Jewels -->
+        <div class="section">
+            <h2 class="section-title">Status Jewels</h2>
+            <div class="jewel-grid">
+                <div class="jewel-item">
+                    <div class="jewel" style="background: #4CAF50; color: #4CAF50;"></div>
+                    <span class="jewel-label">Active / Success</span>
+                </div>
+                <div class="jewel-item">
+                    <div class="jewel" style="background: #FF9800; color: #FF9800;"></div>
+                    <span class="jewel-label">Pending / Warning</span>
+                </div>
+                <div class="jewel-item">
+                    <div class="jewel" style="background: #F44336; color: #F44336;"></div>
+                    <span class="jewel-label">Error / Offline</span>
+                </div>
+                <div class="jewel-item">
+                    <div class="jewel" style="background: #2196F3; color: #2196F3;"></div>
+                    <span class="jewel-label">Info / Available</span>
+                </div>
+                <div class="jewel-item">
+                    <div class="jewel" style="background: #7D7873; color: #7D7873;"></div>
+                    <span class="jewel-label">Disabled / Unknown</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Typography -->
+        <div class="section">
+            <h2 class="section-title">Typography</h2>
+            <div class="type-sample">
+                <div class="type-label">Display</div>
+                <div class="type-display">Watchmaker Precision</div>
+            </div>
+            <div class="type-sample">
+                <div class="type-label">Headline</div>
+                <div class="type-headline">Systems Evolve With Progress</div>
+            </div>
+            <div class="type-sample">
+                <div class="type-label">Title</div>
+                <div class="type-title">Synchronized Living Architecture for Transformation and Evolution</div>
+            </div>
+            <div class="type-sample">
+                <div class="type-label">Body</div>
+                <div class="type-body">SLATE is a living system that reflects its current state and evolves as progress is made. Every pixel serves a purpose. Beauty emerges from functional perfection, not decoration.</div>
+            </div>
+            <div class="type-sample">
+                <div class="type-label">Monospace</div>
+                <div class="type-mono">const SLATE = { provider: "ollama", port: 11434, cost: "FREE" };</div>
+            </div>
+        </div>
+
+        <!-- Spacing Scale -->
+        <div class="section">
+            <h2 class="section-title">Spacing Scale (4px base)</h2>
+            <div id="spacing"></div>
+        </div>
+
+        <!-- Border Radius -->
+        <div class="section">
+            <h2 class="section-title">Border Radius</h2>
+            <div class="radius-grid" id="radius"></div>
+        </div>
+
+        <!-- Elevation -->
+        <div class="section">
+            <h2 class="section-title">Elevation</h2>
+            <div class="elevation-grid" id="elevation"></div>
+        </div>
+
+        <!-- Motion Tokens -->
+        <div class="section">
+            <h2 class="section-title">Motion</h2>
+            <div class="motion-grid" id="motion"></div>
+        </div>
+
+    </div>
+
+    <script>
+    // ── Design Tokens (embedded from source of truth) ──────────────────
+    const TOKENS = {
+        colors: {
+            "Primary": "#B85A3C",
+            "Primary Light": "#D4785A",
+            "Primary Dark": "#8B4530",
+            "Secondary": "#5D5D74",
+            "Secondary Light": "#7A7A94",
+            "Secondary Dark": "#424258",
+            "Tertiary": "#6B8E23",
+            "Tertiary Light": "#8FBC3F",
+            "Tertiary Dark": "#4A6418",
+            "Blueprint BG": "#0D1B2A",
+            "Blueprint Grid": "#1B3A4B",
+            "Blueprint Accent": "#4FC3F7",
+            "Success": "#4CAF50",
+            "Warning": "#FF9800",
+            "Error": "#F44336",
+            "Info": "#2196F3",
+            "Surface": "#1A1816",
+            "Surface Container": "#2A2624",
+            "Surface High": "#34302E",
+            "On Surface": "#E8E2DE",
+            "On Surface Dim": "#CAC4BF",
+            "Outline": "#7D7873",
+        },
+        spacing: [
+            { name: "space-0", value: "0px", px: 0 },
+            { name: "space-1", value: "4px", px: 4 },
+            { name: "space-2", value: "8px", px: 8 },
+            { name: "space-3", value: "12px", px: 12 },
+            { name: "space-4", value: "16px", px: 16 },
+            { name: "space-5", value: "20px", px: 20 },
+            { name: "space-6", value: "24px", px: 24 },
+            { name: "space-8", value: "32px", px: 32 },
+            { name: "space-10", value: "40px", px: 40 },
+            { name: "space-12", value: "48px", px: 48 },
+            { name: "space-16", value: "64px", px: 64 },
+            { name: "space-20", value: "80px", px: 80 },
+            { name: "space-24", value: "96px", px: 96 },
+        ],
+        radius: [
+            { name: "none", value: "0px" },
+            { name: "xs", value: "4px" },
+            { name: "sm", value: "8px" },
+            { name: "md", value: "12px" },
+            { name: "lg", value: "16px" },
+            { name: "xl", value: "24px" },
+            { name: "2xl", value: "32px" },
+        ],
+        elevation: [
+            { name: "Level 0", shadow: "none" },
+            { name: "Level 1", shadow: "0 1px 2px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1)" },
+            { name: "Level 2", shadow: "0 2px 4px rgba(0,0,0,0.05), 0 4px 8px rgba(0,0,0,0.1)" },
+            { name: "Level 3", shadow: "0 4px 8px rgba(0,0,0,0.08), 0 8px 16px rgba(0,0,0,0.12)" },
+            { name: "Level 4", shadow: "0 8px 16px rgba(0,0,0,0.1), 0 16px 32px rgba(0,0,0,0.15)" },
+            { name: "Level 5", shadow: "0 16px 32px rgba(0,0,0,0.12), 0 32px 64px rgba(0,0,0,0.18)" },
+        ],
+        motion: [
+            { name: "easing-standard", value: "cubic-bezier(0.4, 0, 0.2, 1)", duration: "200ms" },
+            { name: "easing-decelerate", value: "cubic-bezier(0, 0, 0.2, 1)", duration: "300ms" },
+            { name: "easing-accelerate", value: "cubic-bezier(0.4, 0, 1, 1)", duration: "200ms" },
+            { name: "easing-spring", value: "cubic-bezier(0.34, 1.56, 0.64, 1)", duration: "400ms" },
+            { name: "duration-instant", value: "50ms", duration: "50ms" },
+            { name: "duration-fast", value: "100ms", duration: "100ms" },
+            { name: "duration-normal", value: "200ms", duration: "200ms" },
+            { name: "duration-slow", value: "300ms", duration: "300ms" },
+            { name: "duration-slower", value: "400ms", duration: "400ms" },
+            { name: "duration-slowest", value: "500ms", duration: "500ms" },
+        ],
+    };
+
+    // ── Render Functions ───────────────────────────────────────────────
+
+    function luminance(hex) {
+        const r = parseInt(hex.slice(1,3), 16) / 255;
+        const g = parseInt(hex.slice(3,5), 16) / 255;
+        const b = parseInt(hex.slice(5,7), 16) / 255;
+        return 0.299 * r + 0.587 * g + 0.114 * b;
+    }
+
+    function renderColors() {
+        const grid = document.getElementById('colors');
+        Object.entries(TOKENS.colors).forEach(([name, hex]) => {
+            const textColor = luminance(hex) > 0.5 ? '#000' : '#fff';
+            grid.innerHTML += `
+                <div class="color-card">
+                    <div class="color-swatch" style="background: ${hex}; color: ${textColor};">${hex}</div>
+                    <div class="color-info">
+                        <div class="color-name">${name}</div>
+                        <div class="color-value">${hex}</div>
+                    </div>
+                </div>`;
+        });
+    }
+
+    function renderSpacing() {
+        const container = document.getElementById('spacing');
+        TOKENS.spacing.forEach(s => {
+            container.innerHTML += `
+                <div class="spacing-row">
+                    <span class="spacing-label">${s.name}</span>
+                    <div class="spacing-bar" style="width: ${Math.max(s.px, 2)}px;" title="${s.value}"></div>
+                    <span class="spacing-label" style="width: 50px; text-align: left;">${s.value}</span>
+                </div>`;
+        });
+    }
+
+    function renderRadius() {
+        const container = document.getElementById('radius');
+        TOKENS.radius.forEach(r => {
+            container.innerHTML += `
+                <div class="radius-item" style="border-radius: ${r.value};">${r.name}<br>${r.value}</div>`;
+        });
+    }
+
+    function renderElevation() {
+        const grid = document.getElementById('elevation');
+        TOKENS.elevation.forEach(e => {
+            grid.innerHTML += `
+                <div class="elevation-card" style="box-shadow: ${e.shadow};">
+                    <div class="label">${e.name}</div>
+                </div>`;
+        });
+    }
+
+    function renderMotion() {
+        const grid = document.getElementById('motion');
+        TOKENS.motion.forEach(m => {
+            grid.innerHTML += `
+                <div class="motion-card">
+                    <div class="motion-name">${m.name}</div>
+                    <div class="motion-value">${m.value}</div>
+                    <div class="motion-bar">
+                        <div class="motion-indicator" style="transition: width ${m.duration} ${m.name.startsWith('easing') ? m.value : 'ease'};"></div>
+                    </div>
+                </div>`;
+        });
+    }
+
+    // ── Init ───────────────────────────────────────────────────────────
+    renderColors();
+    renderSpacing();
+    renderRadius();
+    renderElevation();
+    renderMotion();
+    </script>
+</body>
+</html>
