@@ -440,11 +440,13 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 						} catch (err) {
 							console.error('[SLATE] detectSystem failed:', err);
 							// Send a minimal profile so the UI doesn't stay stuck on spinner
-							this._sendToWebview({ type: 'systemProfile', profile: {
-								pythonVersion: 'Unknown', gpuCount: 0, gpuModels: [], totalVramGb: 0,
-								ollamaAvailable: false, ollamaModels: [], dockerAvailable: false,
-								githubAuthenticated: false, venvActive: false, platform: process.platform, packageCount: 0,
-							} });
+							this._sendToWebview({
+								type: 'systemProfile', profile: {
+									pythonVersion: 'Unknown', gpuCount: 0, gpuModels: [], totalVramGb: 0,
+									ollamaAvailable: false, ollamaModels: [], dockerAvailable: false,
+									githubAuthenticated: false, venvActive: false, platform: process.platform, packageCount: 0,
+								}
+							});
 						}
 						break;
 
@@ -747,22 +749,22 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 		const py = config.pythonPath;
 
 		const commands: Record<string, string> = {
-			'welcome:intro': 'echo SLATE v2.4.0 ready',
+			'welcome:intro': 'echo SLATE v3.0.0-stable ready',
 			'welcome:scan-init': `"${py}" -c "import sys; print(f'Scanner initialized (Python {sys.version_info.major}.{sys.version_info.minor})')"`,
 			'system-scan:detect-python': `"${py}" -c "import sys; print(f'{sys.version}')"`,
 			'system-scan:detect-gpu': `"${py}" -c "import subprocess; r=subprocess.run(['nvidia-smi','--query-gpu=name','--format=csv,noheader'],capture_output=True,text=True); print(r.stdout.strip() or 'No GPU detected')"`,
-			'system-scan:detect-ollama': `"${py}" -c "import urllib.request,json; r=urllib.request.urlopen('${OLLAMA_URL_DYNAMIC()}/api/tags',timeout=3); d=json.loads(r.read()); print(len(d.get('models',[])),'models available')"`,  
+			'system-scan:detect-ollama': `"${py}" -c "import urllib.request,json; r=urllib.request.urlopen('${OLLAMA_URL_DYNAMIC()}/api/tags',timeout=3); d=json.loads(r.read()); print(len(d.get('models',[])),'models available')"`,
 			'system-scan:detect-docker': `"${py}" -c "import subprocess; r=subprocess.run(['docker','info'],capture_output=True,text=True,timeout=5); print('Running' if r.returncode==0 else 'Not available')"`,
 			'system-scan:detect-github': `"${py}" -c "import subprocess; r=subprocess.run(['git','credential','fill'],input='protocol=https\\nhost=github.com\\n',capture_output=True,text=True); print('Authenticated' if 'password=' in r.stdout else 'Not configured')"`,
 			'core-services:init-venv': `"${py}" -c "import sys; print('venv active' if sys.prefix!=sys.base_prefix else 'system python')"`,
 			// Modified: 2026-02-08T02:00:00Z | Author: COPILOT | Change: Replace broken pkg_resources.working_set with importlib.metadata
 			'core-services:install-deps': `"${py}" -c "import importlib.metadata; print(f'{len(list(importlib.metadata.distributions()))} packages installed')"`,
-			'core-services:start-dashboard': `"${py}" -c "import urllib.request; urllib.request.urlopen('${DASHBOARD_URL_DYNAMIC()}',timeout=3); print('Dashboard running')"`,  
+			'core-services:start-dashboard': `"${py}" -c "import urllib.request; urllib.request.urlopen('${DASHBOARD_URL_DYNAMIC()}',timeout=3); print('Dashboard running')"`,
 			'core-services:init-orchestrator': `"${py}" slate/slate_orchestrator.py status`,
 			'ai-backends:check-ollama': `"${py}" -c "import urllib.request,json; r=urllib.request.urlopen('${OLLAMA_URL_DYNAMIC()}/api/tags',timeout=3); d=json.loads(r.read()); print(len(d.get('models',[])),'models available')"`,
 			'ai-backends:check-models': `"${py}" -c "import urllib.request,json; r=urllib.request.urlopen('${OLLAMA_URL_DYNAMIC()}/api/tags',timeout=3); d=json.loads(r.read()); names=[m['name'] for m in d.get('models',[])]; print(', '.join(names[:8]) if names else 'No models')"`,
 			'ai-backends:check-slate-models': `"${py}" -c "import urllib.request,json; r=urllib.request.urlopen('${OLLAMA_URL_DYNAMIC()}/api/tags',timeout=3); d=json.loads(r.read()); slate=[m['name'] for m in d.get('models',[]) if 'slate' in m['name']]; print(', '.join(slate) if slate else 'No SLATE models')"`,
-			'ai-backends:test-inference': `"${py}" -c "import urllib.request,json; req=urllib.request.Request('${OLLAMA_URL_DYNAMIC()}/api/generate',data=json.dumps({'model':'slate-fast','prompt':'Hi','stream':False}).encode(),headers={'Content-Type':'application/json'}); r=urllib.request.urlopen(req,timeout=30); d=json.loads(r.read()); print('Inference OK' if d.get('response') else 'No response')"`,  
+			'ai-backends:test-inference': `"${py}" -c "import urllib.request,json; req=urllib.request.Request('${OLLAMA_URL_DYNAMIC()}/api/generate',data=json.dumps({'model':'slate-fast','prompt':'Hi','stream':False}).encode(),headers={'Content-Type':'application/json'}); r=urllib.request.urlopen(req,timeout=30); d=json.loads(r.read()); print('Inference OK' if d.get('response') else 'No response')"`,
 			'integrations:github-auth': `"${py}" -c "import subprocess; r=subprocess.run(['git','credential','fill'],input='protocol=https\\nhost=github.com\\n',capture_output=True,text=True); print('OK' if 'password=' in r.stdout else 'Not configured')"`,
 			'integrations:docker-check': `"${py}" -c "import subprocess; r=subprocess.run(['docker','info'],capture_output=True,text=True,timeout=5); print('Running' if r.returncode==0 else 'Not available')"`,
 			'integrations:mcp-server': `"${py}" -c "import os; print('Available' if os.path.exists('slate/mcp_server.py') else 'Not found')"`,
@@ -817,7 +819,7 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 			`prompt = f"You are SLATE, an AI assistant for a local-first development framework. Provide a brief (2-3 sentences) encouraging narration for the {step_id} step of the setup wizard. Be concise and informative."`,
 			'payload = json.dumps({"model": "slate-fast", "prompt": prompt, "stream": False, "options": {"temperature": 0.7, "num_predict": 100}})',
 			'try:',
-			`    req = urllib.request.Request("${OLLAMA_URL_DYNAMIC()}/api/generate", data=payload.encode(), headers={"Content-Type": "application/json"})`,  
+			`    req = urllib.request.Request("${OLLAMA_URL_DYNAMIC()}/api/generate", data=payload.encode(), headers={"Content-Type": "application/json"})`,
 			'    r = urllib.request.urlopen(req, timeout=15)',
 			'    d = json.loads(r.read())',
 			'    print(d.get("response", ""))',
@@ -864,7 +866,7 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 			{ id: 'venv', label: 'Virtual Env', cmd: `"${py}" -c "import sys; print('Active' if sys.prefix!=sys.base_prefix else 'System')"` },
 			{ id: 'gpu', label: 'GPU / CUDA', cmd: `"${py}" -c "import torch; print(f'{torch.cuda.device_count()}x GPU, CUDA {torch.version.cuda}' if torch.cuda.is_available() else 'No CUDA')"` },
 			{ id: 'ollama', label: 'Ollama', cmd: `"${py}" -c "import urllib.request,json; r=urllib.request.urlopen('${OLLAMA_URL_DYNAMIC()}/api/tags',timeout=3); d=json.loads(r.read()); print(len(d.get('models',[])),'models')"` },
-			{ id: 'dashboard', label: 'Dashboard', cmd: `"${py}" -c "import urllib.request; urllib.request.urlopen('${DASHBOARD_URL_DYNAMIC()}',timeout=2); print('Online')"` },  
+			{ id: 'dashboard', label: 'Dashboard', cmd: `"${py}" -c "import urllib.request; urllib.request.urlopen('${DASHBOARD_URL_DYNAMIC()}',timeout=2); print('Online')"` },
 			{ id: 'runner', label: 'Actions Runner', cmd: `"${py}" slate/slate_runner_manager.py --detect` },
 			{ id: 'docker', label: 'Docker', cmd: `"${py}" -c "import subprocess; r=subprocess.run(['docker','info'],capture_output=True,text=True,timeout=5); print('Running' if r.returncode==0 else 'Stopped')"` },
 			{ id: 'security', label: 'Security Guards', cmd: `"${py}" -c "import os; ag=os.path.exists('slate/action_guard.py'); pii=os.path.exists('slate/pii_scanner.py'); sdk=os.path.exists('slate/sdk_source_guard.py'); print(f'AG={ag} PII={pii} SDK={sdk}')"` },
@@ -901,7 +903,7 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 
 		const checks = [
 			{ id: 'svcDashboard', cmd: `"${py}" -c "import urllib.request; urllib.request.urlopen('${DASHBOARD_URL_DYNAMIC()}', timeout=2); print('ok')"`, ok: ':8080 Online', fail: ':8080 Offline' },
-			{ id: 'svcOllama', cmd: `"${py}" -c "import urllib.request; urllib.request.urlopen('${OLLAMA_URL_DYNAMIC()}/api/tags', timeout=2); print('ok')"`, ok: ':11434 Online', fail: ':11434 Offline' },  
+			{ id: 'svcOllama', cmd: `"${py}" -c "import urllib.request; urllib.request.urlopen('${OLLAMA_URL_DYNAMIC()}/api/tags', timeout=2); print('ok')"`, ok: ':11434 Online', fail: ':11434 Offline' },
 			{ id: 'svcRunner', cmd: `"${py}" slate/slate_runner_manager.py --detect`, ok: 'Online', fail: 'Offline' },
 			{ id: 'svcGPU', cmd: `"${py}" -c "import torch; print('ok' if torch.cuda.is_available() else 'no')"`, ok: 'GPU Active', fail: 'No GPU' },
 			{ id: 'svcDocker', cmd: `"${py}" -c "import subprocess; r=subprocess.run(['docker','info'],capture_output=True,text=True,timeout=5); print('ok' if r.returncode==0 else 'no')"`, ok: 'Running', fail: 'Stopped' },
