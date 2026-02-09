@@ -24,6 +24,7 @@
   <a href="https://pytorch.org/"><img src="https://img.shields.io/badge/PyTorch-2.7+-ee4c2c.svg" alt="PyTorch 2.7+"></a>
   <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/actions"><img src="https://img.shields.io/badge/build-passing-B87333.svg" alt="Build Status"></a>
   <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/wiki"><img src="https://img.shields.io/badge/docs-wiki-blue.svg" alt="Documentation"></a>
+  <a href="https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/"><img src="https://img.shields.io/badge/🌐_Live_Site-GitHub_Pages-B85A3C.svg" alt="GitHub Pages"></a>
 </p>
 
 <p align="center">
@@ -32,6 +33,12 @@
 
 <p align="center">
   Works with GitHub Copilot, VS Code, Claude Code, AI Toolkit, and PyTorch
+</p>
+
+<p align="center">
+  <a href="https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/">
+    <img src="https://img.shields.io/badge/▶_Explore_SLATE-Feature_Page-B85A3C?style=for-the-badge&logo=github&logoColor=white" alt="Explore SLATE Feature Page">
+  </a>
 </p>
 
 ---
@@ -1018,9 +1025,31 @@ S.L.A.T.E. is **experimental software** — an AI hobbyist project entirely crea
 
 See the [LICENSE](LICENSE) file for complete terms and conditions.
 
+## SLATE Feature Page
+
+<p align="center">
+  <a href="https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/">
+    <img src="https://img.shields.io/badge/🌐_SLATE_Feature_Page-Live_on_GitHub_Pages-B85A3C?style=for-the-badge&logo=github&logoColor=white" alt="SLATE Feature Page">
+  </a>
+</p>
+
+<p align="center">
+  <em>Explore SLATE's full feature showcase, architecture diagrams, and interactive demos at:</em><br>
+  <a href="https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/"><strong>https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/</strong></a>
+</p>
+
+The SLATE feature page includes:
+- **System Architecture** — Interactive diagrams of the local AI operations center
+- **Feature Showcase** — All 24+ specifications with live status
+- **AI Provider Matrix** — 3 FREE local inference providers (Ollama, Claude Code, Foundry Local)
+- **Watchmaker Dashboard** — Preview of the D3.js-powered 3D dashboard
+- **Technology Stack** — Full vendor integration map across 24 forked dependencies
+
+> **Source**: [`docs/pages/`](docs/pages/) — Auto-deployed via GitHub Actions on push to `main`
+
 ## Links
 
-- [Website](https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/)
+- [Feature Page](https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/)
 - [GitHub Repository](https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E)
 - [Wiki Documentation](https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/wiki)
 - [Issue Tracker](https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/issues)
