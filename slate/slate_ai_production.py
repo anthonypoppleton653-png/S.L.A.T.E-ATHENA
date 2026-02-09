@@ -197,7 +197,7 @@ def _query_ollama_health(model: str) -> dict:
         "model": model,
         "prompt": "Reply with OK",
         "stream": False,
-        "options": {"temperature": 0.1, "num_predict": 5},
+        "options": {"temperature": 0.1, "num_predict": 5, "num_gpu": 999},
     }).encode()
     req = urllib.request.Request(
         f"{OLLAMA_URL}/api/generate",
@@ -671,7 +671,7 @@ class ProductionManager:
                     "prompt": "warmup",
                     "stream": False,
                     "keep_alive": "24h",
-                    "options": {"num_predict": 1},
+                    "options": {"num_predict": 1, "num_gpu": 999},
                 }).encode()
                 req = urllib.request.Request(
                     f"{OLLAMA_URL}/api/generate",

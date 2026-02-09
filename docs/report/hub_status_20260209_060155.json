@@ -1,0 +1,39 @@
+{
+  "hub": "SLATE Workflow Hub",
+  "version": "1.0.0",
+  "ollama": {
+    "available": true,
+    "models": [
+      "codellama:13b",
+      "slate-planner:latest",
+      "slate-fast:latest",
+      "slate-coder:latest",
+      "llama3.2:3b",
+      "nomic-embed-text:latest",
+      "mistral-nemo:latest",
+      "phi:latest",
+      "llama3.2:latest",
+      "llama2:latest",
+      "mistral:latest"
+    ],
+    "url": "http://127.0.0.1:11434"
+  },
+  "capabilities": {
+    "docs_generate": true,
+    "docs_update": true,
+    "pages_update": true,
+    "research": true,
+    "planning": true,
+    "changelog": true,
+    "roadmap": true,
+    "wiki_sync": true
+  },
+  "paths": {
+    "workspace": "E:\\11132025",
+    "docs": "E:\\11132025\\docs",
+    "wiki": "E:\\11132025\\docs\\wiki",
+    "pages": "E:\\11132025\\docs\\pages",
+    "plans": "E:\\11132025\\plans"
+  },
+  "timestamp": "2026-02-09T11:01:55.103767+00:00"
+}

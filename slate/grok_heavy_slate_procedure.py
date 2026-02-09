@@ -324,6 +324,7 @@ class GrokHeavySlateProcedure:
                 "options": {
                     "temperature": 0.1,  # Low temperature for deterministic analysis
                     "num_predict": 2048,
+                    "num_gpu": 999,
                 },
             }).encode("utf-8")
 

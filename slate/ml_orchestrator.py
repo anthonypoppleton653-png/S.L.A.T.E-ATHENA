@@ -139,7 +139,7 @@ class OllamaClient:
                  temperature: float = 0.7, max_tokens: int = 2048,
                  stream: bool = False, keep_alive: str = "24h") -> dict:
         """Generate text with a model."""
-        # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: Added keep_alive for GPU persistence
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add num_gpu 999 to force all layers to GPU VRAM, never CPU
         data = {
             "model": model,
             "prompt": prompt,
@@ -148,6 +148,7 @@ class OllamaClient:
             "options": {
                 "temperature": temperature,
                 "num_predict": max_tokens,
+                "num_gpu": 999,
             },
         }
         if system:
@@ -157,19 +158,20 @@ class OllamaClient:
 
     def embed(self, model: str, text: str) -> list[float]:
         """Generate embeddings for text."""
-        # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: Added keep_alive
-        data = {"model": model, "input": text, "keep_alive": "24h"}
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add num_gpu 999 to force embedding layers to GPU VRAM
+        data = {"model": model, "input": text, "keep_alive": "24h", "options": {"num_gpu": 999}}
         result = self._request("/api/embed", data, timeout=60)
         embeddings = result.get("embeddings", [[]])
         return embeddings[0] if embeddings else []
 
     def chat(self, model: str, messages: list[dict], temperature: float = 0.7) -> dict:
         """Chat completion."""
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add num_gpu 999 to force chat layers to GPU VRAM
         data = {
             "model": model,
             "messages": messages,
             "stream": False,
-            "options": {"temperature": temperature},
+            "options": {"temperature": temperature, "num_gpu": 999},
         }
         # Modified: 2026-02-09T09:15:00Z | Author: COPILOT | Change: Increase chat timeout from 300s to 600s
         return self._request("/api/chat", data, timeout=600)

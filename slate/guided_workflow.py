@@ -425,7 +425,7 @@ Focus on: testing, AI analysis, security, or maintenance."""
                         "model": "mistral-nemo",
                         "prompt": prompt,
                         "stream": False,
-                        "options": {"temperature": 0.5, "num_predict": 100}
+                        "options": {"temperature": 0.5, "num_predict": 100, "num_gpu": 999}
                     },
                     timeout=10
                 )

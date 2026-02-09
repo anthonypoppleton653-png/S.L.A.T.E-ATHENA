@@ -1,33 +1,41 @@
 #!/usr/bin/env python3
-# Modified: 2026-02-09T14:00:00Z | Author: ClaudeCode (Opus 4.6) | Change: Create unified AI backend with Claude Code as inference provider
+# Modified: 2026-02-10T18:00:00Z | Author: COPILOT | Change: Add Gemini CLI, Copilot CLI providers, cross-verification pipeline, GPU-first routing
 """
 SLATE Unified AI Backend
 ==========================
 Central routing for all AI inference tasks across SLATE providers.
 
 Providers (priority order, all FREE / local):
-1. Ollama (localhost:11434) — Primary: slate-coder 12B, slate-fast 3B, slate-planner 7B
-2. Claude Code (local MCP bridge) — Agentic tasks, code generation, complex reasoning
-3. Foundry Local (localhost:5272) — ONNX-optimized Phi-3, Mistral-7B
+1. Ollama (localhost:11434) — GPU Primary: slate-coder 12B, slate-fast 3B, slate-planner 7B
+2. Claude Code CLI (E:\\.tools\\npm-global\\claude.cmd) — Complex reasoning, code gen
+3. Gemini CLI (E:\\.tools\\npm-global\\gemini.cmd) — Analysis, verification, review
+4. Copilot CLI (gh copilot) — Code suggestions, explanations
+5. Foundry Local (localhost:5272) — ONNX-optimized Phi-3, Mistral-7B
+
+Cross-verification pipeline:
+    Work produced by one provider is verified by another.
+    Primary generates code/analysis → Verifier reviews/confirms/flags discrepancies.
 
 Task routing:
-    code_generation    → ollama (slate-coder)     or claude_code
-    code_review        → ollama (slate-coder)     or claude_code
-    test_generation    → ollama (slate-coder)     or claude_code
-    bug_fix            → claude_code              or ollama (slate-coder)
-    refactoring        → claude_code              or ollama (slate-coder)
-    documentation      → ollama (slate-fast)      or claude_code
-    analysis           → claude_code              or ollama (slate-planner)
-    research           → claude_code              or ollama (slate-planner)
-    planning           → ollama (slate-planner)   or claude_code
+    code_generation    → ollama (slate-coder)     | verify: gemini
+    code_review        → gemini                   | verify: ollama
+    test_generation    → ollama (slate-coder)     | verify: gemini
+    bug_fix            → claude_code              | verify: gemini
+    refactoring        → claude_code              | verify: gemini
+    documentation      → ollama (slate-fast)      | verify: copilot
+    analysis           → gemini                   | verify: ollama
+    research           → gemini                   | verify: ollama
+    planning           → ollama (slate-planner)   | verify: gemini
     classification     → ollama (slate-fast)
-    prompt_engineering → claude_code              or ollama (slate-planner)
+    prompt_engineering → claude_code              | verify: gemini
+    verification       → gemini                   | (meta-verify)
 
 Usage:
     python slate/unified_ai_backend.py --status
     python slate/unified_ai_backend.py --task "your task"
-    python slate/unified_ai_backend.py --task "your task" --provider ollama
-    python slate/unified_ai_backend.py --task "your task" --provider claude_code
+    python slate/unified_ai_backend.py --task "your task" --provider gemini
+    python slate/unified_ai_backend.py --task "your task" --provider copilot
+    python slate/unified_ai_backend.py --verify "code to verify" --verifier gemini
     python slate/unified_ai_backend.py --providers
     python slate/unified_ai_backend.py --route "code_generation"
 """
@@ -63,34 +71,57 @@ logger = logging.getLogger("slate.unified_ai_backend")
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 FOUNDRY_HOST = os.environ.get("FOUNDRY_HOST", "http://127.0.0.1:5272")
 
-# Model mapping per task type
+# CLI tool paths — everything on E:\ drive
+TOOLS_DIR = Path(os.environ.get("SLATE_TOOLS_DIR", str(WORKSPACE_ROOT / ".tools" / "npm-global")))
+CLAUDE_CMD = str(TOOLS_DIR / ("claude.cmd" if sys.platform == "win32" else "claude"))
+GEMINI_CMD = str(TOOLS_DIR / ("gemini.cmd" if sys.platform == "win32" else "gemini"))
+GH_CMD = os.environ.get("GH_PATH", "gh")  # gh is in system PATH
+
+# Model mapping per task type (5 providers)
 TASK_MODELS = {
-    "code_generation":    {"ollama": "slate-coder",   "claude_code": "opus-4.6"},
-    "code_review":        {"ollama": "slate-coder",   "claude_code": "opus-4.6"},
-    "test_generation":    {"ollama": "slate-coder",   "claude_code": "opus-4.6"},
-    "bug_fix":            {"claude_code": "opus-4.6", "ollama": "slate-coder"},
-    "refactoring":        {"claude_code": "opus-4.6", "ollama": "slate-coder"},
-    "documentation":      {"ollama": "slate-fast",    "claude_code": "sonnet-4.5"},
-    "analysis":           {"claude_code": "opus-4.6", "ollama": "slate-planner"},
-    "research":           {"claude_code": "opus-4.6", "ollama": "slate-planner"},
-    "planning":           {"ollama": "slate-planner", "claude_code": "opus-4.6"},
+    "code_generation":    {"ollama": "slate-coder",   "claude_code": "opus-4.6",  "gemini": "gemini-2.5-pro", "copilot": "gpt-4o"},
+    "code_review":        {"gemini": "gemini-2.5-pro", "claude_code": "opus-4.6", "ollama": "slate-coder"},
+    "test_generation":    {"ollama": "slate-coder",   "claude_code": "opus-4.6",  "gemini": "gemini-2.5-pro"},
+    "bug_fix":            {"claude_code": "opus-4.6", "ollama": "slate-coder",    "gemini": "gemini-2.5-pro"},
+    "refactoring":        {"claude_code": "opus-4.6", "ollama": "slate-coder",    "gemini": "gemini-2.5-pro"},
+    "documentation":      {"ollama": "slate-fast",    "gemini": "gemini-2.5-flash", "copilot": "gpt-4o"},
+    "analysis":           {"gemini": "gemini-2.5-pro", "claude_code": "opus-4.6", "ollama": "slate-planner"},
+    "research":           {"gemini": "gemini-2.5-pro", "claude_code": "opus-4.6", "ollama": "slate-planner"},
+    "planning":           {"ollama": "slate-planner", "claude_code": "opus-4.6",  "gemini": "gemini-2.5-pro"},
     "classification":     {"ollama": "slate-fast"},
-    "prompt_engineering": {"claude_code": "opus-4.6", "ollama": "slate-planner"},
+    "prompt_engineering": {"claude_code": "opus-4.6", "ollama": "slate-planner",  "gemini": "gemini-2.5-pro"},
+    "verification":       {"gemini": "gemini-2.5-pro", "copilot": "gpt-4o",      "ollama": "slate-planner"},
 }
 
 # Provider priority per task type (first = preferred)
 TASK_ROUTING = {
-    "code_generation":    ["ollama", "claude_code", "foundry"],
-    "code_review":        ["ollama", "claude_code"],
-    "test_generation":    ["ollama", "claude_code"],
-    "bug_fix":            ["claude_code", "ollama"],
-    "refactoring":        ["claude_code", "ollama"],
-    "documentation":      ["ollama", "claude_code"],
-    "analysis":           ["claude_code", "ollama"],
-    "research":           ["claude_code", "ollama"],
-    "planning":           ["ollama", "claude_code"],
+    "code_generation":    ["ollama", "claude_code", "gemini", "foundry"],
+    "code_review":        ["gemini", "claude_code", "ollama"],
+    "test_generation":    ["ollama", "claude_code", "gemini"],
+    "bug_fix":            ["claude_code", "ollama", "gemini"],
+    "refactoring":        ["claude_code", "ollama", "gemini"],
+    "documentation":      ["ollama", "gemini", "copilot"],
+    "analysis":           ["gemini", "claude_code", "ollama"],
+    "research":           ["gemini", "claude_code", "ollama"],
+    "planning":           ["ollama", "claude_code", "gemini"],
     "classification":     ["ollama"],
-    "prompt_engineering": ["claude_code", "ollama"],
+    "prompt_engineering": ["claude_code", "ollama", "gemini"],
+    "verification":       ["gemini", "copilot", "ollama"],
+}
+
+# Cross-verification mapping: task_type → which provider verifies the work
+VERIFICATION_ROUTING = {
+    "code_generation":    "gemini",
+    "code_review":        "ollama",
+    "test_generation":    "gemini",
+    "bug_fix":            "gemini",
+    "refactoring":        "gemini",
+    "documentation":      "copilot",
+    "analysis":           "ollama",
+    "research":           "ollama",
+    "planning":           "gemini",
+    "prompt_engineering": "gemini",
+    "verification":       "ollama",  # meta-verify
 }
 
 
@@ -186,6 +217,7 @@ class OllamaProvider:
     def generate(self, prompt: str, model: str = "slate-fast",
                  max_tokens: int = 2048, temperature: float = 0.7) -> InferenceResult:
         """Generate text via Ollama API."""
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add num_gpu 999 to force all layers to GPU VRAM
         start = time.time()
         try:
             url = f"{self.host}/api/generate"
@@ -196,6 +228,7 @@ class OllamaProvider:
                 "options": {
                     "num_predict": max_tokens,
                     "temperature": temperature,
+                    "num_gpu": 999,
                 },
             }).encode("utf-8")
 
@@ -442,6 +475,258 @@ class FoundryProvider:
             )
 
 
+# Modified: 2026-02-10T18:00:00Z | Author: COPILOT | Change: Add GeminiCliProvider for Gemini CLI inference
+class GeminiCliProvider:
+    """Gemini CLI inference provider — wraps the local Gemini CLI for analysis and verification.
+
+    Gemini CLI is installed on E:\\ drive at .tools/npm-global/gemini.cmd.
+    It provides strong analytical capabilities ideal for:
+    - Code review and verification (cross-checking Ollama/Claude output)
+    - Research and analysis tasks
+    - Documentation quality assessment
+    - Multi-step reasoning
+
+    All execution is LOCAL — Gemini CLI manages its own auth and inference.
+    """
+
+    def __init__(self, cmd_path: str = GEMINI_CMD):
+        self.name = "gemini"
+        self.cmd_path = cmd_path
+
+    def check_status(self) -> ProviderStatus:
+        """Check Gemini CLI availability."""
+        start = time.time()
+        try:
+            result = subprocess.run(
+                [self.cmd_path, "--version"],
+                capture_output=True, text=True, timeout=15,
+                encoding="utf-8", errors="replace",
+            )
+            latency = (time.time() - start) * 1000
+
+            if result.returncode == 0:
+                version = result.stdout.strip().split("\n")[0] if result.stdout.strip() else "unknown"
+                return ProviderStatus(
+                    name=self.name,
+                    available=True,
+                    endpoint=f"cli:{self.cmd_path}",
+                    models=["gemini-2.5-pro", "gemini-2.5-flash"],
+                    latency_ms=latency,
+                    cost="FREE (Google AI)",
+                )
+            else:
+                return ProviderStatus(
+                    name=self.name,
+                    available=False,
+                    endpoint=f"cli:{self.cmd_path}",
+                    error=f"CLI exited with code {result.returncode}: {result.stderr.strip()[:100]}",
+                )
+        except FileNotFoundError:
+            return ProviderStatus(
+                name=self.name,
+                available=False,
+                endpoint=f"cli:{self.cmd_path}",
+                error=f"Gemini CLI not found at {self.cmd_path}",
+            )
+        except Exception as e:
+            return ProviderStatus(
+                name=self.name,
+                available=False,
+                endpoint=f"cli:{self.cmd_path}",
+                error=str(e)[:100],
+            )
+
+    def generate(self, prompt: str, model: str = "gemini-2.5-pro",
+                 max_tokens: int = 4096, temperature: float = 0.7) -> InferenceResult:
+        """Generate text via Gemini CLI subprocess.
+
+        Uses `gemini -p "prompt"` for non-interactive single-shot inference.
+        """
+        start = time.time()
+        try:
+            # Build command: gemini -p "prompt" for single-shot mode
+            cmd = [self.cmd_path, "-p", prompt[:8000]]  # Limit prompt size for CLI
+
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=180,  # 3 min timeout for complex tasks
+                encoding="utf-8",
+                errors="replace",
+                cwd=str(WORKSPACE_ROOT),
+                env={**os.environ, "TERM": "dumb", "NO_COLOR": "1"},
+            )
+
+            duration = (time.time() - start) * 1000
+            response_text = result.stdout.strip()
+
+            if result.returncode == 0 and response_text:
+                return InferenceResult(
+                    success=True,
+                    provider=self.name,
+                    model=model,
+                    response=response_text,
+                    tokens=len(response_text.split()),  # Approximate
+                    duration_ms=duration,
+                    cost="FREE (Google AI)",
+                )
+            else:
+                error_msg = result.stderr.strip()[:200] if result.stderr else f"Exit code {result.returncode}"
+                return InferenceResult(
+                    success=False,
+                    provider=self.name,
+                    model=model,
+                    response=response_text,
+                    error=error_msg,
+                    duration_ms=duration,
+                )
+
+        except subprocess.TimeoutExpired:
+            return InferenceResult(
+                success=False,
+                provider=self.name,
+                model=model,
+                response="",
+                error="Gemini CLI timed out after 180s",
+                duration_ms=(time.time() - start) * 1000,
+            )
+        except Exception as e:
+            return InferenceResult(
+                success=False,
+                provider=self.name,
+                model=model,
+                response="",
+                error=str(e),
+            )
+
+
+# Modified: 2026-02-10T18:00:00Z | Author: COPILOT | Change: Add CopilotCliProvider for gh copilot CLI inference
+class CopilotCliProvider:
+    """GitHub Copilot CLI inference provider — wraps `gh copilot` for code suggestions.
+
+    Uses the `gh copilot suggest` and `gh copilot explain` commands for:
+    - Code suggestions and completions
+    - Code explanations
+    - Shell command generation
+    - Documentation assistance
+
+    All execution is LOCAL through the gh CLI extension.
+    """
+
+    def __init__(self, gh_path: str = GH_CMD):
+        self.name = "copilot"
+        self.gh_path = gh_path
+
+    def check_status(self) -> ProviderStatus:
+        """Check gh copilot availability."""
+        start = time.time()
+        try:
+            result = subprocess.run(
+                [self.gh_path, "copilot", "--version"],
+                capture_output=True, text=True, timeout=15,
+                encoding="utf-8", errors="replace",
+            )
+            latency = (time.time() - start) * 1000
+
+            if result.returncode == 0:
+                version = result.stdout.strip().split("\n")[0] if result.stdout.strip() else "unknown"
+                return ProviderStatus(
+                    name=self.name,
+                    available=True,
+                    endpoint=f"cli:{self.gh_path} copilot",
+                    models=["gpt-4o"],
+                    latency_ms=latency,
+                    cost="FREE (GitHub Copilot)",
+                )
+            else:
+                return ProviderStatus(
+                    name=self.name,
+                    available=False,
+                    endpoint=f"cli:{self.gh_path} copilot",
+                    error=f"gh copilot exited {result.returncode}: {result.stderr.strip()[:100]}",
+                )
+        except FileNotFoundError:
+            return ProviderStatus(
+                name=self.name,
+                available=False,
+                endpoint=f"cli:{self.gh_path}",
+                error=f"gh CLI not found at {self.gh_path}",
+            )
+        except Exception as e:
+            return ProviderStatus(
+                name=self.name,
+                available=False,
+                endpoint=f"cli:{self.gh_path}",
+                error=str(e)[:100],
+            )
+
+    def generate(self, prompt: str, model: str = "gpt-4o",
+                 max_tokens: int = 2048, temperature: float = 0.7) -> InferenceResult:
+        """Generate via gh copilot explain for code-related tasks.
+
+        Uses `gh copilot explain` for explanations/analysis.
+        Falls back to direct prompt piping if explain doesn't work well.
+        """
+        start = time.time()
+        try:
+            # Use 'explain' mode for code-related prompts
+            cmd = [self.gh_path, "copilot", "explain", prompt[:4000]]
+
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=120,
+                encoding="utf-8",
+                errors="replace",
+                cwd=str(WORKSPACE_ROOT),
+                env={**os.environ, "GH_PROMPT": "disable"},
+            )
+
+            duration = (time.time() - start) * 1000
+            response_text = result.stdout.strip()
+
+            if result.returncode == 0 and response_text:
+                return InferenceResult(
+                    success=True,
+                    provider=self.name,
+                    model=model,
+                    response=response_text,
+                    tokens=len(response_text.split()),
+                    duration_ms=duration,
+                    cost="FREE (GitHub Copilot)",
+                )
+            else:
+                error_msg = result.stderr.strip()[:200] if result.stderr else f"Exit code {result.returncode}"
+                return InferenceResult(
+                    success=False,
+                    provider=self.name,
+                    model=model,
+                    response=response_text,
+                    error=error_msg,
+                    duration_ms=duration,
+                )
+
+        except subprocess.TimeoutExpired:
+            return InferenceResult(
+                success=False,
+                provider=self.name,
+                model=model,
+                response="",
+                error="gh copilot timed out after 120s",
+                duration_ms=(time.time() - start) * 1000,
+            )
+        except Exception as e:
+            return InferenceResult(
+                success=False,
+                provider=self.name,
+                model=model,
+                response="",
+                error=str(e),
+            )
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Unified Backend
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -453,6 +738,8 @@ class UnifiedAIBackend:
         self.providers = {
             "ollama": OllamaProvider(),
             "claude_code": ClaudeCodeProvider(),
+            "gemini": GeminiCliProvider(),
+            "copilot": CopilotCliProvider(),
             "foundry": FoundryProvider(),
         }
         self._status_cache: dict[str, ProviderStatus] = {}
@@ -489,6 +776,7 @@ class UnifiedAIBackend:
             "planning": ["plan", "design", "architect", "roadmap", "strategy"],
             "classification": ["classify", "categorize", "route", "triage", "sort"],
             "prompt_engineering": ["prompt", "super prompt", "template", "instruction"],
+            "verification": ["verify", "cross-check", "validate output", "double-check", "confirm correctness"],
         }
 
         for task_type, keywords in keyword_map.items():
@@ -505,7 +793,14 @@ class UnifiedAIBackend:
     def get_model_for_task(self, task_type: str, provider: str) -> str:
         """Get the recommended model for a task type and provider."""
         models = TASK_MODELS.get(task_type, {})
-        return models.get(provider, "slate-fast" if provider == "ollama" else "opus-4.6")
+        defaults = {
+            "ollama": "slate-fast",
+            "claude_code": "opus-4.6",
+            "gemini": "gemini-2.5-pro",
+            "copilot": "gpt-4o",
+            "foundry": "phi-3.5",
+        }
+        return models.get(provider, defaults.get(provider, "slate-fast"))
 
     def execute(self, task: str, provider_override: Optional[str] = None,
                 model_override: Optional[str] = None,
@@ -570,6 +865,102 @@ class UnifiedAIBackend:
                   f"Tried: {', '.join(provider_list)}",
         )
 
+    # Modified: 2026-02-10T18:00:00Z | Author: COPILOT | Change: Add cross-verification pipeline
+    def verify(self, content: str, task_type: str = "verification",
+               verifier_override: Optional[str] = None,
+               original_provider: str = "") -> InferenceResult:
+        """Cross-verify content produced by one AI provider using another.
+
+        The verification pipeline:
+        1. Receives content (code/analysis/docs) from a primary provider
+        2. Routes to a different provider for independent review
+        3. Returns verification result with pass/fail assessment
+
+        Args:
+            content: The content to verify (code, analysis, etc.)
+            task_type: The original task type (used to route to correct verifier)
+            verifier_override: Force a specific verifier provider
+            original_provider: Which provider produced the content (logged for audit)
+
+        Returns:
+            InferenceResult with verification assessment
+        """
+        # Select verifier
+        if verifier_override:
+            verifier_name = verifier_override
+        else:
+            verifier_name = VERIFICATION_ROUTING.get(task_type, "gemini")
+
+        # Don't verify with the same provider that generated
+        if verifier_name == original_provider:
+            # Cycle to next available verifier
+            fallback_order = ["gemini", "ollama", "copilot", "claude_code"]
+            for fb in fallback_order:
+                if fb != original_provider and fb in self.providers:
+                    verifier_name = fb
+                    break
+
+        # Build verification prompt
+        verify_prompt = (
+            f"VERIFICATION REQUEST\n"
+            f"{'=' * 40}\n"
+            f"Original task type: {task_type}\n"
+            f"Original provider: {original_provider or 'unknown'}\n\n"
+            f"Please review the following output for:\n"
+            f"1. Correctness — Are there logical errors, bugs, or inaccuracies?\n"
+            f"2. Completeness — Does it fully address the task?\n"
+            f"3. Quality — Is it well-structured and following best practices?\n"
+            f"4. Security — Any security concerns (exposed secrets, unsafe patterns)?\n\n"
+            f"CONTENT TO VERIFY:\n"
+            f"{'─' * 40}\n"
+            f"{content[:6000]}\n"
+            f"{'─' * 40}\n\n"
+            f"Respond with:\n"
+            f"- VERDICT: PASS or FAIL\n"
+            f"- CONFIDENCE: HIGH/MEDIUM/LOW\n"
+            f"- ISSUES: List any problems found (or 'None')\n"
+            f"- SUGGESTIONS: Improvements if any\n"
+        )
+
+        logger.info(f"Cross-verifying with {verifier_name} (original: {original_provider})")
+        return self.execute(
+            task=verify_prompt,
+            provider_override=verifier_name,
+            max_tokens=2048,
+            temperature=0.3,  # Low temperature for objective verification
+        )
+
+    def execute_with_verification(self, task: str,
+                                   provider_override: Optional[str] = None,
+                                   verify: bool = True) -> dict[str, Any]:
+        """Execute a task and optionally cross-verify the result.
+
+        Returns a dict with both the primary result and verification result.
+        """
+        # Step 1: Execute primary task
+        primary_result = self.execute(task=task, provider_override=provider_override)
+
+        output = {
+            "primary": primary_result.to_dict(),
+            "verified": False,
+            "verification": None,
+        }
+
+        if not primary_result.success or not verify:
+            return output
+
+        # Step 2: Cross-verify
+        task_type = self.classify_task(task)
+        verification = self.verify(
+            content=primary_result.response,
+            task_type=task_type,
+            original_provider=primary_result.provider,
+        )
+
+        output["verified"] = True
+        output["verification"] = verification.to_dict()
+        return output
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Module-Level Singleton
@@ -599,9 +990,9 @@ def print_status(as_json: bool = False):
         print(json.dumps({k: v.to_dict() for k, v in statuses.items()}, indent=2))
         return
 
-    print("=" * 65)
-    print("  SLATE Unified AI Backend — Provider Status")
-    print("=" * 65)
+    print("=" * 75)
+    print("  SLATE Unified AI Backend — Provider Status (5 providers)")
+    print("=" * 75)
 
     for name, status in statuses.items():
         icon = "OK" if status.available else "OFFLINE"
@@ -614,26 +1005,37 @@ def print_status(as_json: bool = False):
         if status.error:
             print(f"           Error:    {status.error[:80]}")
 
-    print("\n" + "-" * 65)
+    available_count = sum(1 for s in statuses.values() if s.available)
+    print(f"\n  Providers: {available_count}/{len(statuses)} online")
+
+    print("\n" + "-" * 75)
     print("  Task Routing Table")
-    print("-" * 65)
-    print(f"  {'Task Type':<22} {'Primary':<15} {'Fallback':<15} {'Cost'}")
-    print(f"  {'─' * 22} {'─' * 15} {'─' * 15} {'─' * 8}")
+    print("-" * 75)
+    print(f"  {'Task Type':<22} {'Primary':<15} {'Fallback':<15} {'Verifier':<12} {'Cost'}")
+    print(f"  {'─' * 22} {'─' * 15} {'─' * 15} {'─' * 12} {'─' * 8}")
     for task_type, providers in TASK_ROUTING.items():
         primary = providers[0] if providers else "none"
         fallback = providers[1] if len(providers) > 1 else "—"
-        print(f"  {task_type:<22} {primary:<15} {fallback:<15} FREE")
+        verifier = VERIFICATION_ROUTING.get(task_type, "—")
+        print(f"  {task_type:<22} {primary:<15} {fallback:<15} {verifier:<12} FREE")
 
-    print("\n" + "=" * 65)
+    print("\n" + "=" * 75)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="SLATE Unified AI Backend")
+    parser = argparse.ArgumentParser(description="SLATE Unified AI Backend — 5 providers, cross-verification")
     parser.add_argument("--status", action="store_true", help="Check all provider status")
     parser.add_argument("--task", type=str, help="Execute an AI task")
-    parser.add_argument("--provider", type=str, choices=["ollama", "claude_code", "foundry"],
+    parser.add_argument("--provider", type=str,
+                        choices=["ollama", "claude_code", "gemini", "copilot", "foundry"],
                         help="Force a specific provider")
     parser.add_argument("--model", type=str, help="Force a specific model")
+    parser.add_argument("--verify", type=str, help="Cross-verify content with a verifier")
+    parser.add_argument("--verifier", type=str,
+                        choices=["ollama", "claude_code", "gemini", "copilot"],
+                        help="Force a specific verifier for --verify")
+    parser.add_argument("--with-verification", action="store_true",
+                        help="Execute task AND cross-verify the result")
     parser.add_argument("--providers", action="store_true", help="List all providers")
     parser.add_argument("--route", type=str, help="Show routing for a task type")
     parser.add_argument("--json", action="store_true", help="JSON output")
@@ -644,33 +1046,81 @@ def main():
     if args.status or args.providers:
         print_status(as_json=args.json)
 
-    elif args.task:
-        result = backend.execute(
-            task=args.task,
-            provider_override=args.provider,
-            model_override=args.model,
+    elif args.verify:
+        # Cross-verification mode
+        result = backend.verify(
+            content=args.verify,
+            verifier_override=args.verifier,
         )
         if args.json:
             print(json.dumps(result.to_dict(), indent=2))
         else:
             if result.success:
-                print(f"Provider: {result.provider} | Model: {result.model} | "
-                      f"Tokens: {result.tokens} | {result.duration_ms:.0f}ms | {result.cost}")
+                print(f"Verifier: {result.provider} | Model: {result.model} | "
+                      f"{result.duration_ms:.0f}ms | {result.cost}")
                 print("-" * 50)
                 print(result.response)
             else:
-                print(f"Error: {result.error}")
+                print(f"Verification error: {result.error}")
                 sys.exit(1)
+
+    elif args.task:
+        if args.with_verification:
+            # Execute + verify
+            output = backend.execute_with_verification(
+                task=args.task,
+                provider_override=args.provider,
+                verify=True,
+            )
+            if args.json:
+                print(json.dumps(output, indent=2))
+            else:
+                primary = output["primary"]
+                print(f"Primary: {primary['provider']} | Model: {primary['model']} | "
+                      f"Tokens: {primary['tokens']} | {primary['duration_ms']:.0f}ms")
+                print("-" * 50)
+                print(primary["response"][:2000])
+                if output["verified"] and output["verification"]:
+                    v = output["verification"]
+                    print(f"\n{'=' * 50}")
+                    print(f"VERIFICATION by {v['provider']} | Model: {v['model']} | "
+                          f"{v['duration_ms']:.0f}ms")
+                    print("-" * 50)
+                    print(v["response"][:1000])
+        else:
+            result = backend.execute(
+                task=args.task,
+                provider_override=args.provider,
+                model_override=args.model,
+            )
+            if args.json:
+                print(json.dumps(result.to_dict(), indent=2))
+            else:
+                if result.success:
+                    print(f"Provider: {result.provider} | Model: {result.model} | "
+                          f"Tokens: {result.tokens} | {result.duration_ms:.0f}ms | {result.cost}")
+                    print("-" * 50)
+                    print(result.response)
+                else:
+                    print(f"Error: {result.error}")
+                    sys.exit(1)
 
     elif args.route:
         task_type = args.route
         providers = backend.route_task(task_type)
         model_map = TASK_MODELS.get(task_type, {})
+        verifier = VERIFICATION_ROUTING.get(task_type, "none")
         if args.json:
-            print(json.dumps({"task_type": task_type, "providers": providers, "models": model_map}))
+            print(json.dumps({
+                "task_type": task_type,
+                "providers": providers,
+                "models": model_map,
+                "verifier": verifier,
+            }))
         else:
             print(f"Task type: {task_type}")
             print(f"Provider order: {' → '.join(providers)}")
+            print(f"Verifier: {verifier}")
             for p in providers:
                 print(f"  {p}: {model_map.get(p, 'default')}")
 

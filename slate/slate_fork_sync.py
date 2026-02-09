@@ -404,7 +404,7 @@ Be specific about which fork and what feature."""
                     "model": "mistral-nemo",
                     "prompt": prompt,
                     "stream": False,
-                    "options": {"temperature": 0.5, "num_predict": 500}
+                    "options": {"temperature": 0.5, "num_predict": 500, "num_gpu": 999}
                 },
                 timeout=30
             )

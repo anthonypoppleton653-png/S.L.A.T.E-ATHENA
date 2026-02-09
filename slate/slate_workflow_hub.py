@@ -101,13 +101,40 @@ class OllamaClient:
         # Use any available model
         return self.models[0] if self.models else None
     
-    def generate(self, prompt: str, task_type: str = "docs",
-                 max_tokens: int = 1024, temperature: float = 0.3) -> dict:
-        """Generate text using local inference."""
+    # Modified: 2026-02-09T05:00:00-05:00 | Author: Gemini | Change: Add warmup to pre-load models into VRAM
+    def warmup(self, task_type: str = "fast") -> bool:
+        """Pre-load a model into VRAM with a tiny generation request."""
         model = self.resolve_model(task_type)
         if not model:
-            return {"error": "No model available", "response": ""}
+            return False
         
+        payload = json.dumps({
+            "model": model,
+            "prompt": "Hello",
+            "stream": False,
+            "options": {"num_predict": 1, "num_gpu": 999}
+        }).encode()
+        
+        req = urllib.request.Request(
+            f"{self.base_url}/api/generate",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        
+        try:
+            print(f"  Warming up {model}...")
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                json.loads(resp.read())
+            print(f"  ✓ {model} loaded into VRAM")
+            return True
+        except Exception as e:
+            print(f"  ✗ Warmup failed for {model}: {e}")
+            return False
+    
+    def _do_generate(self, model: str, prompt: str, max_tokens: int, 
+                     temperature: float, timeout: int = 300) -> dict:
+        """Internal generate with a specific model."""
         payload = json.dumps({
             "model": model,
             "prompt": prompt,
@@ -115,6 +142,7 @@ class OllamaClient:
             "options": {
                 "num_predict": max_tokens,
                 "temperature": temperature,
+                "num_gpu": 999,
             }
         }).encode()
         
@@ -126,23 +154,54 @@ class OllamaClient:
         )
         
         start = time.time()
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read())
+        elapsed = time.time() - start
+        tokens = data.get("eval_count", 0)
+        eval_dur = data.get("eval_duration", 1)
+        tps = tokens / max(eval_dur / 1e9, 0.001)
+        
+        return {
+            "response": data.get("response", ""),
+            "model": model,
+            "tokens": tokens,
+            "tok_per_sec": round(tps, 1),
+            "elapsed": round(elapsed, 1),
+        }
+    
+    # Modified: 2026-02-09T05:00:00-05:00 | Author: Gemini | Change: Add retry-with-fallback to handle model load timeouts
+    def generate(self, prompt: str, task_type: str = "docs",
+                 max_tokens: int = 1024, temperature: float = 0.3) -> dict:
+        """Generate text using local inference. Retries with fallback model on timeout."""
+        model = self.resolve_model(task_type)
+        if not model:
+            return {"error": "No model available", "response": ""}
+        
+        # Try primary model
         try:
-            with urllib.request.urlopen(req, timeout=180) as resp:
-                data = json.loads(resp.read())
-            elapsed = time.time() - start
-            tokens = data.get("eval_count", 0)
-            eval_dur = data.get("eval_duration", 1)
-            tps = tokens / max(eval_dur / 1e9, 0.001)
-            
-            return {
-                "response": data.get("response", ""),
-                "model": model,
-                "tokens": tokens,
-                "tok_per_sec": round(tps, 1),
-                "elapsed": round(elapsed, 1),
-            }
+            return self._do_generate(model, prompt, max_tokens, temperature, timeout=300)
         except Exception as e:
-            return {"error": str(e), "response": "", "model": model}
+            print(f"  ⚠ Primary model {model} failed: {e}")
+        
+        # Try fallback model
+        fallback = MODEL_MAP["fallback"]
+        if fallback != model and any(fallback in m for m in self.models):
+            try:
+                print(f"  Retrying with fallback model {fallback}...")
+                return self._do_generate(fallback, prompt, max_tokens, temperature, timeout=300)
+            except Exception as e2:
+                return {"error": f"Primary: {e}, Fallback: {e2}", "response": "", "model": model}
+        
+        # Try any available model
+        for m in self.models:
+            if m != model:
+                try:
+                    print(f"  Retrying with {m}...")
+                    return self._do_generate(m, prompt, max_tokens, temperature, timeout=300)
+                except Exception:
+                    continue
+        
+        return {"error": str(e), "response": "", "model": model}
 
 
 # ─── Documentation Automation ────────────────────────────────────────────────

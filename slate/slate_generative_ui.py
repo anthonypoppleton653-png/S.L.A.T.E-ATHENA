@@ -665,7 +665,7 @@ class GenerativeUIEngine:
                         "model": self.model,
                         "prompt": prompt,
                         "stream": False,
-                        "options": {"temperature": 0.7, "num_predict": 100},
+                        "options": {"temperature": 0.7, "num_predict": 100, "num_gpu": 999},
                     },
                     timeout=30,
                 )

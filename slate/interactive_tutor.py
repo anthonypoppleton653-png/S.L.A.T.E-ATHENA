@@ -1537,6 +1537,7 @@ Be encouraging and reference what they've already learned when relevant."""
                         "options": {
                             "temperature": 0.7,
                             "num_predict": 300,
+                            "num_gpu": 999,
                         },
                     },
                     timeout=30,

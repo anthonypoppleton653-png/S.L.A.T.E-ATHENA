@@ -266,7 +266,7 @@ class SlateModelTrainer:
                 "model": actual_name,
                 "prompt": config["test_prompt"],
                 "stream": False,
-                "options": {"temperature": 0.3, "num_predict": 256},
+                "options": {"temperature": 0.3, "num_predict": 256, "num_gpu": 999},
             }
             result = self._ollama_request("/api/generate", data, timeout=120)
             elapsed = time.time() - start
@@ -356,7 +356,7 @@ class SlateModelTrainer:
                         "model": actual,
                         "prompt": prompt,
                         "stream": False,
-                        "options": {"temperature": 0.3, "num_predict": 256},
+                        "options": {"temperature": 0.3, "num_predict": 256, "num_gpu": 999},
                     }
                     r = self._ollama_request("/api/generate", data, timeout=120)
                     elapsed = time.time() - start

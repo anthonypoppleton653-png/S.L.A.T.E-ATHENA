@@ -116,13 +116,15 @@ def run_prompt(name: str, model_override: str = None) -> str:
     try:
         import urllib.request
         url = f'{OLLAMA_HOST}/api/generate'
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add num_gpu 999 to force GPU VRAM
         payload = json.dumps({
             'model': model,
             'prompt': prompt_text,
             'stream': False,
             'options': {
                 'num_predict': 2048,
-                'temperature': 0.7
+                'temperature': 0.7,
+                'num_gpu': 999
             }
         }).encode('utf-8')
 

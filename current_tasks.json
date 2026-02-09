@@ -16,7 +16,7 @@
     {
       "id": "collab_antigravity_003",
       "title": "SLATE Dashboard integration for Antigravity agent",
-      "description": "Created dashboard_client.py (34 API endpoints), K8s antigravity-bridge deployment (NodePort 30085), slate-dashboard agent skill, integrated into index.py v1.2.0, built slate-antigravity VS Code extension v5.2.0 with SLATE Dark theme, sidebar dashboard webview, @antigravity chat participant (27 commands, 36 tools). Dashboard connected via K8s bridge → slate-dashboard-svc:8080.",
+      "description": "Created dashboard_client.py (34 API endpoints), K8s antigravity-bridge deployment (NodePort 30085), slate-dashboard agent skill, integrated into index.py v1.2.0, built slate-antigravity VS Code extension v5.2.0 with SLATE Dark theme, sidebar dashboard webview, @antigravity chat participant (27 commands, 36 tools). Dashboard connected via K8s bridge \u2192 slate-dashboard-svc:8080.",
       "priority": "high",
       "assigned_to": "antigravity",
       "source": "collaborative_session",
@@ -167,7 +167,7 @@
     {
       "id": "phase3_token_brand_011",
       "title": "Phase 3 Expansion: Token System + Brand Identity + Avatar + Microsoft Dependency Analysis",
-      "description": "Created slate_token_system.py (26 bootstrapped tokens: 11 service, 8 agent, 5 plugin, 1 wiki, 1 MCP). Created 3 new specs (022-brand, 023-avatar, 024-trellis). Analyzed TRELLIS.2 and 24 Microsoft repos. Updated fork sync (16→24 deps with 8 new MS repos). Updated tech tree v3.0.0 (45 nodes, 61 edges). Updated CLAUDE.md, FORGE.md. Forked TRELLIS.2.",
+      "description": "Created slate_token_system.py (26 bootstrapped tokens: 11 service, 8 agent, 5 plugin, 1 wiki, 1 MCP). Created 3 new specs (022-brand, 023-avatar, 024-trellis). Analyzed TRELLIS.2 and 24 Microsoft repos. Updated fork sync (16\u219224 deps with 8 new MS repos). Updated tech tree v3.0.0 (45 nodes, 61 edges). Updated CLAUDE.md, FORGE.md. Forked TRELLIS.2.",
       "priority": "high",
       "assigned_to": "claude-code",
       "source": "user_request",
@@ -176,10 +176,36 @@
       "created_at": "2026-02-09T15:00:00+00:00",
       "completed_at": "2026-02-09T15:30:00+00:00",
       "completed_by": "claude-code"
+    },
+    {
+      "id": "kanban_PVTI_lAH",
+      "title": "Unified AI Backend: 3-provider inference routing (Ollama + Claude Code + Foundry)",
+      "description": "Synced from KANBAN project board (item type: unknown)",
+      "priority": "medium",
+      "assigned_to": "workflow",
+      "source": "project_board",
+      "project_item_id": "PVTI_lAHODaoBEM4BOh0WzglFHow",
+      "status": "in_progress",
+      "created_at": "2026-02-09T10:45:35.834259+00:00",
+      "completed_at": "2026-02-09T11:08:36.726020+00:00",
+      "completed_by": "autonomous_loop",
+      "started_at": "2026-02-09T11:08:41.464372+00:00",
+      "started_by": "autonomous_loop"
+    },
+    {
+      "id": "kanban_PVTI_lAH",
+      "title": "chore: Push workflow file updates (aurora_core \u2192 slate unification)",
+      "description": "Synced from KANBAN project board (item type: unknown)",
+      "priority": "medium",
+      "assigned_to": "workflow",
+      "source": "project_board",
+      "project_item_id": "PVTI_lAHODaoBEM4BOh0Wzgk_v-U",
+      "status": "pending",
+      "created_at": "2026-02-09T11:05:14.133600+00:00"
     }
   ],
   "created_at": "2026-02-06T04:19:10.197376+00:00",
-  "last_cleaned": "2026-02-09T08:40:11.673525+00:00",
+  "last_cleaned": "2026-02-09T11:05:13.027441+00:00",
   "clean_reason": "Workflow cleanup: 1 removed, 0 reset",
-  "last_updated": "2026-02-09T15:30:00.000000+00:00"
+  "last_updated": "2026-02-09T11:08:41.464372+00:00"
 }

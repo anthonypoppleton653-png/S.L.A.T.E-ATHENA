@@ -196,7 +196,7 @@ def _query_ollama(model: str, prompt: str, system: str = "",
         "prompt": prompt,
         "system": system,
         "stream": False,
-        "options": {"temperature": temperature, "num_predict": max_tokens},
+        "options": {"temperature": temperature, "num_predict": max_tokens, "num_gpu": 999},
     }).encode()
     req = urllib.request.Request(
         f"{OLLAMA_URL}/api/generate",

@@ -420,7 +420,7 @@ Respond ONLY with valid JSON, no markdown formatting or code blocks."""
                     "prompt": prompt,
                     "stream": stream,
                     "keep_alive": keep_alive,
-                    "options": {"temperature": temperature, "num_predict": max_tokens},
+                    "options": {"temperature": temperature, "num_predict": max_tokens, "num_gpu": 999},
                 }
                 if system:
                     data["system"] = system
