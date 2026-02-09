@@ -147,14 +147,14 @@
 
 ## Phase 4: Morph System (Sprint 5)
 
-- [ ] **T-025-016**: Create `.slate_config/morph.yaml` schema
+- [x] **T-025-016**: Create `.slate_config/morph.yaml` schema
   - Project identity fields
   - Brand override configuration
   - Active systems selection
   - Protected paths list
   - Upstream sync preferences
 
-- [ ] **T-025-017**: Build `slate/morph_manager.py`
+- [x] **T-025-017**: Build `slate/morph_manager.py`
   - Fork creation automation
   - Custom branding application
   - README generation (AI-powered)

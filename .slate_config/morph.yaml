@@ -1,0 +1,89 @@
+# SLATE Morph Configuration
+# Modified: 2026-02-09T22:00:00Z | Author: COPILOT | Change: Create morph.yaml schema (T-025-016)
+# NOTE: All AIs modifying this file must add a dated comment.
+# ──────────────────────────────────────────────────────────
+# A SLATE Morph is a forked SLATE project customized for a
+# specific purpose. This file defines the morph identity,
+# branding, active systems, protected paths, and upstream
+# sync preferences.
+#
+# Generate via:  python slate/morph_manager.py --init
+# Validate via:  python slate/morph_manager.py --validate
+# Apply via:     python slate/morph_manager.py --apply-brand
+# ──────────────────────────────────────────────────────────
+
+morph:
+  # ── Identity ──────────────────────────────────────────
+  name: "S.L.A.T.E."                    # Project display name
+  description: "Synchronized Living Architecture for Transformation and Evolution"
+  version: "3.0.0"                       # Morph version (independent of SLATE core)
+  upstream: "SynchronizedLivingArchitecture/S.L.A.T.E"
+  created: "2026-02-09"
+  author: ""                             # Morph owner / organization
+  license: "MIT"                         # Morph license (SLATE core stays MIT)
+
+  # ── Brand ─────────────────────────────────────────────
+  # Override SLATE's default design tokens with your brand.
+  # Colors propagate to dashboard, CLI, VSCode theme, README badges.
+  brand:
+    primary_color: "#B87333"             # Default: SLATE copper/bronze
+    secondary_color: "#3B82F6"           # Default: SLATE electric blue
+    surface_color: "#0C0C0C"             # Default: SLATE dark surface
+    accent_color: "#10B981"              # Default: SLATE emerald accent
+    logo_path: ""                        # Path to custom logo SVG (relative to workspace)
+    favicon_path: ""                     # Path to custom favicon (relative to workspace)
+    project_title: "S.L.A.T.E."         # Shown in dashboard header
+    tagline: "Local-First AI Agent Orchestration"
+    # When logo_path is empty, SLATE's default schematic logo is used.
+    # Set logo_path to ".slate_identity/logo.svg" after uploading your logo.
+
+  # ── Active Systems ────────────────────────────────────
+  # Toggle which SLATE subsystems are active in this morph.
+  # Disabled systems are hidden from dashboard and skip during install.
+  systems:
+    core: true                           # SLATE core SDK (always true)
+    dashboard: true                      # FastAPI dashboard + WebSocket
+    ollama: true                         # Local LLM inference via Ollama
+    gpu_compute: true                    # GPU detection, benchmarks, thermal
+    github_runner: false                 # Self-hosted GitHub Actions runner
+    docker: false                        # Docker containerization
+    kubernetes: false                    # K8s local cloud deployment
+    chromadb: true                       # Vector store for codebase embeddings
+    spec_kit: true                       # Spec processing and wiki generation
+    avatar_3d: false                     # TRELLIS 3D asset generation
+    energy_scheduler: true               # Energy-aware task scheduling
+    morph_sdk: false                     # Morph SDK for building extensions
+
+  # ── Protected Paths ───────────────────────────────────
+  # Files that upstream sync will NEVER overwrite.
+  # These are your morph's identity — they survive updates.
+  protected_paths:
+    - "README.md"                        # Your custom README
+    - ".slate_config/morph.yaml"         # This file
+    - ".slate_identity/"                 # Custom logos, favicon, brand assets
+    - "docs/pages/index.html"            # Your custom landing page
+    # Add your project-specific paths:
+    # - "custom/**"
+    # - "my-plugin/**"
+
+  # ── Upstream Sync ─────────────────────────────────────
+  # How this morph stays in sync with SLATE upstream.
+  sync:
+    auto: false                          # Auto-merge safe upstream changes
+    frequency: "weekly"                  # Check frequency: daily, weekly, manual
+    strategy: "preserve_morph"           # preserve_morph | prefer_upstream | manual_merge
+    notify_on_conflict: true             # Dashboard notification on merge conflicts
+    # preserve_morph:   Keep morph identity, merge only non-conflicting core updates
+    # prefer_upstream:  Accept upstream changes, re-apply morph overrides after
+    # manual_merge:     Always prompt user for conflict resolution
+
+  # ── Creative Commons Contract ─────────────────────────
+  # Revenue distribution for morph-generated revenue.
+  # Acceptance is required during onboarding (T-025-019).
+  contract:
+    accepted: false                      # Set to true after onboarding acceptance
+    accepted_at: ""                      # ISO timestamp of acceptance
+    distribution:
+      slate_foundation_pct: 5            # Infrastructure maintenance
+      upstream_contributors_pct: 10      # Weighted by commit history
+      morph_owner_pct: 85                # Morph creator/maintainer
