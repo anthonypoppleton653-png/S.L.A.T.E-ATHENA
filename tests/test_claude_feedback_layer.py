@@ -18,8 +18,13 @@ def test_tool_event_to_dict_and_from_dict():
         "id": "123",
         "tool_name": "example_tool",
         "tool_input": {"input_key": "input_value"},
+        "tool_output": None,
         "success": True,
+        "error_message": None,
+        "duration_ms": 0,
+        "session_id": None,
         "timestamp": event.timestamp,
+        "metadata": {},
     }
 
     new_event = ToolEvent.from_dict(event.to_dict())
@@ -41,8 +46,10 @@ def test_pattern_insight_to_dict_and_from_dict():
         "frequency": 1,
         "confidence": 0.0,
         "affected_tools": [],
+        "recommendation": None,
         "first_seen": insight.first_seen,
         "last_seen": insight.last_seen,
+        "metadata": {},
     }
 
     new_insight = PatternInsight.from_dict(insight.to_dict())

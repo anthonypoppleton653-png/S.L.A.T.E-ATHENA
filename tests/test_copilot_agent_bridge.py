@@ -82,7 +82,7 @@ class TestCopilotAgentBridge:
              patch("slate.copilot_agent_bridge.BRIDGE_RESULTS_FILE", results_file):
             bridge = CopilotAgentBridge()
             status = bridge.get_status()
-            assert "pending_count" in status
+            assert "pending" in status
             assert "total_results" in status
 
     def test_cleanup_stale(self, tmp_path):

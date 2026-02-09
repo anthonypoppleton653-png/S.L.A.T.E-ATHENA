@@ -24,6 +24,12 @@ from slate.slate_status import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _force_not_docker():
+    """Ensure IS_DOCKER is False for all tests, preventing env contamination."""
+    with patch("slate.slate_status.IS_DOCKER", False):
+        yield
+
 # ── get_python_info ─────────────────────────────────────────────────────
 
 
@@ -77,6 +83,7 @@ class TestGetGpuInfo:
         info = get_gpu_info()
         assert isinstance(info["gpus"], list)
 
+    @patch("slate.slate_status.IS_DOCKER", False)
     @patch("slate.slate_status.subprocess.run")
     def test_nvidia_smi_success(self, mock_run):
         mock_run.return_value = MagicMock(
@@ -88,6 +95,7 @@ class TestGetGpuInfo:
         assert info["count"] == 1
         assert info["gpus"][0]["name"] == "NVIDIA RTX 5070 Ti"
 
+    @patch("slate.slate_status.IS_DOCKER", False)
     @patch("slate.slate_status.subprocess.run")
     def test_nvidia_smi_multi_gpu(self, mock_run):
         mock_run.return_value = MagicMock(
@@ -98,6 +106,7 @@ class TestGetGpuInfo:
         assert info["count"] == 2
         assert len(info["gpus"]) == 2
 
+    @patch("slate.slate_status.IS_DOCKER", False)
     @patch("slate.slate_status.subprocess.run")
     def test_nvidia_smi_not_found(self, mock_run):
         mock_run.side_effect = FileNotFoundError("nvidia-smi not found")
@@ -105,6 +114,7 @@ class TestGetGpuInfo:
         assert info["available"] is False
         assert info["count"] == 0
 
+    @patch("slate.slate_status.IS_DOCKER", False)
     @patch("slate.slate_status.subprocess.run")
     def test_nvidia_smi_failure(self, mock_run):
         mock_run.return_value = MagicMock(returncode=1, stdout="")
@@ -167,6 +177,7 @@ class TestGetOllamaInfo:
         info = get_ollama_info()
         assert isinstance(info, dict)
 
+    @patch("slate.slate_status.IS_DOCKER", False)
     @patch("slate.slate_status.subprocess.run")
     def test_ollama_available(self, mock_run):
         mock_run.return_value = MagicMock(
@@ -177,6 +188,7 @@ class TestGetOllamaInfo:
         assert info["available"] is True
         assert info["model_count"] == 2
 
+    @patch("slate.slate_status.IS_DOCKER", False)
     @patch("slate.slate_status.subprocess.run")
     def test_ollama_not_available(self, mock_run):
         mock_run.side_effect = FileNotFoundError()
@@ -184,6 +196,7 @@ class TestGetOllamaInfo:
         assert info["available"] is False
         assert info["model_count"] == 0
 
+    @patch("slate.slate_status.IS_DOCKER", False)
     @patch("slate.slate_status.subprocess.run")
     def test_ollama_failure(self, mock_run):
         mock_run.return_value = MagicMock(returncode=1, stdout="")

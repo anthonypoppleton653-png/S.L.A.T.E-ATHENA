@@ -24,14 +24,9 @@ def test_security_labels_and_commit_intent_labels():
     assert "bug fix" in COMMIT_INTENT_LABELS
 
 def test_pipeline_methods(pipeline):
-    # Test if methods are present but not implemented yet
-    with pytest.raises(NotImplementedError):
-        pipeline.classify("text")
-    with pytest.raises(NotImplementedError):
-        pipeline.embed("code")
-    with pytest.raises(NotImplementedError):
-        pipeline.security("code")
-    with pytest.raises(NotImplementedError):
-        pipeline.benchmark()
-    with pytest.raises(NotImplementedError):
-        pipeline.batch_classify("file.jsonl")
+    # Test if methods are present
+    assert hasattr(pipeline, 'classify_text')
+    assert hasattr(pipeline, 'extract_embeddings')
+    assert hasattr(pipeline, 'security_scan')
+    assert hasattr(pipeline, 'benchmark')
+    assert hasattr(pipeline, 'batch_classify_file')

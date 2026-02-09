@@ -24,7 +24,6 @@ def test_get_git_sha(release_manager):
     assert isinstance(sha, str)
 
 def test_release_channels():
-    channels = [ReleaseChannel.STABLE, ReleaseChannel.BETA, ReleaseChannel.NIGHTLY]
-    for channel in channels:
-        assert hasattr(ReleaseChannel, channel)
-        assert getattr(ReleaseChannel, channel) == channel
+    assert ReleaseChannel.STABLE == "stable"
+    assert ReleaseChannel.BETA == "beta"
+    assert ReleaseChannel.NIGHTLY == "nightly"

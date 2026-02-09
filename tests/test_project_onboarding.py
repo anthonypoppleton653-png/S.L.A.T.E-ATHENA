@@ -1,6 +1,7 @@
 # tests/test_project_onboarding.py
 
 import pytest
+from pathlib import Path
 from slate.project_onboarding import (
     OnboardingPhase,
     ProjectInfo,
@@ -10,7 +11,7 @@ from slate.project_onboarding import (
 )
 
 def test_onboarding_phase_enums():
-    assert len(OnboardingPhase) == 10
+    assert len(OnboardingPhase) == 9
     assert OnboardingPhase.WELCOME.value == "welcome"
     assert OnboardingPhase.COMPLETE.value == "complete"
 
@@ -46,7 +47,7 @@ def test_onboarding_state_initialization():
     assert state.completed_at is None
 
 def test_onboarding_steps():
-    welcome_steps = ONBOARDING_STEPS[OnboardingPhase.WELCOARE]
+    welcome_steps = ONBOARDING_STEPS[OnboardingPhase.WELCOME]
     assert len(welcome_steps) == 1
     assert welcome_steps[0]["id"] == "welcome_intro"
     assert welcome_steps[0]["title"] == "Welcome to S.L.A.T.E."

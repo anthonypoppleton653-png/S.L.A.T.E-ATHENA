@@ -35,8 +35,8 @@ def test_git_hub_achievement_to_dict(sample_achievement):
         "description": "Open PRs that get merged",
         "icon": "🦈",
         "category": "contributions",
-        "tiers": {"bronze": 5, "silver": 20, "gold": 50},
-    }
+        "tiers": {"bronze": 5, "silver": 20, "gold": 50},        "single_threshold": None,
+        "how_to_earn": "",    }
 
 def test_achievement_progress_to_dict(sample_progress):
     assert sample_progress.to_dict() == {
@@ -44,6 +44,7 @@ def test_achievement_progress_to_dict(sample_progress):
         "current_count": 10,
         "current_tier": AchievementTier.SILVER.value,
         "status": AchievementStatus.IN_PROGRESS.value,
+        "earned_at": None,
         "last_updated": sample_progress.last_updated,
     }
 
