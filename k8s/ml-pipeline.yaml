@@ -232,7 +232,8 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 2
-      activeDeadlineSeconds: 3600  # 1 hour max
+      # Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Increase deadline from 3600 to 7200 — indexer exceeded 1h on large codebases
+      activeDeadlineSeconds: 7200  # 2 hours max
       template:
         metadata:
           labels:
