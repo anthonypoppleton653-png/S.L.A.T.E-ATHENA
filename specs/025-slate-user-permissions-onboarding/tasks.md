@@ -2,24 +2,24 @@
 
 ## Phase 1: Token Foundation (Sprint 1)
 
-- [ ] **T-025-001**: Create `design-tokens.json` — Single source of truth
+- [x] **T-025-001**: Create `design-tokens.json` — Single source of truth
   - Consolidate all tokens from spec-007, spec-008, spec-022
   - JSON schema with validation
   - Version lock mechanism
 
-- [ ] **T-025-002**: Build `slate/token_propagator.py`
+- [x] **T-025-002**: Build `slate/token_propagator.py`
   - Read `design-tokens.json`
   - Generate CSS, Python, VSCode theme, GitHub labels, CLI colors
   - Validation: ensure all outputs match source
   - Pre-commit hook integration
 
-- [ ] **T-025-003**: Create `.slate_config/permissions.yaml` schema
+- [x] **T-025-003**: Create `.slate_config/permissions.yaml` schema
   - Define tier 0-5 permission levels
   - Agent-specific overrides
   - Guardrail configuration
   - Budget/quota system
 
-- [ ] **T-025-004**: Build `slate/permission_gate.py`
+- [x] **T-025-004**: Build `slate/permission_gate.py`
   - Central enforcement engine
   - Audit trail logging
   - Tier escalation flow
@@ -27,7 +27,7 @@
 
 ## Phase 2: Benchmarking, Metering & Energy (Sprint 2)
 
-- [ ] **T-025-005**: Build `slate/benchmark_suite.py`
+- [x] **T-025-005**: Build `slate/benchmark_suite.py`
   - GPU inference benchmark (Ollama tok/s)
   - GPU VRAM scan
   - GPU thermal profile (temperature under load)
@@ -36,13 +36,13 @@
   - Memory bandwidth test
   - Network latency test
 
-- [ ] **T-025-006**: Performance Profile Card generator
+- [x] **T-025-006**: Performance Profile Card generator
   - ASCII art output (terminal)
   - HTML output (dashboard widget)
   - JSON output (storage)
   - Scoring algorithm (0-100)
 
-- [ ] **T-025-007**: Thermal Policy System
+- [x] **T-025-007**: Thermal Policy System
   - `.slate_config/thermal.yaml` schema
   - Four policies: aggressive, balanced, quiet, endurance
   - Auto-select based on benchmark results
@@ -53,7 +53,7 @@
   - Animated progress in dashboard
   - Results feed into system tuning
 
-- [ ] **T-025-028**: Build `slate/token_counter.py` — Inference Token Metering
+- [x] **T-025-028**: Build `slate/token_counter.py` — Inference Token Metering
   - Hook into all Ollama API call points in the SLATE ecosystem
   - Extract prompt_tokens, completion_tokens from API response
   - Per-agent attribution (tag each call with originating agent)
@@ -65,7 +65,7 @@
   - API endpoint: `GET /api/tokens/throughput?window=1h`
   - CLI: `slate tokens [--today | --week | --lifetime]`
 
-- [ ] **T-025-029**: Build `slate/energy_providers.py` — Provider Database
+- [x] **T-025-029**: Build `slate/energy_providers.py` — Provider Database
   - US electrical provider database (top 10 metro providers)
   - ZIP code to provider lookup
   - Rate schedule parsing (TOU: peak/off-peak/super-off-peak)
@@ -73,7 +73,7 @@
   - Community-contributed provider submissions (via SLATE Discussions)
   - Seasonal rate adjustment support
 
-- [ ] **T-025-030**: Build `slate/energy_scheduler.py` — Rate-Aware Scheduling
+- [x] **T-025-030**: Build `slate/energy_scheduler.py` — Rate-Aware Scheduling
   - Operation classifier (heavy/normal/light)
   - Current rate tier detection (time-based)
   - Schedule decision engine (execute now vs queue for window)
