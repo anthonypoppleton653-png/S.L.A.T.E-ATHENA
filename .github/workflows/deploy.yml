@@ -56,7 +56,7 @@ jobs:
       image_tag: ${{ steps.meta.outputs.version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python PATH
         shell: powershell
@@ -102,7 +102,7 @@ jobs:
     needs: build
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python PATH
         shell: powershell
@@ -130,7 +130,7 @@ jobs:
       name: ${{ inputs.environment || 'local' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python PATH
         shell: powershell
@@ -188,7 +188,7 @@ jobs:
       name: ${{ inputs.environment || 'local' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Helm lint
         shell: powershell
@@ -226,7 +226,7 @@ jobs:
     if: always() && !inputs.dry_run && (needs.deploy-kustomize.result == 'success' || needs.deploy-helm.result == 'success')
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python PATH
         shell: powershell

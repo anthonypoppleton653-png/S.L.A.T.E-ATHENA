@@ -63,7 +63,7 @@ jobs:
       cluster_ready: ${{ steps.check.outputs.ready }}
       node_count: ${{ steps.check.outputs.nodes }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -102,7 +102,7 @@ jobs:
     if: ${{ (github.event.inputs.action == 'deploy' || github.event_name == 'workflow_run') && needs.preflight.outputs.cluster_ready == 'true' }}
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -153,7 +153,7 @@ jobs:
     if: ${{ github.event.inputs.action == 'status' }}
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -168,7 +168,7 @@ jobs:
     if: ${{ github.event.inputs.action == 'health' }}
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -183,7 +183,7 @@ jobs:
     if: ${{ github.event.inputs.action == 'teardown' }}
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH
