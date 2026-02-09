@@ -60,6 +60,9 @@ spec:
             - name: OLLAMA_HOST
               value: ollama-svc:11434
             # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio host env for K8s pods
+            # Modified: 2026-02-11T06:00:00Z | Author: COPILOT | Change: Document host.docker.internal requirement
+            # NOTE: host.docker.internal resolves ONLY when running K8s via Docker Desktop.
+            # For non-Docker-Desktop clusters, override with the host IP or use a hostNetwork pod.
             - name: LMSTUDIO_HOST
               value: http://host.docker.internal:1234
             - name: CHROMADB_HOST

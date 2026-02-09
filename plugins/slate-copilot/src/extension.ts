@@ -190,6 +190,7 @@ export function deactivate() { }
 
 // ─── Auto-Start SLATE Systems ──────────────────────────────────────────────
 // Modified: 2026-02-10T08:00:00Z | Author: COPILOT | Change: Auto-start Ollama + SLATE services on VS Code open
+// Modified: 2026-02-11T06:00:00Z | Author: COPILOT | Change: Enforce container-first in auto-start — no local Python fallback, skip host Ollama when K8s backend detected
 
 /** Check if Ollama is running by hitting its health endpoint */
 async function checkOllamaRunning(): Promise<boolean> {
@@ -237,68 +238,65 @@ async function autoStartSlateSystems(
 	vscode.window.setStatusBarMessage('$(sync~spin) SLATE: Checking systems...', 10000);
 	console.log('[SLATE] Auto-start: checking SLATE systems...');
 
-	// 1. Check and start Ollama
-	const ollamaOk = await checkOllamaRunning();
-	if (!ollamaOk) {
-		console.log('[SLATE] Auto-start: Ollama not running, attempting to start...');
-		try {
-			const ollamaProc = spawn('ollama', ['serve'], {
-				detached: true,
-				stdio: 'ignore',
-				windowsHide: true,
-			});
-			ollamaProc.unref();
-			// Wait a moment for Ollama to start
-			await new Promise(r => setTimeout(r, 2000));
-			const ollamaCheck = await checkOllamaRunning();
-			if (ollamaCheck) {
-				startedServices.push('Ollama');
-				console.log('[SLATE] Auto-start: Ollama started successfully');
-			} else {
-				failedServices.push('Ollama');
-				console.warn('[SLATE] Auto-start: Ollama failed to start');
-			}
-		} catch (err) {
-			failedServices.push('Ollama');
-			console.warn('[SLATE] Auto-start: Ollama spawn error:', err);
-		}
+	// 1. Check and start Ollama (host-level only — skip if K8s detected, Ollama runs as pod)
+	if (status.backend === 'kubernetes') {
+		console.log('[SLATE] Auto-start: K8s backend detected — skipping host Ollama (runs as K8s pod)');
 	} else {
-		console.log('[SLATE] Auto-start: Ollama already running');
+		const ollamaOk = await checkOllamaRunning();
+		if (!ollamaOk) {
+			console.log('[SLATE] Auto-start: Ollama not running, attempting to start...');
+			try {
+				const ollamaProc = spawn('ollama', ['serve'], {
+					detached: true,
+					stdio: 'ignore',
+					windowsHide: true,
+				});
+				ollamaProc.unref();
+				// Wait a moment for Ollama to start
+				await new Promise(r => setTimeout(r, 2000));
+				const ollamaCheck = await checkOllamaRunning();
+				if (ollamaCheck) {
+					startedServices.push('Ollama');
+					console.log('[SLATE] Auto-start: Ollama started successfully');
+				} else {
+					failedServices.push('Ollama');
+					console.warn('[SLATE] Auto-start: Ollama failed to start');
+				}
+			} catch (err) {
+				failedServices.push('Ollama');
+				console.warn('[SLATE] Auto-start: Ollama spawn error:', err);
+			}
+		} else {
+			console.log('[SLATE] Auto-start: Ollama already running');
+		}
 	}
 
 	// 2. If runtime backend is not healthy, try to start services
 	if (!status.healthy || status.backend === 'none') {
 		console.log('[SLATE] Auto-start: Runtime not healthy, attempting to start services...');
 
-		// Check if Dashboard is running (local FastAPI)
+		// Check if Dashboard is running
 		const dashboardOk = await checkServiceRunning(8080, '/docs');
 		if (!dashboardOk) {
-			// Try to start the dashboard via the SLATE Auto-Start task
+			// Try to start services via the SLATE Auto-Start task (which uses container runtime)
 			try {
 				await vscode.commands.executeCommand('workbench.action.tasks.runTask', 'SLATE: Auto-Start');
 				startedServices.push('SLATE Services');
 				console.log('[SLATE] Auto-start: Dispatched SLATE: Auto-Start task');
 			} catch (err) {
-				// Fallback: try direct Python start
-				const config = getSlateConfig();
-				try {
-					const proc = spawn(
-						config.pythonPath,
-						['slate/slate_orchestrator.py', 'start'],
-						{
-							cwd: config.workspacePath,
-							detached: true,
-							stdio: 'ignore',
-							windowsHide: true,
-						}
-					);
-					proc.unref();
-					startedServices.push('Orchestrator');
-					console.log('[SLATE] Auto-start: Started orchestrator directly');
-				} catch (e2) {
-					failedServices.push('SLATE Services');
-					console.warn('[SLATE] Auto-start: Failed to start services:', e2);
-				}
+				// Container-first: prompt user to deploy via K8s or Docker instead of local Python fallback
+				console.warn('[SLATE] Auto-start: Auto-Start task failed, prompting container deploy');
+				void vscode.window.showWarningMessage(
+					'SLATE: Could not auto-start services. Deploy via K8s or Docker to enable the full runtime.',
+					'K8s Deploy', 'Docker Up (Dev)'
+				).then(action => {
+					if (action === 'K8s Deploy') {
+						void vscode.commands.executeCommand('workbench.action.tasks.runTask', 'SLATE: K8s Deploy');
+					} else if (action === 'Docker Up (Dev)') {
+						void vscode.commands.executeCommand('workbench.action.tasks.runTask', 'SLATE: Docker Up (Dev)');
+					}
+				});
+				failedServices.push('SLATE Services');
 			}
 		} else {
 			console.log('[SLATE] Auto-start: Dashboard already running on :8080');
