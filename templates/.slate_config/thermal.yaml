@@ -1,0 +1,26 @@
+# SLATE Thermal Policy Configuration Template
+# Modified: 2026-02-09T15:26:00-05:00 | Author: Gemini (Antigravity)
+# NOTE: All AIs modifying this file must add a dated comment.
+# ────────────────────────────────────────
+#
+# Policies: aggressive | balanced | quiet | endurance
+# Auto-selected during onboarding based on benchmark results.
+# Copy to .slate_config/thermal.yaml to customize.
+
+policy: balanced
+description: "Good performance with thermal protection. Default for most systems."
+
+gpu:
+  power_limit_pct: 85
+  max_temp_c: 85
+  throttle_temp_c: 80
+  fan_curve: auto    # auto | max | quiet | silent
+
+# Override per GPU (optional — use nvidia-smi --query-gpu=name)
+# gpu_overrides:
+#   "NVIDIA GeForce RTX 4090":
+#     power_limit_pct: 90
+#     max_temp_c: 88
+#   "NVIDIA GeForce RTX 3060":
+#     power_limit_pct: 80
+#     max_temp_c: 82
