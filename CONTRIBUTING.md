@@ -214,10 +214,31 @@ Create `tests/test_your_agent.py` following Arrange-Act-Assert pattern.
 | ZETA | Benchmark Oracle | benchmark, performance, profile, throughput, optimize |
 | COPILOT | Orchestration | complex, multi-step, orchestrate, deploy, release |
 
-## License
+## License and Compensation
 
 By contributing, you agree that your contributions will be licensed under the
-S.L.A.T.E. Experimental Open Source License (EOSL-1.0).
+**S.L.A.T.E. Experimental Open Source License (EOSL-1.0)**.
+
+### Fair Compensation
+
+SLATE includes a **fair compensation framework** for contributors. When commercial
+use of SLATE generates significant revenue ($1M+ USD annually), 25% of royalties
+are distributed to qualifying contributors based on objective contribution metrics.
+
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for:
+- Full compensation methodology and scoring weights
+- Fork maintainer tier system (Bronze/Silver/Gold)
+- Hardware donation recognition tiers
+- Transparency and audit provisions
+
+### GitHub Achievements
+
+SLATE's development workflow is designed to help contributors earn GitHub Achievements:
+- **Pull Shark**: PR-based workflow generates merged PRs
+- **Pair Extraordinaire**: Co-authored commits with AI and human collaborators
+- **Galaxy Brain**: Active GitHub Discussions community
+
+Track your progress: `python slate/github_achievements.py --refresh`
 
 ---
 
