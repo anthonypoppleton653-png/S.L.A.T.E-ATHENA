@@ -53,6 +53,7 @@ htmlcov/
 
 # SLATE specific
 .slate_pids/
+.slate_community/
 .slate_terminal_monitor/
 .slate_hardware_config.json
 *.log
