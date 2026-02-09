@@ -1178,7 +1178,7 @@
             opacity: 0;
             transform: translateY(40px);
             transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .reveal.revealed {
@@ -1190,7 +1190,7 @@
             opacity: 0;
             transform: translateX(-60px);
             transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .reveal-left.revealed {
@@ -1202,7 +1202,7 @@
             opacity: 0;
             transform: translateX(60px);
             transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .reveal-right.revealed {
@@ -1214,7 +1214,7 @@
             opacity: 0;
             transform: scale(0.9);
             transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .reveal-scale.revealed {
@@ -1223,15 +1223,41 @@
         }
 
         /* Stagger delays for grid children */
-        .stagger-1 { transition-delay: 0.05s; }
-        .stagger-2 { transition-delay: 0.1s; }
-        .stagger-3 { transition-delay: 0.15s; }
-        .stagger-4 { transition-delay: 0.2s; }
-        .stagger-5 { transition-delay: 0.25s; }
-        .stagger-6 { transition-delay: 0.3s; }
-        .stagger-7 { transition-delay: 0.35s; }
-        .stagger-8 { transition-delay: 0.4s; }
-        .stagger-9 { transition-delay: 0.45s; }
+        .stagger-1 {
+            transition-delay: 0.05s;
+        }
+
+        .stagger-2 {
+            transition-delay: 0.1s;
+        }
+
+        .stagger-3 {
+            transition-delay: 0.15s;
+        }
+
+        .stagger-4 {
+            transition-delay: 0.2s;
+        }
+
+        .stagger-5 {
+            transition-delay: 0.25s;
+        }
+
+        .stagger-6 {
+            transition-delay: 0.3s;
+        }
+
+        .stagger-7 {
+            transition-delay: 0.35s;
+        }
+
+        .stagger-8 {
+            transition-delay: 0.4s;
+        }
+
+        .stagger-9 {
+            transition-delay: 0.45s;
+        }
 
         /* ─── Glassmorphism Cards ────────────────────────────────────────────────── */
         .feature-card {
@@ -1243,8 +1269,8 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-                        box-shadow 0.4s ease,
-                        border-color 0.3s ease;
+                box-shadow 0.4s ease,
+                border-color 0.3s ease;
         }
 
         .health-card:hover {
@@ -1256,14 +1282,14 @@
         /* ─── Enhanced Feature Card Hover ────────────────────────────────────────── */
         .feature-card {
             transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
-                        box-shadow 0.5s ease,
-                        border-color 0.3s ease;
+                box-shadow 0.5s ease,
+                border-color 0.3s ease;
         }
 
         .feature-card:hover {
             transform: translateY(-6px) scale(1.01);
             box-shadow: 0 20px 60px rgba(184, 115, 51, 0.12),
-                        0 0 0 1px rgba(184, 115, 51, 0.2);
+                0 0 0 1px rgba(184, 115, 51, 0.2);
         }
 
         /* ─── Cursor Glow Effect ─────────────────────────────────────────────────── */
@@ -1290,6 +1316,7 @@
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -1319,8 +1346,8 @@
         /* ─── Magnetic Button Effect ─────────────────────────────────────────────── */
         .btn {
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-                        box-shadow 0.3s ease,
-                        background 0.3s ease;
+                box-shadow 0.3s ease,
+                background 0.3s ease;
         }
 
         .btn:hover {
@@ -1356,8 +1383,13 @@
         }
 
         @keyframes marquee-scroll {
-            from { transform: translateX(0); }
-            to { transform: translateX(-50%); }
+            from {
+                transform: translateX(0);
+            }
+
+            to {
+                transform: translateX(-50%);
+            }
         }
 
         .marquee-item {
@@ -1381,15 +1413,397 @@
 
         /* ─── Reduced Motion Override ────────────────────────────────────────────── */
         @media (prefers-reduced-motion: reduce) {
-            .reveal, .reveal-left, .reveal-right, .reveal-scale {
+
+            .reveal,
+            .reveal-left,
+            .reveal-right,
+            .reveal-scale {
                 opacity: 1;
                 transform: none;
                 transition: none;
             }
-            .cursor-glow { display: none; }
-            .scroll-progress { display: none; }
-            .sdk-marquee-inner { animation: none; }
-            body { animation: none; }
+
+            .cursor-glow {
+                display: none;
+            }
+
+            .scroll-progress {
+                display: none;
+            }
+
+            .sdk-marquee-inner {
+                animation: none;
+            }
+
+            body {
+                animation: none;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════════════
+           AWWWARDS v2 — Advanced Design Tokenization & Interactions
+           Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add fluid type, 3D tilt, grain, particles, magnetic, stone material, section indicators
+           ═══════════════════════════════════════════════════════════════════════════ */
+
+        :root {
+            /* — Fluid Typography Scale — */
+            --fluid-display: clamp(2.5rem, 5vw + 1rem, 5rem);
+            --fluid-h1: clamp(2rem, 4vw + 0.5rem, 3.5rem);
+            --fluid-h2: clamp(1.5rem, 3vw + 0.5rem, 2.5rem);
+            --fluid-h3: clamp(1.25rem, 2vw + 0.5rem, 1.75rem);
+            --fluid-body-lg: clamp(1rem, 1.2vw + 0.5rem, 1.25rem);
+            --fluid-body: clamp(0.875rem, 1vw + 0.25rem, 1rem);
+
+            /* — Advanced Motion Curves — */
+            --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --ease-snap: cubic-bezier(0.55, 0, 0.1, 1);
+            --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+
+            /* — Interaction Tokens — */
+            --tilt-max: 12deg;
+            --tilt-perspective: 1000px;
+            --tilt-scale: 1.02;
+            --tilt-transition: 400ms cubic-bezier(0.03, 0.98, 0.52, 0.99);
+            --magnetic-strength: 0.35;
+            --magnetic-return: 600ms;
+            --ripple-color: rgba(184, 115, 51, 0.25);
+
+            /* — Texture & Grain — */
+            --grain-opacity: 0.035;
+            --grain-size: 200px;
+            --noise-blend: overlay;
+
+            /* — Slate Stone Material — */
+            --stone-hue: 220;
+            --stone-sat: 8%;
+            --stone-base: hsl(var(--stone-hue), var(--stone-sat), 12%);
+            --stone-mid: hsl(var(--stone-hue), var(--stone-sat), 17%);
+            --stone-light: hsl(var(--stone-hue), var(--stone-sat), 22%);
+            --stone-stratify: linear-gradient(180deg, var(--stone-base) 0%, var(--stone-mid) 35%, var(--stone-base) 50%, var(--stone-light) 70%, var(--stone-base) 100%);
+
+            /* — Glow System — */
+            --glow-copper: 0 0 30px rgba(184, 115, 51, 0.3), 0 0 60px rgba(184, 115, 51, 0.1);
+            --glow-data: 0 0 30px rgba(152, 193, 217, 0.3), 0 0 60px rgba(152, 193, 217, 0.1);
+            --glow-active: 0 0 20px rgba(76, 175, 80, 0.4);
+        }
+
+        /* — Film Grain Overlay — */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            pointer-events: none;
+            opacity: var(--grain-opacity);
+            mix-blend-mode: var(--noise-blend);
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-size: var(--grain-size);
+        }
+
+        /* — Fluid Typography Application — */
+        .hero h1 { font-size: var(--fluid-display) !important; }
+        .section-header h2 { font-size: var(--fluid-h2); }
+        .feature-card h3 { font-size: var(--fluid-h3); }
+        .section-header p { font-size: var(--fluid-body-lg); }
+
+        /* — 3D Card Tilt Effect — */
+        .feature-card,
+        .health-card {
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+        .feature-card.tilt-active,
+        .health-card.tilt-active {
+            transition: transform var(--tilt-transition), box-shadow 0.4s ease;
+        }
+
+        /* — Ripple Effect on Buttons — */
+        .btn .ripple-ring {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--ripple-color);
+            transform: scale(0);
+            opacity: 1;
+            pointer-events: none;
+            animation: ripple-expand 600ms ease-out forwards;
+        }
+        @keyframes ripple-expand {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+        /* — Text Reveal Animation — */
+        .text-reveal {
+            overflow: hidden;
+            display: inline-block;
+        }
+        .text-reveal-inner {
+            display: inline-block;
+            transform: translateY(120%);
+            transition: transform 0.8s var(--ease-out-quint);
+        }
+        .text-reveal.revealed .text-reveal-inner {
+            transform: translateY(0);
+        }
+
+        /* — Split Text Lines — */
+        .split-line {
+            overflow: hidden;
+            display: block;
+        }
+        .split-line-inner {
+            display: block;
+            transform: translateY(105%) rotate(2deg);
+            transform-origin: left bottom;
+            opacity: 0;
+            transition: transform 0.9s var(--ease-out-quint), opacity 0.6s ease;
+        }
+        .split-line.revealed .split-line-inner {
+            transform: translateY(0) rotate(0deg);
+            opacity: 1;
+        }
+
+        /* — Marquee Hover Enhancement — */
+        .sdk-marquee:hover .sdk-marquee-inner {
+            animation-play-state: paused;
+        }
+        .marquee-item {
+            transition: transform 0.4s var(--ease-elastic), background 0.3s ease, box-shadow 0.3s ease;
+        }
+        .marquee-item:hover {
+            transform: scale(1.08) translateY(-3px);
+            background: rgba(184, 115, 51, 0.15);
+            box-shadow: var(--glow-copper);
+            z-index: 2;
+        }
+
+        /* — Slate Stone Card Variant — */
+        .card-stone {
+            background: var(--stone-stratify) !important;
+            border: 1px solid rgba(184, 115, 51, 0.12);
+            position: relative;
+        }
+        .card-stone::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 40%, rgba(0,0,0,0.08) 100%);
+            pointer-events: none;
+        }
+        .card-stone::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.08) 70%, transparent 100%);
+            pointer-events: none;
+        }
+
+        /* — Section Navigation Dots — */
+        .section-indicator {
+            position: fixed;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .section-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(184, 115, 51, 0.25);
+            border: 1px solid rgba(184, 115, 51, 0.4);
+            cursor: pointer;
+            transition: all 0.4s var(--ease-out-quint);
+            position: relative;
+        }
+        .section-dot.active {
+            background: var(--sl-primary);
+            box-shadow: 0 0 12px rgba(184, 115, 51, 0.5);
+            transform: scale(1.4);
+        }
+        .section-dot:hover {
+            background: var(--sl-primary-light);
+            transform: scale(1.6);
+        }
+        .section-dot .dot-label {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            white-space: nowrap;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            letter-spacing: 0.08em;
+            color: var(--sl-primary-light);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s var(--ease-out-quint);
+            text-transform: uppercase;
+            padding: 2px 8px;
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid rgba(184, 115, 51, 0.2);
+            border-radius: 4px;
+        }
+        .section-dot:hover .dot-label {
+            opacity: 1;
+            transform: translateY(-50%) translateX(-4px);
+        }
+
+        /* — Enhanced Cursor Glow — */
+        #cursorGlow {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(184,115,51,0.06) 0%, rgba(184,115,51,0.02) 30%, transparent 70%);
+            mix-blend-mode: screen;
+        }
+
+        /* — Hero Stat Morphing Border — */
+        .hero-stats .hero-stat {
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-stats .hero-stat::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 14px;
+            background: conic-gradient(from 0deg, var(--sl-primary) 0%, var(--sl-trace-data) 25%, var(--sl-status-active) 50%, var(--sl-trace-control) 75%, var(--sl-primary) 100%);
+            opacity: 0;
+            z-index: -1;
+            animation: morph-border 6s linear infinite;
+            transition: opacity 0.4s ease;
+        }
+        .hero-stats .hero-stat:hover::before {
+            opacity: 1;
+        }
+        @keyframes morph-border {
+            to { transform: rotate(360deg); }
+        }
+
+        /* — Enhanced Section Headers — Underline Reveal — */
+        .section-header h2 {
+            position: relative;
+            display: inline-block;
+        }
+        .section-header h2::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--sl-primary), var(--sl-primary-light), transparent);
+            transition: width 0.8s var(--ease-out-quint);
+        }
+        .section-header.revealed h2::after {
+            width: 100%;
+        }
+
+        /* — Status Jewel Glow Pulse — */
+        .status-jewel.active {
+            animation: jewel-glow 2s ease-in-out infinite alternate;
+        }
+        @keyframes jewel-glow {
+            from { box-shadow: 0 0 6px rgba(76, 175, 80, 0.4), 0 0 12px rgba(76, 175, 80, 0.2); }
+            to   { box-shadow: 0 0 10px rgba(76, 175, 80, 0.6), 0 0 20px rgba(76, 175, 80, 0.3), 0 0 30px rgba(76, 175, 80, 0.1); }
+        }
+
+        /* — Floating Particles (CSS-only) — */
+        .particle-field {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: var(--sl-primary);
+            border-radius: 50%;
+            opacity: 0;
+            animation: particle-float 8s ease-in-out infinite;
+        }
+        @keyframes particle-float {
+            0%   { opacity: 0; transform: translateY(100vh) scale(0); }
+            10%  { opacity: 0.6; }
+            90%  { opacity: 0.2; }
+            100% { opacity: 0; transform: translateY(-20vh) scale(1.5); }
+        }
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 7s; }
+        .particle:nth-child(2) { left: 25%; animation-delay: 1.2s; animation-duration: 9s; }
+        .particle:nth-child(3) { left: 40%; animation-delay: 2.4s; animation-duration: 6s; }
+        .particle:nth-child(4) { left: 55%; animation-delay: 0.8s; animation-duration: 10s; }
+        .particle:nth-child(5) { left: 70%; animation-delay: 3.1s; animation-duration: 8s; }
+        .particle:nth-child(6) { left: 85%; animation-delay: 1.7s; animation-duration: 7.5s; }
+        .particle:nth-child(7) { left: 15%; animation-delay: 4.0s; animation-duration: 9.5s; }
+        .particle:nth-child(8) { left: 60%; animation-delay: 2.0s; animation-duration: 6.5s; }
+
+        /* — Nav Link Letter Spacing on Hover — */
+        .nav-links a {
+            transition: color 0.3s ease, letter-spacing 0.4s var(--ease-out-quint);
+        }
+        .nav-links a:hover {
+            letter-spacing: 0.06em;
+        }
+
+        /* — Scroll Progress Gradient Animation — */
+        #scrollProgress {
+            background: linear-gradient(90deg, var(--sl-primary), var(--sl-primary-light), var(--sl-trace-data), var(--sl-primary)) !important;
+            background-size: 300% 100% !important;
+            animation: gradient-shift 4s linear infinite;
+        }
+        @keyframes gradient-shift {
+            0%   { background-position: 0% 50%; }
+            100% { background-position: 300% 50%; }
+        }
+
+        /* — Architecture Tab Active Glow — */
+        .arch-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--sl-primary);
+            box-shadow: 0 2px 8px rgba(184, 115, 51, 0.4);
+        }
+        .arch-tab { position: relative; }
+
+        /* — Feature Card Inner Glow on Hover — */
+        .feature-card:hover .icon-box {
+            box-shadow: var(--glow-copper);
+            transition: box-shadow 0.4s ease;
+        }
+
+        /* — v2 Responsive — */
+        @media (max-width: 768px) {
+            .section-indicator { display: none; }
+            .particle-field { display: none; }
+            :root { --tilt-max: 6deg; }
+        }
+
+        /* — v2 Reduced Motion — */
+        @media (prefers-reduced-motion: reduce) {
+            body::after { display: none; }
+            .particle-field { display: none; }
+            .hero-stats .hero-stat::before { animation: none; }
+            .status-jewel.active { animation: none; }
+            #scrollProgress { animation: none !important; }
+            .btn .ripple-ring { animation: none; }
+            .split-line-inner { transform: none; opacity: 1; }
+            .text-reveal-inner { transform: none; }
+            .section-dot { transition: none; }
         }
     </style>
 </head>
@@ -1403,6 +1817,17 @@
 
     <!-- Skip Link (Accessibility) -->
     <a href="#main" class="skip-link">Skip to main content</a>
+
+    <!-- Section Navigation Indicator (awwwards v2) -->
+    <nav class="section-indicator" aria-label="Section navigation">
+        <button class="section-dot active" data-section="hero"><span class="dot-label">Home</span></button>
+        <button class="section-dot" data-section="health"><span class="dot-label">Health</span></button>
+        <button class="section-dot" data-section="features"><span class="dot-label">Features</span></button>
+        <button class="section-dot" data-section="sdks" data-href="#sdk-integrations"><span class="dot-label">SDKs</span></button>
+        <button class="section-dot" data-section="architecture"><span class="dot-label">Architecture</span></button>
+        <button class="section-dot" data-section="roadmap"><span class="dot-label">Roadmap</span></button>
+        <button class="section-dot" data-section="community"><span class="dot-label">Community</span></button>
+    </nav>
 
     <!-- Precision Engineering Schematic Background (ISO 128 / IEC 60617 / Flux.ai) -->
     <div class="schematic-bg" aria-hidden="true">
@@ -1614,7 +2039,13 @@
         </div>
 
         <!-- Hero Section -->
-        <section class="hero">
+        <section id="hero" class="hero" style="position: relative;">
+            <!-- Floating Particles -->
+            <div class="particle-field" aria-hidden="true">
+                <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+                <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+                <div class="particle"></div><div class="particle"></div>
+            </div>
             <div class="hero-version">
                 <span class="status-jewel active" aria-hidden="true"></span>
                 <span>v3.0.0 EXPERIMENTAL | AI-Generated | Vibe Coded | Open Source</span>
@@ -1686,34 +2117,52 @@
         <div class="sdk-marquee" aria-hidden="true">
             <div class="sdk-marquee-inner">
                 <span class="marquee-item"><span class="dot"></span>OpenAI Agents v0.8</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-data);"></span>AutoGen v0.7</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-status-active);"></span>Semantic Kernel v1.39</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-control);"></span>Copilot SDK v0.1</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-blueprint-accent);"></span>Claude Agent SDK</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-data);"></span>AutoGen
+                    v0.7</span>
+                <span class="marquee-item"><span class="dot"
+                        style="background: var(--sl-status-active);"></span>Semantic Kernel v1.39</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-control);"></span>Copilot
+                    SDK v0.1</span>
+                <span class="marquee-item"><span class="dot"
+                        style="background: var(--sl-blueprint-accent);"></span>Claude Agent SDK</span>
                 <span class="marquee-item"><span class="dot"></span>Spec Kit v0.0.22</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-status-active);"></span>Ollama · 11 Models</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-data);"></span>ChromaDB v1.4</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-control);"></span>Kubernetes · 9 Pods</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-status-active);"></span>Ollama
+                    · 11 Models</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-data);"></span>ChromaDB
+                    v1.4</span>
+                <span class="marquee-item"><span class="dot"
+                        style="background: var(--sl-trace-control);"></span>Kubernetes · 9 Pods</span>
                 <span class="marquee-item"><span class="dot"></span>Docker · CUDA 12.8</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-blueprint-accent);"></span>GitHub Actions · 19 Workflows</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-primary);"></span>2× RTX 5070 Ti · 32GB VRAM</span>
+                <span class="marquee-item"><span class="dot"
+                        style="background: var(--sl-blueprint-accent);"></span>GitHub Actions · 19 Workflows</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-primary);"></span>2× RTX 5070
+                    Ti · 32GB VRAM</span>
                 <!-- Duplicate for seamless loop -->
                 <span class="marquee-item"><span class="dot"></span>OpenAI Agents v0.8</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-data);"></span>AutoGen v0.7</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-status-active);"></span>Semantic Kernel v1.39</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-control);"></span>Copilot SDK v0.1</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-blueprint-accent);"></span>Claude Agent SDK</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-data);"></span>AutoGen
+                    v0.7</span>
+                <span class="marquee-item"><span class="dot"
+                        style="background: var(--sl-status-active);"></span>Semantic Kernel v1.39</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-control);"></span>Copilot
+                    SDK v0.1</span>
+                <span class="marquee-item"><span class="dot"
+                        style="background: var(--sl-blueprint-accent);"></span>Claude Agent SDK</span>
                 <span class="marquee-item"><span class="dot"></span>Spec Kit v0.0.22</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-status-active);"></span>Ollama · 11 Models</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-data);"></span>ChromaDB v1.4</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-control);"></span>Kubernetes · 9 Pods</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-status-active);"></span>Ollama
+                    · 11 Models</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-data);"></span>ChromaDB
+                    v1.4</span>
+                <span class="marquee-item"><span class="dot"
+                        style="background: var(--sl-trace-control);"></span>Kubernetes · 9 Pods</span>
                 <span class="marquee-item"><span class="dot"></span>Docker · CUDA 12.8</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-blueprint-accent);"></span>GitHub Actions · 19 Workflows</span>
-                <span class="marquee-item"><span class="dot" style="background: var(--sl-primary);"></span>2× RTX 5070 Ti · 32GB VRAM</span>
+                <span class="marquee-item"><span class="dot"
+                        style="background: var(--sl-blueprint-accent);"></span>GitHub Actions · 19 Workflows</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-primary);"></span>2× RTX 5070
+                    Ti · 32GB VRAM</span>
             </div>
         </div>
 
-        <section class="health-section" aria-labelledby="health-heading">
+        <section id="health" class="health-section" aria-labelledby="health-heading">
             <div class="container reveal">
                 <h2 id="health-heading" class="visually-hidden">Project Health</h2>
                 <div class="health-grid">
@@ -2977,6 +3426,125 @@
     </main>
 
     <!-- Footer -->
+    <!-- Development System & Cost Transparency (Spec 026) -->
+    <!-- Modified: 2026-02-09T18:00:00-05:00 | Author: Gemini (Antigravity) | Change: Add dev system specs, cost transparency, Claude Opus 4.6 recommendation -->
+    <div
+        style="background: linear-gradient(180deg, rgba(13,27,42,0.95) 0%, rgba(10,10,10,0.98) 100%); border-top: 1px solid rgba(184,115,51,0.15); padding: 4rem 0;">
+        <div class="container">
+            <!-- Section Title -->
+            <div style="text-align: center; margin-bottom: 3rem;">
+                <div
+                    style="font-family: 'Consolas', monospace; font-size: 0.7rem; letter-spacing: 0.15em; color: rgba(184,115,51,0.6); text-transform: uppercase; margin-bottom: 0.5rem;">
+                    SPEC 026 — HARDWARE &amp; COST REFERENCE</div>
+                <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: #E8E2DE; margin: 0;">
+                    Development Reference System</h2>
+                <p style="color: #7D7873; max-width: 600px; margin: 0.75rem auto 0; font-size: 0.95rem;">
+                    Custom installs should compare against these specifications for compatibility assessment.
+                </p>
+            </div>
+
+            <!-- Hardware Grid -->
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 2.5rem;">
+                <div
+                    style="background: rgba(22,22,22,0.8); border: 1px solid rgba(184,115,51,0.12); border-radius: 12px; padding: 1.25rem;">
+                    <div
+                        style="font-family: 'Consolas', monospace; font-size: 0.65rem; color: rgba(184,115,51,0.5); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">
+                        CPU</div>
+                    <div style="font-size: 1.15rem; font-weight: 700; color: #E8E2DE;">Intel Core Ultra 9 285K</div>
+                    <div style="font-size: 0.8rem; color: #7D7873; margin-top: 4px;">24 cores / 24 threads — 3.7 GHz —
+                        Arrow Lake</div>
+                </div>
+                <div
+                    style="background: rgba(22,22,22,0.8); border: 1px solid rgba(184,115,51,0.12); border-radius: 12px; padding: 1.25rem;">
+                    <div
+                        style="font-family: 'Consolas', monospace; font-size: 0.65rem; color: rgba(184,115,51,0.5); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">
+                        DUAL GPU</div>
+                    <div style="font-size: 1.15rem; font-weight: 700; color: #E8E2DE;">2× RTX 5070 Ti</div>
+                    <div style="font-size: 0.8rem; color: #7D7873; margin-top: 4px;">32 GB GDDR7 total — PCIe Gen5 x8 —
+                        Blackwell</div>
+                </div>
+                <div
+                    style="background: rgba(22,22,22,0.8); border: 1px solid rgba(184,115,51,0.12); border-radius: 12px; padding: 1.25rem;">
+                    <div
+                        style="font-family: 'Consolas', monospace; font-size: 0.65rem; color: rgba(184,115,51,0.5); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">
+                        RAM</div>
+                    <div style="font-size: 1.15rem; font-weight: 700; color: #E8E2DE;">64 GB DDR5-6000</div>
+                    <div style="font-size: 0.8rem; color: #7D7873; margin-top: 4px;">4× 16 GB Team Group UD5-6000 @ 6333
+                        MT/s</div>
+                </div>
+                <div
+                    style="background: rgba(22,22,22,0.8); border: 1px solid rgba(184,115,51,0.12); border-radius: 12px; padding: 1.25rem;">
+                    <div
+                        style="font-family: 'Consolas', monospace; font-size: 0.65rem; color: rgba(184,115,51,0.5); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">
+                        PLATFORM</div>
+                    <div style="font-size: 1.15rem; font-weight: 700; color: #E8E2DE;">ASUS ProArt Z890</div>
+                    <div style="font-size: 0.8rem; color: #7D7873; margin-top: 4px;">Z890-CREATOR WIFI — WD_BLACK SN850X
+                        1 TB NVMe</div>
+                </div>
+            </div>
+
+            <!-- Recommended AI & Cost Grid -->
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 2rem;">
+                <div
+                    style="background: linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(22,22,22,0.8) 100%); border: 1px solid rgba(245,158,11,0.2); border-radius: 12px; padding: 1.25rem;">
+                    <div
+                        style="font-family: 'Consolas', monospace; font-size: 0.65rem; color: rgba(245,158,11,0.7); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">
+                        ⭐ RECOMMENDED PRIMARY AGENT</div>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #F59E0B;">Claude Opus 4.6</div>
+                    <div style="font-size: 0.8rem; color: #CAC4BF; margin-top: 6px;">Best-in-class reasoning &amp; code
+                        generation. Recommended for professional systems development.</div>
+                    <div style="font-size: 0.75rem; color: #7D7873; margin-top: 8px;">$15/MTok input — $75/MTok output —
+                        Cache: $1.50/$3.75 per MTok</div>
+                </div>
+                <div
+                    style="background: rgba(22,22,22,0.8); border: 1px solid rgba(34,197,94,0.2); border-radius: 12px; padding: 1.25rem;">
+                    <div
+                        style="font-family: 'Consolas', monospace; font-size: 0.65rem; color: rgba(34,197,94,0.7); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">
+                        LOCAL INFERENCE</div>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #22C55E;">$0.00</div>
+                    <div style="font-size: 0.8rem; color: #CAC4BF; margin-top: 6px;">11 Ollama models — Dual-GPU load
+                        balancing — Zero API cost</div>
+                    <div style="font-size: 0.75rem; color: #7D7873; margin-top: 8px;">slate-fast (~308 tok/s) —
+                        slate-coder (~100 tok/s)</div>
+                </div>
+                <div
+                    style="background: rgba(22,22,22,0.8); border: 1px solid rgba(184,115,51,0.12); border-radius: 12px; padding: 1.25rem;">
+                    <div
+                        style="font-family: 'Consolas', monospace; font-size: 0.65rem; color: rgba(184,115,51,0.5); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">
+                        INFRASTRUCTURE COST</div>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #E8E2DE;">~$0.22<span
+                            style="font-size: 0.7rem; color: #7D7873;">/hr</span></div>
+                    <div style="font-size: 0.8rem; color: #CAC4BF; margin-top: 6px;">Electricity + hardware amortization
+                        for dual-GPU workstation</div>
+                    <div style="font-size: 0.75rem; color: #7D7873; margin-top: 8px;">GitHub Copilot: $10-39/mo
+                        subscription</div>
+                </div>
+                <div
+                    style="background: rgba(22,22,22,0.8); border: 1px solid rgba(184,115,51,0.12); border-radius: 12px; padding: 1.25rem;">
+                    <div
+                        style="font-family: 'Consolas', monospace; font-size: 0.65rem; color: rgba(184,115,51,0.5); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">
+                        ALIGNMENT GRADE</div>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #22C55E;">A+ <span
+                            style="font-size: 0.9rem; color: #7D7873;">97.1%</span></div>
+                    <div style="font-size: 0.8rem; color: #CAC4BF; margin-top: 6px;">Codebase ↔ Docker ↔ GitHub fully
+                        aligned</div>
+                    <div style="font-size: 0.75rem; color: #7D7873; margin-top: 8px;">8/8 critical files synced — Morph:
+                        MODERATE</div>
+                </div>
+            </div>
+
+            <!-- API Notice -->
+            <div
+                style="text-align: center; font-family: 'Consolas', monospace; font-size: 0.7rem; color: #7D7873; padding: 12px; background: rgba(22,22,22,0.5); border: 1px solid rgba(184,115,51,0.08); border-radius: 8px;">
+                <span style="color: rgba(184,115,51,0.6);">API:</span>
+                GET /api/analytics &bull; GET /api/system/specs &bull; GET /api/alignment &bull; POST
+                /api/analytics/record
+            </div>
+        </div>
+    </div>
+
     <footer class="footer">
         <div class="container">
             <div class="footer-brand">
@@ -3203,6 +3771,126 @@
                     var scrolled = window.pageYOffset;
                     schematicBg.style.transform = 'translateY(' + (scrolled * 0.15) + 'px)';
                 }, { passive: true });
+            }
+
+            // ═══════════════════════════════════════════════════════════════════════
+            // AWWWARDS v2 — Advanced Interactions
+            // Modified: 2026-02-10T12:00:00Z | Author: COPILOT
+            // ═══════════════════════════════════════════════════════════════════════
+
+            // ═══ 3D Card Tilt Effect ═══
+            if (window.matchMedia('(pointer: fine)').matches && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelectorAll('.feature-card, .health-card').forEach(function(card) {
+                    card.classList.add('tilt-active');
+                    card.addEventListener('mousemove', function(e) {
+                        var rect = card.getBoundingClientRect();
+                        var x = (e.clientX - rect.left) / rect.width;
+                        var y = (e.clientY - rect.top) / rect.height;
+                        var tiltX = (0.5 - y) * 12;
+                        var tiltY = (x - 0.5) * 12;
+                        card.style.transform = 'perspective(1000px) rotateX(' + tiltX + 'deg) rotateY(' + tiltY + 'deg) scale3d(1.02, 1.02, 1.02)';
+                    });
+                    card.addEventListener('mouseleave', function() {
+                        card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+                    });
+                });
+            }
+
+            // ═══ Magnetic Button Effect ═══
+            document.querySelectorAll('.btn').forEach(function(btn) {
+                btn.style.position = 'relative';
+                btn.style.overflow = 'hidden';
+                if (window.matchMedia('(pointer: fine)').matches) {
+                    btn.addEventListener('mousemove', function(e) {
+                        var rect = btn.getBoundingClientRect();
+                        var x = e.clientX - rect.left - rect.width / 2;
+                        var y = e.clientY - rect.top - rect.height / 2;
+                        btn.style.transform = 'translate(' + (x * 0.2) + 'px, ' + (y * 0.2) + 'px)';
+                    });
+                    btn.addEventListener('mouseleave', function() {
+                        btn.style.transform = 'translate(0, 0)';
+                        btn.style.transition = 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                        setTimeout(function() { btn.style.transition = ''; }, 600);
+                    });
+                }
+                // Ripple effect on click
+                btn.addEventListener('click', function(e) {
+                    var rect = btn.getBoundingClientRect();
+                    var ripple = document.createElement('span');
+                    ripple.className = 'ripple-ring';
+                    ripple.style.left = (e.clientX - rect.left) + 'px';
+                    ripple.style.top = (e.clientY - rect.top) + 'px';
+                    ripple.style.width = ripple.style.height = Math.max(rect.width, rect.height) + 'px';
+                    ripple.style.marginLeft = ripple.style.marginTop = -(Math.max(rect.width, rect.height) / 2) + 'px';
+                    btn.appendChild(ripple);
+                    setTimeout(function() { ripple.remove(); }, 700);
+                });
+            });
+
+            // ═══ Text Reveal on Scroll ═══
+            var textRevealObserver = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                        textRevealObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '-60px' });
+
+            // Apply text-reveal to section headers
+            document.querySelectorAll('.section-header').forEach(function(header) {
+                header.classList.add('text-reveal');
+                textRevealObserver.observe(header);
+            });
+
+            // ═══ Section Indicator Tracking ═══
+            var sectionDots = document.querySelectorAll('.section-dot');
+            var trackedSections = [];
+            sectionDots.forEach(function(dot) {
+                var sectionId = dot.dataset.href ? dot.dataset.href.replace('#', '') : dot.dataset.section;
+                var el = document.getElementById(sectionId);
+                if (el) trackedSections.push({ el: el, dot: dot });
+
+                dot.addEventListener('click', function() {
+                    var targetId = dot.dataset.href ? dot.dataset.href.replace('#', '') : dot.dataset.section;
+                    var target = document.getElementById(targetId);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+
+            if (trackedSections.length > 0) {
+                var sectionObserver = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(entry) {
+                        if (entry.isIntersecting) {
+                            sectionDots.forEach(function(d) { d.classList.remove('active'); });
+                            trackedSections.forEach(function(s) {
+                                if (s.el === entry.target) s.dot.classList.add('active');
+                            });
+                        }
+                    });
+                }, { threshold: 0.2, rootMargin: '-100px 0px -40% 0px' });
+                trackedSections.forEach(function(s) { sectionObserver.observe(s.el); });
+            }
+
+            // ═══ Enhanced Cursor Glow (Lerped) ═══
+            var cursorTarget = { x: 0, y: 0 };
+            var cursorCurrent = { x: 0, y: 0 };
+            var cursorEl = document.getElementById('cursorGlow');
+            if (cursorEl && window.matchMedia('(pointer: fine)').matches) {
+                document.addEventListener('mousemove', function(e) {
+                    cursorTarget.x = e.clientX;
+                    cursorTarget.y = e.clientY;
+                });
+                function lerpCursor() {
+                    cursorCurrent.x += (cursorTarget.x - cursorCurrent.x) * 0.08;
+                    cursorCurrent.y += (cursorTarget.y - cursorCurrent.y) * 0.08;
+                    cursorEl.style.left = (cursorCurrent.x - 250) + 'px';
+                    cursorEl.style.top = (cursorCurrent.y - 250) + 'px';
+                    requestAnimationFrame(lerpCursor);
+                }
+                lerpCursor();
             }
 
         })();
