@@ -1,11 +1,9 @@
 {
   "mcpServers": {
     "slate": {
-      "command": "${CLAUDE_PLUGIN_ROOT}/.venv/Scripts/python.exe",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/slate/mcp_server.py"],
+      "command": "python",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/slate/mcp_launcher.py"],
       "env": {
-        "SLATE_WORKSPACE": "${CLAUDE_PLUGIN_ROOT}",
-        "PYTHONPATH": "${CLAUDE_PLUGIN_ROOT}",
         "SLATE_BEHAVIOR": "operator",
         "SLATE_ACTIONGUARD": "enabled"
       },
