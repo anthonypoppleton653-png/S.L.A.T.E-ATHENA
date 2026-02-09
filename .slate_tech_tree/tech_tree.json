@@ -439,11 +439,12 @@
     {
       "id": "graphrag",
       "name": "GraphRAG Knowledge System",
-      "status": "available",
+      "status": "complete",
       "phase": 3,
-      "description": "Microsoft GraphRAG knowledge graph RAG to augment ChromaDB vector search with structured relationships",
+      "description": "In-memory knowledge graph with JSON persistence: 177 entities (104 modules, 20 specs, 9 services, 44 tech nodes), 141 relations (75 imports, 60 deps, 6 service connections), BFS traversal, hybrid RAG context generation",
       "paths": [
-        "slate/slate_graphrag.py"
+        "slate/slate_graphrag.py",
+        ".slate_index/graphrag/"
       ]
     },
     {

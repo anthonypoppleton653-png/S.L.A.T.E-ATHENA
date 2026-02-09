@@ -1,0 +1,2831 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-02-09T13:12:14.940732+00:00",
+  "entity_count": 177,
+  "relation_count": 141,
+  "entities": [
+    {
+      "id": "mod:action_guard",
+      "name": "action_guard",
+      "type": "module",
+      "description": "ActionGuard - Security enforcement for SLATE agent actions.",
+      "properties": {
+        "size_bytes": 24151
+      },
+      "source_file": "slate\\action_guard.py"
+    },
+    {
+      "id": "mod:actions_sdk",
+      "name": "actions_sdk",
+      "type": "module",
+      "description": "SLATE Actions SDK Wrapper",
+      "properties": {
+        "size_bytes": 24149
+      },
+      "source_file": "slate\\actions_sdk.py"
+    },
+    {
+      "id": "mod:adaptive_instructions",
+      "name": "adaptive_instructions",
+      "type": "module",
+      "description": "SLATE Adaptive Instruction Layer",
+      "properties": {
+        "size_bytes": 45982
+      },
+      "source_file": "slate\\adaptive_instructions.py"
+    },
+    {
+      "id": "mod:claude_agent_sdk_integration",
+      "name": "claude_agent_sdk_integration",
+      "type": "module",
+      "description": "SLATE Claude Agent SDK Integration",
+      "properties": {
+        "size_bytes": 30874
+      },
+      "source_file": "slate\\claude_agent_sdk_integration.py"
+    },
+    {
+      "id": "mod:claude_code_manager",
+      "name": "claude_code_manager",
+      "type": "module",
+      "description": "Claude Code Manager - Configuration and integration management for SLATE.",
+      "properties": {
+        "size_bytes": 29856
+      },
+      "source_file": "slate\\claude_code_manager.py"
+    },
+    {
+      "id": "mod:claude_code_validator",
+      "name": "claude_code_validator",
+      "type": "module",
+      "description": "Claude Code Validator - Comprehensive settings validation and management for SLATE.",
+      "properties": {
+        "size_bytes": 29308
+      },
+      "source_file": "slate\\claude_code_validator.py"
+    },
+    {
+      "id": "mod:claude_feedback_layer",
+      "name": "claude_feedback_layer",
+      "type": "module",
+      "description": "Claude Feedback Layer - Bidirectional event stream for Claude Code integration.",
+      "properties": {
+        "size_bytes": 39801
+      },
+      "source_file": "slate\\claude_feedback_layer.py"
+    },
+    {
+      "id": "mod:copilot_agent_bridge",
+      "name": "copilot_agent_bridge",
+      "type": "module",
+      "description": "SLATE Copilot Agent Bridge",
+      "properties": {
+        "size_bytes": 15372
+      },
+      "source_file": "slate\\copilot_agent_bridge.py"
+    },
+    {
+      "id": "mod:copilot_sdk_session",
+      "name": "copilot_sdk_session",
+      "type": "module",
+      "description": "SLATE Copilot SDK Session Manager",
+      "properties": {
+        "size_bytes": 35407
+      },
+      "source_file": "slate\\copilot_sdk_session.py"
+    },
+    {
+      "id": "mod:copilot_sdk_tools",
+      "name": "copilot_sdk_tools",
+      "type": "module",
+      "description": "SLATE Copilot SDK Tool Definitions",
+      "properties": {
+        "size_bytes": 25551
+      },
+      "source_file": "slate\\copilot_sdk_tools.py"
+    },
+    {
+      "id": "mod:copilot_slate_runner",
+      "name": "copilot_slate_runner",
+      "type": "module",
+      "description": "SLATE Copilot Runner",
+      "properties": {
+        "size_bytes": 19941
+      },
+      "source_file": "slate\\copilot_slate_runner.py"
+    },
+    {
+      "id": "mod:dependency_resolver",
+      "name": "dependency_resolver",
+      "type": "module",
+      "description": "S.L.A.T.E. Dependency Resolver",
+      "properties": {
+        "size_bytes": 45530
+      },
+      "source_file": "slate\\dependency_resolver.py"
+    },
+    {
+      "id": "mod:design_tokens",
+      "name": "design_tokens",
+      "type": "module",
+      "description": "SLATE Design Tokens",
+      "properties": {
+        "size_bytes": 37620
+      },
+      "source_file": "slate\\design_tokens.py"
+    },
+    {
+      "id": "mod:dev_cycle_engine",
+      "name": "dev_cycle_engine",
+      "type": "module",
+      "description": "SLATE Development Cycle Engine",
+      "properties": {
+        "size_bytes": 37163
+      },
+      "source_file": "slate\\dev_cycle_engine.py"
+    },
+    {
+      "id": "mod:feature_flags",
+      "name": "feature_flags",
+      "type": "module",
+      "description": "Feature Flags - Runtime feature toggle system for SLATE.",
+      "properties": {
+        "size_bytes": 5991
+      },
+      "source_file": "slate\\feature_flags.py"
+    },
+    {
+      "id": "mod:github_achievements",
+      "name": "github_achievements",
+      "type": "module",
+      "description": "GitHub Achievements Tracker - Track and guide users toward GitHub badges.",
+      "properties": {
+        "size_bytes": 34405
+      },
+      "source_file": "slate\\github_achievements.py"
+    },
+    {
+      "id": "mod:grok_heavy_slate_procedure",
+      "name": "grok_heavy_slate_procedure",
+      "type": "module",
+      "description": "Grok Heavy SLATE Procedure",
+      "properties": {
+        "size_bytes": 33967
+      },
+      "source_file": "slate\\grok_heavy_slate_procedure.py"
+    },
+    {
+      "id": "mod:guided_mode",
+      "name": "guided_mode",
+      "type": "module",
+      "description": "SLATE Guided Mode Engine",
+      "properties": {
+        "size_bytes": 29355
+      },
+      "source_file": "slate\\guided_mode.py"
+    },
+    {
+      "id": "mod:guided_workflow",
+      "name": "guided_workflow",
+      "type": "module",
+      "description": "SLATE Guided Workflow Engine",
+      "properties": {
+        "size_bytes": 36502
+      },
+      "source_file": "slate\\guided_workflow.py"
+    },
+    {
+      "id": "mod:install_copilot_sdk",
+      "name": "install_copilot_sdk",
+      "type": "module",
+      "description": "SLATE Copilot SDK Installer",
+      "properties": {
+        "size_bytes": 14194
+      },
+      "source_file": "slate\\install_copilot_sdk.py"
+    },
+    {
+      "id": "mod:install_tracker",
+      "name": "install_tracker",
+      "type": "module",
+      "description": "SLATE Install Tracker",
+      "properties": {
+        "size_bytes": 15330
+      },
+      "source_file": "slate\\install_tracker.py"
+    },
+    {
+      "id": "mod:instruction_loader",
+      "name": "instruction_loader",
+      "type": "module",
+      "description": "SLATE Instruction Loader",
+      "properties": {
+        "size_bytes": 38874
+      },
+      "source_file": "slate\\instruction_loader.py"
+    },
+    {
+      "id": "mod:integrated_autonomous_loop",
+      "name": "integrated_autonomous_loop",
+      "type": "module",
+      "description": "SLATE Integrated Autonomous Loop",
+      "properties": {
+        "size_bytes": 24704
+      },
+      "source_file": "slate\\integrated_autonomous_loop.py"
+    },
+    {
+      "id": "mod:interactive_api",
+      "name": "interactive_api",
+      "type": "module",
+      "description": "Interactive API Router - FastAPI endpoints for SLATE interactive experience.",
+      "properties": {
+        "size_bytes": 20481
+      },
+      "source_file": "slate\\interactive_api.py"
+    },
+    {
+      "id": "mod:interactive_tutor",
+      "name": "interactive_tutor",
+      "type": "module",
+      "description": "SLATE Interactive Tutor Engine",
+      "properties": {
+        "size_bytes": 76132
+      },
+      "source_file": "slate\\interactive_tutor.py"
+    },
+    {
+      "id": "mod:k8s_entrypoints",
+      "name": "k8s_entrypoints",
+      "type": "module",
+      "description": "K8s Entrypoints \u2014 Launches real SLATE services inside Kubernetes containers.",
+      "properties": {
+        "size_bytes": 20053
+      },
+      "source_file": "slate\\k8s_entrypoints.py"
+    },
+    {
+      "id": "mod:k8s_integration",
+      "name": "k8s_integration",
+      "type": "module",
+      "description": "SLATE Kubernetes Integration Module",
+      "properties": {
+        "size_bytes": 40177
+      },
+      "source_file": "slate\\k8s_integration.py"
+    },
+    {
+      "id": "mod:mcp_launcher",
+      "name": "mcp_launcher",
+      "type": "module",
+      "description": "SLATE MCP Server Launcher",
+      "properties": {
+        "size_bytes": 2465
+      },
+      "source_file": "slate\\mcp_launcher.py"
+    },
+    {
+      "id": "mod:mcp_server",
+      "name": "mcp_server",
+      "type": "module",
+      "description": "SLATE MCP Server - Model Context Protocol server for Claude Code / Copilot integration.",
+      "properties": {
+        "size_bytes": 19274
+      },
+      "source_file": "slate\\mcp_server.py"
+    },
+    {
+      "id": "mod:ml_orchestrator",
+      "name": "ml_orchestrator",
+      "type": "module",
+      "description": "SLATE ML Orchestrator - Local GPU Inference Management",
+      "properties": {
+        "size_bytes": 32161
+      },
+      "source_file": "slate\\ml_orchestrator.py"
+    },
+    {
+      "id": "mod:module_registry",
+      "name": "module_registry",
+      "type": "module",
+      "description": "Module Registry",
+      "properties": {
+        "size_bytes": 14682
+      },
+      "source_file": "slate\\module_registry.py"
+    },
+    {
+      "id": "mod:monitoring",
+      "name": "monitoring",
+      "type": "module",
+      "description": "SLATE Monitoring Module",
+      "properties": {
+        "size_bytes": 23096
+      },
+      "source_file": "slate\\monitoring.py"
+    },
+    {
+      "id": "mod:notification_system",
+      "name": "notification_system",
+      "type": "module",
+      "description": "SLATE Notification System",
+      "properties": {
+        "size_bytes": 18418
+      },
+      "source_file": "slate\\notification_system.py"
+    },
+    {
+      "id": "mod:pii_scanner",
+      "name": "pii_scanner",
+      "type": "module",
+      "description": "PII Scanner for SLATE Project Boards and Kubernetes Manifests",
+      "properties": {
+        "size_bytes": 14320
+      },
+      "source_file": "slate\\pii_scanner.py"
+    },
+    {
+      "id": "mod:plugin_diagnose",
+      "name": "plugin_diagnose",
+      "type": "module",
+      "description": "SLATE Plugin Diagnostic Tool",
+      "properties": {
+        "size_bytes": 8866
+      },
+      "source_file": "slate\\plugin_diagnose.py"
+    },
+    {
+      "id": "mod:project_onboarding",
+      "name": "project_onboarding",
+      "type": "module",
+      "description": "SLATE Project Onboarding System",
+      "properties": {
+        "size_bytes": 27379
+      },
+      "source_file": "slate\\project_onboarding.py"
+    },
+    {
+      "id": "mod:release",
+      "name": "release",
+      "type": "module",
+      "description": "SLATE Release Manager",
+      "properties": {
+        "size_bytes": 17068
+      },
+      "source_file": "slate\\release.py"
+    },
+    {
+      "id": "mod:runner_cost_tracker",
+      "name": "runner_cost_tracker",
+      "type": "module",
+      "description": "SLATE Runner Cost Tracker",
+      "properties": {
+        "size_bytes": 13142
+      },
+      "source_file": "slate\\runner_cost_tracker.py"
+    },
+    {
+      "id": "mod:runner_fallback",
+      "name": "runner_fallback",
+      "type": "module",
+      "description": "SLATE Runner Fallback Manager",
+      "properties": {
+        "size_bytes": 9909
+      },
+      "source_file": "slate\\runner_fallback.py"
+    },
+    {
+      "id": "mod:schematic_api",
+      "name": "schematic_api",
+      "type": "module",
+      "description": "SLATE Schematic API - Dashboard Integration",
+      "properties": {
+        "size_bytes": 18097
+      },
+      "source_file": "slate\\schematic_api.py"
+    },
+    {
+      "id": "mod:sdk_source_guard",
+      "name": "sdk_source_guard",
+      "type": "module",
+      "description": "SDK Source Guard - Validates package publishers and sources for SLATE.",
+      "properties": {
+        "size_bytes": 11172
+      },
+      "source_file": "slate\\sdk_source_guard.py"
+    },
+    {
+      "id": "mod:slate_ai_evaluation",
+      "name": "slate_ai_evaluation",
+      "type": "module",
+      "description": "SLATE AI Evaluation \u2014 Model Performance & Quality Assessment",
+      "properties": {
+        "size_bytes": 35067
+      },
+      "source_file": "slate\\slate_ai_evaluation.py"
+    },
+    {
+      "id": "mod:slate_ai_orchestrator",
+      "name": "slate_ai_orchestrator",
+      "type": "module",
+      "description": "SLATE AI Orchestrator",
+      "properties": {
+        "size_bytes": 28534
+      },
+      "source_file": "slate\\slate_ai_orchestrator.py"
+    },
+    {
+      "id": "mod:slate_ai_production",
+      "name": "slate_ai_production",
+      "type": "module",
+      "description": "SLATE AI Production \u2014 Model Health Monitoring & Production Readiness",
+      "properties": {
+        "size_bytes": 36403
+      },
+      "source_file": "slate\\slate_ai_production.py"
+    },
+    {
+      "id": "mod:slate_ai_scheduler",
+      "name": "slate_ai_scheduler",
+      "type": "module",
+      "description": "SLATE AI Task Scheduler",
+      "properties": {
+        "size_bytes": 32590
+      },
+      "source_file": "slate\\slate_ai_scheduler.py"
+    },
+    {
+      "id": "mod:slate_ai_tracing",
+      "name": "slate_ai_tracing",
+      "type": "module",
+      "description": "SLATE AI Tracing \u2014 OpenTelemetry-Based Inference Observability",
+      "properties": {
+        "size_bytes": 21491
+      },
+      "source_file": "slate\\slate_ai_tracing.py"
+    },
+    {
+      "id": "mod:slate_avatar",
+      "name": "slate_avatar",
+      "type": "module",
+      "description": "SLATE Avatar State Engine",
+      "properties": {
+        "size_bytes": 15825
+      },
+      "source_file": "slate\\slate_avatar.py"
+    },
+    {
+      "id": "mod:slate_benchmark",
+      "name": "slate_benchmark",
+      "type": "module",
+      "description": "SLATE Benchmark",
+      "properties": {
+        "size_bytes": 14203
+      },
+      "source_file": "slate\\slate_benchmark.py"
+    },
+    {
+      "id": "mod:slate_brand",
+      "name": "slate_brand",
+      "type": "module",
+      "description": "SLATE Brand Identity Engine",
+      "properties": {
+        "size_bytes": 20042
+      },
+      "source_file": "slate\\slate_brand.py"
+    },
+    {
+      "id": "mod:slate_chromadb",
+      "name": "slate_chromadb",
+      "type": "module",
+      "description": "SLATE ChromaDB Integration \u2014 Persistent Vector Store for Codebase Embeddings",
+      "properties": {
+        "size_bytes": 21781
+      },
+      "source_file": "slate\\slate_chromadb.py"
+    },
+    {
+      "id": "mod:slate_control_intelligence",
+      "name": "slate_control_intelligence",
+      "type": "module",
+      "description": "SLATE Agentic Control Intelligence",
+      "properties": {
+        "size_bytes": 8523
+      },
+      "source_file": "slate\\slate_control_intelligence.py"
+    },
+    {
+      "id": "mod:slate_control_panel",
+      "name": "slate_control_panel",
+      "type": "module",
+      "description": "SLATE Control Panel",
+      "properties": {
+        "size_bytes": 24394
+      },
+      "source_file": "slate\\slate_control_panel.py"
+    },
+    {
+      "id": "mod:slate_copilot_sdk",
+      "name": "slate_copilot_sdk",
+      "type": "module",
+      "description": "SLATE Copilot SDK Integration",
+      "properties": {
+        "size_bytes": 38221
+      },
+      "source_file": "slate\\slate_copilot_sdk.py"
+    },
+    {
+      "id": "mod:slate_copilot_sdk_bridge",
+      "name": "slate_copilot_sdk_bridge",
+      "type": "module",
+      "description": "SLATE Copilot SDK Bridge",
+      "properties": {
+        "size_bytes": 30361
+      },
+      "source_file": "slate\\slate_copilot_sdk_bridge.py"
+    },
+    {
+      "id": "mod:slate_dependency_forks",
+      "name": "slate_dependency_forks",
+      "type": "module",
+      "description": "# Modified: 2026-02-07T23:00:00Z | Author: COPILOT | Change: Create dependency fork manager",
+      "properties": {
+        "size_bytes": 25439
+      },
+      "source_file": "slate\\slate_dependency_forks.py"
+    },
+    {
+      "id": "mod:slate_dependency_scanner",
+      "name": "slate_dependency_scanner",
+      "type": "module",
+      "description": "SLATE Dependency Scanner",
+      "properties": {
+        "size_bytes": 44696
+      },
+      "source_file": "slate\\slate_dependency_scanner.py"
+    },
+    {
+      "id": "mod:slate_discussion_manager",
+      "name": "slate_discussion_manager",
+      "type": "module",
+      "description": "SLATE Discussion Manager",
+      "properties": {
+        "size_bytes": 18371
+      },
+      "source_file": "slate\\slate_discussion_manager.py"
+    },
+    {
+      "id": "mod:slate_docker_daemon",
+      "name": "slate_docker_daemon",
+      "type": "module",
+      "description": "SLATE Docker Daemon",
+      "properties": {
+        "size_bytes": 51897
+      },
+      "source_file": "slate\\slate_docker_daemon.py"
+    },
+    {
+      "id": "mod:slate_forge",
+      "name": "slate_forge",
+      "type": "module",
+      "description": "SLATE FORGE.md Manager",
+      "properties": {
+        "size_bytes": 8721
+      },
+      "source_file": "slate\\slate_forge.py"
+    },
+    {
+      "id": "mod:slate_fork_deps",
+      "name": "slate_fork_deps",
+      "type": "module",
+      "description": "SLATE Fork Dependencies Manager",
+      "properties": {
+        "size_bytes": 5996
+      },
+      "source_file": "slate\\slate_fork_deps.py"
+    },
+    {
+      "id": "mod:slate_fork_intelligence",
+      "name": "slate_fork_intelligence",
+      "type": "module",
+      "description": "SLATE Fork Intelligence System",
+      "properties": {
+        "size_bytes": 18514
+      },
+      "source_file": "slate\\slate_fork_intelligence.py"
+    },
+    {
+      "id": "mod:slate_fork_manager",
+      "name": "slate_fork_manager",
+      "type": "module",
+      "description": "# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550",
+      "properties": {
+        "size_bytes": 37753
+      },
+      "source_file": "slate\\slate_fork_manager.py"
+    },
+    {
+      "id": "mod:slate_fork_sync",
+      "name": "slate_fork_sync",
+      "type": "module",
+      "description": "SLATE Fork Sync System",
+      "properties": {
+        "size_bytes": 20604
+      },
+      "source_file": "slate\\slate_fork_sync.py"
+    },
+    {
+      "id": "mod:slate_generative_ui",
+      "name": "slate_generative_ui",
+      "type": "module",
+      "description": "SLATE Generative UI Engine",
+      "properties": {
+        "size_bytes": 34463
+      },
+      "source_file": "slate\\slate_generative_ui.py"
+    },
+    {
+      "id": "mod:slate_github_models",
+      "name": "slate_github_models",
+      "type": "module",
+      "description": "SLATE GitHub Models Integration",
+      "properties": {
+        "size_bytes": 28171
+      },
+      "source_file": "slate\\slate_github_models.py"
+    },
+    {
+      "id": "mod:slate_gpu_manager",
+      "name": "slate_gpu_manager",
+      "type": "module",
+      "description": "SLATE GPU Manager \u2014 Dual-GPU Load Balancing for Ollama",
+      "properties": {
+        "size_bytes": 15847
+      },
+      "source_file": "slate\\slate_gpu_manager.py"
+    },
+    {
+      "id": "mod:slate_graphrag",
+      "name": "slate_graphrag",
+      "type": "module",
+      "description": "SLATE GraphRAG Knowledge System",
+      "properties": {
+        "size_bytes": 24272
+      },
+      "source_file": "slate\\slate_graphrag.py"
+    },
+    {
+      "id": "mod:slate_hardware_optimizer",
+      "name": "slate_hardware_optimizer",
+      "type": "module",
+      "description": "SLATE Hardware Optimizer - Automatic GPU detection and PyTorch optimization.",
+      "properties": {
+        "size_bytes": 5646
+      },
+      "source_file": "slate\\slate_hardware_optimizer.py"
+    },
+    {
+      "id": "mod:slate_installer",
+      "name": "slate_installer",
+      "type": "module",
+      "description": "S.L.A.T.E. Ecosystem Installer",
+      "properties": {
+        "size_bytes": 80960
+      },
+      "source_file": "slate\\slate_installer.py"
+    },
+    {
+      "id": "mod:slate_interactive_experience",
+      "name": "slate_interactive_experience",
+      "type": "module",
+      "description": "SLATE Interactive Experience Engine",
+      "properties": {
+        "size_bytes": 60187
+      },
+      "source_file": "slate\\slate_interactive_experience.py"
+    },
+    {
+      "id": "mod:slate_k8s",
+      "name": "slate_k8s",
+      "type": "module",
+      "description": "SLATE K8s Manager \u2014 Local Container Orchestration",
+      "properties": {
+        "size_bytes": 15038
+      },
+      "source_file": "slate\\slate_k8s.py"
+    },
+    {
+      "id": "mod:slate_k8s_deploy",
+      "name": "slate_k8s_deploy",
+      "type": "module",
+      "description": "SLATE Kubernetes Deployment Manager",
+      "properties": {
+        "size_bytes": 26609
+      },
+      "source_file": "slate\\slate_k8s_deploy.py"
+    },
+    {
+      "id": "mod:slate_live_update",
+      "name": "slate_live_update",
+      "type": "module",
+      "description": "SLATE Live Update System",
+      "properties": {
+        "size_bytes": 28350
+      },
+      "source_file": "slate\\slate_live_update.py"
+    },
+    {
+      "id": "mod:slate_model_trainer",
+      "name": "slate_model_trainer",
+      "type": "module",
+      "description": "SLATE Model Trainer \u2014 Build & Manage Custom SLATE Models",
+      "properties": {
+        "size_bytes": 25054
+      },
+      "source_file": "slate\\slate_model_trainer.py"
+    },
+    {
+      "id": "mod:slate_multi_runner",
+      "name": "slate_multi_runner",
+      "type": "module",
+      "description": "SLATE Multi-Runner Coordinator - Manage multiple parallel runners.",
+      "properties": {
+        "size_bytes": 12373
+      },
+      "source_file": "slate\\slate_multi_runner.py"
+    },
+    {
+      "id": "mod:slate_orchestrator",
+      "name": "slate_orchestrator",
+      "type": "module",
+      "description": "SLATE Orchestrator",
+      "properties": {
+        "size_bytes": 33986
+      },
+      "source_file": "slate\\slate_orchestrator.py"
+    },
+    {
+      "id": "mod:slate_personalization",
+      "name": "slate_personalization",
+      "type": "module",
+      "description": "S.L.A.T.E. Personalization System",
+      "properties": {
+        "size_bytes": 47015
+      },
+      "source_file": "slate\\slate_personalization.py"
+    },
+    {
+      "id": "mod:slate_project_board",
+      "name": "slate_project_board",
+      "type": "module",
+      "description": "SLATE Project Board Processor - GitHub Projects V2 Integration.",
+      "properties": {
+        "size_bytes": 19837
+      },
+      "source_file": "slate\\slate_project_board.py"
+    },
+    {
+      "id": "mod:slate_prompt_runner",
+      "name": "slate_prompt_runner",
+      "type": "module",
+      "description": "SLATE Prompt Runner",
+      "properties": {
+        "size_bytes": 10998
+      },
+      "source_file": "slate\\slate_prompt_runner.py"
+    },
+    {
+      "id": "mod:slate_real_multi_runner",
+      "name": "slate_real_multi_runner",
+      "type": "module",
+      "description": "SLATE Real Multi-Runner Manager - Manages actual GitHub Actions runner instances.",
+      "properties": {
+        "size_bytes": 15629
+      },
+      "source_file": "slate\\slate_real_multi_runner.py"
+    },
+    {
+      "id": "mod:slate_release_manager",
+      "name": "slate_release_manager",
+      "type": "module",
+      "description": "SLATE Release Manager",
+      "properties": {
+        "size_bytes": 21077
+      },
+      "source_file": "slate\\slate_release_manager.py"
+    },
+    {
+      "id": "mod:slate_runner_benchmark",
+      "name": "slate_runner_benchmark",
+      "type": "module",
+      "description": "SLATE Multi-Runner Benchmark - Determine optimal runner count per GPU.",
+      "properties": {
+        "size_bytes": 13084
+      },
+      "source_file": "slate\\slate_runner_benchmark.py"
+    },
+    {
+      "id": "mod:slate_runner_manager",
+      "name": "slate_runner_manager",
+      "type": "module",
+      "description": "SLATE Runner Manager",
+      "properties": {
+        "size_bytes": 24464
+      },
+      "source_file": "slate\\slate_runner_manager.py"
+    },
+    {
+      "id": "mod:slate_runtime",
+      "name": "slate_runtime",
+      "type": "module",
+      "description": "SLATE Runtime Checker - Check all integrations and dependencies.",
+      "properties": {
+        "size_bytes": 11282
+      },
+      "source_file": "slate\\slate_runtime.py"
+    },
+    {
+      "id": "mod:slate_semantic_kernel",
+      "name": "slate_semantic_kernel",
+      "type": "module",
+      "description": "SLATE Semantic Kernel Integration",
+      "properties": {
+        "size_bytes": 27191
+      },
+      "source_file": "slate\\slate_semantic_kernel.py"
+    },
+    {
+      "id": "mod:slate_service_watchdog",
+      "name": "slate_service_watchdog",
+      "type": "module",
+      "description": "SLATE Service Watchdog",
+      "properties": {
+        "size_bytes": 15629
+      },
+      "source_file": "slate\\slate_service_watchdog.py"
+    },
+    {
+      "id": "mod:slate_spec_kit",
+      "name": "slate_spec_kit",
+      "type": "module",
+      "description": "SLATE Spec-Kit Wiki Integration",
+      "properties": {
+        "size_bytes": 31021
+      },
+      "source_file": "slate\\slate_spec_kit.py"
+    },
+    {
+      "id": "mod:slate_status",
+      "name": "slate_status",
+      "type": "module",
+      "description": "SLATE Status Checker",
+      "properties": {
+        "size_bytes": 15298
+      },
+      "source_file": "slate\\slate_status.py"
+    },
+    {
+      "id": "mod:slate_terminal_monitor",
+      "name": "slate_terminal_monitor",
+      "type": "module",
+      "description": "SLATE Terminal Monitor - Safe command execution with timeouts.",
+      "properties": {
+        "size_bytes": 3753
+      },
+      "source_file": "slate\\slate_terminal_monitor.py"
+    },
+    {
+      "id": "mod:slate_token_system",
+      "name": "slate_token_system",
+      "type": "module",
+      "description": "SLATE Token System",
+      "properties": {
+        "size_bytes": 25388
+      },
+      "source_file": "slate\\slate_token_system.py"
+    },
+    {
+      "id": "mod:slate_training_pipeline",
+      "name": "slate_training_pipeline",
+      "type": "module",
+      "description": "SLATE Secure AI Training Pipeline",
+      "properties": {
+        "size_bytes": 31367
+      },
+      "source_file": "slate\\slate_training_pipeline.py"
+    },
+    {
+      "id": "mod:slate_transformers",
+      "name": "slate_transformers",
+      "type": "module",
+      "description": "SLATE Transformer Pipeline \u2014 HuggingFace Transformers for CI/CD Analysis",
+      "properties": {
+        "size_bytes": 20909
+      },
+      "source_file": "slate\\slate_transformers.py"
+    },
+    {
+      "id": "mod:slate_unified_autonomous",
+      "name": "slate_unified_autonomous",
+      "type": "module",
+      "description": "SLATE Unified Autonomous Loop",
+      "properties": {
+        "size_bytes": 56313
+      },
+      "source_file": "slate\\slate_unified_autonomous.py"
+    },
+    {
+      "id": "mod:slate_warmup",
+      "name": "slate_warmup",
+      "type": "module",
+      "description": "SLATE Warmup \u2014 GPU Model Preloading & System Initialization",
+      "properties": {
+        "size_bytes": 19463
+      },
+      "source_file": "slate\\slate_warmup.py"
+    },
+    {
+      "id": "mod:slate_watcher",
+      "name": "slate_watcher",
+      "type": "module",
+      "description": "SLATE File Watcher",
+      "properties": {
+        "size_bytes": 18785
+      },
+      "source_file": "slate\\slate_watcher.py"
+    },
+    {
+      "id": "mod:slate_workflow_analyzer",
+      "name": "slate_workflow_analyzer",
+      "type": "module",
+      "description": "SLATE Workflow Analyzer - Meta-workflow management for SLATE development.",
+      "properties": {
+        "size_bytes": 15154
+      },
+      "source_file": "slate\\slate_workflow_analyzer.py"
+    },
+    {
+      "id": "mod:slate_workflow_coordinator",
+      "name": "slate_workflow_coordinator",
+      "type": "module",
+      "description": "SLATE Workflow Coordinator",
+      "properties": {
+        "size_bytes": 20999
+      },
+      "source_file": "slate\\slate_workflow_coordinator.py"
+    },
+    {
+      "id": "mod:slate_workflow_hub",
+      "name": "slate_workflow_hub",
+      "type": "module",
+      "description": "SLATE Workflow Hub \u2014 Central AI-Powered Automation Engine",
+      "properties": {
+        "size_bytes": 47021
+      },
+      "source_file": "slate\\slate_workflow_hub.py"
+    },
+    {
+      "id": "mod:slate_workflow_manager",
+      "name": "slate_workflow_manager",
+      "type": "module",
+      "description": "SLATE Workflow Manager",
+      "properties": {
+        "size_bytes": 17381
+      },
+      "source_file": "slate\\slate_workflow_manager.py"
+    },
+    {
+      "id": "mod:stability",
+      "name": "stability",
+      "type": "module",
+      "description": "SLATE Stability Module",
+      "properties": {
+        "size_bytes": 49833
+      },
+      "source_file": "slate\\stability.py"
+    },
+    {
+      "id": "mod:unified_ai_backend",
+      "name": "unified_ai_backend",
+      "type": "module",
+      "description": "SLATE Unified AI Backend",
+      "properties": {
+        "size_bytes": 48013
+      },
+      "source_file": "slate\\unified_ai_backend.py"
+    },
+    {
+      "id": "mod:vendor_agents_sdk",
+      "name": "vendor_agents_sdk",
+      "type": "module",
+      "description": "Vendor OpenAI Agents SDK Import Helper",
+      "properties": {
+        "size_bytes": 5519
+      },
+      "source_file": "slate\\vendor_agents_sdk.py"
+    },
+    {
+      "id": "mod:vendor_autogen_sdk",
+      "name": "vendor_autogen_sdk",
+      "type": "module",
+      "description": "Vendor Microsoft AutoGen SDK Import Helper",
+      "properties": {
+        "size_bytes": 7560
+      },
+      "source_file": "slate\\vendor_autogen_sdk.py"
+    },
+    {
+      "id": "mod:vendor_integration",
+      "name": "vendor_integration",
+      "type": "module",
+      "description": "SLATE Vendor Integration Status",
+      "properties": {
+        "size_bytes": 10580
+      },
+      "source_file": "slate\\vendor_integration.py"
+    },
+    {
+      "id": "spec:005",
+      "name": "Spec 005: Monochrome Theme",
+      "type": "spec",
+      "description": "Specification: Dashboard Monochrome Theme",
+      "properties": {
+        "number": "005",
+        "directory": "005-monochrome-theme"
+      },
+      "source_file": "specs\\005-monochrome-theme\\spec.md"
+    },
+    {
+      "id": "spec:006",
+      "name": "Spec 006: Natural Theme System",
+      "type": "spec",
+      "description": "Specification: Natural Theme System with Procedural Gradient",
+      "properties": {
+        "number": "006",
+        "directory": "006-natural-theme-system"
+      },
+      "source_file": "specs\\006-natural-theme-system\\spec.md"
+    },
+    {
+      "id": "spec:007",
+      "name": "Spec 007: Slate Design System",
+      "type": "spec",
+      "description": "Specification: SLATE Unified Design System",
+      "properties": {
+        "number": "007",
+        "directory": "007-slate-design-system"
+      },
+      "source_file": "specs\\007-slate-design-system\\spec.md"
+    },
+    {
+      "id": "spec:008",
+      "name": "Spec 008: Slate Guided Experience",
+      "type": "spec",
+      "description": "SLATE Guided Experience & Brochure UI Specification",
+      "properties": {
+        "number": "008",
+        "directory": "008-slate-guided-experience"
+      },
+      "source_file": "specs\\008-slate-guided-experience\\spec.md"
+    },
+    {
+      "id": "spec:009",
+      "name": "Spec 009: Slate Copilot Roadmap Awareness",
+      "type": "spec",
+      "description": "Specification: @slate Copilot Participant Roadmap Awareness",
+      "properties": {
+        "number": "009",
+        "directory": "009-slate-copilot-roadmap-awareness"
+      },
+      "source_file": "specs\\009-slate-copilot-roadmap-awareness\\spec.md"
+    },
+    {
+      "id": "spec:010",
+      "name": "Spec 010: Slate Generative Onboarding",
+      "type": "spec",
+      "description": "Specification: SLATE Generative Onboarding UI",
+      "properties": {
+        "number": "010",
+        "directory": "010-slate-generative-onboarding"
+      },
+      "source_file": "specs\\010-slate-generative-onboarding\\spec.md"
+    },
+    {
+      "id": "spec:011",
+      "name": "Spec 011: Schematic Diagram Sdk",
+      "type": "spec",
+      "description": "SLATE Schematic Diagram Generation SDK Specification",
+      "properties": {
+        "number": "011",
+        "directory": "011-schematic-diagram-sdk"
+      },
+      "source_file": "specs\\011-schematic-diagram-sdk\\spec.md"
+    },
+    {
+      "id": "spec:012",
+      "name": "Spec 012: Watchmaker 3D Dashboard",
+      "type": "spec",
+      "description": "Specification: Watchmaker Aesthetic & Interactive 3D Dashboard",
+      "properties": {
+        "number": "012",
+        "directory": "012-watchmaker-3d-dashboard"
+      },
+      "source_file": "specs\\012-watchmaker-3d-dashboard\\spec.md"
+    },
+    {
+      "id": "spec:013",
+      "name": "Spec 013: Engineering Drawing Theme",
+      "type": "spec",
+      "description": "Spec 013: Engineering Drawing Theme System",
+      "properties": {
+        "number": "013",
+        "directory": "013-engineering-drawing-theme"
+      },
+      "source_file": "specs\\013-engineering-drawing-theme\\spec.md"
+    },
+    {
+      "id": "spec:014",
+      "name": "Spec 014: Watchmaker Golden Ratio Ui",
+      "type": "spec",
+      "description": "Spec 014: Watchmaker Golden Ratio UI \u2014 Guided Operations Overhaul",
+      "properties": {
+        "number": "014",
+        "directory": "014-watchmaker-golden-ratio-ui"
+      },
+      "source_file": "specs\\014-watchmaker-golden-ratio-ui\\spec.md"
+    },
+    {
+      "id": "spec:015",
+      "name": "Spec 015: Vendor Integration",
+      "type": "spec",
+      "description": "Specification: Vendor SDK Integration",
+      "properties": {
+        "number": "015",
+        "directory": "015-vendor-integration"
+      },
+      "source_file": "specs\\015-vendor-integration\\spec.md"
+    },
+    {
+      "id": "spec:016",
+      "name": "Spec 016: Multi Runner System",
+      "type": "spec",
+      "description": "Specification: Multi-Runner System",
+      "properties": {
+        "number": "016",
+        "directory": "016-multi-runner-system"
+      },
+      "source_file": "specs\\016-multi-runner-system\\spec.md"
+    },
+    {
+      "id": "spec:017",
+      "name": "Spec 017: Claude Agent Sdk",
+      "type": "spec",
+      "description": "Specification: Claude Agent SDK Integration",
+      "properties": {
+        "number": "017",
+        "directory": "017-claude-agent-sdk"
+      },
+      "source_file": "specs\\017-claude-agent-sdk\\spec.md"
+    },
+    {
+      "id": "spec:018",
+      "name": "Spec 018: Kubernetes Infrastructure",
+      "type": "spec",
+      "description": "Specification: Kubernetes Infrastructure",
+      "properties": {
+        "number": "018",
+        "directory": "018-kubernetes-infrastructure"
+      },
+      "source_file": "specs\\018-kubernetes-infrastructure\\spec.md"
+    },
+    {
+      "id": "spec:019",
+      "name": "Spec 019: Dual Gpu Manager",
+      "type": "spec",
+      "description": "Specification: Dual-GPU Manager",
+      "properties": {
+        "number": "019",
+        "directory": "019-dual-gpu-manager"
+      },
+      "source_file": "specs\\019-dual-gpu-manager\\spec.md"
+    },
+    {
+      "id": "spec:020",
+      "name": "Spec 020: Custom Slate Models",
+      "type": "spec",
+      "description": "Specification: Custom SLATE Models",
+      "properties": {
+        "number": "020",
+        "directory": "020-custom-slate-models"
+      },
+      "source_file": "specs\\020-custom-slate-models\\spec.md"
+    },
+    {
+      "id": "spec:021",
+      "name": "Spec 021: Autonomous Task Loop",
+      "type": "spec",
+      "description": "Specification: Autonomous Task Loop",
+      "properties": {
+        "number": "021",
+        "directory": "021-autonomous-task-loop"
+      },
+      "source_file": "specs\\021-autonomous-task-loop\\spec.md"
+    },
+    {
+      "id": "spec:022",
+      "name": "Spec 022: Slate Brand Identity",
+      "type": "spec",
+      "description": "Spec 022: SLATE Brand Identity System",
+      "properties": {
+        "number": "022",
+        "directory": "022-slate-brand-identity"
+      },
+      "source_file": "specs\\022-slate-brand-identity\\spec.md"
+    },
+    {
+      "id": "spec:023",
+      "name": "Spec 023: Slate Avatar System",
+      "type": "spec",
+      "description": "Spec 023: SLATE Avatar System",
+      "properties": {
+        "number": "023",
+        "directory": "023-slate-avatar-system"
+      },
+      "source_file": "specs\\023-slate-avatar-system\\spec.md"
+    },
+    {
+      "id": "spec:024",
+      "name": "Spec 024: Trellis 3D Integration",
+      "type": "spec",
+      "description": "Spec 024: TRELLIS.2 3D Generation Integration",
+      "properties": {
+        "number": "024",
+        "directory": "024-trellis-3d-integration"
+      },
+      "source_file": "specs\\024-trellis-3d-integration\\spec.md"
+    },
+    {
+      "id": "svc:dashboard",
+      "name": "Dashboard",
+      "type": "service",
+      "description": "FastAPI dashboard server on port 8080",
+      "properties": {
+        "port": 8080
+      },
+      "source_file": ""
+    },
+    {
+      "id": "svc:ollama",
+      "name": "Ollama",
+      "type": "service",
+      "description": "Local LLM inference service on port 11434",
+      "properties": {
+        "port": 11434
+      },
+      "source_file": ""
+    },
+    {
+      "id": "svc:chromadb",
+      "name": "ChromaDB",
+      "type": "service",
+      "description": "Vector store for RAG memory on port 8000",
+      "properties": {
+        "port": 8000
+      },
+      "source_file": ""
+    },
+    {
+      "id": "svc:foundry",
+      "name": "Foundry Local",
+      "type": "service",
+      "description": "ONNX-optimized inference on port 5272",
+      "properties": {
+        "port": 5272
+      },
+      "source_file": ""
+    },
+    {
+      "id": "svc:runner",
+      "name": "GitHub Runner",
+      "type": "service",
+      "description": "Self-hosted GitHub Actions runner",
+      "properties": {
+        "port": 0
+      },
+      "source_file": ""
+    },
+    {
+      "id": "svc:mcp",
+      "name": "MCP Server",
+      "type": "service",
+      "description": "Model Context Protocol integration",
+      "properties": {
+        "port": 0
+      },
+      "source_file": ""
+    },
+    {
+      "id": "svc:agent-router",
+      "name": "Agent Router",
+      "type": "service",
+      "description": "Task routing service on port 8081",
+      "properties": {
+        "port": 8081
+      },
+      "source_file": ""
+    },
+    {
+      "id": "svc:autonomous",
+      "name": "Autonomous Loop",
+      "type": "service",
+      "description": "Self-healing autonomous system on port 8082",
+      "properties": {
+        "port": 8082
+      },
+      "source_file": ""
+    },
+    {
+      "id": "svc:trellis2",
+      "name": "TRELLIS.2",
+      "type": "service",
+      "description": "Image-to-3D generation on port 8085",
+      "properties": {
+        "port": 8085
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:core-sdk",
+      "name": "Core SDK",
+      "type": "tech_node",
+      "description": "SLATE core SDK and infrastructure",
+      "properties": {
+        "status": "complete",
+        "phase": 1
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:workflow-system",
+      "name": "Workflow System",
+      "type": "tech_node",
+      "description": "GitHub Actions workflow-based task execution",
+      "properties": {
+        "status": "complete",
+        "phase": 1
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:mcp-server",
+      "name": "MCP Server",
+      "type": "tech_node",
+      "description": "Model Context Protocol integration",
+      "properties": {
+        "status": "complete",
+        "phase": 1
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:github-runner",
+      "name": "Self-Hosted Runner",
+      "type": "tech_node",
+      "description": "GPU-accelerated GitHub Actions runner",
+      "properties": {
+        "status": "complete",
+        "phase": 1
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:dashboard",
+      "name": "Dashboard",
+      "type": "tech_node",
+      "description": "Web-based status dashboard with K8s integration",
+      "properties": {
+        "status": "complete",
+        "phase": 1
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:workflow-pipeline",
+      "name": "Workflow Pipeline",
+      "type": "tech_node",
+      "description": "Tasks -> Runner -> Workflows -> Results pipeline",
+      "properties": {
+        "status": "complete",
+        "phase": 1
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:tech-tree-viz",
+      "name": "Tech Tree Visualization",
+      "type": "tech_node",
+      "description": "D3.js force-directed tech tree on GitHub Pages",
+      "properties": {
+        "status": "complete",
+        "phase": 1
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:docker-infra",
+      "name": "Docker Infrastructure",
+      "type": "tech_node",
+      "description": "GPU/CPU container images, compose, ghcr.io registry",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:copilot-dev",
+      "name": "Copilot Development",
+      "type": "tech_node",
+      "description": "GitHub Copilot instructions, prompts, skills, and @slate chat participant",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:claude-dev",
+      "name": "Claude Integration",
+      "type": "tech_node",
+      "description": "Claude Code commands, MCP server, CLAUDE.md, plugin SDK",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:ui-dev",
+      "name": "UI Development",
+      "type": "tech_node",
+      "description": "Dashboard frontend, tech tree viz, glassmorphism theme, design tokens",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:meta-workflow",
+      "name": "Meta-Workflow System",
+      "type": "tech_node",
+      "description": "Self-managing workflow analyzer and deprecation detection",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:agent-system",
+      "name": "Agent System",
+      "type": "tech_node",
+      "description": "8-agent registry (ALPHA-ZETA, COPILOT, COPILOT_CHAT) with classification and routing",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:uv-migration",
+      "name": "UV Package Manager",
+      "type": "tech_node",
+      "description": "Migrate from pip to UV for faster dependency management",
+      "properties": {
+        "status": "available",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:discord-bot",
+      "name": "Discord Bot",
+      "type": "tech_node",
+      "description": "SLATE Discord integration for notifications and commands",
+      "properties": {
+        "status": "available",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:multi-runner",
+      "name": "Multi-Runner System",
+      "type": "tech_node",
+      "description": "19 parallel runners across 2 GPUs with resource-aware task distribution",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:vscode-sdk",
+      "name": "VSCode SDK Integration",
+      "type": "tech_node",
+      "description": "Local VSCode plugins synced to GitHub as complete SDK",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:schematic-sdk",
+      "name": "Schematic Diagram SDK",
+      "type": "tech_node",
+      "description": "Circuit-board style diagram generation for system visualization",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:copilot-sdk",
+      "name": "Copilot SDK Integration",
+      "type": "tech_node",
+      "description": "GitHub Copilot SDK submodule with 14 SLATE tools, session manager, BYOK providers, MCP configs",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:autonomous-loop",
+      "name": "Autonomous Task Loop",
+      "type": "tech_node",
+      "description": "Unified autonomous loop with 5-source discovery, ML classification, agent routing, self-healing",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:spec-system",
+      "name": "Specification System",
+      "type": "tech_node",
+      "description": "Spec-driven development with spec-kit processing, wiki generation, and roadmap tracking",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:k8s-infra",
+      "name": "Kubernetes Infrastructure",
+      "type": "tech_node",
+      "description": "Kubernetes manifests for SLATE deployment \u00e2\u20ac\u201d namespace, RBAC, deployments, network policies, dashboard service discovery",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:gpu-manager",
+      "name": "Dual-GPU Manager",
+      "type": "tech_node",
+      "description": "Load-balanced dual-GPU management with Ollama model placement and warmup",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:custom-models",
+      "name": "Custom SLATE Models",
+      "type": "tech_node",
+      "description": "Ollama-based custom models: slate-coder (12B), slate-fast (3B), slate-planner (7B)",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:fork-sync",
+      "name": "Vendor Fork Sync",
+      "type": "tech_node",
+      "description": "Fork management for 16 vendor dependencies: OpenAI agents, Microsoft SK/AutoGen, NVIDIA TensorRT/NeMo, HuggingFace transformers",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:vendor-integration",
+      "name": "Vendor SDK Integration",
+      "type": "tech_node",
+      "description": "Unified SDK integration for 5 vendors: openai-agents, autogen, semantic-kernel, copilot-sdk, spec-kit with import helpers and type bridges",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:spec-015-vendor",
+      "name": "Spec 015: Vendor SDK Integration",
+      "type": "tech_node",
+      "description": "Specification for unified vendor SDK integration layer",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:spec-016-multirunner",
+      "name": "Spec 016: Multi-Runner System",
+      "type": "tech_node",
+      "description": "Specification for parallel runner infrastructure across dual GPUs",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:spec-017-claude-sdk",
+      "name": "Spec 017: Claude SDK Integration",
+      "type": "tech_node",
+      "description": "Specification for Claude Code plugin and Agent SDK integration",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:spec-018-k8s",
+      "name": "Spec 018: Kubernetes Infrastructure",
+      "type": "tech_node",
+      "description": "Specification for Kubernetes deployment and service orchestration",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:spec-019-gpu-manager",
+      "name": "Spec 019: Dual-GPU Manager",
+      "type": "tech_node",
+      "description": "Specification for load-balanced dual-GPU management",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:spec-020-custom-models",
+      "name": "Spec 020: Custom SLATE Models",
+      "type": "tech_node",
+      "description": "Specification for custom Ollama models training and deployment",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:spec-021-autonomous",
+      "name": "Spec 021: Autonomous Task Loop",
+      "type": "tech_node",
+      "description": "Specification for unified autonomous loop with self-healing capabilities",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:unified-ai-backend",
+      "name": "Unified AI Backend",
+      "type": "tech_node",
+      "description": "Central AI routing with 3 providers: Ollama, Claude Code, Foundry Local. Task classification and failover logic.",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:claude-code-integration",
+      "name": "Claude Code Full Integration",
+      "type": "tech_node",
+      "description": "Full Claude Code integration: MCP server (12 tools), plugin manifest, hooks, behaviors, instruction loader, copilot bridge, FORGE.md coordination",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:token-system",
+      "name": "Token Management System",
+      "type": "tech_node",
+      "description": "Complete local token system: 7 token types, SHA-256 hashed storage, auto-rotation, audit logging, 26 bootstrapped tokens for services/agents/plugins",
+      "properties": {
+        "status": "complete",
+        "phase": 2
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:brand-identity",
+      "name": "Brand Identity System",
+      "type": "tech_node",
+      "description": "Complete SLATE brand system: brand engine (slate_brand.py), design tokens (JSON/CSS/Python), 6 logo variants, 2 themes, brand dashboard page, color propagation validation, 18 brand assets, 127/127 tokens synced",
+      "properties": {
+        "status": "complete",
+        "phase": 3
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:avatar-system",
+      "name": "SLATE Avatar System",
+      "type": "tech_node",
+      "description": "Living avatar system: state engine (slate_avatar.py), 17 nodes/4 rings/22 connections, D3.js orrery visualization, orbital animation, health jewels, evolution levels 1-5, Level 3 achieved at 84.1% completion",
+      "properties": {
+        "status": "complete",
+        "phase": 3
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:trellis-3d",
+      "name": "TRELLIS.2 3D Integration",
+      "type": "tech_node",
+      "description": "Microsoft TRELLIS.2 (4B) image-to-3D generation as K8s microservice for avatar and asset generation",
+      "properties": {
+        "status": "available",
+        "phase": 3
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:graphrag",
+      "name": "GraphRAG Knowledge System",
+      "type": "tech_node",
+      "description": "Microsoft GraphRAG knowledge graph RAG to augment ChromaDB vector search with structured relationships",
+      "properties": {
+        "status": "available",
+        "phase": 3
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:prompt-compression",
+      "name": "Prompt Compression (LLMLingua)",
+      "type": "tech_node",
+      "description": "Microsoft LLMLingua 20x prompt compression for 16GB VRAM constraint optimization",
+      "properties": {
+        "status": "available",
+        "phase": 3
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:spec-022-brand",
+      "name": "Spec 022: Brand Identity System",
+      "type": "tech_node",
+      "description": "Specification for complete SLATE brand identity across all surfaces",
+      "properties": {
+        "status": "complete",
+        "phase": 3
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:spec-023-avatar",
+      "name": "Spec 023: Avatar System",
+      "type": "tech_node",
+      "description": "Specification for SLATE avatar: 2D orrery + 3D TRELLIS.2 generation",
+      "properties": {
+        "status": "complete",
+        "phase": 3
+      },
+      "source_file": ""
+    },
+    {
+      "id": "tech:spec-024-trellis",
+      "name": "Spec 024: TRELLIS.2 Integration",
+      "type": "tech_node",
+      "description": "Specification for Microsoft TRELLIS.2 3D generation as K8s microservice",
+      "properties": {
+        "status": "complete",
+        "phase": 3
+      },
+      "source_file": ""
+    }
+  ],
+  "relations": [
+    {
+      "source": "svc:dashboard",
+      "target": "svc:ollama",
+      "type": "connects_to",
+      "weight": 0.9,
+      "properties": {}
+    },
+    {
+      "source": "svc:dashboard",
+      "target": "svc:chromadb",
+      "type": "connects_to",
+      "weight": 0.7,
+      "properties": {}
+    },
+    {
+      "source": "svc:agent-router",
+      "target": "svc:ollama",
+      "type": "connects_to",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "svc:agent-router",
+      "target": "svc:foundry",
+      "type": "connects_to",
+      "weight": 0.5,
+      "properties": {}
+    },
+    {
+      "source": "svc:autonomous",
+      "target": "svc:ollama",
+      "type": "connects_to",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "svc:autonomous",
+      "target": "svc:runner",
+      "type": "connects_to",
+      "weight": 0.8,
+      "properties": {}
+    },
+    {
+      "source": "tech:core-sdk",
+      "target": "tech:workflow-system",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:core-sdk",
+      "target": "tech:mcp-server",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:workflow-system",
+      "target": "tech:github-runner",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:workflow-system",
+      "target": "tech:workflow-pipeline",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:mcp-server",
+      "target": "tech:dashboard",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:dashboard",
+      "target": "tech:tech-tree-viz",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:github-runner",
+      "target": "tech:workflow-pipeline",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:workflow-pipeline",
+      "target": "tech:docker-infra",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:workflow-pipeline",
+      "target": "tech:meta-workflow",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:mcp-server",
+      "target": "tech:claude-dev",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:core-sdk",
+      "target": "tech:copilot-dev",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:core-sdk",
+      "target": "tech:agent-system",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:dashboard",
+      "target": "tech:ui-dev",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:core-sdk",
+      "target": "tech:uv-migration",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:workflow-pipeline",
+      "target": "tech:discord-bot",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:github-runner",
+      "target": "tech:multi-runner",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:core-sdk",
+      "target": "tech:vscode-sdk",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:multi-runner",
+      "target": "tech:docker-infra",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:dashboard",
+      "target": "tech:schematic-sdk",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:ui-dev",
+      "target": "tech:schematic-sdk",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:copilot-dev",
+      "target": "tech:copilot-sdk",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:vscode-sdk",
+      "target": "tech:copilot-sdk",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:workflow-pipeline",
+      "target": "tech:autonomous-loop",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:agent-system",
+      "target": "tech:autonomous-loop",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:core-sdk",
+      "target": "tech:spec-system",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:spec-system",
+      "target": "tech:schematic-sdk",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:docker-infra",
+      "target": "tech:k8s-infra",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:github-runner",
+      "target": "tech:gpu-manager",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:gpu-manager",
+      "target": "tech:custom-models",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:custom-models",
+      "target": "tech:autonomous-loop",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:core-sdk",
+      "target": "tech:fork-sync",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:fork-sync",
+      "target": "tech:autonomous-loop",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:fork-sync",
+      "target": "tech:vendor-integration",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:vendor-integration",
+      "target": "tech:autonomous-loop",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:spec-system",
+      "target": "tech:spec-015-vendor",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:spec-system",
+      "target": "tech:spec-016-multirunner",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:spec-system",
+      "target": "tech:spec-017-claude-sdk",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:spec-system",
+      "target": "tech:spec-018-k8s",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:spec-system",
+      "target": "tech:spec-019-gpu-manager",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:spec-system",
+      "target": "tech:spec-020-custom-models",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:spec-system",
+      "target": "tech:spec-021-autonomous",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:claude-dev",
+      "target": "tech:claude-code-integration",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:claude-code-integration",
+      "target": "tech:unified-ai-backend",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:autonomous-loop",
+      "target": "tech:unified-ai-backend",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:vendor-integration",
+      "target": "tech:unified-ai-backend",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:core-sdk",
+      "target": "tech:token-system",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:token-system",
+      "target": "tech:claude-code-integration",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:spec-system",
+      "target": "tech:spec-022-brand",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:spec-system",
+      "target": "tech:spec-023-avatar",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:spec-system",
+      "target": "tech:spec-024-trellis",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:ui-dev",
+      "target": "tech:brand-identity",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:spec-022-brand",
+      "target": "tech:brand-identity",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:brand-identity",
+      "target": "tech:avatar-system",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:spec-023-avatar",
+      "target": "tech:avatar-system",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:avatar-system",
+      "target": "tech:trellis-3d",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:spec-024-trellis",
+      "target": "tech:trellis-3d",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:k8s-infra",
+      "target": "tech:trellis-3d",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:gpu-manager",
+      "target": "tech:trellis-3d",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:fork-sync",
+      "target": "tech:graphrag",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "tech:unified-ai-backend",
+      "target": "tech:prompt-compression",
+      "type": "depends_on",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:claude_agent_sdk_integration",
+      "target": "mod:action_guard",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:claude_agent_sdk_integration",
+      "target": "mod:vendor_agents_sdk",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:claude_agent_sdk_integration",
+      "target": "mod:vendor_autogen_sdk",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:claude_agent_sdk_integration",
+      "target": "mod:slate_status",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:claude_agent_sdk_integration",
+      "target": "mod:slate_workflow_manager",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:claude_agent_sdk_integration",
+      "target": "mod:slate_gpu_manager",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:claude_agent_sdk_integration",
+      "target": "mod:slate_orchestrator",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:claude_agent_sdk_integration",
+      "target": "mod:unified_ai_backend",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:claude_agent_sdk_integration",
+      "target": "mod:slate_k8s_deploy",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:claude_code_manager",
+      "target": "mod:action_guard",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:claude_code_manager",
+      "target": "mod:claude_code_validator",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:claude_code_manager",
+      "target": "mod:instruction_loader",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:claude_code_validator",
+      "target": "mod:action_guard",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:claude_feedback_layer",
+      "target": "mod:claude_code_manager",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:copilot_sdk_session",
+      "target": "mod:copilot_sdk_tools",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:copilot_sdk_session",
+      "target": "mod:instruction_loader",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:copilot_slate_runner",
+      "target": "mod:copilot_agent_bridge",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:copilot_slate_runner",
+      "target": "mod:slate_unified_autonomous",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:grok_heavy_slate_procedure",
+      "target": "mod:action_guard",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:grok_heavy_slate_procedure",
+      "target": "mod:pii_scanner",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:grok_heavy_slate_procedure",
+      "target": "mod:sdk_source_guard",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:guided_mode",
+      "target": "mod:guided_workflow",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:install_copilot_sdk",
+      "target": "mod:slate_copilot_sdk",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:integrated_autonomous_loop",
+      "target": "mod:slate_warmup",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:integrated_autonomous_loop",
+      "target": "mod:slate_unified_autonomous",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:integrated_autonomous_loop",
+      "target": "mod:slate_ai_scheduler",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:interactive_api",
+      "target": "mod:dev_cycle_engine",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:interactive_api",
+      "target": "mod:interactive_tutor",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:interactive_api",
+      "target": "mod:claude_feedback_layer",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:interactive_api",
+      "target": "mod:github_achievements",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:mcp_server",
+      "target": "mod:instruction_loader",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:ml_orchestrator",
+      "target": "mod:slate_ai_tracing",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:ml_orchestrator",
+      "target": "mod:slate_model_trainer",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:ml_orchestrator",
+      "target": "mod:slate_chromadb",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:ml_orchestrator",
+      "target": "mod:slate_warmup",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:plugin_diagnose",
+      "target": "mod:mcp_server",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_ai_orchestrator",
+      "target": "mod:slate_github_models",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_ai_production",
+      "target": "mod:slate_ai_evaluation",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_ai_production",
+      "target": "mod:slate_chromadb",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_chromadb",
+      "target": "mod:ml_orchestrator",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_copilot_sdk",
+      "target": "mod:copilot_sdk_tools",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_copilot_sdk_bridge",
+      "target": "mod:copilot_sdk_tools",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_copilot_sdk_bridge",
+      "target": "mod:copilot_sdk_session",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_fork_manager",
+      "target": "mod:slate_personalization",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_fork_manager",
+      "target": "mod:slate_status",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_installer",
+      "target": "mod:slate_dependency_scanner",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_installer",
+      "target": "mod:slate_personalization",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_installer",
+      "target": "mod:design_tokens",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_multi_runner",
+      "target": "mod:slate_runner_benchmark",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_orchestrator",
+      "target": "mod:slate_runner_manager",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_orchestrator",
+      "target": "mod:slate_workflow_manager",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_orchestrator",
+      "target": "mod:slate_watcher",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_orchestrator",
+      "target": "mod:slate_docker_daemon",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_orchestrator",
+      "target": "mod:slate_semantic_kernel",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_release_manager",
+      "target": "mod:action_guard",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_runtime",
+      "target": "mod:slate_semantic_kernel",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_runtime",
+      "target": "mod:slate_github_models",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_semantic_kernel",
+      "target": "mod:slate_github_models",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_semantic_kernel",
+      "target": "mod:action_guard",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_spec_kit",
+      "target": "mod:ml_orchestrator",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_status",
+      "target": "mod:slate_github_models",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_training_pipeline",
+      "target": "mod:pii_scanner",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_training_pipeline",
+      "target": "mod:action_guard",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_unified_autonomous",
+      "target": "mod:ml_orchestrator",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_unified_autonomous",
+      "target": "mod:slate_github_models",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_unified_autonomous",
+      "target": "mod:slate_semantic_kernel",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_unified_autonomous",
+      "target": "mod:copilot_agent_bridge",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_unified_autonomous",
+      "target": "mod:action_guard",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_unified_autonomous",
+      "target": "mod:slate_warmup",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_warmup",
+      "target": "mod:ml_orchestrator",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:slate_watcher",
+      "target": "mod:module_registry",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:unified_ai_backend",
+      "target": "mod:copilot_agent_bridge",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:vendor_integration",
+      "target": "mod:vendor_agents_sdk",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:vendor_integration",
+      "target": "mod:vendor_autogen_sdk",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": "mod:vendor_integration",
+      "target": "mod:slate_semantic_kernel",
+      "type": "imports",
+      "weight": 1.0,
+      "properties": {}
+    }
+  ]
+}
