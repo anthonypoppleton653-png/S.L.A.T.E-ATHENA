@@ -27,6 +27,7 @@ logger = logging.getLogger("slate.action_guard")
 # ── Security Configuration ──────────────────────────────────────────────
 
 BLOCKED_PATTERNS = [
+    # Code execution safety
     r"eval\(",
     r"exec\(os",
     r"rm\s+-rf\s+/",
@@ -35,6 +36,25 @@ BLOCKED_PATTERNS = [
     r"subprocess\.call.*shell\s*=\s*True",
     r"__import__\(",
     r"os\.system\(",
+    # Ethics enforcement (Constitution Section II)
+    r"nmap\s+",                       # Network scanning / hacking tools
+    r"metasploit",                    # Exploitation framework
+    r"sqlmap",                        # SQL injection tool
+    r"hashcat",                       # Password cracking
+    r"john\s+",                       # John the Ripper password cracking
+    r"hydra\s+",                      # Brute force tool
+    r"aircrack",                      # WiFi cracking
+    r"wireshark.*capture",            # Packet capture (passive surveillance)
+    r"keylog",                        # Keylogger patterns
+    r"reverse.?shell",               # Reverse shell creation
+    r"bind.?shell",                   # Bind shell creation
+    r"payload.*msfvenom",            # Metasploit payload generation
+    r"exploit[_\-]db",               # Exploit database queries
+    r"cve[_\-]\d{4}[_\-]\d+.*exploit",  # CVE exploitation (research reading is OK)
+    r"cryptominer|xmrig|minerd",     # Cryptocurrency mining
+    r"phish|spoof.*email",           # Phishing/spoofing
+    r"ddos|flood.*attack",           # DDoS attack tools
+    r"ransomware|encrypt.*ransom",   # Ransomware patterns
 ]
 
 # Kubernetes-specific blocked patterns (YAML manifest scanning)

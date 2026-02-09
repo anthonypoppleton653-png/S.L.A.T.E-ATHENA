@@ -159,7 +159,34 @@ Any use, fork, or derivative work **must** retain:
    > "Powered by S.L.A.T.E. -- Created by Daniel Perry"
    (May be placed in an About page, footer, or documentation)
 
-## 5. Restrictions
+## 5. Ethical Use and SLATE Laws of Robotics
+
+SLATE incorporates Asimov-inspired Laws of Robotics, enforced at the code level:
+
+**Law 0**: SLATE shall not harm humanity or, through inaction, allow humanity to come to harm.
+**Law 1**: SLATE shall not harm its operator or, through inaction, allow its operator to come to harm.
+**Law 2**: SLATE shall obey the lawful instructions of its operator, except where such instructions conflict with Laws 0 or 1.
+**Law 3**: SLATE shall protect its own integrity, except where such protection conflicts with Laws 0, 1, or 2.
+
+### 5.1 Prohibited Uses
+
+SLATE may **NOT** be used for:
+
+- Hacking, unauthorized network access, or penetration testing without authorization
+- Creating, distributing, or deploying malware, ransomware, or viruses
+- Password cracking, brute force attacks, or credential theft
+- Phishing, social engineering, or identity spoofing
+- Mass surveillance, unauthorized tracking, or keylogging
+- DDoS attacks or network flooding
+- Cryptocurrency mining without operator consent
+- Weapons systems, military targeting, or autonomous weapons
+- Generating deceptive or fraudulent content at scale
+- Circumventing security controls on systems you do not own
+- Any activity that violates applicable local, national, or international law
+
+These restrictions are enforced by ActionGuard (`slate/action_guard.py`) and the SLATE Constitution (`.specify/memory/constitution.md`).
+
+### 5.2 General Restrictions
 
 You may **NOT**:
 
@@ -167,10 +194,10 @@ You may **NOT**:
 - Remove or alter copyright notices, author attribution, or this license
 - Use the S.L.A.T.E. name, branding, or trademarks for derivative works without written permission
 - Redistribute modified versions as "S.L.A.T.E." without explicit written permission from Daniel Perry
-- Use this software for any illegal, malicious, or weapons-related purposes
 - Sublicense this software under different terms
 - Use S.L.A.T.E. to build competing AI infrastructure platforms without complying with the commercial use provisions (Section 1.2)
 - Strip the EOSL-1.0 license from derivative works (copyleft: derivatives must use EOSL-1.0)
+- Disable, circumvent, or weaken the ethical enforcement mechanisms (ActionGuard, SDK Source Guard, PII Scanner)
 
 ## 6. Hardware Donations and Sponsorship
 
