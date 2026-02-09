@@ -25,7 +25,7 @@
   - Tier escalation flow
   - Integration with all AI agent entry points
 
-## Phase 2: Benchmarking (Sprint 2)
+## Phase 2: Benchmarking, Metering & Energy (Sprint 2)
 
 - [ ] **T-025-005**: Build `slate/benchmark_suite.py`
   - GPU inference benchmark (Ollama tok/s)
@@ -52,6 +52,53 @@
   - Add as Phase 6 in onboarding flow
   - Animated progress in dashboard
   - Results feed into system tuning
+
+- [ ] **T-025-028**: Build `slate/token_counter.py` — Inference Token Metering
+  - Hook into all Ollama API call points in the SLATE ecosystem
+  - Extract prompt_tokens, completion_tokens from API response
+  - Per-agent attribution (tag each call with originating agent)
+  - Real-time throughput calculation (tokens/second, rolling average)
+  - Append-only JSONL ledger at `.slate_analytics/token_ledger.jsonl`
+  - Lifetime statistics aggregation
+  - VSCode status bar live tok/s indicator
+  - Dashboard widget: throughput chart + session totals + agent breakdown
+  - API endpoint: `GET /api/tokens/throughput?window=1h`
+  - CLI: `slate tokens [--today | --week | --lifetime]`
+
+- [ ] **T-025-029**: Build `slate/energy_providers.py` — Provider Database
+  - US electrical provider database (top 10 metro providers)
+  - ZIP code to provider lookup
+  - Rate schedule parsing (TOU: peak/off-peak/super-off-peak)
+  - Flat rate provider support
+  - Community-contributed provider submissions (via SLATE Discussions)
+  - Seasonal rate adjustment support
+
+- [ ] **T-025-030**: Build `slate/energy_scheduler.py` — Rate-Aware Scheduling
+  - Operation classifier (heavy/normal/light)
+  - Current rate tier detection (time-based)
+  - Schedule decision engine (execute now vs queue for window)
+  - Operation queue with next-window targeting
+  - Monthly cost estimator (actual vs projected vs unscheduled)
+  - Budget alerting at configurable thresholds
+  - Hard cap option (pause non-essential ops at budget limit)
+  - `.slate_config/energy.yaml` configuration schema
+
+- [ ] **T-025-031**: Energy Configuration Onboarding UI (Phase 7)
+  - ZIP code / city input field
+  - Electrical provider dropdown (auto-populated from ZIP)
+  - Rate schedule visualization (color-coded timeline)
+  - SLATE scheduling preview (heavy/normal/light operation windows)
+  - Cost comparison (optimized vs unoptimized)
+  - "Skip — Run Anytime" option for users who don't care
+  - AI narration explaining the savings opportunity
+
+- [ ] **T-025-032**: Token Counter + Energy Dashboard Widgets
+  - Token throughput live chart (sparkline in dashboard header)
+  - Per-agent token breakdown (bar chart with percentages)
+  - Current rate tier indicator (green/yellow/red badge)
+  - Queued operations list (with scheduled execution times)
+  - Monthly cost gauge (budget progress bar)
+  - Energy savings counter ($XX saved vs unscheduled)
 
 ## Phase 3: Onboarding UI (Sprint 3-4)
 
@@ -199,6 +246,12 @@ T-025-004 ─→ T-025-012 (gate before permission UI)
 T-025-005 ─→ T-025-006 (benchmarks before profile card)
 T-025-006 ─→ T-025-007 (profile before thermal policy)
 T-025-007 ─→ T-025-008 (policy before install integration)
+
+T-025-028 ─→ T-025-032 (token counter before dashboard widget)
+T-025-029 ─→ T-025-030 (provider DB before scheduler)
+T-025-030 ─→ T-025-031 (scheduler before onboarding UI)
+T-025-028 ─┬─→ T-025-030 (token counter feeds energy cost calc)
+            └─→ T-025-032 (counter data for dashboard)
 
 T-025-016 ─→ T-025-017 (schema before manager)
 T-025-017 ─→ T-025-018 (manager before SDK)
