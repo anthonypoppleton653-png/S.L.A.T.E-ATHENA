@@ -4,3 +4,12 @@
 [submodule "vendor/spec-kit"]
 	path = vendor/spec-kit
 	url = https://github.com/SynchronizedLivingArchitecture/spec-kit.git
+[submodule "vendor/openai-agents-python"]
+	path = vendor/openai-agents-python
+	url = https://github.com/SynchronizedLivingArchitecture/openai-agents-python.git
+[submodule "vendor/semantic-kernel"]
+	path = vendor/semantic-kernel
+	url = https://github.com/SynchronizedLivingArchitecture/semantic-kernel.git
+[submodule "vendor/autogen"]
+	path = vendor/autogen
+	url = https://github.com/SynchronizedLivingArchitecture/autogen.git
