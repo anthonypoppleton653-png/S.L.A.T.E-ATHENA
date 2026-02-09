@@ -237,6 +237,14 @@ FORK_REGISTRY: List[ForkInfo] = [
         purpose="Document-to-Markdown for RAG ingestion pipeline",
         integration_files=["slate/slate_chromadb.py", "slate/slate_spec_kit.py"]
     ),
+    # === Discord Integration (Phase 2) ===
+    ForkInfo(
+        name="embedded-app-sdk",
+        upstream="discord/embedded-app-sdk",
+        fork="SynchronizedLivingArchitecture/embedded-app-sdk",
+        purpose="Discord Embedded App SDK for rich activity integrations and notifications",
+        integration_files=["slate/slate_discord.py"]
+    ),
 ]
 
 
