@@ -1,10 +1,10 @@
 # S.L.A.T.E. Development Guidelines
-<!-- Modified: 2026-02-08T05:00:00Z | Author: Claude Opus 4.5 | Change: Add evolving system ethos and schematic background -->
+<!-- Modified: 2026-02-09T19:30:00Z | Author: Claude Opus 4.6 | Change: Add Discord bot, spec enforcement, SEO, feedback loops -->
 
 **S.L.A.T.E.** = Synchronized Living Architecture for Transformation and Evolution
 
 **Constitution**: `.specify/memory/constitution.md` — Supersedes all other practices
-Last updated: 2026-02-08
+Last updated: 2026-02-09
 
 ## Core Ethos: Systems Evolve With Progress
 
@@ -1244,7 +1244,173 @@ SLATE auto-detects all components on startup:
 | Dashboard | 8080 | `slate/slate_status.py` |
 | Ollama | 11434 | `slate/slate_status.py` |
 | Foundry Local | 5272 | `slate/slate_status.py` |
+| Discord Bot | 8086 | `slate/slate_discord_bot.py` |
 | GitHub Runner | N/A | `slate/slate_runner_manager.py` |
+
+## Discord Bot — Community Integration
+
+SLATE has a Discord bot for community interaction at the SLATE-Community server.
+
+### Bot Configuration
+
+| Setting | Value |
+|---------|-------|
+| Application | SLATE.GIT (`1470475063386964153`) |
+| Server | SLATE-Community (`1469890015780933786`) |
+| Port | 8086 |
+| Install | Guild-only (private, owner-installable) |
+| Intents | Minimal (no message content, no presences, no members) |
+| Rate Limit | 1 command per user per minute |
+
+### Slash Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/slate-status` | Sanitized system health (no IPs, ports, paths) |
+| `/slate-feedback` | Submit feature requests, bug reports, ideas |
+| `/slate-tree` | Tech tree progress (public-safe info only) |
+| `/slate-about` | Static project info, links to GitHub/docs |
+
+### Security Architecture (7-Layer Defense)
+
+The bot NEVER exposes system internals to Discord users:
+
+1. **DiscordSecurityGate** (`slate/discord_security.py`) — Blocks IPs, paths, tokens, GPU UUIDs, hostnames, PIDs from all output
+2. **PII Scanner** (`slate/pii_scanner.py`) — Redacts personal data
+3. **ActionGuard** (`slate/action_guard.py`) — Validates all Discord network calls
+4. **Input Validation** — Max 500 chars, no URLs, no code blocks, no mentions
+5. **Rate Limiting** — 1/min per user, 30/min per channel
+6. **Hashed User IDs** — SHA-256, first 16 chars; never store raw Discord user IDs
+7. **Audit Trail** — All interactions logged to `slate_logs/discord_audit.json`
+
+### Commands
+
+```powershell
+# Start Discord bot
+.\.venv\Scripts\python.exe -m slate.slate_discord_bot --start
+
+# Check bot status
+.\.venv\Scripts\python.exe -m slate.slate_discord_bot --status
+
+# Test security gate
+.\.venv\Scripts\python.exe -m slate.slate_discord_bot --test-security
+
+# Run security tests
+.\.venv\Scripts\python.exe -m pytest tests/test_discord_security.py -v
+```
+
+### Community Feedback Pipeline
+
+```
+Discord /slate-feedback → DiscordSecurityGate → PII Scanner
+    → .slate_discussions/discord_feedback.json
+    → ChromaDB (community_feedback collection)
+    → current_tasks.json (source: "discord", priority: low)
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `slate/discord_security.py` | Security isolation gate |
+| `slate/slate_discord_bot.py` | Bot module with slash commands |
+| `slate/slate_discord.py` | Discord webhook config |
+| `.slate_identity/discord_config.json` | Bot configuration |
+| `.slate_discussions/discord_feedback.json` | Feedback storage |
+| `docker/discord-bot/Dockerfile` | Bot container image |
+| `k8s/discord-bot.yaml` | K8s deployment manifest |
+
+## Specification Enforcement
+
+**All non-trivial features MUST go through the spec lifecycle.** This is a constitution-level requirement.
+
+### Spec Lifecycle
+
+```
+draft → specified → planned → tasked → implementing → complete
+```
+
+### When Specs Are Required
+
+- New features or capabilities
+- Architecture changes
+- External integrations (APIs, SDKs, services)
+- Security-sensitive changes
+- User-facing workflows
+
+### Spec Commands
+
+```powershell
+# Create a new spec
+/speckit.specify "Feature description"
+
+# Plan implementation
+/speckit.plan
+
+# Generate tasks
+/speckit.tasks
+
+# Implement from tasks
+/speckit.implement
+
+# Analyze consistency
+/speckit.analyze
+```
+
+### Spec Directory Convention
+
+```
+specs/NNN-feature-name/
+├── spec.md          # Feature specification
+├── plan.md          # Implementation plan
+├── tasks.md         # Task breakdown
+└── checklist.md     # Verification checklist
+```
+
+### Feedback Loop Integration
+
+All feedback sources feed back into the spec system:
+- **Discord feedback** → `current_tasks.json` → spec if non-trivial
+- **GitHub Issues** → project board → spec if feature/architecture
+- **GitHub Discussions** → discussion manager → spec if actionable
+- **Test failures** → bug spec or fix directly
+- **AI analysis** → orchestrator recommendations → spec if significant
+
+## SEO and Public Presence
+
+SLATE follows Google's SEO Starter Guide for all public-facing content.
+
+### SEO Requirements (Enforced)
+
+Per [Google SEO Starter Guide](https://developers.google.com/search/docs/fundamentals/seo-starter-guide):
+
+1. **GitHub Pages** (`docs/pages/`)
+   - Semantic HTML5 with proper heading hierarchy
+   - Meta descriptions on all pages
+   - Open Graph tags for social sharing
+   - Structured data (JSON-LD) for project info
+   - Mobile-responsive design
+   - Fast page load (no external CDN dependencies)
+
+2. **GitHub README**
+   - Clear project description in first paragraph
+   - Keywords: AI, DevOps, local inference, GPU, autonomous
+   - Badges for build status, license, version
+   - Table of contents for discoverability
+   - Links to documentation, wiki, discussions
+
+3. **Social Media / Community**
+   - Consistent brand identity across platforms
+   - Discord server with clear onboarding
+   - GitHub Discussions for community engagement
+   - Project boards visible for transparency
+
+### SSO and User Engagement
+
+- GitHub OAuth for contributor authentication
+- Discord server linked from GitHub Pages and README
+- GitHub Discussions integrated with Discord feedback pipeline
+- Project boards public for community visibility
 
 ## Quick Reference
 
@@ -1257,6 +1423,9 @@ SLATE auto-detects all components on startup:
 
 # Runner status and auto-config
 .\.venv\Scripts\python.exe slate/slate_runner_manager.py --status
+
+# Discord bot
+.\.venv\Scripts\python.exe -m slate.slate_discord_bot --start
 
 # Run tests
 .\.venv\Scripts\python.exe -m pytest tests/ -v
