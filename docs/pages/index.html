@@ -1154,10 +1154,253 @@
                 color: black;
             }
         }
+
+        /* ═══════════════════════════════════════════════════════════════════════════
+           AWWWARDS-INSPIRED ENHANCEMENTS — Scroll Animations, Glassmorphism, Polish
+           Modified: 2026-02-09T22:35:00Z | Author: COPILOT | Change: Add awwwards-inspired visual enhancements
+           ═══════════════════════════════════════════════════════════════════════════ */
+
+        /* ─── Scroll Progress Bar ────────────────────────────────────────────────── */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--sl-primary), var(--sl-primary-light), var(--sl-trace-data));
+            z-index: 10000;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 10px rgba(184, 115, 51, 0.5);
+        }
+
+        /* ─── Scroll Reveal Animations ───────────────────────────────────────────── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-60px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal-left.revealed {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .reveal-right {
+            opacity: 0;
+            transform: translateX(60px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal-right.revealed {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal-scale.revealed {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Stagger delays for grid children */
+        .stagger-1 { transition-delay: 0.05s; }
+        .stagger-2 { transition-delay: 0.1s; }
+        .stagger-3 { transition-delay: 0.15s; }
+        .stagger-4 { transition-delay: 0.2s; }
+        .stagger-5 { transition-delay: 0.25s; }
+        .stagger-6 { transition-delay: 0.3s; }
+        .stagger-7 { transition-delay: 0.35s; }
+        .stagger-8 { transition-delay: 0.4s; }
+        .stagger-9 { transition-delay: 0.45s; }
+
+        /* ─── Glassmorphism Cards ────────────────────────────────────────────────── */
+        .feature-card {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .health-card {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        box-shadow 0.4s ease,
+                        border-color 0.3s ease;
+        }
+
+        .health-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(184, 115, 51, 0.15);
+            border-color: rgba(184, 115, 51, 0.3);
+        }
+
+        /* ─── Enhanced Feature Card Hover ────────────────────────────────────────── */
+        .feature-card {
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        box-shadow 0.5s ease,
+                        border-color 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: 0 20px 60px rgba(184, 115, 51, 0.12),
+                        0 0 0 1px rgba(184, 115, 51, 0.2);
+        }
+
+        /* ─── Cursor Glow Effect ─────────────────────────────────────────────────── */
+        .cursor-glow {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(184, 115, 51, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .cursor-glow.active {
+            opacity: 1;
+        }
+
+        /* ─── Page Entrance Animation ────────────────────────────────────────────── */
+        @keyframes page-entrance {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        body {
+            animation: page-entrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        /* ─── Smooth Section Separators ──────────────────────────────────────────── */
+        section {
+            position: relative;
+        }
+
+        /* ─── Animated Counter Pulse ─────────────────────────────────────────────── */
+        .counter-animate {
+            display: inline-block;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .counter-animate.counting {
+            transform: scale(1.1);
+            color: var(--sl-primary-light);
+        }
+
+        /* ─── Magnetic Button Effect ─────────────────────────────────────────────── */
+        .btn {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        box-shadow 0.3s ease,
+                        background 0.3s ease;
+        }
+
+        .btn:hover {
+            box-shadow: 0 8px 30px rgba(184, 115, 51, 0.3);
+        }
+
+        /* ─── Nav Scroll Effect ──────────────────────────────────────────────────── */
+        .nav.scrolled {
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(184, 115, 51, 0.15);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ─── Marquee for SDK Badges ─────────────────────────────────────────────── */
+        .sdk-marquee {
+            overflow: hidden;
+            white-space: nowrap;
+            margin: 24px 0;
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+
+        .sdk-marquee-inner {
+            display: inline-flex;
+            gap: 48px;
+            animation: marquee-scroll 30s linear infinite;
+        }
+
+        .sdk-marquee-inner:hover {
+            animation-play-state: paused;
+        }
+
+        @keyframes marquee-scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
+        .marquee-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--sl-on-surface-dim);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .marquee-item .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--sl-primary);
+        }
+
+        /* ─── Reduced Motion Override ────────────────────────────────────────────── */
+        @media (prefers-reduced-motion: reduce) {
+            .reveal, .reveal-left, .reveal-right, .reveal-scale {
+                opacity: 1;
+                transform: none;
+                transition: none;
+            }
+            .cursor-glow { display: none; }
+            .scroll-progress { display: none; }
+            .sdk-marquee-inner { animation: none; }
+            body { animation: none; }
+        }
     </style>
 </head>
 
 <body>
+    <!-- Scroll Progress Bar (awwwards-inspired) -->
+    <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+    <!-- Cursor Glow Effect (awwwards-inspired) -->
+    <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+
     <!-- Skip Link (Accessibility) -->
     <a href="#main" class="skip-link">Skip to main content</a>
 
@@ -1335,6 +1578,8 @@
                 <li><a href="#sdk-integrations">SDKs</a></li>
                 <!-- Modified: 2026-02-09T14:01:00-05:00 | Author: Gemini (Antigravity) | Change: Add AI Agents nav link -->
                 <li><a href="#ai-agents">Agents</a></li>
+                <!-- Modified: 2026-02-09T16:01:00-05:00 | Author: Gemini (Antigravity) | Change: Add Docker nav link -->
+                <li><a href="#docker-start">Docker</a></li>
                 <!-- Modified: 2026-02-09T06:45:00Z | Author: COPILOT | Change: Add Components showcase link -->
                 <li><a href="components.html">Components</a></li>
                 <li><a href="#phase3">Phase 3</a></li>
@@ -1396,7 +1641,7 @@
                 style="display: flex; gap: 32px; margin-top: 48px; flex-wrap: wrap; justify-content: center;">
                 <div style="text-align: center;">
                     <div style="font-size: 2rem; font-weight: 700; color: var(--sl-primary-light); font-family: var(--font-mono);"
-                        id="stat-nodes">44</div>
+                        id="stat-nodes" data-target="54" class="counter-animate">54</div>
                     <div
                         style="font-size: 0.7rem; color: var(--sl-on-surface-dim); text-transform: uppercase; letter-spacing: 0.15em;">
                         Tech Tree Nodes</div>
@@ -1404,14 +1649,14 @@
                 <div style="text-align: center;">
                     <div
                         style="font-size: 2rem; font-weight: 700; color: var(--sl-status-active); font-family: var(--font-mono);">
-                        81.8%</div>
+                        100%</div>
                     <div
                         style="font-size: 0.7rem; color: var(--sl-on-surface-dim); text-transform: uppercase; letter-spacing: 0.15em;">
                         Completion</div>
                 </div>
                 <div style="text-align: center;">
                     <div style="font-size: 2rem; font-weight: 700; color: var(--sl-trace-data); font-family: var(--font-mono);"
-                        id="stat-specs">27</div>
+                        id="stat-specs" data-target="24" class="counter-animate">24</div>
                     <div
                         style="font-size: 0.7rem; color: var(--sl-on-surface-dim); text-transform: uppercase; letter-spacing: 0.15em;">
                         Specifications</div>
@@ -1436,8 +1681,40 @@
         </section>
 
         <!-- Project Health Section -->
+        <!-- Modified: 2026-02-09T22:35:00Z | Author: COPILOT | Change: Add awwwards-inspired SDK marquee ticker -->
+        <!-- SDK Capabilities Marquee (awwwards-inspired infinite scroll) -->
+        <div class="sdk-marquee" aria-hidden="true">
+            <div class="sdk-marquee-inner">
+                <span class="marquee-item"><span class="dot"></span>OpenAI Agents SDK</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-data);"></span>Microsoft AutoGen</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-status-active);"></span>Semantic Kernel v1.39</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-control);"></span>GitHub Copilot SDK</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-blueprint-accent);"></span>Claude Agent SDK</span>
+                <span class="marquee-item"><span class="dot"></span>Ollama Local LLM</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-status-active);"></span>ChromaDB Vector Store</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-data);"></span>Kubernetes Orchestration</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-control);"></span>Docker Container Runtime</span>
+                <span class="marquee-item"><span class="dot"></span>GitHub Actions CI/CD</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-blueprint-accent);"></span>TRELLIS.2 3D Engine</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-primary);"></span>Dual RTX 5070 Ti GPUs</span>
+                <!-- Duplicate for seamless loop -->
+                <span class="marquee-item"><span class="dot"></span>OpenAI Agents SDK</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-data);"></span>Microsoft AutoGen</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-status-active);"></span>Semantic Kernel v1.39</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-control);"></span>GitHub Copilot SDK</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-blueprint-accent);"></span>Claude Agent SDK</span>
+                <span class="marquee-item"><span class="dot"></span>Ollama Local LLM</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-status-active);"></span>ChromaDB Vector Store</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-data);"></span>Kubernetes Orchestration</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-trace-control);"></span>Docker Container Runtime</span>
+                <span class="marquee-item"><span class="dot"></span>GitHub Actions CI/CD</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-blueprint-accent);"></span>TRELLIS.2 3D Engine</span>
+                <span class="marquee-item"><span class="dot" style="background: var(--sl-primary);"></span>Dual RTX 5070 Ti GPUs</span>
+            </div>
+        </div>
+
         <section class="health-section" aria-labelledby="health-heading">
-            <div class="container">
+            <div class="container reveal">
                 <h2 id="health-heading" class="visually-hidden">Project Health</h2>
                 <div class="health-grid">
                     <div class="health-card">
@@ -1517,7 +1794,7 @@
         <!-- Features Section -->
         <section id="features">
             <div class="container">
-                <div class="section-header">
+                <div class="section-header reveal">
                     <h2>Core Capabilities</h2>
                     <p>A complete local AI development platform designed for privacy, performance, and professional
                         workflows.</p>
@@ -1593,7 +1870,7 @@
         <!-- SDK Integrations Section -->
         <section id="sdk-integrations" class="requirements-section" aria-labelledby="sdk-heading">
             <div class="container">
-                <div class="section-header">
+                <div class="section-header reveal">
                     <h2 id="sdk-heading">SDK Integrations</h2>
                     <p>SLATE provides a unified interface to industry-leading agent frameworks and AI development SDKs.
                     </p>
@@ -1650,7 +1927,7 @@
         <section id="ai-agents"
             style="background: linear-gradient(180deg, var(--sl-surface) 0%, rgba(13,27,42,0.3) 50%, var(--sl-surface) 100%); border-top: 1px solid rgba(184,115,51,0.1); padding: 80px 0;">
             <div class="container">
-                <div class="section-header">
+                <div class="section-header reveal">
                     <h2
                         style="background: linear-gradient(135deg, var(--sl-primary), var(--sl-primary-light), #98C1D9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
                         Active AI Agents</h2>
@@ -1915,11 +2192,146 @@
             </div>
         </section>
 
+        <!-- Modified: 2026-02-09T16:01:00-05:00 | Author: Gemini (Antigravity) | Change: Add Docker Quick-Start section -->
+        <!-- Docker Quick-Start Section -->
+        <section id="docker-start"
+            style="background: linear-gradient(180deg, var(--sl-surface) 0%, rgba(13,27,42,0.2) 100%); border-top: 1px solid rgba(184,115,51,0.1); padding: 80px 0;">
+            <div class="container">
+                <div class="section-header reveal">
+                    <h2
+                        style="background: linear-gradient(135deg, var(--sl-primary), #98C1D9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                        &#x1F433; Docker Quick-Start</h2>
+                    <p>Pull the stable image from GitHub Container Registry and run SLATE in minutes.</p>
+                </div>
+
+                <!-- Install Commands -->
+                <div
+                    style="background: var(--sl-blueprint-bg); border: 1px solid rgba(152,193,217,0.2); border-radius: 12px; padding: 28px; margin-top: 32px; position: relative; overflow: hidden;">
+                    <div style="position: absolute; inset: 0; background: var(--polish); pointer-events: none;"></div>
+                    <div
+                        style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; position: relative;">
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.12em; color: var(--sl-blueprint-accent); text-transform: uppercase;">
+                            STABLE IMAGE v3.0.0</div>
+                        <span class="status-jewel active" style="margin-left: auto;" aria-label="Published"></span>
+                    </div>
+                    <pre
+                        style="background: rgba(0,0,0,0.4); border: 1px solid rgba(152,193,217,0.1); border-radius: 8px; padding: 20px; margin: 0; font-family: var(--font-mono); font-size: 0.85rem; color: var(--sl-on-surface); line-height: 1.8; overflow-x: auto; position: relative;"><code><span style="color: var(--sl-on-surface-dim);"># Pull stable image from GHCR</span>
+<span style="color: var(--sl-blueprint-accent);">docker pull</span> ghcr.io/synchronizedlivingarchitecture/slate:<span style="color: var(--sl-status-active);">stable</span>
+
+<span style="color: var(--sl-on-surface-dim);"># Start full stack (GPU + Ollama + ChromaDB + Grafana)</span>
+<span style="color: var(--sl-blueprint-accent);">docker compose</span> up -d
+
+<span style="color: var(--sl-on-surface-dim);"># CPU-only alternative</span>
+<span style="color: var(--sl-blueprint-accent);">docker compose</span> --profile cpu up -d
+
+<span style="color: var(--sl-on-surface-dim);"># Open dashboard</span>
+<span style="color: var(--sl-blueprint-accent);">open</span> http://127.0.0.1:8080</code></pre>
+                </div>
+
+                <!-- Services Grid -->
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 32px;">
+                    <div
+                        style="background: var(--sl-surface-variant); border: 1px solid rgba(184,115,51,0.15); border-radius: 10px; padding: 20px; text-align: center;">
+                        <div style="font-size: 1.5rem; margin-bottom: 8px;">&#x1F3AF;</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: var(--sl-on-surface);">
+                            Dashboard</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--sl-primary-light); margin-top: 4px;">
+                            :8080</div>
+                    </div>
+                    <div
+                        style="background: var(--sl-surface-variant); border: 1px solid rgba(184,115,51,0.15); border-radius: 10px; padding: 20px; text-align: center;">
+                        <div style="font-size: 1.5rem; margin-bottom: 8px;">&#x1F9E0;</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: var(--sl-on-surface);">
+                            Ollama LLM</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--sl-primary-light); margin-top: 4px;">
+                            :11434</div>
+                    </div>
+                    <div
+                        style="background: var(--sl-surface-variant); border: 1px solid rgba(184,115,51,0.15); border-radius: 10px; padding: 20px; text-align: center;">
+                        <div style="font-size: 1.5rem; margin-bottom: 8px;">&#x1F4CA;</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: var(--sl-on-surface);">
+                            ChromaDB</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--sl-primary-light); margin-top: 4px;">
+                            :8000</div>
+                    </div>
+                    <div
+                        style="background: var(--sl-surface-variant); border: 1px solid rgba(184,115,51,0.15); border-radius: 10px; padding: 20px; text-align: center;">
+                        <div style="font-size: 1.5rem; margin-bottom: 8px;">&#x1F4C8;</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: var(--sl-on-surface);">
+                            Grafana</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--sl-primary-light); margin-top: 4px;">
+                            :3000</div>
+                    </div>
+                </div>
+
+                <!-- Image variants -->
+                <div
+                    style="margin-top: 32px; background: var(--sl-surface-variant); border: 1px solid rgba(184,115,51,0.12); border-radius: 10px; padding: 20px; overflow-x: auto;">
+                    <table
+                        style="width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.8rem; color: var(--sl-on-surface-variant);">
+                        <thead>
+                            <tr style="border-bottom: 1px solid rgba(184,115,51,0.2);">
+                                <th
+                                    style="text-align: left; padding: 8px 12px; color: var(--sl-primary-light); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em;">
+                                    Image</th>
+                                <th
+                                    style="text-align: left; padding: 8px 12px; color: var(--sl-primary-light); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em;">
+                                    Base</th>
+                                <th
+                                    style="text-align: center; padding: 8px 12px; color: var(--sl-primary-light); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em;">
+                                    Size</th>
+                                <th
+                                    style="text-align: left; padding: 8px 12px; color: var(--sl-primary-light); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em;">
+                                    Use Case</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid rgba(184,115,51,0.08);">
+                                <td style="padding: 10px 12px; color: var(--sl-status-active); font-weight: 700;">
+                                    :stable</td>
+                                <td style="padding: 10px 12px;">CUDA 12.8</td>
+                                <td style="padding: 10px 12px; text-align: center;">~8GB</td>
+                                <td style="padding: 10px 12px;">Recommended — GPU inference</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(184,115,51,0.08);">
+                                <td style="padding: 10px 12px; color: var(--sl-blueprint-accent);">:latest-gpu</td>
+                                <td style="padding: 10px 12px;">CUDA 12.8</td>
+                                <td style="padding: 10px 12px; text-align: center;">~8GB</td>
+                                <td style="padding: 10px 12px;">Latest GPU build</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(184,115,51,0.08);">
+                                <td style="padding: 10px 12px; color: var(--sl-blueprint-accent);">:stable-cpu</td>
+                                <td style="padding: 10px 12px;">Python 3.11-slim</td>
+                                <td style="padding: 10px 12px; text-align: center;">~500MB</td>
+                                <td style="padding: 10px 12px;">CPU-only deployment</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px 12px; color: var(--sl-on-surface-dim);">:latest-dev</td>
+                                <td style="padding: 10px 12px;">CUDA 12.8</td>
+                                <td style="padding: 10px 12px; text-align: center;">~10GB</td>
+                                <td style="padding: 10px 12px;">Development build (hot reload)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
         <!-- Phase 3: Token System + Brand Identity -->
         <section id="phase3" aria-labelledby="phase3-heading"
             style="background: linear-gradient(180deg, var(--sl-surface) 0%, var(--sl-blueprint-bg) 100%); border-top: 1px solid rgba(184,115,51,0.15);">
             <div class="container">
-                <div class="section-header">
+                <div class="section-header reveal">
                     <h2 id="phase3-heading"
                         style="background: linear-gradient(135deg, var(--sl-primary), var(--sl-primary-light), var(--sl-trace-data)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
                         Phase 3: Living Systems</h2>
@@ -2111,7 +2523,7 @@
                             TECH TREE v3.0.0</div>
                         <div
                             style="margin-left: auto; font-family: var(--font-mono); font-size: 0.875rem; font-weight: 700; color: var(--sl-primary-light);">
-                            44 NODES | 60 EDGES</div>
+                            54 NODES | 100% COMPLETE</div>
                     </div>
                     <!-- Phase Progress Bars -->
                     <div style="display: grid; gap: 12px;">
@@ -2132,12 +2544,12 @@
                             <div
                                 style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px;">
                                 <span style="color: var(--sl-on-surface-variant);">Phase 2: Integration</span>
-                                <span style="color: var(--sl-status-active); font-family: var(--font-mono);">95%</span>
+                                <span style="color: var(--sl-status-active); font-family: var(--font-mono);">100%</span>
                             </div>
                             <div
                                 style="height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden;">
                                 <div
-                                    style="width: 95%; height: 100%; background: linear-gradient(90deg, var(--sl-status-active), var(--sl-primary-light)); border-radius: 4px;">
+                                    style="width: 100%; height: 100%; background: linear-gradient(90deg, var(--sl-status-active), var(--sl-primary-light)); border-radius: 4px;">
                                 </div>
                             </div>
                         </div>
@@ -2145,12 +2557,12 @@
                             <div
                                 style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px;">
                                 <span style="color: var(--sl-on-surface-variant);">Phase 3: Living Systems</span>
-                                <span style="color: var(--sl-status-pending); font-family: var(--font-mono);">25%</span>
+                                <span style="color: var(--sl-status-active); font-family: var(--font-mono);">75%</span>
                             </div>
                             <div
                                 style="height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden;">
                                 <div
-                                    style="width: 25%; height: 100%; background: linear-gradient(90deg, var(--sl-primary), var(--sl-status-pending)); border-radius: 4px;">
+                                    style="width: 75%; height: 100%; background: linear-gradient(90deg, var(--sl-primary), var(--sl-status-active)); border-radius: 4px;">
                                 </div>
                             </div>
                         </div>
@@ -2162,7 +2574,7 @@
         <!-- Architecture Section -->
         <section id="architecture" class="arch-section" aria-labelledby="arch-heading">
             <div class="container">
-                <div class="section-header">
+                <div class="section-header reveal">
                     <h2 id="arch-heading">System Architecture</h2>
                     <p>Conceptual diagrams showing how SLATE components integrate.</p>
                 </div>
@@ -2318,7 +2730,7 @@
         <!-- Requirements Section -->
         <section id="requirements" class="requirements-section" aria-labelledby="req-heading">
             <div class="container">
-                <div class="section-header">
+                <div class="section-header reveal">
                     <h2 id="req-heading">System Requirements</h2>
                     <p>SLATE scales from modest hardware to professional workstations.</p>
                 </div>
@@ -2367,7 +2779,7 @@
         <!-- Roadmap Section -->
         <section id="roadmap" aria-labelledby="roadmap-heading">
             <div class="container">
-                <div class="section-header">
+                <div class="section-header reveal">
                     <h2 id="roadmap-heading">Development Roadmap</h2>
                     <p>Track the evolution of SLATE capabilities.</p>
                 </div>
@@ -2383,7 +2795,7 @@
                             <li>24 fork dependencies (Microsoft, NVIDIA, Anthropic)</li>
                             <li>GitHub Interface Layer (wiki, projects, discussions)</li>
                             <li>27 specifications (24 complete + 3 Phase 3)</li>
-                            <li>44-node tech tree at 81.8% completion</li>
+                            <li>54-node tech tree at 100% completion</li>
                             <li>33 GitHub Actions workflows</li>
                         </ul>
                     </div>
@@ -2418,7 +2830,7 @@
         <!-- Community & Discord Section -->
         <section id="community" aria-labelledby="community-heading">
             <div class="container">
-                <div class="section-header">
+                <div class="section-header reveal">
                     <h2 id="community-heading">Community</h2>
                     <p>Join the SLATE community — managed by slate.ai, a locally-running AI agent
                         that proves the concept of autonomous community management.</p>
@@ -2596,31 +3008,27 @@
         </div>
     </footer>
 
-    <!-- Minimal JavaScript for tab switching only -->
+    <!-- Enhanced JavaScript — Awwwards-Inspired Interactions -->
+    <!-- Modified: 2026-02-09T22:35:00Z | Author: COPILOT | Change: Add scroll-reveal, animated counters, progress bar, cursor glow -->
     <script>
         (function () {
             'use strict';
 
-            // Architecture tab switching
-            const tabs = document.querySelectorAll('.arch-tab');
+            // ═══ Architecture Tab Switching ═══
+            var tabs = document.querySelectorAll('.arch-tab');
             tabs.forEach(function (tab) {
                 tab.addEventListener('click', function () {
-                    const tabName = this.getAttribute('data-tab');
-
-                    // Update tabs
+                    var tabName = this.getAttribute('data-tab');
                     tabs.forEach(function (t) {
                         t.classList.remove('active');
                         t.setAttribute('aria-selected', 'false');
                     });
                     this.classList.add('active');
                     this.setAttribute('aria-selected', 'true');
-
-                    // Update panes
                     document.querySelectorAll('.arch-pane').forEach(function (pane) {
                         pane.classList.remove('active');
                         pane.setAttribute('hidden', '');
                     });
-
                     var activePane = document.getElementById('arch-' + tabName);
                     if (activePane) {
                         activePane.classList.add('active');
@@ -2628,6 +3036,175 @@
                     }
                 });
             });
+
+            // ═══ Scroll Progress Bar ═══
+            var progressBar = document.getElementById('scrollProgress');
+            if (progressBar) {
+                window.addEventListener('scroll', function () {
+                    var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                    var progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+                    progressBar.style.width = progress + '%';
+                }, { passive: true });
+            }
+
+            // ═══ Scroll-Reveal with IntersectionObserver ═══
+            var revealElements = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
+            if ('IntersectionObserver' in window && revealElements.length > 0) {
+                var revealObserver = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('revealed');
+                            revealObserver.unobserve(entry.target);
+                        }
+                    });
+                }, {
+                    threshold: 0.15,
+                    rootMargin: '0px 0px -60px 0px'
+                });
+                revealElements.forEach(function (el) {
+                    revealObserver.observe(el);
+                });
+            } else {
+                // Fallback: show everything
+                revealElements.forEach(function (el) {
+                    el.classList.add('revealed');
+                });
+            }
+
+            // ═══ Animated Counters ═══
+            var counterElements = document.querySelectorAll('.counter-animate[data-target]');
+            if ('IntersectionObserver' in window && counterElements.length > 0) {
+                var counterObserver = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) {
+                            animateCounter(entry.target);
+                            counterObserver.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.5 });
+                counterElements.forEach(function (el) {
+                    counterObserver.observe(el);
+                });
+            }
+
+            function animateCounter(el) {
+                var target = parseInt(el.getAttribute('data-target'), 10);
+                var duration = 1500;
+                var start = 0;
+                var startTime = null;
+                el.classList.add('counting');
+
+                function step(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    var elapsed = timestamp - startTime;
+                    var progress = Math.min(elapsed / duration, 1);
+                    // Ease-out cubic
+                    var eased = 1 - Math.pow(1 - progress, 3);
+                    var current = Math.round(start + (target - start) * eased);
+                    el.textContent = current;
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        el.textContent = target;
+                        el.classList.remove('counting');
+                    }
+                }
+                requestAnimationFrame(step);
+            }
+
+            // ═══ Cursor Glow Effect ═══
+            var cursorGlow = document.getElementById('cursorGlow');
+            if (cursorGlow && window.matchMedia('(pointer: fine)').matches) {
+                var glowActive = false;
+                document.addEventListener('mousemove', function (e) {
+                    if (!glowActive) {
+                        cursorGlow.classList.add('active');
+                        glowActive = true;
+                    }
+                    requestAnimationFrame(function () {
+                        cursorGlow.style.left = e.clientX + 'px';
+                        cursorGlow.style.top = e.clientY + 'px';
+                    });
+                }, { passive: true });
+
+                document.addEventListener('mouseleave', function () {
+                    cursorGlow.classList.remove('active');
+                    glowActive = false;
+                });
+            }
+
+            // ═══ Nav Scroll Effect ═══
+            var nav = document.querySelector('.nav');
+            if (nav) {
+                var lastScroll = 0;
+                window.addEventListener('scroll', function () {
+                    var currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+                    if (currentScroll > 80) {
+                        nav.classList.add('scrolled');
+                    } else {
+                        nav.classList.remove('scrolled');
+                    }
+                    lastScroll = currentScroll;
+                }, { passive: true });
+            }
+
+            // ═══ Smooth Scroll for Nav Links ═══
+            document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
+                anchor.addEventListener('click', function (e) {
+                    var targetId = this.getAttribute('href');
+                    if (targetId === '#') return;
+                    var target = document.querySelector(targetId);
+                    if (target) {
+                        e.preventDefault();
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // ═══ Stagger Animation for Grid Children ═══
+            if ('IntersectionObserver' in window) {
+                var grids = document.querySelectorAll('.features-grid, .health-grid, .requirements-grid, .roadmap-grid');
+                var gridObserver = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) {
+                            var children = entry.target.children;
+                            Array.prototype.forEach.call(children, function (child, index) {
+                                child.style.opacity = '0';
+                                child.style.transform = 'translateY(30px)';
+                                child.style.transition = 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+                                child.style.transitionDelay = (index * 0.08) + 's';
+                                requestAnimationFrame(function () {
+                                    requestAnimationFrame(function () {
+                                        child.style.opacity = '1';
+                                        child.style.transform = 'translateY(0)';
+                                    });
+                                });
+                            });
+                            gridObserver.unobserve(entry.target);
+                        }
+                    });
+                }, {
+                    threshold: 0.1,
+                    rootMargin: '0px 0px -40px 0px'
+                });
+                grids.forEach(function (grid) {
+                    gridObserver.observe(grid);
+                });
+            }
+
+            // ═══ Parallax for Schematic Background ═══
+            var schematicBg = document.querySelector('.schematic-bg');
+            if (schematicBg && window.matchMedia('(pointer: fine)').matches) {
+                window.addEventListener('scroll', function () {
+                    var scrolled = window.pageYOffset;
+                    schematicBg.style.transform = 'translateY(' + (scrolled * 0.15) + 'px)';
+                }, { passive: true });
+            }
+
         })();
     </script>
 

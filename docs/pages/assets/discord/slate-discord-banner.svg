@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540">
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0D1B2A;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1A1816;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0D1B2A;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Warm rust glow -->
+    <radialGradient id="glowCenter" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#B85A3C;stop-opacity:0.15" />
+      <stop offset="70%" style="stop-color:#B85A3C;stop-opacity:0.03" />
+      <stop offset="100%" style="stop-color:#B85A3C;stop-opacity:0" />
+    </radialGradient>
+
+    <!-- Grid pattern -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1B3A4B" stroke-width="0.5" opacity="0.4"/>
+    </pattern>
+
+    <!-- Hexagon clip for logo area -->
+    <clipPath id="hexClip">
+      <polygon points="480,120 560,166 560,258 480,304 400,258 400,166"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="540" fill="url(#bgGrad)"/>
+
+  <!-- Blueprint grid -->
+  <rect width="960" height="540" fill="url(#grid)"/>
+
+  <!-- Center glow -->
+  <rect width="960" height="540" fill="url(#glowCenter)"/>
+
+  <!-- Schematic lines (decorative) -->
+  <g stroke="#1B3A4B" stroke-width="1" opacity="0.6">
+    <!-- Horizontal precision lines -->
+    <line x1="80" y1="200" x2="350" y2="200"/>
+    <line x1="610" y1="200" x2="880" y2="200"/>
+    <line x1="80" y1="340" x2="350" y2="340"/>
+    <line x1="610" y1="340" x2="880" y2="340"/>
+    <!-- Vertical precision lines -->
+    <line x1="120" y1="140" x2="120" y2="400"/>
+    <line x1="840" y1="140" x2="840" y2="400"/>
+    <!-- Corner brackets -->
+    <polyline points="60,120 60,100 80,100" fill="none"/>
+    <polyline points="900,120 900,100 880,100" fill="none"/>
+    <polyline points="60,420 60,440 80,440" fill="none"/>
+    <polyline points="900,420 900,440 880,440" fill="none"/>
+  </g>
+
+  <!-- Gear decorations (left) -->
+  <g transform="translate(100, 270)" opacity="0.15">
+    <circle cx="0" cy="0" r="30" fill="none" stroke="#B85A3C" stroke-width="2"/>
+    <circle cx="0" cy="0" r="20" fill="none" stroke="#B85A3C" stroke-width="1"/>
+    <circle cx="0" cy="0" r="5" fill="#B85A3C"/>
+    <!-- Gear teeth -->
+    <g stroke="#B85A3C" stroke-width="2">
+      <line x1="0" y1="-30" x2="0" y2="-38"/>
+      <line x1="26" y1="-15" x2="33" y2="-19"/>
+      <line x1="26" y1="15" x2="33" y2="19"/>
+      <line x1="0" y1="30" x2="0" y2="38"/>
+      <line x1="-26" y1="15" x2="-33" y2="19"/>
+      <line x1="-26" y1="-15" x2="-33" y2="-19"/>
+    </g>
+  </g>
+
+  <!-- Gear decorations (right) -->
+  <g transform="translate(860, 270)" opacity="0.15">
+    <circle cx="0" cy="0" r="25" fill="none" stroke="#B85A3C" stroke-width="2"/>
+    <circle cx="0" cy="0" r="15" fill="none" stroke="#B85A3C" stroke-width="1"/>
+    <circle cx="0" cy="0" r="4" fill="#B85A3C"/>
+    <g stroke="#B85A3C" stroke-width="2">
+      <line x1="0" y1="-25" x2="0" y2="-32"/>
+      <line x1="22" y1="-12" x2="28" y2="-16"/>
+      <line x1="22" y1="12" x2="28" y2="16"/>
+      <line x1="0" y1="25" x2="0" y2="32"/>
+      <line x1="-22" y1="12" x2="-28" y2="16"/>
+      <line x1="-22" y1="-12" x2="-28" y2="-16"/>
+    </g>
+  </g>
+
+  <!-- Central hexagon frame -->
+  <polygon points="480,140 555,183 555,268 480,310 405,268 405,183"
+           fill="none" stroke="#B85A3C" stroke-width="2" opacity="0.6"/>
+  <polygon points="480,155 540,190 540,260 480,295 420,260 420,190"
+           fill="#0D1B2A" stroke="#484f58" stroke-width="1" opacity="0.8"/>
+
+  <!-- S.L.A.T.E. Logo Text -->
+  <text x="480" y="230" text-anchor="middle"
+        font-family="Consolas, 'Courier New', monospace"
+        font-size="28" font-weight="bold" fill="#E8E2DE" letter-spacing="4">
+    S.L.A.T.E.
+  </text>
+  <line x1="415" y1="240" x2="545" y2="240" stroke="#B85A3C" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- Subtitle -->
+  <text x="480" y="260" text-anchor="middle"
+        font-family="'Segoe UI', 'Inter', sans-serif"
+        font-size="10" fill="#CAC4BF" letter-spacing="3">
+    SYNCHRONIZED LIVING ARCHITECTURE
+  </text>
+  <text x="480" y="275" text-anchor="middle"
+        font-family="'Segoe UI', 'Inter', sans-serif"
+        font-size="10" fill="#CAC4BF" letter-spacing="3">
+    FOR TRANSFORMATION AND EVOLUTION
+  </text>
+
+  <!-- Hexagon vertex dots -->
+  <g fill="#B85A3C" opacity="0.7">
+    <circle cx="480" cy="140" r="3"/>
+    <circle cx="555" cy="183" r="3"/>
+    <circle cx="555" cy="268" r="3"/>
+    <circle cx="480" cy="310" r="3"/>
+    <circle cx="405" cy="268" r="3"/>
+    <circle cx="405" cy="183" r="3"/>
+  </g>
+
+  <!-- Connection lines to nodes -->
+  <g stroke="#1B3A4B" stroke-width="1" stroke-dasharray="4,4" opacity="0.4">
+    <line x1="405" y1="225" x2="200" y2="225"/>
+    <line x1="555" y1="225" x2="760" y2="225"/>
+    <line x1="480" y1="140" x2="480" y2="80"/>
+    <line x1="480" y1="310" x2="480" y2="400"/>
+  </g>
+
+  <!-- Info nodes -->
+  <g font-family="'Segoe UI', 'Inter', sans-serif" fill="#7D7873" font-size="11">
+    <!-- Left nodes -->
+    <text x="200" y="190" text-anchor="end">Local AI</text>
+    <text x="200" y="210" text-anchor="end" fill="#B85A3C" font-size="10">Ollama • Claude • Foundry</text>
+    <text x="200" y="260" text-anchor="end">Dual GPU</text>
+    <text x="200" y="280" text-anchor="end" fill="#B85A3C" font-size="10">2x RTX 5070 Ti</text>
+
+    <!-- Right nodes -->
+    <text x="760" y="190">Kubernetes</text>
+    <text x="760" y="210" fill="#B85A3C" font-size="10">Containerized Cloud</text>
+    <text x="760" y="260">Community</text>
+    <text x="760" y="280" fill="#B85A3C" font-size="10">Discord • GitHub</text>
+
+    <!-- Top node -->
+    <text x="480" y="70" text-anchor="middle">26+ Specifications</text>
+
+    <!-- Bottom node -->
+    <text x="480" y="420" text-anchor="middle">Autonomous Workflow Orchestration</text>
+  </g>
+
+  <!-- Status indicator (top right) -->
+  <g transform="translate(900, 40)">
+    <circle cx="0" cy="0" r="6" fill="#238636" opacity="0.8"/>
+    <circle cx="0" cy="0" r="3" fill="#4CAF50"/>
+  </g>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="490" width="960" height="50" fill="#0D1B2A" opacity="0.8"/>
+  <text x="480" y="520" text-anchor="middle"
+        font-family="Consolas, 'Courier New', monospace"
+        font-size="12" fill="#484f58" letter-spacing="2">
+    SYSTEMS EVOLVE WITH PROGRESS
+  </text>
+
+  <!-- Warm accent line -->
+  <line x1="0" y1="490" x2="960" y2="490"
+        stroke="#B85A3C" stroke-width="2" opacity="0.5"/>
+</svg>

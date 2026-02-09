@@ -79,6 +79,51 @@ spec:
           averageUtilization: 80
 
 ---
+# Modified: 2026-02-11T20:30:00Z | Author: COPILOT | Change: Add HPA for agent-router (inference dispatch bottleneck)
+# HPA for Agent Router (handles task classification & GPU inference dispatch)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: agent-router-hpa
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: autoscaling
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: slate-agent-router
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 65
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+
+---
 # Modified: 2026-02-11T00:30:00Z | Author: COPILOT | Change: Fix metrics service selector to point to agent-router (which hosts metrics on :9090)
 # Metrics Service (expose metrics port for monitoring)
 apiVersion: v1

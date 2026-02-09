@@ -2717,10 +2717,11 @@ DASHBOARD_HTML = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; img-src 'self' data:;">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>S.L.A.T.E. Dashboard</title>
+    <title>S.L.A.T.E. Dashboard — v3.0.0</title>
     <style>
         :root {
-            /* ═══ SLATE UNIFIED DESIGN SYSTEM v2.0 ═══ */
+            /* ═══ SLATE UNIFIED DESIGN SYSTEM v3.0.0-stable ═══ */
+            /* Modified: 2026-02-09T17:00:00-05:00 | Author: Gemini (Antigravity) */
             /* Synthesizing: M3 Material + Anthropic Geometric + Awwwards Patterns */
             /* Theme Value: 0=dark, 1=light (procedural interpolation) */
             --theme-value: 0.15;
@@ -5657,7 +5658,7 @@ DASHBOARD_HTML = """
                 </div>
                 <div class="logo-text">
                     <h1>S.L.A.T.E.</h1>
-                    <span>Synchronized Living Architecture</span>
+                    <span>v3.0.0-stable &bull; Synchronized Living Architecture</span>
                 </div>
             </div>
             <div class="header-status">

@@ -1,100 +1,307 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- Modified: 2026-02-09T16:12:00-05:00 | Author: Gemini (Antigravity) | Change: Rewrite with SLATE blueprint design, gear animation -->
+<!-- AI Note: When modifying this file, add a dated comment with your agent name. -->
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - Page Not Found | S.L.A.T.E.</title>
+    <title>404 - Circuit Broken | S.L.A.T.E.</title>
+    <meta name="description" content="Page not found - S.L.A.T.E. local AI operations platform.">
     <link rel="icon" type="image/svg+xml" href="assets/slate-logo-v2.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
     <style>
-        :root {
-            --bg-dark: #0a0f0a;
-            --bg-card: rgba(20, 28, 20, 0.85);
-            --text-primary: #ffffff;
-            --text-secondary: #a3a3a3;
-            --accent-green: #22c55e;
-            --border: rgba(255, 255, 255, 0.06);
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --copper-primary: #B87333;
+            --copper-light: #C9956B;
+            --copper-dark: #8B4530;
+            --surface: #0A0A0A;
+            --on-surface: #E7E0D8;
+            --on-surface-dim: #78716C;
+            --blueprint-bg: #0D1B2A;
+            --blueprint-grid: #1B3A4B;
+            --blueprint-accent: #98C1D9;
+            --status-error: #C47070;
+            --font-sans: 'Space Grotesk', system-ui, sans-serif;
+            --font-mono: 'IBM Plex Mono', monospace;
+        }
 
         body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-            background: var(--bg-dark);
-            background-image:
-                radial-gradient(ellipse at 50% 50%, rgba(239, 68, 68, 0.03) 0%, transparent 50%),
-                linear-gradient(180deg, var(--bg-dark) 0%, #121812 100%);
-            background-attachment: fixed;
-            color: var(--text-primary);
+            font-family: var(--font-sans);
+            background:
+                radial-gradient(ellipse at 50% 40%, rgba(196, 112, 112, 0.06) 0%, transparent 60%),
+                linear-gradient(180deg, var(--blueprint-bg) 0%, var(--surface) 100%);
+            color: var(--on-surface);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            padding: 2rem;
+            padding: 24px;
+            overflow: hidden;
+        }
+
+        /* Blueprint grid */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                linear-gradient(rgba(27, 58, 75, 0.18) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(27, 58, 75, 0.18) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Broken gear animation */
+        .gear-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin-bottom: 32px;
+            z-index: 1;
+        }
+
+        .gear-svg {
+            width: 180px;
+            height: 180px;
+            animation: gear-rotate 12s linear infinite;
+        }
+
+        .gear-svg.broken {
+            animation: gear-stutter 2s ease-in-out infinite;
+        }
+
+        @keyframes gear-rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes gear-stutter {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            20% {
+                transform: rotate(12deg);
+            }
+
+            30% {
+                transform: rotate(8deg);
+            }
+
+            50% {
+                transform: rotate(24deg);
+            }
+
+            60% {
+                transform: rotate(18deg);
+            }
+
+            80% {
+                transform: rotate(32deg);
+            }
+
+            90% {
+                transform: rotate(28deg);
+            }
+        }
+
+        .error-label {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+            color: var(--status-error);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
         }
 
         .error-code {
-            font-size: clamp(6rem, 20vw, 12rem);
+            font-size: clamp(5rem, 15vw, 9rem);
             font-weight: 800;
             line-height: 1;
-            background: linear-gradient(135deg, #fff 0%, #444 100%);
+            background: linear-gradient(135deg, var(--copper-primary) 0%, var(--status-error) 50%, var(--copper-dark) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 1rem;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
         }
 
         h1 {
-            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-size: clamp(1.2rem, 3vw, 1.6rem);
             font-weight: 600;
-            margin-bottom: 1rem;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
         }
 
-        p {
-            color: var(--text-secondary);
-            font-size: 1rem;
-            max-width: 400px;
-            margin-bottom: 2rem;
+        .description {
+            color: var(--on-surface-dim);
+            font-size: 0.9rem;
+            max-width: 420px;
+            margin-bottom: 28px;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
         }
 
         .btn {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            background: var(--text-primary);
-            color: var(--bg-dark);
-            border-radius: 9999px;
+            gap: 8px;
+            padding: 10px 24px;
+            border-radius: 8px;
             font-weight: 600;
+            font-size: 0.85rem;
             text-decoration: none;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
         }
 
-        .btn:hover {
+        .btn-primary {
+            background: linear-gradient(135deg, var(--copper-primary), var(--copper-dark));
+            color: var(--on-surface);
+            border: 1px solid rgba(184, 115, 51, 0.4);
+        }
+
+        .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(255,255,255,0.15);
+            box-shadow: 0 8px 24px rgba(184, 115, 51, 0.2);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--blueprint-accent);
+            border: 1px solid rgba(152, 193, 217, 0.3);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            border-color: rgba(152, 193, 217, 0.6);
+        }
+
+        .trace-line {
+            position: absolute;
+            width: 200px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(184, 115, 51, 0.15), transparent);
+            z-index: 0;
+        }
+
+        .trace-line:nth-child(1) {
+            top: 20%;
+            left: -5%;
+            transform: rotate(-15deg);
+        }
+
+        .trace-line:nth-child(2) {
+            top: 60%;
+            right: -5%;
+            transform: rotate(10deg);
+        }
+
+        .trace-line:nth-child(3) {
+            bottom: 15%;
+            left: 10%;
+            transform: rotate(-5deg);
         }
 
         .footer {
             position: absolute;
-            bottom: 2rem;
-            color: var(--text-secondary);
-            font-size: 0.75rem;
+            bottom: 24px;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--on-surface-dim);
+            z-index: 1;
         }
 
         .footer a {
-            color: var(--text-secondary);
+            color: var(--copper-light);
+            text-decoration: none;
         }
     </style>
 </head>
+
 <body>
+    <div class="trace-line"></div>
+    <div class="trace-line"></div>
+    <div class="trace-line"></div>
+
+    <div class="gear-container">
+        <svg class="gear-svg broken" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Outer gear teeth -->
+            <path
+                d="M50 5 L55 18 L45 18Z M50 95 L55 82 L45 82Z M5 50 L18 45 L18 55Z M95 50 L82 45 L82 55Z
+                    M19.4 19.4 L30 25 L25 30Z M80.6 19.4 L75 30 L70 25Z M19.4 80.6 L25 70 L30 75Z M80.6 80.6 L70 75 L75 70Z"
+                fill="var(--status-error)" opacity="0.6" />
+            <!-- Outer ring -->
+            <circle cx="50" cy="50" r="28" stroke="var(--copper-primary)" stroke-width="3" fill="none" opacity="0.4"
+                stroke-dasharray="6 4" />
+            <!-- Inner ring -->
+            <circle cx="50" cy="50" r="16" stroke="var(--status-error)" stroke-width="2.5" fill="none" opacity="0.5" />
+            <!-- Center -->
+            <circle cx="50" cy="50" r="5" fill="var(--status-error)" opacity="0.7" />
+            <!-- Crack line -->
+            <path d="M42 30 L48 45 L44 50 L50 58 L46 70" stroke="var(--status-error)" stroke-width="1.5" fill="none"
+                opacity="0.6" stroke-linecap="round" />
+        </svg>
+    </div>
+
+    <div class="error-label">&#x26A0; Circuit Broken</div>
     <div class="error-code">404</div>
-    <h1>Page Not Found</h1>
-    <p>The page you're looking for doesn't exist or has been moved. Let's get you back on track.</p>
-    <a href="/" class="btn">Return Home</a>
+    <h1>Trace Not Found</h1>
+    <p class="description">The circuit you're looking for has been disconnected or doesn't exist in this schematic.
+        Let's route you back to an active node.</p>
+
+    <div class="actions">
+        <a href="./" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            Return Home
+        </a>
+        <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E" class="btn btn-secondary">View on
+            GitHub</a>
+    </div>
+
     <div class="footer">
-        <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E">S.L.A.T.E.</a> | Created by Daniel Perry
+        <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E">S.L.A.T.E.</a> v3.0.0-stable &bull;
+        Created by Daniel Perry
     </div>
 </body>
+
 </html>

@@ -1,11 +1,11 @@
-# Modified: 2026-02-08T18:00:00Z | Author: COPILOT | Change: Add SK extras (ollama,hugging_face,chroma), security optional deps (msticpy, azure-mgmt-security), sentence-transformers
+# Modified: 2026-02-09T16:01:00-05:00 | Author: Gemini (Antigravity) | Change: v3.0.0-stable
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "slate"
-version = "2.4.0"
+version = "3.0.0"
 description = "System Learning Agent for Task Execution"
 readme = "README.md"
 license = {text = "EOSL-1.0"}
@@ -70,6 +70,7 @@ slate-benchmark = "slate.slate_benchmark:main"
 slate-hardware = "slate.slate_hardware_optimizer:main"
 slate-copilot = "slate.slate_copilot_sdk:main"
 slate-copilot-install = "slate.install_copilot_sdk:main"
+slate-bench = "slate.benchmark_suite:main"
 
 [project.urls]
 Homepage = "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E"

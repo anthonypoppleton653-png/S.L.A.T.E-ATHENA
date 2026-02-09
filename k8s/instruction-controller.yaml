@@ -164,6 +164,14 @@ spec:
             limits:
               cpu: "200m"
               memory: "128Mi"
+          # Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Add startupProbe for controller initialization
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8085
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            failureThreshold: 12
           livenessProbe:
             httpGet:
               path: /health

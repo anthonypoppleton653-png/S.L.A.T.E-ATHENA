@@ -15,10 +15,11 @@ import pytest
 WORKSPACE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(WORKSPACE_ROOT))
 
+# Modified: 2026-02-09T22:30:00Z | Author: COPILOT | Change: Update imports for flood-based rate limiting
 from slate.discord_security import (
     DiscordSecurityGate,
     get_security_gate,
-    USER_RATE_LIMIT,
+    USER_FLOOD_LIMIT,
 )
 
 
@@ -193,22 +194,26 @@ class TestOutputFiltering:
 class TestRateLimiting:
     """Tests for per-user and per-channel rate limiting."""
 
+    # Modified: 2026-02-09T22:30:00Z | Author: COPILOT | Change: Update tests for flood-based rate limiting
     def test_initial_commands_allowed(self, gate):
-        for _ in range(USER_RATE_LIMIT):
+        """Commands below flood threshold should be allowed."""
+        for _ in range(USER_FLOOD_LIMIT - 1):
             r = gate.check_rate_limit("user1", "channel1")
             assert r.allowed
 
     def test_exceeding_limit_blocked(self, gate):
-        for _ in range(USER_RATE_LIMIT):
+        """Exceeding flood limit triggers anti-flood cooldown."""
+        for _ in range(USER_FLOOD_LIMIT):
             gate.check_rate_limit("user1", "channel1")
         r = gate.check_rate_limit("user1", "channel1")
         assert not r.allowed
-        assert "rate limited" in r.reason.lower()
+        assert "flood" in r.reason.lower() or "cooldown" in r.reason.lower()
 
     def test_different_users_independent(self, gate):
-        for _ in range(USER_RATE_LIMIT):
+        """Flood detection is per-user, not global."""
+        for _ in range(USER_FLOOD_LIMIT):
             gate.check_rate_limit("user1", "channel1")
-        # user1 is rate limited
+        # user1 is flood-limited
         r = gate.check_rate_limit("user1", "channel1")
         assert not r.allowed
         # user2 should still be fine
