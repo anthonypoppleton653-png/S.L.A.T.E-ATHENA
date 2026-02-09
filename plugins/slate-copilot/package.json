@@ -1074,7 +1074,7 @@
 		"lint": "eslint"
 	},
 	"devDependencies": {
-		"@types/node": "^22",
+		"@types/node": "^25",
 		"@types/vscode": "^1.95.0",
 		"typescript": "^5.9.2"
 	}
