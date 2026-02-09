@@ -19,7 +19,16 @@ S.L.A.T.E. is built through **vibe coding** -- human vision guided by AI impleme
 
 ## How Contributor Compensation Works
 
-SLATE uses the **EOSL-1.0 license** which includes a fair compensation framework. When commercial use of SLATE generates significant revenue ($1M+ USD annually), 25% of royalties flow to the **Contributor Compensation Pool**.
+SLATE uses the **EOSL-1.0 license** which includes a fair compensation framework. When commercial use of SLATE generates significant revenue ($1M+ USD annually), royalties are calculated using a **progressive formula** (like tax brackets -- only revenue within each band is charged at that band's rate):
+
+| Revenue Band | Rate | Applied To |
+|-------------|------|-----------|
+| First $1M | 0% (free) | $0 - $1,000,000 |
+| $1M - $5M | 2% | Next $4,000,000 |
+| $5M - $25M | 3% | Next $20,000,000 |
+| Above $25M | 5% | Remaining revenue |
+
+25% of all royalties flow to the **Contributor Compensation Pool**.
 
 ### Revenue Distribution
 
