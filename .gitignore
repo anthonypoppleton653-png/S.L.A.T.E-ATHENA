@@ -84,6 +84,11 @@ actions-runner-*/
 # Fork identity (generated per-user during install — never share upstream)
 .slate_identity/
 
+# Modified: 2026-02-09T14:01:00-05:00 | Author: Gemini (Antigravity)
+# User config (populated during onboarding with personal data: ZIP code, provider, budgets)
+# Track templates in templates/.slate_config/ for reference
+.slate_config/
+
 # Runtime state files
 .slate_orchestrator.pid
 .slate_orchestrator_state.json
