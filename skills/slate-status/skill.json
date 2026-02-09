@@ -1,0 +1,9 @@
+{
+  "name": "slate-status",
+  "displayName": "SLATE Status",
+  "description": "Check SLATE system health — GPU, services, workflows, Python environment, and Kubernetes cluster status",
+  "version": "2.4.0",
+  "publisher": "slate",
+  "prompts": ["SKILL.md"],
+  "tools": ["slate_status", "slate_runtime", "slate_hardware"]
+}

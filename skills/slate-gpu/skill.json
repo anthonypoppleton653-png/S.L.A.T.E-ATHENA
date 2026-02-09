@@ -1,0 +1,9 @@
+{
+  "name": "slate-gpu",
+  "displayName": "SLATE GPU Manager",
+  "description": "Manage dual-GPU load balancing for Ollama LLMs (2x RTX 5070 Ti)",
+  "version": "2.0.0",
+  "publisher": "slate",
+  "prompts": ["SKILL.md"],
+  "tools": ["slate_gpu", "slate_hardware", "slate_benchmark"]
+}

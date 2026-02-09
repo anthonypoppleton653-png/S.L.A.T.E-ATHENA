@@ -1,0 +1,182 @@
+# Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Unified plugin with all 12 skills and S.L.A.T.E mode
+---
+name: slate
+version: 5.3.0
+description: 'S.L.A.T.E. — Synchronized Living Architecture for Transformation and Evolution. Unified local-first AI agent orchestration with GPU support, Kubernetes deployment, ActionGuard security, and S.L.A.T.E mode for Claude Code.'
+author:
+  name: SynchronizedLivingArchitecture
+  url: https://github.com/SynchronizedLivingArchitecture
+repository: https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E
+homepage: https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/
+license: EOSL-1.0
+featured: true
+
+tags:
+  - ai-agents
+  - kubernetes
+  - gpu
+  - llm
+  - orchestration
+  - local-first
+  - security
+  - mcp
+  - ollama
+  - copilot
+
+# Collection contents - agents, prompts, instructions, and skills
+agents:
+  - path: .github/agents/slate.agent.md
+    name: slate
+    description: 'SLATE system operator for managing runner, CI/CD, GPU, services, and workflows'
+    tags: [system, orchestration, gpu, kubernetes]
+
+prompts:
+  - path: prompts/system-health.prompt.md
+    name: system-health
+    description: 'Check SLATE system health including GPU, services, and Kubernetes'
+    tags: [health, diagnostics]
+
+  - path: prompts/deploy-kubernetes.prompt.md
+    name: deploy-kubernetes
+    description: 'Deploy SLATE to Kubernetes cluster with Kustomize overlays'
+    tags: [kubernetes, deployment]
+
+  - path: prompts/run-benchmarks.prompt.md
+    name: run-benchmarks
+    description: 'Execute GPU and inference benchmarks'
+    tags: [benchmark, gpu, performance]
+
+  - path: prompts/workflow-cleanup.prompt.md
+    name: workflow-cleanup
+    description: 'Clean up stale tasks and enforce completion rules'
+    tags: [workflow, maintenance]
+
+instructions:
+  - path: instructions/slate-python.instructions.md
+    name: slate-python
+    description: 'Coding standards for SLATE Python modules'
+    applyTo: 'slate/**/*.py, agents/**/*.py, slate_core/**/*.py'
+    tags: [python, coding-standards]
+
+  - path: instructions/slate-typescript.instructions.md
+    name: slate-typescript
+    description: 'Coding standards for SLATE TypeScript extensions'
+    applyTo: 'plugins/**/*.ts'
+    tags: [typescript, vscode, extension]
+
+  - path: instructions/slate-kubernetes.instructions.md
+    name: slate-kubernetes
+    description: 'Best practices for SLATE Kubernetes manifests'
+    applyTo: 'k8s/**/*.yaml, helm/**/*.yaml'
+    tags: [kubernetes, helm, infrastructure]
+
+  - path: instructions/slate-security.instructions.md
+    name: slate-security
+    description: 'Security requirements enforced by ActionGuard'
+    applyTo: '**/*.py, **/*.ts, **/*.sh, **/*.ps1'
+    tags: [security, actionguard]
+
+skills:
+  - path: skills/slate
+    name: slate
+    description: 'Main SLATE orchestrator control'
+    tags: [orchestration, services]
+
+  - path: skills/slate-status
+    name: slate-status
+    description: 'Check SLATE services and system status'
+    tags: [health, diagnostics]
+
+  - path: skills/slate-runner
+    name: slate-runner
+    description: 'Manage GitHub Actions self-hosted runner'
+    tags: [ci-cd, github, runner]
+
+  - path: skills/slate-workflow
+    name: slate-workflow
+    description: 'Manage task workflow queue'
+    tags: [workflow, tasks]
+
+  - path: skills/slate-orchestrator
+    name: slate-orchestrator
+    description: 'Control SLATE services lifecycle'
+    tags: [services, orchestration]
+
+  - path: skills/slate-gpu
+    name: slate-gpu
+    description: 'Dual-GPU load balancing for Ollama LLMs'
+    tags: [gpu, llm, hardware]
+
+  - path: skills/slate-multirunner
+    name: slate-multirunner
+    description: 'Multi-runner system management'
+    tags: [runner, ci-cd, parallel]
+
+  - path: skills/slate-discussions
+    name: slate-discussions
+    description: 'GitHub Discussions management'
+    tags: [github, community]
+
+  - path: skills/slate-claude
+    name: slate-claude
+    description: 'Claude Code integration validation'
+    tags: [claude, integration]
+
+  - path: skills/slate-spec-kit
+    name: slate-spec-kit
+    description: 'Spec processing and wiki generation'
+    tags: [specs, documentation, wiki]
+
+  - path: skills/slate-schematic
+    name: slate-schematic
+    description: 'System diagram and schematic generation'
+    tags: [visualization, diagrams]
+
+  - path: skills/slate-help
+    name: slate-help
+    description: 'Get help with SLATE commands and features'
+    tags: [help, documentation]
+
+# MCP Server configuration
+mcpServers:
+  slate:
+    command: '.venv/Scripts/python.exe'
+    args: ['slate/mcp_server.py']
+    env:
+      SLATE_WORKSPACE: '.'
+      PYTHONPATH: '.'
+      SLATE_BEHAVIOR: 'operator'
+    tools:
+      - slate_status
+      - slate_workflow
+      - slate_orchestrator
+      - slate_runner
+      - slate_ai
+      - slate_runtime
+      - slate_hardware
+      - slate_benchmark
+      - slate_gpu
+      - slate_claude_code
+      - slate_spec_kit
+      - slate_schematic
+
+# Installation configuration
+installation:
+  method: git-clone
+  command: 'git clone https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git && cd S.L.A.T.E && python install_slate.py'
+  requirements:
+    - python>=3.11
+  optional:
+    - nvidia-gpu
+    - docker
+    - kubectl
+    - helm
+
+# Behavior profile
+behavior:
+  profile: slate-operator
+  permissionMode: bypassWithActionGuard
+  securityModel: actionguard
+  runtime:
+    preferredBackend: kubernetes
+    fallbackOrder: [kubernetes, docker]

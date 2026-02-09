@@ -1,0 +1,9 @@
+{
+  "name": "slate-multirunner",
+  "displayName": "SLATE Multi-Runner",
+  "description": "Manage multiple GitHub Actions self-hosted runners with GPU allocation",
+  "version": "1.0.0",
+  "publisher": "slate",
+  "prompts": ["SKILL.md"],
+  "tools": ["slate_runner"]
+}

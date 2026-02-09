@@ -1,0 +1,9 @@
+{
+  "name": "slate-claude",
+  "displayName": "SLATE Claude Integration",
+  "description": "Validate and manage Claude Code configuration for SLATE",
+  "version": "1.0.0",
+  "publisher": "slate",
+  "prompts": ["SKILL.md"],
+  "tools": ["slate_claude_code"]
+}

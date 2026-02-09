@@ -1,29 +1,88 @@
 {
-  "name": "slate-marketplace",
-  "description": "S.L.A.T.E. - Claude Code plugins for AI-powered development orchestration",
+  "$schema": "https://claude.ai/schemas/marketplace.json",
+  "name": "slate",
+  "displayName": "S.L.A.T.E.",
+  "description": "Synchronized Living Architecture for Transformation and Evolution — A unified AI agent orchestration framework with GPU support, Kubernetes deployment, and security-first design",
+  "version": "5.3.0",
   "owner": {
     "name": "SynchronizedLivingArchitecture",
-    "email": "slate@github.com"
+    "email": "slate@github.com",
+    "url": "https://github.com/SynchronizedLivingArchitecture"
   },
-  "plugins": [
-    {
-      "name": "slate-sdk",
-      "version": "1.2.0",
-      "source": {
-        "source": "github",
-        "repo": "SynchronizedLivingArchitecture/S.L.A.T.E"
-      },
-      "description": "Full SLATE integration: slash commands, skills, MCP server, GPU management, workflow orchestration"
-    },
-    {
-      "name": "slate-kubernetes",
-      "version": "1.0.0",
-      "source": {
-        "source": "github",
-        "repo": "SynchronizedLivingArchitecture/S.L.A.T.E",
-        "path": "plugins/slate-kubernetes"
-      },
-      "description": "Deploy and manage SLATE on Kubernetes clusters"
+  "repository": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E",
+  "homepage": "https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/",
+  "llmsTxt": "llms.txt",
+
+  "mode": {
+    "name": "S.L.A.T.E",
+    "description": "SLATE Operator Mode — Full system access with ActionGuard security",
+    "behavior": "slate-operator",
+    "permissionMode": "bypassWithActionGuard",
+    "activationCommand": "/slate",
+    "statusIndicator": {
+      "active": "🔧 SLATE",
+      "inactive": "SLATE (inactive)"
     }
-  ]
+  },
+
+  "collection": {
+    "path": "collections/slate.collection.yml",
+    "description": "Complete SLATE agent orchestration collection",
+    "featured": true,
+    "items": {
+      "agents": 1,
+      "prompts": 4,
+      "instructions": 4,
+      "skills": 11
+    },
+    "tags": ["ai-agents", "kubernetes", "gpu", "llm", "orchestration", "local-first", "security", "mcp"]
+  },
+
+  "features": [
+    "Claude Agent SDK integration with custom tools and hooks",
+    "S.L.A.T.E mode for Claude Code with permission bypass",
+    "ActionGuard security validation on all operations",
+    "12 MCP tools for comprehensive system management",
+    "11 slash command skills (/slate, /slate-status, /slate-workflow, etc.)",
+    "Kubernetes-first deployment with Docker fallback",
+    "Dual-GPU load balancing for RTX 5070 Ti",
+    "GitHub Actions self-hosted runner integration",
+    "Local-first AI with Ollama and Foundry Local",
+    "10 operational protocols (P001-P010)"
+  ],
+
+  "skills": [
+    {"name": "slate", "command": "/slate", "description": "Main orchestrator control"},
+    {"name": "slate-status", "command": "/slate-status", "description": "System and service status"},
+    {"name": "slate-workflow", "command": "/slate-workflow", "description": "Task workflow management"},
+    {"name": "slate-runner", "command": "/slate-runner", "description": "GitHub Actions runner"},
+    {"name": "slate-gpu", "command": "/slate-gpu", "description": "Dual-GPU load balancing"},
+    {"name": "slate-multirunner", "command": "/slate-multirunner", "description": "Multi-runner system"},
+    {"name": "slate-discussions", "command": "/slate-discussions", "description": "GitHub Discussions"},
+    {"name": "slate-claude", "command": "/slate-claude", "description": "Claude Code validation"},
+    {"name": "slate-spec-kit", "command": "/slate-spec-kit", "description": "Spec processing and wiki"},
+    {"name": "slate-schematic", "command": "/slate-schematic", "description": "System diagrams"},
+    {"name": "slate-help", "command": "/slate-help", "description": "Help and documentation"}
+  ],
+
+  "mcpTools": [
+    "slate_status", "slate_workflow", "slate_orchestrator", "slate_runner",
+    "slate_ai", "slate_runtime", "slate_hardware", "slate_benchmark",
+    "slate_gpu", "slate_claude_code", "slate_spec_kit", "slate_schematic"
+  ],
+
+  "installation": {
+    "method": "git-clone",
+    "command": "git clone https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git && cd S.L.A.T.E && python install_slate.py",
+    "dashboardUrl": "http://127.0.0.1:8080",
+    "requirements": {
+      "python": ">=3.11",
+      "optional": ["nvidia-gpu", "docker", "kubectl", "helm"]
+    }
+  },
+
+  "deprecated": {
+    "note": "The following plugins have been merged into this unified plugin",
+    "merged": ["slate-sdk", "slate-kubernetes"]
+  }
 }

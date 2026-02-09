@@ -1,13 +1,14 @@
 {
-  "name": "slate-sdk",
+  "name": "slate-kubernetes",
   "description": "DEPRECATED: This plugin has been merged into the unified 'slate' plugin",
   "version": "1.0.0",
   "deprecated": true,
-  "deprecatedMessage": "This plugin is deprecated. Use the unified 'slate' plugin instead (/.claude-plugin/plugin.json)",
+  "deprecatedMessage": "This plugin is deprecated. Use the unified 'slate' plugin instead (/.claude-plugin/plugin.json). K8s features are now available via /slate commands and slate_* MCP tools.",
   "replacedBy": "slate@5.3.0",
   "author": {
     "name": "SynchronizedLivingArchitecture",
-    "email": "slate@github.com"
+    "email": "slate@github.com",
+    "url": "https://github.com/SynchronizedLivingArchitecture"
   },
   "repository": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E",
   "license": "EOSL-1.0"

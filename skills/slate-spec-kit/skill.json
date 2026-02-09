@@ -1,0 +1,9 @@
+{
+  "name": "slate-spec-kit",
+  "displayName": "SLATE Spec-Kit",
+  "description": "Process specifications, run AI analysis, and generate wiki pages",
+  "version": "1.0.0",
+  "publisher": "slate",
+  "prompts": ["SKILL.md"],
+  "tools": ["slate_spec_kit"]
+}

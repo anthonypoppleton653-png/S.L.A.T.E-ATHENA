@@ -1,14 +1,196 @@
 {
-  "name": "slate-sdk",
-  "version": "1.2.0",
-  "description": "S.L.A.T.E. - AI-powered development orchestration, workflow management, and agentic task execution",
+  "$schema": "https://claude.ai/schemas/plugin.json",
+  "name": "slate",
+  "displayName": "S.L.A.T.E.",
+  "description": "Synchronized Living Architecture for Transformation and Evolution — Unified AI agent orchestration with GPU support, Kubernetes deployment, ActionGuard security, and 12 MCP tools",
+  "version": "5.3.0",
   "author": {
     "name": "SynchronizedLivingArchitecture",
-    "email": "slate@github.com"
+    "email": "slate@github.com",
+    "url": "https://github.com/SynchronizedLivingArchitecture"
   },
   "repository": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E",
+  "homepage": "https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/",
   "license": "EOSL-1.0",
-  "keywords": ["slate", "ai", "orchestration", "agents", "workflow", "automation", "gpu", "local-llm"],
+  "keywords": [
+    "slate", "ai", "agents", "claude-agent-sdk", "kubernetes", "docker",
+    "gpu", "llm", "ollama", "actionguard", "mcp", "orchestrator", "local-first"
+  ],
+
+  "mode": {
+    "name": "S.L.A.T.E",
+    "shortName": "SLATE",
+    "description": "SLATE Operator Mode — Full system access with ActionGuard security",
+    "activationTrigger": "/slate",
+    "statusLine": "S.L.A.T.E",
+    "enabled": true
+  },
+
+  "behavior": {
+    "profile": "slate-operator",
+    "permissionMode": "bypassWithActionGuard",
+    "securityModel": "actionguard",
+    "description": "SLATE Operator Mode: Permission bypass with ActionGuard security validation"
+  },
+
+  "permissions": {
+    "allow": [
+      "Bash(*)", "Read(*)", "Write(*)", "Edit(*)", "Glob(*)", "Grep(*)",
+      "WebFetch(*)", "WebSearch(*)", "Task(*)", "TodoWrite(*)", "AskUserQuestion(*)",
+      "mcp__slate__*(*)"
+    ],
+    "deny": []
+  },
+
+  "mcpServers": {
+    "slate": {
+      "command": ".venv/Scripts/python.exe",
+      "args": ["slate/mcp_server.py"],
+      "env": {
+        "SLATE_WORKSPACE": ".",
+        "PYTHONPATH": ".",
+        "SLATE_BEHAVIOR": "operator",
+        "SLATE_ACTIONGUARD": "enabled"
+      },
+      "tools": [
+        "slate_status", "slate_workflow", "slate_orchestrator", "slate_runner",
+        "slate_ai", "slate_runtime", "slate_hardware", "slate_benchmark",
+        "slate_gpu", "slate_claude_code", "slate_spec_kit", "slate_schematic"
+      ]
+    }
+  },
+
+  "agentSdk": {
+    "enabled": true,
+    "integrationModule": "slate/claude_agent_sdk_integration.py",
+    "defaultMode": "operator",
+    "modes": {
+      "operator": {
+        "description": "Full SLATE operator access with permission bypass",
+        "permissionMode": "bypassPermissions"
+      },
+      "readonly": {
+        "description": "Read-only access for monitoring and analysis",
+        "permissionMode": "default"
+      },
+      "minimal": {
+        "description": "Status-only access for health checks",
+        "permissionMode": "default"
+      }
+    },
+    "customTools": [
+      "slate_status", "slate_workflow", "slate_gpu",
+      "slate_orchestrator", "slate_ai", "slate_k8s"
+    ],
+    "subagents": {
+      "slate-operator": {
+        "description": "SLATE system operator for infrastructure management",
+        "tools": ["mcp__slate__*", "Bash", "Read", "Glob"]
+      },
+      "slate-code-reviewer": {
+        "description": "Code quality and security reviewer",
+        "tools": ["Read", "Glob", "Grep"]
+      },
+      "slate-test-runner": {
+        "description": "Test execution agent",
+        "tools": ["Bash", "Read", "Glob"]
+      },
+      "slate-docs-generator": {
+        "description": "Documentation generator",
+        "tools": ["Read", "Write", "Glob", "Grep"]
+      }
+    }
+  },
+
+  "collection": "./collections/slate.collection.yml",
   "skills": "./skills/",
-  "commands": "./.claude/commands/"
+  "commands": "./.claude/commands/",
+  "instructions": "./instructions/",
+  "prompts": "./prompts/",
+  "agents": "./.github/agents/",
+  "llmsTxt": "./llms.txt",
+
+  "skillsList": [
+    {"name": "slate", "path": "skills/slate/skill.json"},
+    {"name": "slate-status", "path": "skills/slate-status/skill.json"},
+    {"name": "slate-workflow", "path": "skills/slate-workflow/skill.json"},
+    {"name": "slate-runner", "path": "skills/slate-runner/skill.json"},
+    {"name": "slate-orchestrator", "path": "skills/slate-orchestrator/skill.json"},
+    {"name": "slate-gpu", "path": "skills/slate-gpu/skill.json"},
+    {"name": "slate-multirunner", "path": "skills/slate-multirunner/skill.json"},
+    {"name": "slate-discussions", "path": "skills/slate-discussions/skill.json"},
+    {"name": "slate-claude", "path": "skills/slate-claude/skill.json"},
+    {"name": "slate-spec-kit", "path": "skills/slate-spec-kit/skill.json"},
+    {"name": "slate-schematic", "path": "skills/slate-schematic/skill.json"},
+    {"name": "slate-help", "path": "skills/slate-help/skill.json"}
+  ],
+
+  "hooks": {
+    "PreToolUse": [
+      {
+        "name": "actionguard-bash",
+        "matcher": { "tool": "Bash" },
+        "command": ".venv/Scripts/python.exe slate/action_guard.py --validate-bash \"$TOOL_INPUT_command\"",
+        "timeout": 5000,
+        "onError": "allow"
+      },
+      {
+        "name": "actionguard-write",
+        "matcher": { "tool": ["Write", "Edit"] },
+        "command": ".venv/Scripts/python.exe slate/action_guard.py --validate-path \"$TOOL_INPUT_file_path\"",
+        "timeout": 3000,
+        "onError": "allow"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "name": "audit-log",
+        "matcher": { "tool": ["Bash", "Write", "Edit"] },
+        "command": ".venv/Scripts/python.exe slate/claude_code_manager.py --log-tool \"$TOOL_NAME\"",
+        "timeout": 2000,
+        "background": true
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "name": "pii-scanner",
+        "command": ".venv/Scripts/python.exe slate/pii_scanner.py --scan-prompt",
+        "timeout": 2000,
+        "onError": "allow"
+      }
+    ]
+  },
+
+  "activation": {
+    "onStartup": true,
+    "events": ["folderOpen", "workspaceOpen"]
+  },
+
+  "requirements": {
+    "tools": ["python"],
+    "optional": ["kubectl", "docker", "helm", "nvidia-smi"],
+    "pythonPackages": ["claude-agent-sdk>=1.0.0"]
+  },
+
+  "protocols": {
+    "P001-INIT": "System initialization and health check",
+    "P002-EXECUTE": "DIAGNOSE -> ACT -> VERIFY execution pattern",
+    "P003-WORKFLOW": "Task queue management",
+    "P004-GPU": "Dual-GPU load balancing",
+    "P005-SECURITY": "ActionGuard validation",
+    "P006-RECOVERY": "Error recovery and fallback",
+    "P007-CODE": "File read/write/edit operations",
+    "P008-GIT": "Git operations with safety",
+    "P009-K8S": "Kubernetes deployment",
+    "P010-AUTONOMOUS": "Background task processing"
+  },
+
+  "runtime": {
+    "preferredBackend": "kubernetes",
+    "fallbackOrder": ["kubernetes", "docker"],
+    "k8sEndpoint": "http://127.0.0.1:8083",
+    "dockerContainer": "slate"
+  },
+
+  "mergedFrom": ["slate-sdk@1.0.0", "slate-kubernetes@1.0.0"]
 }
