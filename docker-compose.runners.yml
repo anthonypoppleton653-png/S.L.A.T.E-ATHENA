@@ -1,0 +1,139 @@
+# S.L.A.T.E. Docker Runners — GPU-Accelerated GitHub Actions
+# Modified: 2026-02-09T07:54:00-05:00 | Author: Gemini | Change: Create Docker-based multi-runner stack
+# NOTE: All AIs modifying this file must add a dated comment like the one above.
+#
+# Usage:
+#   Start:  .\scripts\start-runners.ps1
+#   Stop:   docker compose -f docker-compose.runners.yml down
+#   Status: docker compose -f docker-compose.runners.yml ps
+#
+# Architecture:
+#   - 2 GPU runners (1 per RTX 5070 Ti) for AI/inference workloads
+#   - 2 CPU runners for lint, test, docs, pages jobs
+#   - All runners connect to host Ollama for model inference
+#   - Workspace mounted READ-ONLY, output dirs mounted RW (production safety)
+#
+# PRODUCTION SAFETY:
+#   The workspace root is mounted READ-ONLY. Only designated output
+#   directories (docs/wiki, docs/report, plans, etc.) are writable.
+#   AI automation CANNOT modify source code, configs, or workflows.
+
+x-runner-common: &runner-common
+  image: myoung34/github-runner:latest
+  restart: unless-stopped
+  networks:
+    - slate_network
+  environment: &runner-env
+    REPO_URL: "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E"
+    ACCESS_TOKEN: "${GH_RUNNER_PAT}"
+    RUNNER_SCOPE: "repo"
+    RUNNER_WORKDIR: "/runner/_work"
+    EPHEMERAL: "false"
+    DISABLE_AUTO_UPDATE: "true"
+    # SLATE environment
+    SLATE_DOCKER: "1"
+    SLATE_SAFE_MODE: "1"
+    OLLAMA_HOST: "host.docker.internal:11434"
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio host for runners compose
+    LMSTUDIO_HOST: "http://host.docker.internal:1234"
+    PYTHONPATH: "/workspace"
+    PYTHONUNBUFFERED: "1"
+  volumes:
+    # Runner work directory (ephemeral per-job)
+    - runner_work:/runner/_work
+    # Workspace checkout (read-only for safety)
+    - .:/workspace:ro
+  security_opt:
+    - no-new-privileges:true
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
+services:
+  # ─── GPU Runner 1 — RTX 5070 Ti #0 ──────────────────────────────────────
+  # Heavy AI inference: research, planning, code analysis
+  slate-runner-gpu-0:
+    <<: *runner-common
+    container_name: slate-runner-gpu-0
+    hostname: slate-runner-gpu-0
+    environment:
+      <<: *runner-env
+      RUNNER_NAME: "slate-docker-gpu-0"
+      LABELS: "self-hosted,slate,gpu,cuda,gpu-0,docker"
+      CUDA_VISIBLE_DEVICES: "0"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [gpu]
+        limits:
+          memory: 16G
+          cpus: "6.0"
+
+  # ─── GPU Runner 2 — RTX 5070 Ti #1 ──────────────────────────────────────
+  # Parallel AI workloads: docs generation, embeddings  
+  slate-runner-gpu-1:
+    <<: *runner-common
+    container_name: slate-runner-gpu-1
+    hostname: slate-runner-gpu-1
+    environment:
+      <<: *runner-env
+      RUNNER_NAME: "slate-docker-gpu-1"
+      LABELS: "self-hosted,slate,gpu,cuda,gpu-1,docker"
+      CUDA_VISIBLE_DEVICES: "1"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [gpu]
+        limits:
+          memory: 16G
+          cpus: "6.0"
+
+  # ─── CPU Runner 1 — Lightweight jobs ────────────────────────────────────
+  # Lint, test, pages deploy, wiki sync
+  slate-runner-cpu-1:
+    <<: *runner-common
+    container_name: slate-runner-cpu-1
+    hostname: slate-runner-cpu-1
+    environment:
+      <<: *runner-env
+      RUNNER_NAME: "slate-docker-cpu-1"
+      LABELS: "self-hosted,slate,cpu-only,docker"
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "3.0"
+
+  # ─── CPU Runner 2 — Lightweight jobs ────────────────────────────────────
+  slate-runner-cpu-2:
+    <<: *runner-common
+    container_name: slate-runner-cpu-2
+    hostname: slate-runner-cpu-2
+    environment:
+      <<: *runner-env
+      RUNNER_NAME: "slate-docker-cpu-2"
+      LABELS: "self-hosted,slate,cpu-only,docker"
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "3.0"
+
+volumes:
+  runner_work:
+    name: slate_runner_work
+
+networks:
+  slate_network:
+    external: true
+    name: slate_network

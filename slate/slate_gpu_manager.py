@@ -153,11 +153,69 @@ class GPUManager:
 
         return {"success": True, "actions": results}
 
+    # Modified: 2026-02-10T07:00:00Z | Author: COPILOT | Change: Add balance_gpus method, fix preload order (big models first)
+    def balance_gpus(self) -> dict:
+        """Unload all models and reload in optimal order for dual-GPU distribution.
+        
+        Strategy: Load biggest model first (slate-coder 12B → GPU 0),
+        then smaller models fill GPU 1. This prevents CPU spillover.
+        """
+        results = {"unloaded": [], "loaded": [], "errors": []}
+        
+        # Step 1: Unload all currently loaded models
+        loaded = self.get_loaded_models()
+        for m in loaded:
+            name = m.get("name", "")
+            try:
+                self._ollama_request("/api/generate",
+                    {"model": name, "keep_alive": 0}, timeout=10)
+                results["unloaded"].append(name)
+                print(f"  Unloaded: {name}")
+            except Exception as e:
+                results["errors"].append(f"unload {name}: {e}")
+        
+        if loaded:
+            time.sleep(3)  # Let VRAM settle
+        
+        # Step 2: Load models in order — biggest first
+        # This ensures the 12B model gets a full GPU before smaller models fill the other
+        load_order = [
+            ("slate-coder", 4096, "generate"),      # 12B → ~7.7GB with 4K ctx → GPU 0
+            ("slate-planner", 4096, "generate"),     # 7B  → ~5.1GB with 4K ctx → GPU 1
+            ("slate-fast", 4096, "generate"),         # 3B  → ~2.8GB with 4K ctx → GPU 1
+            ("nomic-embed-text", 2048, "embed"),      # 137M → ~600MB → GPU 1
+        ]
+        
+        for model_name, ctx, api_type in load_order:
+            try:
+                if api_type == "embed":
+                    self._ollama_request("/api/embed",
+                        {"model": model_name, "input": "test", "keep_alive": "24h"},
+                        timeout=120)
+                else:
+                    self._ollama_request("/api/generate",
+                        {"model": model_name, "prompt": "OK", "stream": False,
+                         "keep_alive": "24h",
+                         "options": {"num_predict": 3, "num_ctx": ctx, "num_gpu": 999}},
+                        timeout=180)
+                results["loaded"].append(model_name)
+                print(f"  Loaded: {model_name} (ctx={ctx})")
+            except Exception as e:
+                results["errors"].append(f"load {model_name}: {e}")
+                print(f"  Error loading {model_name}: {e}")
+        
+        results["success"] = len(results["loaded"]) >= 3
+        return results
+
     def preload_models(self) -> dict:
-        """Preload key models to warm up both GPUs."""
+        """Preload key models to warm up both GPUs.
+        
+        Modified: 2026-02-10T07:00:00Z | Author: COPILOT | Change: Load in size order, use API keepalive
+        """
         results = {}
 
-        # Warm up primary models (GPU 0)
+        # Load in order: biggest first to distribute across GPUs properly
+        # GPU 0 gets slate-coder (largest), GPU 1 gets the rest
         for model_name in ["slate-coder:latest", "slate-planner:latest"]:
             results[model_name] = self._warm_model(model_name)
 
@@ -182,11 +240,11 @@ class GPUManager:
             start = time.time()
             if "embed" in model_name:
                 self._ollama_request("/api/embed",
-                                     {"model": model_name, "input": "test"}, timeout=30)
+                                     {"model": model_name, "input": "test", "options": {"num_gpu": 999}}, timeout=30)
             else:
                 self._ollama_request("/api/generate",
                                      {"model": model_name, "prompt": "hi",
-                                      "stream": False, "options": {"num_predict": 1}},
+                                      "stream": False, "options": {"num_predict": 1, "num_gpu": 999}},
                                      timeout=60)
             elapsed = time.time() - start
             return {"success": True, "elapsed_s": round(elapsed, 1)}
@@ -222,6 +280,34 @@ class GPUManager:
         else:
             print("\n  No models currently loaded in VRAM")
 
+        # Modified: 2026-02-09T05:30:00Z | Author: COPILOT | Change: Add K8s GPU resource awareness
+        try:
+            import subprocess as _sp
+            r = _sp.run(["kubectl", "get", "pods", "-n", "slate",
+                         "-l", "app.kubernetes.io/component=ollama",
+                         "--field-selector=status.phase=Running",
+                         "-o", "jsonpath={.items[*].metadata.name}"],
+                        capture_output=True, text=True, timeout=10)
+            if r.returncode == 0 and r.stdout.strip():
+                gpu_pods = r.stdout.strip().split()
+                print(f"\n  K8s Ollama Pods: {len(gpu_pods)}")
+                for p in gpu_pods:
+                    print(f"    {p}")
+            else:
+                # Also check for any GPU-related pods
+                r2 = _sp.run(["kubectl", "get", "pods", "-n", "slate",
+                              "-l", "app.kubernetes.io/part-of=slate-system",
+                              "--field-selector=status.phase=Running",
+                              "-o", "jsonpath={.items[*].metadata.name}"],
+                             capture_output=True, text=True, timeout=10)
+                if r2.returncode == 0 and r2.stdout.strip():
+                    pods = r2.stdout.strip().split()
+                    print(f"\n  K8s SLATE Pods: {len(pods)} running")
+                if r2.returncode == 0 and r2.stdout.strip():
+                    print(f"\n  K8s Ollama Pods: {r2.stdout.strip()}")
+        except Exception:
+            pass  # K8s not available
+
         print("\n" + "=" * 65)
 
 
@@ -237,7 +323,16 @@ def main():
 
     mgr = GPUManager()
 
-    if args.configure:
+    if args.balance:
+        print("Balancing models across GPUs (unload all → reload in size order)...")
+        result = mgr.balance_gpus()
+        loaded = len(result.get("loaded", []))
+        errors = len(result.get("errors", []))
+        print(f"\nResult: {loaded} loaded, {errors} errors")
+        if result.get("success"):
+            print("Dual-GPU balance complete!")
+        mgr.print_status()
+    elif args.configure:
         result = mgr.configure_dual_gpu()
         for action in result.get("actions", []):
             print(f"  {action}")

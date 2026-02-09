@@ -1,6 +1,9 @@
+# Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Integrate with stable release pipeline, add live update triggers
 # Modified: 2026-02-07T04:56:45Z | Author: COPILOT | Change: Normalize paths and clean workflow artifacts
 # Continuous Deployment Workflow
 # Builds EXE and publishes releases
+# Coordinates with: stable-release.yml (primary), docker.yml, service-management.yml
+# Reference: https://github.com/features/actions
 
 name: CD - Build & Deploy
 
@@ -13,8 +16,20 @@ on:
       build_exe:
         description: 'Build EXE artifact'
         required: false
-        default: 'true'
+        default: true
         type: boolean
+  # Called by stable-release.yml after validation
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to build'
+        required: false
+        type: string
+      trigger:
+        description: 'Trigger source'
+        required: false
+        type: string
+        default: 'manual'
 
 concurrency:
   group: cd-${{ github.ref }}
@@ -37,7 +52,7 @@ jobs:
       version: ${{ steps.ver.outputs.version }}
       is_tag: ${{ steps.ver.outputs.is_tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -60,7 +75,7 @@ jobs:
     if: ${{ github.event.inputs.build_exe != 'false' }}
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -84,21 +99,22 @@ jobs:
             Write-Host "::warning::No slate.spec found, skipping EXE build"
           }
         continue-on-error: true
+      # Modified: 2026-02-08T08:00:00Z | Author: COPILOT | Change: Unify SLATEPI → SLATE naming
       - name: Verify EXE
         run: |
-          if (Test-Path "dist_v2/SLATEPI/SLATEPI.exe") {
+          if (Test-Path "dist_v2/SLATE/SLATE.exe") {
             Write-Host "EXE built successfully"
-            $size = (Get-Item "dist_v2/SLATEPI/SLATEPI.exe").Length / 1MB
+            $size = (Get-Item "dist_v2/SLATE/SLATE.exe").Length / 1MB
             Write-Host "Size: $([math]::Round($size, 2)) MB"
           } else {
             Write-Host "::warning::EXE not found (spec may be missing)"
           }
         continue-on-error: true
       - uses: actions/upload-artifact@v4
-        if: hashFiles('dist_v2/SLATEPI/SLATEPI.exe') != ''
+        if: hashFiles('dist_v2/SLATE/SLATE.exe') != ''
         with:
-          name: SLATEPI-exe-${{ needs.version.outputs.version }}
-          path: dist_v2/SLATEPI/
+          name: SLATE-exe-${{ needs.version.outputs.version }}
+          path: dist_v2/SLATE/
           retention-days: 30
 
   release:
@@ -108,22 +124,23 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
-          name: SLATEPI-exe-${{ needs.version.outputs.version }}
+          name: SLATE-exe-${{ needs.version.outputs.version }}
           path: release-artifacts/
+      # Modified: 2026-02-08T08:00:00Z | Author: COPILOT | Change: Unify SLATEPI → SLATE naming
       - name: Create release archive
         run: |
-          Compress-Archive -Path "release-artifacts/*" -DestinationPath "SLATEPI-${{ needs.version.outputs.version }}-win64.zip"
+          Compress-Archive -Path "release-artifacts/*" -DestinationPath "SLATE-${{ needs.version.outputs.version }}-win64.zip"
       - uses: softprops/action-gh-release@v2
         with:
-          name: SLATEPI v${{ needs.version.outputs.version }}
+          name: SLATE v${{ needs.version.outputs.version }}
           generate_release_notes: true
-          files: SLATEPI-${{ needs.version.outputs.version }}-win64.zip
+          files: SLATE-${{ needs.version.outputs.version }}-win64.zip
 
   summary:
     name: CD Summary

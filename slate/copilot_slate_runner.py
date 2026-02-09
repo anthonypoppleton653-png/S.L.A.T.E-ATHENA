@@ -406,6 +406,25 @@ class CopilotSlateRunner:
             print(f"    Processing: {bridge.get('processing_tasks', 0)}")
             print(f"    Results:    {bridge.get('completed_results', 0)}")
 
+        # Modified: 2026-02-09T05:00:00Z | Author: COPILOT | Change: Add K8s deployment awareness
+        try:
+            import subprocess as _sp
+            r = _sp.run(["kubectl", "get", "deployments", "-n", "slate",
+                         "-o", "jsonpath={.items[*].metadata.name}"],
+                        capture_output=True, text=True, timeout=10)
+            if r.returncode == 0 and r.stdout.strip():
+                deploys = r.stdout.strip().split()
+                r2 = _sp.run(["kubectl", "get", "pods", "-n", "slate",
+                              "--field-selector=status.phase=Running",
+                              "-o", "jsonpath={.items[*].metadata.name}"],
+                             capture_output=True, text=True, timeout=10)
+                pod_count = len(r2.stdout.strip().split()) if r2.returncode == 0 and r2.stdout.strip() else 0
+                print(f"\n  K8s:")
+                print(f"    Deployments: {len(deploys)}")
+                print(f"    Running Pods: {pod_count}")
+        except Exception:
+            pass  # K8s not available
+
         print("\n" + "=" * 60)
 
 

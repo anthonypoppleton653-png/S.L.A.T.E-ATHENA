@@ -214,6 +214,7 @@ def save_tasks(data: dict[str, Any]) -> None:
 
 
 def sync_kanban_to_tasks() -> dict[str, int]:
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add verbose output for skipped items and summary stats
     """Sync KANBAN board items to current_tasks.json."""
     stats = {"added": 0, "skipped": 0, "errors": 0}
 
@@ -222,6 +223,7 @@ def sync_kanban_to_tasks() -> dict[str, int]:
         print("No items in KANBAN or error fetching")
         return stats
 
+    print(f"Found {len(items)} items in KANBAN board")
     task_data = load_tasks()
     existing_titles = {t.get("title", "") for t in task_data.get("tasks", [])}
 
@@ -229,6 +231,7 @@ def sync_kanban_to_tasks() -> dict[str, int]:
         title = item.get("title", "")
         if not title or title in existing_titles:
             stats["skipped"] += 1
+            print(f"  ~ Skipped (already synced): {title[:60]}")
             continue
 
         # Create task from KANBAN item
@@ -249,8 +252,8 @@ def sync_kanban_to_tasks() -> dict[str, int]:
 
     if stats["added"] > 0:
         save_tasks(task_data)
-        print(f"\nSynced {stats['added']} items from KANBAN to tasks")
 
+    print(f"\nSync complete: {stats['added']} added, {stats['skipped']} skipped, {stats['errors']} errors")
     return stats
 
 
@@ -508,9 +511,11 @@ def print_status() -> None:
     items = get_project_items(PROJECTS["kanban"])
     if items:
         for item in items:
-            item_type = item.get("type", "unknown")
+            # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Show status and content type from JSON format
+            status = item.get("status", "unknown")
+            content_type = item.get("content", {}).get("type", item.get("type", "unknown"))
             title = item.get("title", "untitled")[:50]
-            print(f"  [{item_type:11s}] {title}")
+            print(f"  [{status:10s}] [{content_type:10s}] {title}")
     else:
         print("  (no items)")
 
@@ -559,6 +564,8 @@ def main() -> int:
         stats = sync_kanban_to_tasks()
         if args.json:
             print(json.dumps(stats))
+        else:
+            print(f"\nResult: added={stats['added']}, skipped={stats['skipped']}, errors={stats['errors']}")
         return 0
 
     if args.push:

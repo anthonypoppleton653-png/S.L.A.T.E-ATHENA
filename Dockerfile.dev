@@ -1,19 +1,25 @@
-# S.L.A.T.E. Docker Image (Dev Variant - GPU with Hot-Reload)
-# Modified: 2026-02-07T06:00:00Z | Author: COPILOT | Change: Dev Dockerfile with watchfiles for hot-reload
-# Base: NVIDIA CUDA 12.4 Runtime on Ubuntu 22.04
+# S.L.A.T.E. Docker Image — DEV (GPU with Hot-Reload)
+# Modified: 2026-02-09T01:32:00Z | Author: Antigravity | Change: Multi-stage build, tini init, hot-reload ready
+# AI Note: When modifying, add a comment with the current date, time, and a 'Gemini' marker.
+# Base: NVIDIA CUDA 12.8 Runtime on Ubuntu 22.04
+#
+# Dev variant of the release image. Identical dependencies and codebase, but:
+#   - Adds watchfiles for hot-reload (file changes trigger restart)
+#   - Runs in dev mode (SLATE_MODE=dev)
+#   - Codebase is typically bind-mounted over COPY'd files
+#
+# Build:  docker build -f Dockerfile.dev -t slate-dev:local .
+# Run:    docker compose -f docker-compose.dev.yml up
 
-FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+# ═══════════════════════════════════════════════════════════════════════════════
+# Stage 1: Builder
+# ═══════════════════════════════════════════════════════════════════════════════
+FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04 AS builder
 
-LABEL org.opencontainers.image.source="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E"
-LABEL org.opencontainers.image.description="SLATE - Dev Mode with Hot-Reload (GPU)"
-LABEL org.opencontainers.image.licenses="MIT"
-
-# Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Install Python 3.11 and system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.11 \
     python3.11-venv \
@@ -24,39 +30,78 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ln -sf /usr/bin/python3.11 /usr/bin/python \
     && ln -sf /usr/bin/python3.11 /usr/bin/python3
 
-# Set working directory
-WORKDIR /slate
-
-# Copy requirements first for layer caching
+WORKDIR /build
 COPY requirements.txt .
 
-# Install Python dependencies + watchfiles for dev hot-reload
 RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128 \
     && pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir watchfiles>=1.0.0
+    && pip install --no-cache-dir "watchfiles>=1.0.0" "debugpy>=1.8.0"
 
-# Copy SLATE codebase (will be overridden by bind mounts in dev)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Stage 2: Dev Runtime
+# ═══════════════════════════════════════════════════════════════════════════════
+FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
+
+LABEL org.opencontainers.image.source="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E"
+LABEL org.opencontainers.image.description="SLATE - Dev Mode with Hot-Reload (GPU)"
+LABEL org.opencontainers.image.licenses="EOSL-1.0"
+LABEL org.opencontainers.image.version="2.4.0"
+LABEL slate.image.type="dev"
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3-pip \
+    git \
+    tini \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -sf /usr/bin/python3.11 /usr/bin/python \
+    && ln -sf /usr/bin/python3.11 /usr/bin/python3
+
+COPY --from=builder /usr/local/lib/python3.11/dist-packages /usr/local/lib/python3.11/dist-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+WORKDIR /slate
+
+# Copy codebase (will be overridden by bind mounts in dev)
 COPY slate/ ./slate/
 COPY agents/ ./agents/
 COPY slate_core/ ./slate_core/
+COPY slate_web/ ./slate_web/
+COPY models/ ./models/
 COPY skills/ ./skills/
+COPY plugins/ ./plugins/
+COPY vendor/ ./vendor/
+COPY docs/ ./docs/
+COPY specs/ ./specs/
+COPY .agent/ ./.agent/
 COPY pyproject.toml .
 COPY current_tasks.json .
+COPY AGENTS.md .
+COPY .github/copilot-instructions.md ./.github/copilot-instructions.md
+COPY k8s/ ./k8s/
+COPY helm/ ./helm/
 
-# Set Python path
-ENV PYTHONPATH="/slate:${PYTHONPATH}"
-
-# Dev mode environment
+ENV PYTHONPATH="/slate"
 ENV SLATE_MODE=dev
 ENV SLATE_DOCKER=1
+ENV SLATE_K8S=true
+ENV SLATE_VERSION=2.4.0
+ENV SLATE_AGENT_NAME=Antigravity
 
-# Expose dashboard port
-EXPOSE 8080
+RUN useradd -m -s /bin/bash -u 1000 slate \
+    && chown -R slate:slate /slate
+USER slate
 
-# Health check
-HEALTHCHECK --interval=15s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)" || exit 1
+EXPOSE 8080 8081 8082 8083 8084 9090
 
-# Default entrypoint: start SLATE orchestrator in dev mode
-ENTRYPOINT ["python", "slate/slate_orchestrator.py"]
-CMD ["start", "--mode", "dev"]
+HEALTHCHECK --interval=15s --timeout=10s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health', timeout=5)" || exit 1
+
+ENTRYPOINT ["tini", "--"]
+CMD ["python", "slate/slate_orchestrator.py", "start", "--mode", "dev"]

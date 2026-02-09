@@ -9,14 +9,14 @@
 		"url": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git"
 	},
 	"slateMetadata": {
-		"modified": "2026-02-08T16:00:00Z",
+		"modified": "2026-02-10T12:00:00Z",
 		"author": "COPILOT",
-		"change": "SLATE-ATHENA UI/Theme Unification — added SLATE-ATHENA Dark color theme with Parthenon Gold, Aegean Deep, Acropolis Gray palette"
+		"change": "v5.3.0 — Auto-start SLATE systems on VS Code open, split dashboard (upper command center + lower control board), AI command interface (Ollama + Copilot SDK), system vitals bar, quick command chips"
 	},
-	"version": "3.2.0",
+	"version": "5.3.0",
 	"icon": "media/icon.png",
 	"engines": {
-		"vscode": "^1.100.0"
+		"vscode": "^1.95.0"
 	},
 	"categories": [
 		"AI",
@@ -29,11 +29,6 @@
 	"main": "./out/extension.js",
 	"contributes": {
 		"themes": [
-			{
-				"label": "SLATE-ATHENA Dark",
-				"uiTheme": "vs-dark",
-				"path": "./themes/slate-athena-color-theme.json"
-			},
 			{
 				"label": "SLATE Dark",
 				"uiTheme": "vs-dark",
@@ -152,6 +147,34 @@
 					{
 						"name": "context",
 						"description": "Get compressed SLATE state context (token-optimized)"
+					},
+					{
+						"name": "pr",
+						"description": "Pull request management — list, create, check status with CI"
+					},
+					{
+						"name": "issues",
+						"description": "GitHub issue tracking — list, create, close, comment"
+					},
+					{
+						"name": "git",
+						"description": "Git operations — status, branches, log, diff, stash"
+					},
+					{
+						"name": "tests",
+						"description": "Test Explorer — run tests, refresh suites, view results"
+					},
+					{
+						"name": "scan",
+						"description": "Security scan — run diagnostics and show in Problems panel"
+					},
+					{
+						"name": "forge",
+						"description": "FORGE.md — read/append to the collaborative AI operations log, check teammate updates"
+					},
+					{
+						"name": "prompts",
+						"description": "Prompt Index — list, view, run, validate SLATE super prompts via Ollama"
 					}
 				],
 				"disambiguation": [
@@ -164,6 +187,27 @@
 							"Dispatch the CI workflow",
 							"Show system status",
 							"Start the dashboard"
+						]
+					},
+					{
+						"category": "slate_github",
+						"description": "The user wants to interact with GitHub — PRs, issues, CI runs, git operations.",
+						"examples": [
+							"List open pull requests",
+							"Create an issue for this bug",
+							"Show recent CI runs",
+							"What branch am I on?",
+							"Check the git diff"
+						]
+					},
+					{
+						"category": "slate_quality",
+						"description": "The user wants to run tests, security scans, or code quality checks.",
+						"examples": [
+							"Run the test suite",
+							"Scan for security issues",
+							"Check code coverage",
+							"Run the security audit"
 						]
 					}
 				]
@@ -679,13 +723,307 @@
 						}
 					}
 				}
+			},
+			{
+				"name": "slate_ciMonitor",
+				"tags": ["slate", "ci", "github", "actions", "workflow"],
+				"toolReferenceName": "slateCiMonitor",
+				"displayName": "SLATE CI Monitor",
+				"modelDescription": "Monitor GitHub Actions CI/CD: list recent runs, check active runs, dispatch workflows, get job logs, cancel or re-run failed jobs. Deep integration with the self-hosted slate-runner.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"required": ["action"],
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "CI action: 'runs' (list recent), 'status' (active runs), 'dispatch' (trigger workflow), 'logs' (job details), 'cancel', 'rerun'",
+							"enum": ["runs", "status", "dispatch", "logs", "cancel", "rerun"]
+						},
+						"workflow": {
+							"type": "string",
+							"description": "Workflow file name for dispatch (e.g., 'ci.yml', 'agentic.yml')"
+						},
+						"runId": {
+							"type": "string",
+							"description": "Workflow run ID for logs/cancel/rerun actions"
+						},
+						"count": {
+							"type": "number",
+							"description": "Number of runs to list (default 10)",
+							"default": 10
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_prManager",
+				"tags": ["slate", "github", "pr", "pull-request"],
+				"toolReferenceName": "slatePrManager",
+				"displayName": "SLATE PR Manager",
+				"modelDescription": "Manage GitHub pull requests: list open PRs, create new PRs, check PR status with check runs. Integrates with SLATE workflow for task-to-PR lifecycle.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"required": ["action"],
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "PR action: 'list' (open PRs), 'create' (new PR), 'status' (check PR with CI status)",
+							"enum": ["list", "create", "status"]
+						},
+						"branch": {
+							"type": "string",
+							"description": "Source branch for creating a PR"
+						},
+						"title": {
+							"type": "string",
+							"description": "PR title"
+						},
+						"body": {
+							"type": "string",
+							"description": "PR description body"
+						},
+						"prNumber": {
+							"type": "number",
+							"description": "PR number for status check"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_issueTracker",
+				"tags": ["slate", "github", "issues", "bugs"],
+				"toolReferenceName": "slateIssueTracker",
+				"displayName": "SLATE Issue Tracker",
+				"modelDescription": "Manage GitHub issues: list open issues, create new issues with labels, close issues, add comments. Bridges SLATE task management with GitHub issue tracking.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"required": ["action"],
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Issue action: 'list' (open issues), 'create' (new issue), 'close', 'comment'",
+							"enum": ["list", "create", "close", "comment"]
+						},
+						"title": {
+							"type": "string",
+							"description": "Issue title (for create)"
+						},
+						"body": {
+							"type": "string",
+							"description": "Issue body or comment text"
+						},
+						"labels": {
+							"type": "array",
+							"items": { "type": "string" },
+							"description": "Labels to apply (for create)"
+						},
+						"issueNumber": {
+							"type": "number",
+							"description": "Issue number (for close/comment)"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_semanticKernel",
+				"tags": ["slate", "semantic-kernel", "ai", "microsoft", "plugins", "planner"],
+				"toolReferenceName": "slateSemanticKernel",
+				"displayName": "SLATE Semantic Kernel",
+				"modelDescription": "Microsoft Semantic Kernel integration: check status, list plugins, run inference via local Ollama models with SK function calling, or benchmark SK pipeline performance. Uses SLATE custom models (slate-coder, slate-fast, slate-planner) with ChromaDB RAG memory.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "SK action: 'status' (integration health), 'plugins' (list SK plugins), 'invoke' (run prompt through SK), 'benchmark' (SK inference perf)",
+							"enum": ["status", "plugins", "invoke", "benchmark"],
+							"default": "status"
+						},
+						"prompt": {
+							"type": "string",
+							"description": "Prompt text for 'invoke' action"
+						},
+						"model": {
+							"type": "string",
+							"description": "Model role: code, fast, planner, general",
+							"enum": ["code", "fast", "planner", "general"],
+							"default": "general"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_gitOps",
+				"tags": ["slate", "git", "source-control", "branch"],
+				"toolReferenceName": "slateGitOps",
+				"displayName": "SLATE Git Operations",
+				"modelDescription": "Git source control operations: check status, list branches, view commit log, show diff stats, list stashes. Provides repository awareness for the @slate agent.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"required": ["action"],
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Git action: 'status', 'branch', 'log', 'diff', 'stash'",
+							"enum": ["status", "branch", "log", "diff", "stash"]
+						},
+						"branch": {
+							"type": "string",
+							"description": "Branch name (for branch operations)"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_githubModels",
+				"tags": ["slate", "github-models", "ai", "cloud", "inference", "free-tier"],
+				"toolReferenceName": "slateGitHubModels",
+				"displayName": "SLATE GitHub Models",
+				"modelDescription": "GitHub Models free-tier cloud AI inference: check status and rate limits, list available models (GPT-4o, GPT-4o-mini, Mistral, DeepSeek-R1, Phi-4, Llama, etc.), send chat prompts, run with Ollama fallback chain, or benchmark API performance. 11 models, 15 RPM / 150 RPD rate limits, no cost.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "GitHub Models action: 'status' (auth + rate limits), 'list' (available models), 'chat' (send prompt), 'fallback' (GitHub→Ollama chain), 'benchmark' (API perf)",
+							"enum": ["status", "list", "chat", "fallback", "benchmark"],
+							"default": "status"
+						},
+						"prompt": {
+							"type": "string",
+							"description": "Prompt text for 'chat' or 'fallback' actions"
+						},
+						"model": {
+							"type": "string",
+							"description": "Model name for 'chat' action (e.g., gpt-4o, gpt-4o-mini, DeepSeek-R1)",
+							"default": "gpt-4o-mini"
+						},
+						"role": {
+							"type": "string",
+							"description": "SLATE role mapping for 'fallback' action: code, fast, planner, analysis, reasoning, summary, general",
+							"enum": ["code", "fast", "planner", "analysis", "reasoning", "summary", "general"],
+							"default": "general"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_kubernetes",
+				"tags": ["slate", "kubernetes", "k8s", "cluster", "pods", "deployment"],
+				"toolReferenceName": "slateKubernetes",
+				"displayName": "SLATE Kubernetes",
+				"modelDescription": "Kubernetes deployment management for SLATE: check cluster status (pods, deployments, services), run health checks, deploy manifests (raw kubectl or Kustomize overlays), teardown, view component logs, set up port forwarding, or preload ML models. Manages the slate namespace with 7 deployments, 5 CronJobs, HPAs, PDBs, and Ingress.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "K8s action: 'status' (cluster overview), 'health' (deep health check), 'deploy' (apply manifests), 'deploy-kustomize' (apply with overlay), 'teardown' (remove all), 'logs' (component logs), 'port-forward' (local access), 'preload-models' (ML model init)",
+							"enum": ["status", "health", "deploy", "deploy-kustomize", "teardown", "logs", "port-forward", "preload-models"],
+							"default": "status"
+						},
+						"component": {
+							"type": "string",
+							"description": "Component name for 'logs' action (e.g., core, ollama, vectorstore, agent-router, autonomous-loop, copilot-bridge, workflow-manager)"
+						},
+						"overlay": {
+							"type": "string",
+							"description": "Kustomize overlay for 'deploy-kustomize' action (e.g., local, dev, staging, prod)",
+							"enum": ["local", "dev", "staging", "prod"]
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_adaptiveInstructions",
+				"tags": ["slate", "instructions", "adaptive", "k8s", "configmap", "agent", "copilot"],
+				"toolReferenceName": "slateAdaptiveInstructions",
+				"displayName": "SLATE Adaptive Instructions",
+				"modelDescription": "Adaptive Instruction Layer — K8s-driven dynamic instruction controller. Evaluates system state (K8s pods, GPUs, services, workflows) and generates context-aware instruction overrides stored in the slate-instructions ConfigMap. Controls operating mode (normal/degraded/maintenance/emergency/autonomous), agent availability (full/gpu-only/cpu-only/minimal), tool routing, and behavioral directives. The source of truth for all SLATE agent and Copilot instruction behaviors.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Instruction action: 'status' (current state), 'evaluate' (analyze system), 'sync' (evaluate+apply to K8s), 'get-context' (instruction block for sessions), 'get-active' (active set from K8s), 'apply' (push to ConfigMap)",
+							"enum": ["status", "evaluate", "sync", "get-context", "get-active", "apply"],
+							"default": "status"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_forge",
+				"tags": ["slate", "forge", "collaboration", "log", "agents", "copilot", "antigravity"],
+				"toolReferenceName": "slateForge",
+				"displayName": "SLATE FORGE.md",
+				"modelDescription": "FORGE.md collaborative AI operations log — the shared append-only log for AI team members (Copilot, Antigravity, autonomous agents). FORGE = Framework for Orchestrated Research, Generation & Evolution. Use to read teammate updates, append new entries, check collaboration status, and sync the FORGE log across Docker volumes and MCP. Entries are timestamped with format: [AgentName] YYYY-MM-DDTHH:MM:SSZ | Action: description. Sections: STATUS, PLAN, OUTPUT, HANDOFF, MAGIC (super prompts).",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"required": ["action"],
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "FORGE action: 'read' (view log, optionally filtered), 'append' (add new entry), 'status' (collaboration summary), 'sync' (sync with Docker/MCP)",
+							"enum": ["read", "append", "status", "sync"]
+						},
+						"entry": {
+							"type": "string",
+							"description": "For 'append': the log entry text to add (auto-timestamped)"
+						},
+						"section": {
+							"type": "string",
+							"description": "For 'read': filter by section (STATUS, PLAN, OUTPUT, HANDOFF, MAGIC)"
+						},
+						"filter": {
+							"type": "string",
+							"description": "For 'read': text search filter across entries"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_promptIndex",
+				"tags": ["slate", "prompts", "ollama", "automation", "inference", "index"],
+				"toolReferenceName": "slatePromptIndex",
+				"displayName": "SLATE Prompt Index",
+				"modelDescription": "SLATE Prompt Index — manage and execute the 9 super prompts in prompts/index.json. Prompts are Ollama-routed automation workflows: system-health, deploy-kubernetes, run-benchmarks, workflow-cleanup, issue-to-task, pr-review, task-router, dashboard-sync, forge-collab. Each prompt targets a specific SLATE model (slate-coder 12B, slate-fast 3B, or slate-planner 7B) for local GPU inference. Use to list available prompts, get prompt contents, run a prompt through Ollama, validate prompt format, or rebuild the index.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"required": ["action"],
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Prompt action: 'list' (all prompts), 'get' (view one), 'run' (execute via Ollama), 'validate' (check format), 'index' (rebuild index.json)",
+							"enum": ["list", "get", "run", "validate", "index"]
+						},
+						"name": {
+							"type": "string",
+							"description": "Prompt name for 'get'/'run' (e.g. 'system-health', 'pr-review', 'task-router')"
+						},
+						"prompt": {
+							"type": "string",
+							"description": "For 'run': additional context to inject into the prompt"
+						},
+						"model": {
+							"type": "string",
+							"description": "For 'run': override the default model (slate-coder, slate-fast, slate-planner)"
+						}
+					}
+				}
 			}
 		],
 		"commands": [
-			{
-				"command": "slate.showStatus",
-				"title": "SLATE: Show System Status"
-			},
 			{
 				"command": "slate.openDashboard",
 				"title": "SLATE: Open Dashboard"
@@ -695,8 +1033,16 @@
 				"title": "SLATE: Refresh Dashboard"
 			},
 			{
+				"command": "slate.skipOnboarding",
+				"title": "SLATE: Skip Onboarding (Fix Stuck)"
+			},
+			{
+				"command": "slate.resetOnboarding",
+				"title": "SLATE: Reset Onboarding"
+			},
+			{
 				"command": "slate.applyTheme",
-				"title": "SLATE: Apply SLATE-ATHENA Dark Theme"
+				"title": "SLATE: Apply SLATE Dark Theme"
 			},
 			{
 				"command": "slate.refreshBackground",
@@ -705,11 +1051,77 @@
 			{
 				"command": "slate.toggleBackground",
 				"title": "SLATE: Toggle Schematic Background"
+			},
+			{
+				"command": "slate.scanDiagnostics",
+				"title": "SLATE: Run Security Scan (Diagnostics)"
+			},
+			{
+				"command": "slate.clearDiagnostics",
+				"title": "SLATE: Clear Security Diagnostics"
+			},
+			{
+				"command": "slate.refreshTests",
+				"title": "SLATE: Refresh Test Explorer"
+			},
+			{
+				"command": "slate.codeLens.runTest",
+				"title": "SLATE: Run Test at Cursor"
+			},
+			{
+				"command": "slate.codeLens.runModule",
+				"title": "SLATE: Check Module Status"
+			},
+			{
+				"command": "slate.codeLens.scanFile",
+				"title": "SLATE: Scan File for Security Issues"
+			},
+			{
+				"command": "slate.codeLens.dispatchWorkflow",
+				"title": "SLATE: Dispatch Workflow"
+			}
+		],
+		"taskDefinitions": [
+			{
+				"type": "slate",
+				"required": ["operation"],
+				"properties": {
+					"operation": {
+						"type": "string",
+						"description": "The SLATE operation to run (e.g., 'status', 'workflow-status', 'gpu-status')"
+					},
+					"args": {
+						"type": "array",
+						"items": { "type": "string" },
+						"description": "Additional arguments for the operation"
+					}
+				}
 			}
 		],
 		"configuration": {
 			"title": "SLATE",
 			"properties": {
+				"slate.runtime.backend": {
+					"type": "string",
+					"default": "auto",
+					"enum": ["auto", "kubernetes", "docker"],
+					"enumDescriptions": [
+						"Auto-detect best available backend (K8s > Docker)",
+						"Route all commands to K8s copilot-bridge-svc",
+						"Execute inside Docker SLATE container"
+					],
+					"description": "SLATE runtime backend — controls where commands are executed. Auto-detect tries K8s first, then Docker. K8s or Docker deployment is required."
+				},
+				"slate.runtime.k8sEndpoint": {
+					"type": "string",
+					"default": "http://127.0.0.1:8083",
+					"description": "K8s copilot bridge service endpoint. Use kubectl port-forward or the SLATE K8s Port Forward task to expose this."
+				},
+				"slate.runtime.dockerContainer": {
+					"type": "string",
+					"default": "slate",
+					"description": "Docker container name for the SLATE runtime. Must match the container_name in docker-compose.yml."
+				},
 				"slate.background.enabled": {
 					"type": "boolean",
 					"default": false,
@@ -732,8 +1144,8 @@
 		"lint": "eslint"
 	},
 	"devDependencies": {
-		"@types/node": "^22",
-		"@types/vscode": "^1.100.0",
+		"@types/node": "^25",
+		"@types/vscode": "^1.95.0",
 		"typescript": "^5.9.2"
 	}
 }

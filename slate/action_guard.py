@@ -1,3 +1,4 @@
+# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Add PROTECTED_PATHS and validate_file_write to prevent AI overwriting production files
 # Modified: 2026-02-07T09:00:00Z | Author: COPILOT | Change: Add Kubernetes security patterns and container validation
 """
 ActionGuard - Security enforcement for SLATE agent actions.
@@ -12,6 +13,7 @@ Security rules:
 - Rate limiting on API calls
 - Kubernetes: privileged pods, hostNetwork, hostPID blocked
 - Container images: only trusted registries allowed
+- PROTECTED_PATHS: production files AI must never overwrite
 """
 
 import logging
@@ -25,6 +27,7 @@ logger = logging.getLogger("slate.action_guard")
 # ── Security Configuration ──────────────────────────────────────────────
 
 BLOCKED_PATTERNS = [
+    # Code execution safety
     r"eval\(",
     r"exec\(os",
     r"rm\s+-rf\s+/",
@@ -33,6 +36,25 @@ BLOCKED_PATTERNS = [
     r"subprocess\.call.*shell\s*=\s*True",
     r"__import__\(",
     r"os\.system\(",
+    # Ethics enforcement (Constitution Section II)
+    r"nmap\s+",                       # Network scanning / hacking tools
+    r"metasploit",                    # Exploitation framework
+    r"sqlmap",                        # SQL injection tool
+    r"hashcat",                       # Password cracking
+    r"john\s+",                       # John the Ripper password cracking
+    r"hydra\s+",                      # Brute force tool
+    r"aircrack",                      # WiFi cracking
+    r"wireshark.*capture",            # Packet capture (passive surveillance)
+    r"keylog",                        # Keylogger patterns
+    r"reverse.?shell",               # Reverse shell creation
+    r"bind.?shell",                   # Bind shell creation
+    r"payload.*msfvenom",            # Metasploit payload generation
+    r"exploit[_\-]db",               # Exploit database queries
+    r"cve[_\-]\d{4}[_\-]\d+.*exploit",  # CVE exploitation (research reading is OK)
+    r"cryptominer|xmrig|minerd",     # Cryptocurrency mining
+    r"phish|spoof.*email",           # Phishing/spoofing
+    r"ddos|flood.*attack",           # DDoS attack tools
+    r"ransomware|encrypt.*ransom",   # Ransomware patterns
 ]
 
 # Kubernetes-specific blocked patterns (YAML manifest scanning)
@@ -67,6 +89,106 @@ BLOCKED_DOMAINS = [
     "generativelanguage.googleapis.com",
 ]
 
+# Production files that autonomous AI must NEVER overwrite.
+# These are matched as suffixes against normalized paths (forward slashes).
+# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Add protected path list for AI write prevention
+PROTECTED_PATHS: list[str] = [
+    # ── Core SDK (the engine itself) ─────────────────────────────────────
+    "slate/slate_unified_autonomous.py",
+    "slate/integrated_autonomous_loop.py",
+    "slate/copilot_slate_runner.py",
+    "slate/action_guard.py",
+    "slate/sdk_source_guard.py",
+    "slate/pii_scanner.py",
+    "slate/mcp_server.py",
+    "slate/slate_status.py",
+    "slate/slate_runtime.py",
+    "slate/slate_runner_manager.py",
+    "slate/slate_orchestrator.py",
+    "slate/slate_workflow_manager.py",
+    "slate/slate_hardware_optimizer.py",
+    "slate/slate_gpu_manager.py",
+    "slate/slate_k8s_deploy.py",
+    "slate/slate_benchmark.py",
+    "slate/slate_chromadb.py",
+    "slate/ml_orchestrator.py",
+    "slate/slate_model_trainer.py",
+    "slate/slate_project_board.py",
+    "slate/slate_fork_manager.py",
+    "slate/adaptive_instructions.py",
+    "slate/copilot_agent_bridge.py",
+    "slate/unified_ai_backend.py",
+    "slate/slate_semantic_kernel.py",
+    "slate/instruction_loader.py",
+    "slate/feature_flags.py",
+    "slate/install_tracker.py",
+    # ── Agents & APIs ───────────────────────────────────────────────────
+    "agents/runner_api.py",
+    "agents/slate_dashboard_server.py",
+    "agents/install_api.py",
+    # ── Config & Infrastructure ─────────────────────────────────────────
+    "pyproject.toml",
+    "requirements.txt",
+    "Dockerfile",
+    "Dockerfile.cpu",
+    "Dockerfile.dev",
+    "docker-compose.yml",
+    "docker-compose.dev.yml",
+    "docker-compose.prod.yml",
+    "install_slate.py",
+    "slate_startup.py",
+    # ── Instruction & Protocol Files ────────────────────────────────────
+    "AGENTS.md",
+    "CLAUDE.md",
+    "FORGE.md",
+    "README.md",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "current_tasks.json",
+]
+
+# Directory patterns that are entirely protected (AI cannot write any file in them)
+# CRITICAL: This is the PRIMARY defense against autonomous AI overwriting production code.
+# The deny-by-default policy (AI_WRITABLE_DIRS allowlist) is the SECONDARY defense.
+# Both must agree before any write is allowed.
+PROTECTED_DIRS: list[str] = [
+    # ── Production Source Code (NEVER writable by AI) ──────────────────
+    "slate/",                    # ALL production engine modules
+    "slate_core/",               # Shared infrastructure
+    "agents/",                   # Dashboard server, APIs
+    "src/",                      # Frontend/backend source
+    # ── Configuration & Infrastructure ─────────────────────────────────
+    ".github/",
+    ".claude/",
+    ".claude-plugin/",
+    "k8s/",
+    "helm/",
+    "actions-runner/",
+    # ── Plugin Source Code ─────────────────────────────────────────────
+    "plugins/",
+    "skills/",
+    "instructions/",
+    "hooks/",
+    # ── Documentation & Pages ──────────────────────────────────────────
+    "docs/",
+    "specs/",
+    # ── Security-Sensitive ─────────────────────────────────────────────
+    "grafana/",
+    "scripts/",
+    "vendor/",
+    "models/",
+]
+
+# Directories where AI IS allowed to write
+AI_WRITABLE_DIRS: list[str] = [
+    "tests/",
+    "slate_logs/",
+    "slate_memory/",
+    "logs/",
+    "data/",
+]
+
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
@@ -77,6 +199,24 @@ ALLOWED_GITHUB_DOMAINS = [
     "api.github.com",
     "github.com",
     "raw.githubusercontent.com",
+    "models.inference.ai.azure.com",  # GitHub Models free-tier AI endpoint
+]
+# Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Add GitHub Models endpoint to allowed domains
+
+# Discord API domains (bot gateway + CDN only)
+# Modified: 2026-02-09T18:00:00Z | Author: Claude Opus 4.6 | Change: Add Discord domains for bot integration
+ALLOWED_DISCORD_DOMAINS = [
+    "discord.com",
+    "gateway.discord.gg",
+    "cdn.discordapp.com",
+]
+
+# Discord-specific blocked patterns (prevent bot abuse)
+DISCORD_BLOCKED_PATTERNS = [
+    r"@everyone",           # Mass ping prevention
+    r"@here",               # Mass ping prevention
+    r"discord\.gg/",        # No invite link generation from bot
+    r"<@&\d+>",            # No role mentions from bot output
 ]
 
 # Rate limiting: max calls per minute per action type
@@ -85,6 +225,8 @@ RATE_LIMITS = {
     "file_write": 120,
     "command_exec": 30,
     "network_request": 30,
+    "discord_command": 60,  # Discord slash command processing
+    "discord_send": 30,     # Discord webhook/message sends
 }
 
 
@@ -230,6 +372,74 @@ class ActionGuard:
                 )
         return ActionResult(allowed=True, action="file_access", reason="Path OK")
 
+    # Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Add validate_file_write for AI production file protection
+    def validate_file_write(self, path: str) -> ActionResult:
+        """Validate whether the autonomous AI is allowed to write to a file.
+
+        This is the CRITICAL safety gate that prevents the local AI inference
+        loop from overwriting production source code, configs, workflows,
+        K8s manifests, instruction files, and security guards.
+
+        AI is ONLY allowed to write to:
+        - tests/         (generated test files)
+        - slate_logs/    (audit logs, backups)
+        - slate_memory/  (context memory)
+        - logs/          (runtime logs)
+        - data/          (data artifacts)
+
+        Everything else is BLOCKED.
+        """
+        # Normalize to forward slashes for consistent matching
+        norm = path.replace("\\", "/")
+        # Strip workspace prefix if present (handle absolute paths)
+        for prefix in ["E:/11132025/", "e:/11132025/", "/workspace/"]:
+            if norm.lower().startswith(prefix.lower()):
+                norm = norm[len(prefix):]
+                break
+
+        # Check against explicitly protected individual files
+        for protected in PROTECTED_PATHS:
+            if norm == protected or norm.endswith("/" + protected):
+                result = ActionResult(
+                    allowed=False,
+                    action="file_write",
+                    reason=f"PROTECTED production file: {protected}",
+                )
+                self._audit(result)
+                return result
+
+        # Check against protected directory patterns
+        for pdir in PROTECTED_DIRS:
+            if norm.startswith(pdir) or ("/" + pdir) in norm:
+                result = ActionResult(
+                    allowed=False,
+                    action="file_write",
+                    reason=f"PROTECTED directory: {pdir}",
+                )
+                self._audit(result)
+                return result
+
+        # Explicitly allow writable directories
+        for wdir in AI_WRITABLE_DIRS:
+            if norm.startswith(wdir):
+                result = ActionResult(
+                    allowed=True,
+                    action="file_write",
+                    reason=f"AI-writable directory: {wdir}",
+                )
+                self._audit(result)
+                return result
+
+        # Default: BLOCK any file not in the writable list
+        # This is a deny-by-default policy — AI must write to designated dirs only
+        result = ActionResult(
+            allowed=False,
+            action="file_write",
+            reason=f"Not in AI-writable directories: {norm}",
+        )
+        self._audit(result)
+        return result
+
     def validate_k8s_manifest(self, manifest_content: str) -> ActionResult:
         """Validate a Kubernetes manifest for security violations.
 
@@ -324,7 +534,7 @@ def validate_command(command: str) -> ActionResult:
 
 
 def is_safe(action_type: str, content: str) -> bool:
-    """Quick check — returns True if action is allowed."""
+    """Quick check - returns True if action is allowed."""
     return get_guard().validate_action(action_type, content).allowed
 
 
@@ -366,6 +576,47 @@ if __name__ == "__main__":
         ("nvidia/cuda:12.4.1-runtime-ubuntu22.04", True),
         ("evil-registry.io/malware:latest", False),
         ("chromadb/chroma:latest", True),
+    ]
+
+    # Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Add file write self-tests
+    # File write protection tests (AI autonomous write validation)
+    file_write_tests = [
+        # BLOCKED: production source files
+        ("slate/slate_unified_autonomous.py", False),
+        ("slate/action_guard.py", False),
+        ("slate/slate_status.py", False),
+        ("slate/ml_orchestrator.py", False),
+        ("agents/runner_api.py", False),
+        ("agents/slate_dashboard_server.py", False),
+        # BLOCKED: config & infra files
+        ("pyproject.toml", False),
+        ("Dockerfile", False),
+        ("docker-compose.yml", False),
+        ("AGENTS.md", False),
+        ("current_tasks.json", False),
+        ("install_slate.py", False),
+        # BLOCKED: protected directories
+        (".github/workflows/ci.yml", False),
+        (".claude/settings.json", False),
+        ("k8s/deployments.yaml", False),
+        ("helm/values.yaml", False),
+        ("plugins/slate-copilot/src/extension.ts", False),
+        ("skills/slate-status/skill.md", False),
+        ("instructions/slate-python.instructions.md", False),
+        ("vendor/spec-kit/README.md", False),
+        ("models/Modelfile.slate-coder", False),
+        ("scripts/deploy.ps1", False),
+        # ALLOWED: test files
+        ("tests/test_guided_mode.py", True),
+        ("tests/test_action_guard.py", True),
+        # ALLOWED: log files
+        ("slate_logs/backups/file_20260209.py.bak", True),
+        ("logs/output.log", True),
+        # ALLOWED: data directory
+        ("data/results.json", True),
+        # BLOCKED: arbitrary source files not in writable list
+        ("slate/new_module.py", False),
+        ("some_random_file.py", False),
     ]
 
     print("=" * 50)
@@ -410,7 +661,17 @@ if __name__ == "__main__":
         else:
             failed += 1
         print(f"  {status}: container_image | {image} | expected={expected} got={result.allowed}")
-
+    # File write protection tests
+    print("\n  AI File Write Protection Tests:")
+    for fpath, expected in file_write_tests:
+        result = guard.validate_file_write(fpath)
+        ok = result.allowed == expected
+        status = "PASS" if ok else "FAIL"
+        if ok:
+            passed += 1
+        else:
+            failed += 1
+        print(f"  {status}: file_write | {fpath[:50]} | expected={expected} got={result.allowed}")
     print(f"\n  Total Results: {passed} passed, {failed} failed")
     print("=" * 50)
 

@@ -57,7 +57,7 @@ jobs:
     env:
       CUDA_VISIBLE_DEVICES: '0'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -77,6 +77,22 @@ jobs:
           except Exception as e:
               print(f'Ollama: NOT RUNNING - {e}')
               exit(1)
+          "@
+      # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio check to agentic workflow
+      - name: Check LM Studio
+        continue-on-error: true
+        run: |
+          python -c @"
+          import urllib.request, json
+          try:
+              r = urllib.request.urlopen('http://127.0.0.1:1234/v1/models', timeout=5)
+              data = json.loads(r.read())
+              models = data.get('data', [])
+              print(f'LM Studio: RUNNING ({len(models)} models)')
+              for m in models:
+                  print(f'  {m.get("id","?")}')
+          except Exception as e:
+              print(f'LM Studio: NOT RUNNING - {e}')
           "@
       - name: Check GPUs
         run: |
@@ -108,7 +124,7 @@ jobs:
       SLATE_RUNNER: 'true'
       SLATE_AGENT_MODE: 'autonomous'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -146,7 +162,7 @@ jobs:
       CUDA_VISIBLE_DEVICES: '0'
       SLATE_RUNNER: 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -170,7 +186,7 @@ jobs:
     env:
       CUDA_VISIBLE_DEVICES: '0'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -221,7 +237,7 @@ jobs:
     runs-on: [self-hosted, slate]
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -245,7 +261,7 @@ jobs:
     env:
       CUDA_VISIBLE_DEVICES: '0'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -302,7 +318,7 @@ jobs:
             gpu: '0'
             description: '7B planning/analysis (mistral base)'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -359,6 +375,85 @@ jobs:
       - name: GPU status after build
         run: nvidia-smi --query-gpu=index,name,memory.used,memory.total --format=csv,noheader
 
+  # Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Add Semantic Kernel GPU benchmark to agentic pipeline
+  # ------------ Semantic Kernel GPU Benchmark ------------
+  semantic-kernel-benchmark:
+    name: SK Benchmark
+    needs: inference-health
+    if: always()
+    runs-on: [self-hosted, slate, gpu, gpu-2]
+    timeout-minutes: 15
+    env:
+      CUDA_VISIBLE_DEVICES: '0,1'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
+      - name: SK Status Check
+        run: python slate/slate_semantic_kernel.py --status --json
+      - name: SK Plugin Listing
+        run: python slate/slate_semantic_kernel.py --plugins
+      - name: SK Inference Benchmark (3 Models)
+        run: python slate/slate_semantic_kernel.py --benchmark
+      - name: SK Function Calling Test
+        run: |
+          python -c @"
+          import asyncio, json
+          from slate.slate_semantic_kernel import invoke_sk
+          async def test_fc():
+              # Test with function calling enabled (experimental)
+              result = await invoke_sk(
+                  prompt='What is the current system status?',
+                  model_role='fast',
+                  enable_plugins=True,
+                  use_function_calling=True,
+              )
+              print(f'Function calling result ({len(result)} chars):')
+              print(result[:500])
+              return result
+          asyncio.run(test_fc())
+          "@
+        continue-on-error: true
+      - name: SK RAG Memory Test
+        run: |
+          python -c @"
+          import asyncio, json
+          from slate.slate_semantic_kernel import invoke_sk
+          async def test_rag():
+              result = await invoke_sk(
+                  prompt='Search the codebase for GPU management functions',
+                  model_role='code',
+                  enable_memory=True,
+                  enable_plugins=True,
+              )
+              print(f'RAG result ({len(result)} chars):')
+              print(result[:500])
+          asyncio.run(test_rag())
+          "@
+        continue-on-error: true
+      - name: SK Benchmark Report
+        if: always()
+        run: |
+          "## Semantic Kernel Benchmark" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          python -c @"
+          from slate.slate_semantic_kernel import get_sk_status
+          import json
+          status = get_sk_status()
+          sk = status['semantic_kernel']
+          models = status['slate_models']
+          mem = status['chromadb_memory']
+          print(f'| Component | Status |')
+          print(f'|-----------|--------|')
+          print(f'| SK Version | v{sk["version"]} |')
+          for role, info in models.items():
+              icon = 'Available' if info['status'] == 'available' else info['status'].title()
+              print(f'| {role} model | {icon}: {info["model"]} |')
+          print(f'| ChromaDB Memory | {mem["documents"]} docs |')
+          print(f'| Plugins | {len(status["plugins"])} |')
+          "@ | Out-File -Append $env:GITHUB_STEP_SUMMARY
+
   # ------------ HuggingFace Transformer Analysis (GPU matrix) ------------
   transformer-analysis:
     name: Transformer ${{ matrix.task }}
@@ -402,7 +497,7 @@ jobs:
               print(json.dumps({'shape': list(r['embedding'].shape) if hasattr(r.get('embedding'), 'shape') else 'scalar', 'model': r.get('model','?')}, indent=2))
               "
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -420,7 +515,7 @@ jobs:
     env:
       CUDA_VISIBLE_DEVICES: '0'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -445,6 +540,17 @@ jobs:
         run: |
           python slate/slate_chromadb.py --index
         continue-on-error: true
+      - name: Validate SK Integration
+        run: |
+          python -c @"
+          from slate.slate_semantic_kernel import get_sk_status
+          import json
+          status = get_sk_status()
+          sk = status['semantic_kernel']
+          print(f'Semantic Kernel: v{sk["version"]}' if sk['available'] else 'SK: NOT AVAILABLE')
+          print(f'Plugins: {len(status["plugins"])}')
+          print(f'Security: {status["security"]}')
+          "@
       - name: AI Inference Summary
         run: |
           python -c @"

@@ -53,11 +53,15 @@ FORK_CONFIG_FILE = ".slate_fork/config.json"
 FORK_STATE_FILE = ".slate_fork/state.json"
 
 # Files that user forks CANNOT modify (security-critical)
+# Modified: 2026-02-09T05:00:00Z | Author: COPILOT | Change: Add K8s and Helm paths to protected files
 PROTECTED_FILES = [
     ".github/workflows/*",
     ".github/CODEOWNERS",
     "slate/action_guard.py",
     "slate/sdk_source_guard.py",
+    "k8s/*",
+    "helm/*",
+    "slate/slate_k8s_deploy.py",
 ]
 
 # Required files for valid SLATE installation

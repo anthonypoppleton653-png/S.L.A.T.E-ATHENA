@@ -1,0 +1,264 @@
+{{/* Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Create Helm RBAC, NetworkPolicy, and security templates */}}
+---
+# ServiceAccount: SLATE Core
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: slate-core
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: core
+automountServiceAccountToken: false
+
+---
+# ServiceAccount: SLATE Agent
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: slate-agent
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent
+automountServiceAccountToken: false
+
+---
+# Role: Core (read pods, manage configmaps)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "slate.fullname" . }}-core
+  namespace: {{ .Values.global.namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch", "create"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "slate.fullname" . }}-core
+  namespace: {{ .Values.global.namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: slate-core
+    namespace: {{ .Values.global.namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "slate.fullname" . }}-core
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Role: Agent (read-only)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "slate.fullname" . }}-agent
+  namespace: {{ .Values.global.namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/status", "services", "configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "slate.fullname" . }}-agent
+  namespace: {{ .Values.global.namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: slate-agent
+    namespace: {{ .Values.global.namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "slate.fullname" . }}-agent
+  apiGroup: rbac.authorization.k8s.io
+
+{{- if .Values.security.networkPolicy.enabled }}
+---
+# Default deny all
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "slate.fullname" . }}-default-deny
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# Allow intra-namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "slate.fullname" . }}-intra-ns
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: slate-system
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.global.namespace }}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: slate-system
+  egress:
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.global.namespace }}
+
+{{- if .Values.security.networkPolicy.allowGitHubEgress }}
+---
+# Allow GitHub API egress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "slate.fullname" . }}-github-egress
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: core
+  policyTypes:
+    - Egress
+  egress:
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.global.namespace }}
+{{- end }}
+{{- end }}
+
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/part-of: slate-system
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+
+---
+# GitHub Credentials Secret (template)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "slate.fullname" . }}-github
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+  annotations:
+    slate.io/managed-by: sealed-secrets
+type: Opaque
+data: {}
+
+---
+# SLATE ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "slate.fullname" . }}-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+data:
+  SLATE_MODE: {{ .Values.core.env.SLATE_MODE | default "prod" }}
+  SLATE_K8S: "true"
+  OLLAMA_HOST: "{{ include "slate.fullname" . }}-ollama:{{ .Values.ollama.service.port }}"
+  CHROMADB_HOST: "{{ include "slate.fullname" . }}-chromadb:{{ .Values.chromadb.service.port }}"
+  ANONYMIZED_TELEMETRY: "FALSE"
+  SLATE_BIND_HOST: "127.0.0.1"
+
+---
+# Workspace PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "slate.fullname" . }}-workspace
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.storage.workspace.size }}
+  {{- if .Values.storage.workspace.storageClass }}
+  storageClassName: {{ .Values.storage.workspace.storageClass }}
+  {{- end }}
+
+---
+# Data PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "slate.fullname" . }}-data
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.storage.data.size }}
+  {{- if .Values.storage.data.storageClass }}
+  storageClassName: {{ .Values.storage.data.storageClass }}
+  {{- end }}

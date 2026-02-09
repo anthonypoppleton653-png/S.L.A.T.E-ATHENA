@@ -1,0 +1,107 @@
+# S.L.A.T.E. — LLM-Readable Project Information
+# Modified: 2026-02-08T12:00:00Z | Author: Claude Opus 4.5 | Change: Add llms.txt for AI discoverability
+
+# Following the llms.txt specification for AI discoverability
+# https://llmstxt.org/
+
+> S.L.A.T.E. is a local-first AI agent orchestration framework with GPU support, Kubernetes deployment, and security-first design.
+
+# Project Overview
+
+S.L.A.T.E. stands for: Synchronized Living Architecture for Transformation and Evolution
+
+## Core Features
+
+- Local-first AI inference using Ollama with dual GPU support
+- Kubernetes-native deployment with Kustomize and Helm
+- VS Code extension (@slate chat participant) with 30+ LM tools
+- Claude Code integration with MCP server and 12 tools
+- GitHub Actions self-hosted runner with GPU acceleration
+- ActionGuard security system blocking dangerous patterns
+- Adaptive instruction layer driven by Kubernetes ConfigMaps
+
+## Quick Links
+
+- Repository: https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E
+- Documentation: https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/
+- Installation: Run `python install_slate.py` after cloning
+
+## Key Files
+
+- CLAUDE.md: Main development guidelines and commands
+- AGENTS.md: Agent instructions and routing rules
+- .github/copilot-instructions.md: GitHub Copilot configuration
+- .github/agents/slate.agent.md: SLATE agent definition
+- collections/slate.collection.yml: Awesome-copilot collection manifest
+
+## Architecture
+
+```
+slate/              # Core SDK modules (30+ Python files)
+agents/             # API servers (FastAPI dashboard)
+plugins/            # VS Code extensions
+skills/             # Copilot Chat skills
+instructions/       # Coding standards with applyTo patterns
+prompts/            # Task-specific prompts
+collections/        # Awesome-copilot collection
+k8s/                # Kubernetes manifests
+helm/               # Helm charts
+```
+
+## MCP Tools Available
+
+| Tool | Description |
+|------|-------------|
+| slate_status | System health check |
+| slate_workflow | Task queue management |
+| slate_orchestrator | Service lifecycle |
+| slate_runner | GitHub Actions runner |
+| slate_ai | AI task execution |
+| slate_runtime | Integration verification |
+| slate_hardware | GPU detection |
+| slate_benchmark | Performance benchmarks |
+| slate_gpu | Dual-GPU load balancing |
+| slate_claude_code | Configuration validation |
+| slate_spec_kit | Specification processing |
+| slate_schematic | System visualization |
+
+## Security Model
+
+- ActionGuard: Blocks dangerous patterns (rm -rf, 0.0.0.0, eval)
+- SDK Source Guard: Only trusted package publishers
+- PII Scanner: Credential detection before sync
+- All services bind to 127.0.0.1 only
+
+## Getting Started
+
+```bash
+# Clone repository
+git clone https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git
+cd S.L.A.T.E
+
+# Install with dashboard
+python install_slate.py
+
+# Check system status
+python slate/slate_status.py --quick
+
+# Deploy to Kubernetes
+python slate/slate_k8s_deploy.py --deploy-kustomize local
+```
+
+## Chat Participant Commands
+
+In VS Code with @slate extension:
+- @slate /status - System health
+- @slate /runner - Runner management
+- @slate /workflow - Task management
+- @slate /specs - Specification processing
+- @slate /help - All commands
+
+## Contributing
+
+See CLAUDE.md for development guidelines. All contributions must:
+1. Include modification timestamps
+2. Pass ActionGuard security checks
+3. Include tests for new features
+4. Follow the coding standards in instructions/

@@ -1,0 +1,9 @@
+{
+  "name": "slate-help",
+  "displayName": "SLATE Help",
+  "description": "Get help with SLATE commands, tools, architecture, and development workflows",
+  "version": "2.4.0",
+  "publisher": "slate",
+  "prompts": ["SKILL.md"],
+  "tools": []
+}

@@ -1,0 +1,292 @@
+# Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Create production overlay for K8s with full HA config
+# SLATE Production Overlay — Kustomize
+#
+# Production environment:
+#   - High-availability replicas for all critical services
+#   - Full GPU allocation (2x RTX 5070 Ti)
+#   - All agentic AI systems active with HA
+#   - Full ML pipeline CronJobs
+#   - Strict resource quotas
+#   - Production ingress
+#
+# Deploy:  kubectl apply -k k8s/overlays/prod/
+# Teardown: kubectl delete -k k8s/overlays/prod/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: slate-prod
+
+resources:
+  - ../../namespace.yaml
+  - ../../rbac.yaml
+  - ../../network-policy.yaml
+  - ../../storage.yaml
+  - ../../secrets.yaml
+  - ../../deployments.yaml
+  - ../../hpa-monitoring.yaml
+  - ../../pdb.yaml
+  - ../../agentic-system.yaml
+  - ../../ml-pipeline.yaml
+  - ../../ingress-gpu.yaml
+
+patches:
+  # ── Namespace override for production ──
+  - target:
+      kind: Namespace
+      name: slate
+    patch: |
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: slate-prod
+        labels:
+          pod-security.kubernetes.io/enforce: restricted
+          pod-security.kubernetes.io/audit: restricted
+          pod-security.kubernetes.io/warn: restricted
+          app.kubernetes.io/part-of: slate
+          slate.io/environment: production
+
+  # ── Core: 3 replicas, production mode ──
+  - target:
+      kind: Deployment
+      name: slate-core
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: slate-core
+      spec:
+        replicas: 3
+        template:
+          spec:
+            containers:
+              - name: slate
+                image: ghcr.io/synchronizedlivingarchitecture/slate:latest-gpu
+                env:
+                  - name: SLATE_MODE
+                    value: production
+                  - name: LOG_LEVEL
+                    value: WARNING
+                resources:
+                  requests:
+                    cpu: 1000m
+                    memory: 2Gi
+                  limits:
+                    cpu: 4000m
+                    memory: 8Gi
+                    nvidia.com/gpu: "1"
+
+  # ── Agent router: 3 replicas for HA ──
+  - target:
+      kind: Deployment
+      name: slate-agent-router
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: slate-agent-router
+      spec:
+        replicas: 3
+        template:
+          spec:
+            containers:
+              - name: agent-router
+                resources:
+                  requests:
+                    cpu: 500m
+                    memory: 1Gi
+                  limits:
+                    cpu: 2000m
+                    memory: 4Gi
+
+  # ── Autonomous loop: 2 replicas for HA (active-passive via leader election) ──
+  - target:
+      kind: Deployment
+      name: slate-autonomous-loop
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: slate-autonomous-loop
+      spec:
+        replicas: 2
+        template:
+          spec:
+            containers:
+              - name: autonomous-loop
+                resources:
+                  requests:
+                    cpu: 500m
+                    memory: 1Gi
+                  limits:
+                    cpu: 2000m
+                    memory: 4Gi
+                    nvidia.com/gpu: "1"
+
+  # ── Ollama: production resources ──
+  - target:
+      kind: Deployment
+      name: ollama
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: ollama
+      spec:
+        template:
+          spec:
+            containers:
+              - name: ollama
+                resources:
+                  requests:
+                    cpu: 2000m
+                    memory: 8Gi
+                  limits:
+                    cpu: 8000m
+                    memory: 24Gi
+                    nvidia.com/gpu: "2"
+
+  # ── ChromaDB: production resources ──
+  - target:
+      kind: Deployment
+      name: chromadb
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: chromadb
+      spec:
+        replicas: 2
+        template:
+          spec:
+            containers:
+              - name: chromadb
+                resources:
+                  requests:
+                    cpu: 500m
+                    memory: 1Gi
+                  limits:
+                    cpu: 2000m
+                    memory: 4Gi
+
+  # ── Ingress: production host with TLS ──
+  - target:
+      kind: Ingress
+      name: slate-ingress
+    patch: |
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: slate-ingress
+        annotations:
+          nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      spec:
+        tls:
+          - hosts:
+              - slate.local
+            secretName: slate-tls
+        rules:
+          - host: slate.local
+            http:
+              paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: slate-dashboard-svc
+                      port:
+                        number: 8080
+                - path: /api/agents
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: slate-agent-router-svc
+                      port:
+                        number: 8081
+                - path: /api/autonomous
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: slate-autonomous-svc
+                      port:
+                        number: 8082
+                - path: /api/bridge
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: slate-copilot-bridge-svc
+                      port:
+                        number: 8083
+                - path: /api/workflow
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: slate-workflow-svc
+                      port:
+                        number: 8084
+
+  # ── Production GPU quota ──
+  - target:
+      kind: ResourceQuota
+      name: slate-gpu-quota
+    patch: |
+      apiVersion: v1
+      kind: ResourceQuota
+      metadata:
+        name: slate-gpu-quota
+      spec:
+        hard:
+          requests.nvidia.com/gpu: "2"
+          requests.cpu: "24"
+          requests.memory: 64Gi
+          pods: "30"
+
+  # ── Larger PVCs for production ──
+  - target:
+      kind: PersistentVolumeClaim
+      name: slate-workspace-pvc
+    patch: |
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: slate-workspace-pvc
+      spec:
+        resources:
+          requests:
+            storage: 50Gi
+
+  - target:
+      kind: PersistentVolumeClaim
+      name: ollama-data-pvc
+    patch: |
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: ollama-data-pvc
+      spec:
+        resources:
+          requests:
+            storage: 100Gi
+
+  - target:
+      kind: PersistentVolumeClaim
+      name: chroma-data-pvc
+    patch: |
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: chroma-data-pvc
+      spec:
+        resources:
+          requests:
+            storage: 20Gi
+
+commonLabels:
+  app.kubernetes.io/managed-by: slate
+  app.kubernetes.io/version: "2.4.0"
+  slate.io/environment: production
+
+commonAnnotations:
+  slate.io/overlay: production
+  slate.io/security-policy: restricted
+  slate.io/backup-enabled: "true"

@@ -22,7 +22,9 @@ wheels/
 *.egg
 
 # Virtual environments
+# Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Add extra venv patterns for antigravity/slate_ag environments
 .venv/
+.venv_*/
 venv/
 ENV/
 env/
@@ -51,13 +53,13 @@ htmlcov/
 
 # SLATE specific
 .slate_pids/
+.slate_community/
 .slate_terminal_monitor/
 .slate_hardware_config.json
 *.log
 
 # SLATE runtime data (not source)
-.aurora_pids/
-.aurora_training/
+.slate_pids_legacy/
 .slate_analytics/
 .slate_archive/
 .slate_cas/
@@ -72,8 +74,7 @@ htmlcov/
 .slate_traces/
 .slate_training/
 .tools/
-aurora_logs/
-aurora_memory/
+slate_logs/
 slate_memory/
 _PipelineMapping/
 
@@ -83,6 +84,11 @@ actions-runner-*/
 
 # Fork identity (generated per-user during install — never share upstream)
 .slate_identity/
+
+# Modified: 2026-02-09T14:01:00-05:00 | Author: Gemini (Antigravity)
+# User config (populated during onboarding with personal data: ZIP code, provider, budgets)
+# Track templates in templates/.slate_config/ for reference
+.slate_config/
 
 # Runtime state files
 .slate_orchestrator.pid
@@ -95,6 +101,7 @@ actions-runner-*/
 .slate_ml_state.json
 .slate_model_state.json
 .slate_copilot_runner.json
+.slate_copilot_runner.pid
 .slate_copilot_queue.json
 .slate_runner_costs.json
 .slate_runners.json
@@ -147,6 +154,11 @@ install_state.json
 .slate_startup.pid
 .slate_spec_kit.json
 
+# Adaptive instruction runtime state
+# Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Add instruction state files to gitignore
+.slate_instruction_state.json
+.slate_instruction_context.json
+
 # Extension build artifacts (root level)
 *.vsix
 
@@ -157,13 +169,29 @@ plugins/**/dist/
 # Temp developer scripts (contains tokens + scratch files)
 _temp/
 
-# Modified: 2026-02-08T03:30:00Z | Author: COPILOT | Change: Lock Athena design token build outputs in gitignore
-# SLATE / Athena generated design assets (rebuilt on demand via build_design_assets)
-slate_web/generated/
+# Node modules (plugin build dependencies)
+node_modules/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# SLATE user fork data (local only)
-.slate_fork/
+# Transient test output
+test_results.txt
+
+tools/helm.exe
+dashboard_err.txt
+dashboard_out.txt
+temp_spec.json
+
+# SLATE Token Store (NEVER commit)
+.slate_tokens/
+
+# NPM cache artifacts (Gemini CLI install)
+.pip_tmp/
+
+# Test deploy state artifacts
+.slate_deploy_state.json
+
+# Restored file backups
+*.restored

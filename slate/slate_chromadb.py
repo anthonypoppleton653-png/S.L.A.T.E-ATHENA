@@ -36,6 +36,7 @@ Usage:
 import argparse
 import hashlib
 import json
+import os
 import sys
 import time
 from datetime import datetime, timezone
@@ -49,6 +50,19 @@ sys.path.insert(0, str(WORKSPACE_ROOT))
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+# K8s-aware service configuration
+def _normalize_url(host: str, default_port: int = 11434) -> str:
+    """Normalize host to include protocol."""
+    if host.startswith("http://") or host.startswith("https://"):
+        return host.rstrip("/")
+    if ":" not in host:
+        host = f"{host}:{default_port}"
+    return f"http://{host}"
+
+OLLAMA_URL = _normalize_url(os.environ.get("OLLAMA_HOST", "127.0.0.1:11434"), 11434)
+CHROMADB_URL = _normalize_url(os.environ.get("CHROMADB_HOST", "127.0.0.1:8000"), 8000)
+K8S_MODE = os.environ.get("SLATE_K8S", "false").lower() == "true"
 
 CHROMADB_DIR = WORKSPACE_ROOT / "slate_memory" / "chromadb"
 STATE_FILE = WORKSPACE_ROOT / ".slate_chromadb_state.json"
@@ -97,17 +111,30 @@ class SlateChromaDB:
 
     @property
     def client(self):
-        """Lazy-load ChromaDB client (persistent, in-process)."""
+        """Lazy-load ChromaDB client (persistent, in-process or HTTP for K8s)."""
+        # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Support HTTP client for K8s, catch Rust panics
         if self._client is None:
             import chromadb
-            # Modified: 2026-02-06T22:30:00Z | Author: COPILOT | Change: Use persistent client
-            self._client = chromadb.PersistentClient(
-                path=str(self.db_path),
-                settings=chromadb.Settings(
-                    anonymized_telemetry=False,  # No external telemetry (security rule)
-                    allow_reset=True,
-                ),
-            )
+
+            chromadb_host = os.environ.get("CHROMADB_HOST", "")
+            if chromadb_host:
+                # K8s/Docker mode — connect to chromadb service
+                self._client = chromadb.HttpClient(
+                    host=chromadb_host,
+                    port=int(os.environ.get("CHROMADB_PORT", "8000")),
+                    settings=chromadb.Settings(
+                        anonymized_telemetry=False,
+                    ),
+                )
+            else:
+                # Local mode — persistent in-process
+                self._client = chromadb.PersistentClient(
+                    path=str(self.db_path),
+                    settings=chromadb.Settings(
+                        anonymized_telemetry=False,
+                        allow_reset=True,
+                    ),
+                )
         return self._client
 
     @property

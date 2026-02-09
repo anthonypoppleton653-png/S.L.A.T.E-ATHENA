@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SLATE Tech Tree - Interactive visualization of the S.L.A.T.E. development progression">
+    <title>SLATE Tech Tree - v3.0.0</title>
+    <link rel="icon" type="image/svg+xml" href="assets/slate-logo-v2.svg">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #B85A3C;
+            --primary-light: #D4785A;
+            --primary-dark: #8B4530;
+            --blueprint-bg: #0D1B2A;
+            --blueprint-grid: #1B3A4B;
+            --blueprint-accent: #4FC3F7;
+            --status-complete: #4CAF50;
+            --status-progress: #FF9800;
+            --status-available: #2196F3;
+            --status-locked: #424242;
+            --surface-dark: #1A1816;
+            --font-display: 'Segoe UI', 'Inter', system-ui, sans-serif;
+            --font-mono: 'Consolas', 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background: var(--blueprint-bg);
+            color: #E8E2DE;
+            font-family: var(--font-display);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .blueprint-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(27,58,75,0.25) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(27,58,75,0.25) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 10;
+            padding: 14px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(180deg, rgba(13,27,42,0.95) 0%, transparent 100%);
+        }
+
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .header-left img { width: 28px; height: 28px; }
+        .header-title { font-size: 1.15rem; font-weight: 700; color: var(--primary-light); letter-spacing: 0.04em; }
+        .header-subtitle { font-size: 0.7rem; color: rgba(232,226,222,0.5); font-family: var(--font-mono); }
+
+        .header-right { display: flex; gap: 12px; align-items: center; }
+
+        .chip {
+            border-radius: 14px;
+            padding: 3px 12px;
+            font-size: 0.7rem;
+            font-family: var(--font-mono);
+            font-weight: 600;
+            border: 1px solid;
+        }
+        .chip-version { background: rgba(184,90,60,0.15); border-color: var(--primary); color: var(--primary-light); }
+        .chip-complete { background: rgba(76,175,80,0.12); border-color: rgba(76,175,80,0.4); color: var(--status-complete); }
+        .chip-progress { background: rgba(255,152,0,0.12); border-color: rgba(255,152,0,0.4); color: var(--status-progress); }
+
+        .back-link { color: rgba(232,226,222,0.4); text-decoration: none; font-size: 0.8rem; transition: color 0.2s; }
+        .back-link:hover { color: var(--primary-light); }
+
+        #tree-svg { position: relative; width: 100vw; height: 100vh; z-index: 1; }
+
+        .tooltip {
+            position: fixed;
+            pointer-events: none;
+            background: rgba(26,24,22,0.95);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            color: #E8E2DE;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.15s;
+            max-width: 280px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+        }
+        .tooltip.visible { opacity: 1; }
+        .tooltip-name { font-weight: 700; color: var(--primary-light); margin-bottom: 3px; }
+        .tooltip-desc { font-size: 0.72rem; color: rgba(232,226,222,0.7); margin-bottom: 4px; }
+        .tooltip-meta { font-family: var(--font-mono); font-size: 0.65rem; color: rgba(232,226,222,0.5); }
+
+        .legend {
+            position: fixed;
+            bottom: 16px; left: 16px;
+            z-index: 10;
+            background: rgba(13,27,42,0.88);
+            border: 1px solid var(--blueprint-grid);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.68rem;
+            font-family: var(--font-mono);
+        }
+        .legend-title { font-weight: 700; color: var(--primary-light); margin-bottom: 5px; font-size: 0.72rem; }
+        .legend-item { display: flex; align-items: center; gap: 7px; margin-bottom: 2px; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+        .phase-labels {
+            position: fixed;
+            top: 64px; right: 16px;
+            z-index: 10;
+            background: rgba(13,27,42,0.88);
+            border: 1px solid var(--blueprint-grid);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.68rem;
+            font-family: var(--font-mono);
+        }
+        .phase-bar { margin-bottom: 6px; }
+        .phase-bar-label { display: flex; justify-content: space-between; margin-bottom: 2px; color: rgba(232,226,222,0.6); }
+        .phase-bar-label span:last-child { color: var(--blueprint-accent); }
+        .phase-bar-track { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+        .phase-bar-fill { height: 100%; border-radius: 2px; }
+    </style>
+</head>
+<body>
+    <div class="blueprint-grid"></div>
+
+    <header class="header">
+        <div class="header-left">
+            <img src="assets/slate-logo-v2.svg" alt="SLATE">
+            <div>
+                <div class="header-title">SLATE Tech Tree</div>
+                <div class="header-subtitle">Force-directed dependency graph</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="chip chip-version">v3.0.0</span>
+            <span class="chip chip-complete">36/44 complete</span>
+            <span class="chip chip-progress">81.8%</span>
+            <a href="./" class="back-link">&larr; Back to SLATE</a>
+        </div>
+    </header>
+
+    <div class="phase-labels">
+        <div class="phase-bar">
+            <div class="phase-bar-label"><span>Phase 1</span><span>100%</span></div>
+            <div class="phase-bar-track"><div class="phase-bar-fill" style="width:100%; background:var(--status-complete);"></div></div>
+        </div>
+        <div class="phase-bar">
+            <div class="phase-bar-label"><span>Phase 2</span><span>95%</span></div>
+            <div class="phase-bar-track"><div class="phase-bar-fill" style="width:95%; background:linear-gradient(90deg,var(--status-complete),var(--status-progress));"></div></div>
+        </div>
+        <div class="phase-bar">
+            <div class="phase-bar-label"><span>Phase 3</span><span>30%</span></div>
+            <div class="phase-bar-track"><div class="phase-bar-fill" style="width:30%; background:var(--status-progress);"></div></div>
+        </div>
+    </div>
+
+    <svg id="tree-svg"></svg>
+
+    <div class="tooltip" id="tooltip">
+        <div class="tooltip-name" id="tt-name"></div>
+        <div class="tooltip-desc" id="tt-desc"></div>
+        <div class="tooltip-meta" id="tt-meta"></div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-title">Status</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--status-complete)"></div> Complete</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--status-progress)"></div> In Progress</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--status-available)"></div> Available</div>
+        <div class="legend-title" style="margin-top:6px">Phase</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(255,255,255,0.15); border:1.5px solid rgba(255,255,255,0.3)"></div> Phase 1</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(79,195,247,0.15); border:1.5px solid rgba(79,195,247,0.3)"></div> Phase 2</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(184,90,60,0.15); border:1.5px solid rgba(184,90,60,0.3)"></div> Phase 3</div>
+    </div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // ── Tech Tree Data (from .slate_tech_tree/tech_tree.json) ────────
+        var nodes = [
+            {id:"core-sdk",name:"Core SDK",status:"complete",phase:1,desc:"SLATE core SDK and infrastructure"},
+            {id:"workflow-system",name:"Workflow System",status:"complete",phase:1,desc:"GitHub Actions workflow-based task execution"},
+            {id:"mcp-server",name:"MCP Server",status:"complete",phase:1,desc:"Model Context Protocol integration"},
+            {id:"github-runner",name:"Self-Hosted Runner",status:"complete",phase:1,desc:"GPU-accelerated GitHub Actions runner"},
+            {id:"dashboard",name:"Dashboard",status:"complete",phase:1,desc:"Web-based status dashboard with K8s integration"},
+            {id:"workflow-pipeline",name:"Workflow Pipeline",status:"complete",phase:1,desc:"Tasks -> Runner -> Workflows -> Results pipeline"},
+            {id:"tech-tree-viz",name:"Tech Tree Viz",status:"complete",phase:1,desc:"D3.js force-directed tech tree visualization"},
+            {id:"docker-infra",name:"Docker Infra",status:"complete",phase:2,desc:"GPU/CPU container images, compose, ghcr.io registry"},
+            {id:"copilot-dev",name:"Copilot Dev",status:"complete",phase:2,desc:"GitHub Copilot instructions, prompts, skills, @slate participant"},
+            {id:"claude-dev",name:"Claude Integration",status:"complete",phase:2,desc:"Claude Code commands, MCP server, plugin SDK"},
+            {id:"ui-dev",name:"UI Development",status:"complete",phase:2,desc:"Dashboard frontend, glassmorphism theme, design tokens"},
+            {id:"meta-workflow",name:"Meta-Workflow",status:"complete",phase:2,desc:"Self-managing workflow analyzer and deprecation detection"},
+            {id:"agent-system",name:"Agent System",status:"complete",phase:2,desc:"8-agent registry (ALPHA-ZETA, COPILOT, COPILOT_CHAT)"},
+            {id:"uv-migration",name:"UV Package Mgr",status:"available",phase:2,desc:"Migrate from pip to UV for faster deps"},
+            {id:"discord-bot",name:"Discord Bot",status:"available",phase:2,desc:"Discord integration for notifications"},
+            {id:"multi-runner",name:"Multi-Runner",status:"complete",phase:2,desc:"19 parallel runners across 2 GPUs"},
+            {id:"vscode-sdk",name:"VS Code SDK",status:"complete",phase:2,desc:"Local VS Code plugins synced to GitHub"},
+            {id:"schematic-sdk",name:"Schematic SDK",status:"complete",phase:2,desc:"Circuit-board style diagram generation"},
+            {id:"copilot-sdk",name:"Copilot SDK",status:"complete",phase:2,desc:"GitHub Copilot SDK with 14 tools, session manager"},
+            {id:"autonomous-loop",name:"Autonomous Loop",status:"complete",phase:2,desc:"5-source discovery, ML classification, self-healing"},
+            {id:"spec-system",name:"Spec System",status:"complete",phase:2,desc:"Spec-driven development with wiki generation"},
+            {id:"k8s-infra",name:"Kubernetes",status:"complete",phase:2,desc:"K8s manifests: namespace, RBAC, deployments, network policies"},
+            {id:"gpu-manager",name:"Dual-GPU Mgr",status:"complete",phase:2,desc:"Load-balanced dual-GPU management with warmup"},
+            {id:"custom-models",name:"Custom Models",status:"complete",phase:2,desc:"slate-coder (12B), slate-fast (3B), slate-planner (7B)"},
+            {id:"fork-sync",name:"Fork Sync",status:"complete",phase:2,desc:"34 forked dependencies from 6+ vendors"},
+            {id:"vendor-integration",name:"Vendor SDKs",status:"complete",phase:2,desc:"5 vendors: OpenAI, AutoGen, SK, Copilot, Spec-Kit"},
+            {id:"unified-ai-backend",name:"Unified AI",status:"complete",phase:2,desc:"3 providers: Ollama, Claude Code, Foundry Local"},
+            {id:"claude-code-integration",name:"Claude Code",status:"complete",phase:2,desc:"Full MCP server, plugin, hooks, behaviors"},
+            {id:"token-system",name:"Token System",status:"complete",phase:2,desc:"7 token types, SHA-256, 26 bootstrapped tokens"},
+            {id:"brand-identity",name:"Brand Identity",status:"in_progress",phase:3,desc:"Design tokens, visual identity, watchmaker aesthetic"},
+            {id:"avatar-system",name:"Avatar System",status:"in_progress",phase:3,desc:"2D D3.js orrery + 3D TRELLIS.2 mesh"},
+            {id:"trellis-3d",name:"TRELLIS.2",status:"available",phase:3,desc:"4B image-to-3D as K8s microservice"},
+            {id:"graphrag",name:"GraphRAG",status:"available",phase:3,desc:"Microsoft GraphRAG knowledge graph for ChromaDB"},
+            {id:"prompt-compression",name:"LLMLingua",status:"available",phase:3,desc:"20x prompt compression for 16GB VRAM"},
+            // Spec nodes (grouped)
+            {id:"specs-p2",name:"Specs 015-021",status:"complete",phase:2,desc:"7 Phase 2 specifications (all complete)"},
+            {id:"specs-p3",name:"Specs 022-024",status:"complete",phase:3,desc:"3 Phase 3 specifications (brand, avatar, TRELLIS)"}
+        ];
+
+        var edges = [
+            {s:"core-sdk",t:"workflow-system"},{s:"core-sdk",t:"mcp-server"},
+            {s:"workflow-system",t:"github-runner"},{s:"workflow-system",t:"workflow-pipeline"},
+            {s:"mcp-server",t:"dashboard"},{s:"dashboard",t:"tech-tree-viz"},
+            {s:"github-runner",t:"workflow-pipeline"},{s:"workflow-pipeline",t:"docker-infra"},
+            {s:"workflow-pipeline",t:"meta-workflow"},{s:"mcp-server",t:"claude-dev"},
+            {s:"core-sdk",t:"copilot-dev"},{s:"core-sdk",t:"agent-system"},
+            {s:"dashboard",t:"ui-dev"},{s:"core-sdk",t:"uv-migration"},
+            {s:"workflow-pipeline",t:"discord-bot"},{s:"github-runner",t:"multi-runner"},
+            {s:"core-sdk",t:"vscode-sdk"},{s:"multi-runner",t:"docker-infra"},
+            {s:"dashboard",t:"schematic-sdk"},{s:"ui-dev",t:"schematic-sdk"},
+            {s:"copilot-dev",t:"copilot-sdk"},{s:"vscode-sdk",t:"copilot-sdk"},
+            {s:"workflow-pipeline",t:"autonomous-loop"},{s:"agent-system",t:"autonomous-loop"},
+            {s:"core-sdk",t:"spec-system"},{s:"spec-system",t:"schematic-sdk"},
+            {s:"docker-infra",t:"k8s-infra"},{s:"github-runner",t:"gpu-manager"},
+            {s:"gpu-manager",t:"custom-models"},{s:"custom-models",t:"autonomous-loop"},
+            {s:"core-sdk",t:"fork-sync"},{s:"fork-sync",t:"autonomous-loop"},
+            {s:"fork-sync",t:"vendor-integration"},{s:"vendor-integration",t:"autonomous-loop"},
+            {s:"claude-dev",t:"claude-code-integration"},
+            {s:"claude-code-integration",t:"unified-ai-backend"},
+            {s:"autonomous-loop",t:"unified-ai-backend"},
+            {s:"vendor-integration",t:"unified-ai-backend"},
+            {s:"core-sdk",t:"token-system"},{s:"token-system",t:"claude-code-integration"},
+            {s:"spec-system",t:"specs-p2"},{s:"spec-system",t:"specs-p3"},
+            {s:"ui-dev",t:"brand-identity"},{s:"brand-identity",t:"avatar-system"},
+            {s:"avatar-system",t:"trellis-3d"},{s:"k8s-infra",t:"trellis-3d"},
+            {s:"gpu-manager",t:"trellis-3d"},{s:"fork-sync",t:"graphrag"},
+            {s:"unified-ai-backend",t:"prompt-compression"}
+        ];
+
+        // ── Color helpers ────────────────────────────────────────────────
+        function statusColor(s) {
+            return s === 'complete' ? '#4CAF50' : s === 'in_progress' ? '#FF9800' : s === 'available' ? '#2196F3' : '#424242';
+        }
+        function phaseColor(p) {
+            return p === 1 ? 'rgba(255,255,255,0.08)' : p === 2 ? 'rgba(79,195,247,0.08)' : 'rgba(184,90,60,0.08)';
+        }
+        function phaseBorder(p) {
+            return p === 1 ? 'rgba(255,255,255,0.2)' : p === 2 ? 'rgba(79,195,247,0.25)' : 'rgba(184,90,60,0.3)';
+        }
+
+        // ── SVG Setup ────────────────────────────────────────────────────
+        var svg = document.getElementById('tree-svg');
+        var W = window.innerWidth;
+        var H = window.innerHeight;
+        svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+        svg.setAttribute('width', W);
+        svg.setAttribute('height', H);
+
+        // Build adjacency for layout
+        var nodeMap = {};
+        nodes.forEach(function(n, i) {
+            n.index = i;
+            n.vx = 0; n.vy = 0;
+            nodeMap[n.id] = n;
+        });
+
+        // Initialize positions — spread by phase
+        nodes.forEach(function(n) {
+            var phaseX = n.phase === 1 ? W * 0.2 : n.phase === 2 ? W * 0.5 : W * 0.8;
+            n.x = phaseX + (Math.random() - 0.5) * W * 0.25;
+            n.y = H * 0.2 + Math.random() * H * 0.6;
+        });
+
+        // ── Simple force simulation ──────────────────────────────────────
+        var alpha = 1.0;
+        var alphaDecay = 0.005;
+        var alphaMin = 0.01;
+
+        function simulate() {
+            if (alpha < alphaMin) return;
+            alpha *= (1 - alphaDecay);
+
+            // Repulsion between all nodes
+            for (var i = 0; i < nodes.length; i++) {
+                for (var j = i + 1; j < nodes.length; j++) {
+                    var dx = nodes[j].x - nodes[i].x;
+                    var dy = nodes[j].y - nodes[i].y;
+                    var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                    var force = 800 / (dist * dist);
+                    var fx = dx / dist * force * alpha;
+                    var fy = dy / dist * force * alpha;
+                    nodes[i].vx -= fx;
+                    nodes[i].vy -= fy;
+                    nodes[j].vx += fx;
+                    nodes[j].vy += fy;
+                }
+            }
+
+            // Attraction along edges
+            edges.forEach(function(e) {
+                var s = nodeMap[e.s];
+                var t = nodeMap[e.t];
+                if (!s || !t) return;
+                var dx = t.x - s.x;
+                var dy = t.y - s.y;
+                var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                var force = (dist - 140) * 0.02 * alpha;
+                var fx = dx / dist * force;
+                var fy = dy / dist * force;
+                s.vx += fx;
+                s.vy += fy;
+                t.vx -= fx;
+                t.vy -= fy;
+            });
+
+            // Phase clustering — gentle pull toward phase columns
+            nodes.forEach(function(n) {
+                var targetX = n.phase === 1 ? W * 0.18 : n.phase === 2 ? W * 0.5 : W * 0.82;
+                n.vx += (targetX - n.x) * 0.003 * alpha;
+            });
+
+            // Center gravity
+            nodes.forEach(function(n) {
+                n.vx += (W / 2 - n.x) * 0.0005 * alpha;
+                n.vy += (H / 2 - n.y) * 0.001 * alpha;
+            });
+
+            // Apply velocity with damping
+            nodes.forEach(function(n) {
+                n.vx *= 0.85;
+                n.vy *= 0.85;
+                n.x += n.vx;
+                n.y += n.vy;
+
+                // Bounds
+                n.x = Math.max(80, Math.min(W - 80, n.x));
+                n.y = Math.max(70, Math.min(H - 50, n.y));
+            });
+        }
+
+        // Run simulation for stabilization
+        for (var step = 0; step < 300; step++) {
+            simulate();
+        }
+
+        // ── Defs ─────────────────────────────────────────────────────────
+        var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        defs.innerHTML =
+            '<filter id="glow" x="-50%" y="-50%" width="200%" height="200%">' +
+            '<feGaussianBlur stdDeviation="3" result="b"/>' +
+            '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>' +
+            '</filter>' +
+            '<marker id="arrow" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">' +
+            '<path d="M0,0 L6,2 L0,4" fill="rgba(79,195,247,0.25)"/>' +
+            '</marker>';
+        svg.appendChild(defs);
+
+        // ── Draw edges ───────────────────────────────────────────────────
+        var edgeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        edges.forEach(function(e) {
+            var s = nodeMap[e.s];
+            var t = nodeMap[e.t];
+            if (!s || !t) return;
+            var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', s.x);
+            line.setAttribute('y1', s.y);
+            line.setAttribute('x2', t.x);
+            line.setAttribute('y2', t.y);
+            line.setAttribute('stroke', 'rgba(79,195,247,0.12)');
+            line.setAttribute('stroke-width', '1.2');
+            line.setAttribute('marker-end', 'url(#arrow)');
+            edgeGroup.appendChild(line);
+        });
+        svg.appendChild(edgeGroup);
+
+        // ── Draw nodes ───────────────────────────────────────────────────
+        var nodeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        var tooltip = document.getElementById('tooltip');
+        var ttName = document.getElementById('tt-name');
+        var ttDesc = document.getElementById('tt-desc');
+        var ttMeta = document.getElementById('tt-meta');
+
+        nodes.forEach(function(node) {
+            var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.style.cursor = 'pointer';
+
+            var r = node.id === 'core-sdk' ? 24 : (node.id.startsWith('specs') ? 16 : 18);
+
+            // Phase background glow
+            var bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            bg.setAttribute('cx', node.x);
+            bg.setAttribute('cy', node.y);
+            bg.setAttribute('r', r + 8);
+            bg.setAttribute('fill', phaseColor(node.phase));
+            bg.setAttribute('stroke', phaseBorder(node.phase));
+            bg.setAttribute('stroke-width', '0.5');
+            g.appendChild(bg);
+
+            // Main node circle
+            var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', node.x);
+            circle.setAttribute('cy', node.y);
+            circle.setAttribute('r', r);
+            circle.setAttribute('fill', 'rgba(13,27,42,0.85)');
+            circle.setAttribute('stroke', statusColor(node.status));
+            circle.setAttribute('stroke-width', node.status === 'complete' ? '2.5' : '1.8');
+            if (node.status === 'in_progress') {
+                circle.setAttribute('stroke-dasharray', '5 3');
+            }
+            if (node.status === 'complete') {
+                circle.setAttribute('filter', 'url(#glow)');
+            }
+            g.appendChild(circle);
+
+            // Status indicator dot
+            var dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            dot.setAttribute('cx', node.x);
+            dot.setAttribute('cy', node.y);
+            dot.setAttribute('r', '4');
+            dot.setAttribute('fill', statusColor(node.status));
+            dot.setAttribute('opacity', node.status === 'complete' ? '0.9' : '0.6');
+            g.appendChild(dot);
+
+            // Label
+            var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', node.x);
+            text.setAttribute('y', node.y + r + 14);
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('fill', 'rgba(232,226,222,0.65)');
+            text.setAttribute('font-size', node.id === 'core-sdk' ? '11' : '9');
+            text.setAttribute('font-family', "'Segoe UI', system-ui, sans-serif");
+            text.setAttribute('font-weight', '500');
+            text.textContent = node.name;
+            g.appendChild(text);
+
+            // Hover
+            g.addEventListener('mouseenter', function(ev) {
+                ttName.textContent = node.name;
+                ttDesc.textContent = node.desc;
+                ttMeta.textContent = 'Phase ' + node.phase + ' | Status: ' + node.status;
+                tooltip.classList.add('visible');
+                circle.setAttribute('stroke-width', '3.5');
+            });
+            g.addEventListener('mousemove', function(ev) {
+                tooltip.style.left = (ev.clientX + 16) + 'px';
+                tooltip.style.top = (ev.clientY - 10) + 'px';
+            });
+            g.addEventListener('mouseleave', function() {
+                tooltip.classList.remove('visible');
+                circle.setAttribute('stroke-width', node.status === 'complete' ? '2.5' : '1.8');
+            });
+
+            nodeGroup.appendChild(g);
+        });
+        svg.appendChild(nodeGroup);
+
+        // ── Slow drift animation ─────────────────────────────────────────
+        var flowOffset = 0;
+        function drift() {
+            flowOffset += 0.3;
+            var lines = edgeGroup.querySelectorAll('line');
+            lines.forEach(function(l) {
+                l.setAttribute('stroke-dasharray', '4 6');
+                l.setAttribute('stroke-dashoffset', flowOffset);
+            });
+            requestAnimationFrame(drift);
+        }
+        drift();
+
+        // ── Resize ───────────────────────────────────────────────────────
+        window.addEventListener('resize', function() {
+            W = window.innerWidth;
+            H = window.innerHeight;
+            svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+            svg.setAttribute('width', W);
+            svg.setAttribute('height', H);
+        });
+
+    })();
+    </script>
+</body>
+</html>

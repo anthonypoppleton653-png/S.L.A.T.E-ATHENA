@@ -57,4 +57,4 @@
 <!-- Any additional context or screenshots -->
 
 ---
-*By submitting this PR, I confirm that my contribution is made under the MIT license and I have the right to submit it.*
+*By submitting this PR, I confirm that my contribution is made under the [EOSL-1.0 License](LICENSE) and I have the right to submit it. I understand that the EOSL-1.0 includes fair compensation provisions for contributors when commercial revenue thresholds are met (see [CONTRIBUTORS.md](CONTRIBUTORS.md)).*

@@ -1,0 +1,44 @@
+{
+  "last_run": "2026-02-09T17:55:52.283726+00:00",
+  "upstream_commits": {
+    "github/spec-kit": {
+      "tracked_since": "2026-02-08",
+      "submodule_path": "vendor/spec-kit",
+      "fork_url": "https://github.com/SynchronizedLivingArchitecture/spec-kit",
+      "upstream_url": "https://github.com/github/spec-kit",
+      "installed_version": "0.0.22",
+      "integration": {
+        "commands_copied": [
+          ".claude/commands/speckit.specify.md",
+          ".claude/commands/speckit.plan.md",
+          ".claude/commands/speckit.tasks.md",
+          ".claude/commands/speckit.implement.md",
+          ".claude/commands/speckit.constitution.md",
+          ".claude/commands/speckit.clarify.md",
+          ".claude/commands/speckit.analyze.md",
+          ".claude/commands/speckit.checklist.md"
+        ],
+        "templates_path": ".specify/templates/",
+        "scripts_path": ".specify/scripts/",
+        "cli_command": "specify"
+      }
+    },
+    "discord/embedded-app-sdk": {
+      "tracked_since": "2026-02-09",
+      "submodule_path": null,
+      "fork_url": "https://github.com/SynchronizedLivingArchitecture/embedded-app-sdk",
+      "upstream_url": "https://github.com/discord/embedded-app-sdk",
+      "installed_version": null,
+      "license": "MIT",
+      "integration": {
+        "purpose": "Discord Embedded App SDK for rich activity integrations and notifications",
+        "integration_files": [
+          "slate/slate_discord.py"
+        ],
+        "status": "tracked"
+      }
+    }
+  },
+  "downstream_forks": [],
+  "pending_actions": []
+}

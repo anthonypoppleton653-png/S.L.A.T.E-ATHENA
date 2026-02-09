@@ -1,0 +1,109 @@
+{{/* Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Create Helm template for Actions Runner Controller */}}
+{{- if .Values.actionsRunner.enabled }}
+---
+# Runner ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: slate-runner
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: runner
+automountServiceAccountToken: true
+
+---
+# RunnerDeployment: GPU Runners
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
+metadata:
+  name: {{ include "slate.fullname" . }}-gpu-runners
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: runner
+spec:
+  replicas: {{ .Values.actionsRunner.replicas }}
+  template:
+    metadata:
+      labels:
+        {{- include "slate.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: runner
+        app.kubernetes.io/part-of: slate-system
+    spec:
+      repository: {{ .Values.actionsRunner.repository }}
+      labels:
+        {{- range .Values.actionsRunner.labels }}
+        - {{ . }}
+        {{- end }}
+        - k8s
+      serviceAccountName: slate-runner
+      containers:
+        - name: runner
+          image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag }}"
+          env:
+            - name: SLATE_WORKSPACE
+              value: /workspace
+            - name: SLATE_K8S
+              value: "true"
+            - name: OLLAMA_HOST
+              value: "{{ include "slate.fullname" . }}-ollama:{{ .Values.ollama.service.port }}"
+            - name: CHROMADB_HOST
+              value: "{{ include "slate.fullname" . }}-chromadb:{{ .Values.chromadb.service.port }}"
+            - name: PYTHONPATH
+              value: /slate:/workspace
+            - name: CUDA_VISIBLE_DEVICES
+              value: "0,1"
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 4Gi
+            limits:
+              cpu: 4000m
+              memory: 16Gi
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: runner-work
+              mountPath: /runner/_work
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: {{ include "slate.fullname" . }}-workspace
+        - name: runner-work
+          emptyDir:
+            sizeLimit: 10Gi
+      {{- if .Values.gpu.enabled }}
+      nodeSelector:
+        {{- toYaml .Values.gpu.nodeSelector | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.gpu.tolerations | nindent 8 }}
+      {{- end }}
+
+---
+# HorizontalRunnerAutoscaler
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: HorizontalRunnerAutoscaler
+metadata:
+  name: {{ include "slate.fullname" . }}-runner-scaler
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    kind: RunnerDeployment
+    name: {{ include "slate.fullname" . }}-gpu-runners
+  minReplicas: 1
+  maxReplicas: {{ .Values.actionsRunner.maxRunners }}
+  scaleUpTriggers:
+    - githubEvent:
+        workflowJob: {}
+      amount: 1
+      duration: "10m"
+  scaleDownDelaySecondsAfterScaleOut: 300
+  metrics:
+    - type: TotalNumberOfQueuedAndInProgressWorkflowRuns
+      repositoryNames:
+        - {{ .Values.actionsRunner.repository }}
+{{- end }}

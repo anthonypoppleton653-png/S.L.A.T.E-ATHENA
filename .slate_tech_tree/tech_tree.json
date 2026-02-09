@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0",
-  "last_updated": "2026-02-06T22:45:00Z",
+  "version": "3.1.0",
+  "last_updated": "2026-02-10T12:00:00Z",
   "metadata": {
     "project": "S.L.A.T.E.",
     "description": "Synchronized Living Architecture for Transformation and Evolution",
@@ -38,9 +38,9 @@
     {
       "id": "dashboard",
       "name": "Dashboard",
-      "status": "in_progress",
+      "status": "complete",
       "phase": 1,
-      "description": "Web-based status dashboard with monochrome theme"
+      "description": "Web-based status dashboard with K8s integration"
     },
     {
       "id": "workflow-pipeline",
@@ -52,9 +52,12 @@
     {
       "id": "tech-tree-viz",
       "name": "Tech Tree Visualization",
-      "status": "in_progress",
+      "status": "complete",
       "phase": 1,
-      "description": "D3.js force-directed tech tree"
+      "description": "D3.js force-directed tech tree on GitHub Pages",
+      "paths": [
+        "docs/pages/tech-tree.html"
+      ]
     },
     {
       "id": "docker-infra",
@@ -63,34 +66,50 @@
       "phase": 2,
       "description": "GPU/CPU container images, compose, ghcr.io registry",
       "workflow": "docker.yml",
-      "paths": ["Dockerfile", "Dockerfile.cpu", "docker-compose.yml"]
+      "paths": [
+        "Dockerfile",
+        "Dockerfile.cpu",
+        "docker-compose.yml"
+      ]
     },
     {
       "id": "copilot-dev",
       "name": "Copilot Development",
-      "status": "available",
+      "status": "complete",
       "phase": 2,
-      "description": "GitHub Copilot instructions, prompts, and skills",
+      "description": "GitHub Copilot instructions, prompts, skills, and @slate chat participant",
       "workflow": "ci.yml",
-      "paths": [".github/copilot-instructions.md", ".github/prompts/", "skills/"]
+      "paths": [
+        ".github/copilot-instructions.md",
+        "skills/",
+        "plugins/slate-copilot/"
+      ]
     },
     {
       "id": "claude-dev",
       "name": "Claude Integration",
-      "status": "available",
+      "status": "complete",
       "phase": 2,
-      "description": "Claude Code commands, MCP server, CLAUDE.md",
+      "description": "Claude Code commands, MCP server, CLAUDE.md, plugin SDK",
       "workflow": "ci.yml",
-      "paths": [".claude/commands/", "slate/mcp_server.py", "CLAUDE.md"]
+      "paths": [
+        ".claude/commands/",
+        "slate/mcp_server.py",
+        "plugins/slate-sdk/"
+      ]
     },
     {
       "id": "ui-dev",
       "name": "UI Development",
-      "status": "available",
+      "status": "complete",
       "phase": 2,
-      "description": "Dashboard frontend, tech tree viz, glassmorphism theme",
+      "description": "Dashboard frontend, tech tree viz, glassmorphism theme, design tokens",
       "workflow": "slate.yml",
-      "paths": ["agents/slate_dashboard_server.py", "src/frontend/"]
+      "paths": [
+        "agents/slate_dashboard_server.py",
+        "slate/design_tokens.py",
+        "slate_web/"
+      ]
     },
     {
       "id": "meta-workflow",
@@ -99,32 +118,43 @@
       "phase": 2,
       "description": "Self-managing workflow analyzer and deprecation detection",
       "workflow": "slate.yml",
-      "paths": ["slate/slate_workflow_analyzer.py"]
+      "paths": [
+        "slate/slate_workflow_analyzer.py"
+      ]
     },
     {
       "id": "agent-system",
       "name": "Agent System",
-      "status": "available",
+      "status": "complete",
       "phase": 2,
-      "description": "GitHub Copilot agents (.github/agents/)",
+      "description": "8-agent registry (ALPHA-ZETA, COPILOT, COPILOT_CHAT) with classification and routing",
       "workflow": "ci.yml",
-      "paths": [".github/agents/slate.agent.md"]
+      "paths": [
+        "slate_core/plugins/agent_registry.py",
+        "AGENTS.md"
+      ]
     },
     {
       "id": "uv-migration",
       "name": "UV Package Manager",
-      "status": "available",
+      "status": "complete",
       "phase": 2,
-      "description": "Migrate from pip to UV for faster dependency management",
-      "paths": ["pyproject.toml", "uv.lock"]
+      "description": "UV v0.9.30 integration: slate_uv.py management module, uv.lock (251 packages), 120x speedup over pip (148ms vs 17,767ms), pre-release support for semantic-kernel deps",
+      "paths": [
+        "pyproject.toml",
+        "uv.lock",
+        "slate/slate_uv.py"
+      ]
     },
     {
       "id": "discord-bot",
       "name": "Discord Bot",
-      "status": "available",
+      "status": "complete",
       "phase": 2,
-      "description": "SLATE Discord integration for notifications and commands",
-      "paths": ["slate/discord_bot.py"]
+      "description": "Webhook-based Discord notifications: 4 channels (builds/status/alerts/progress), SLATE brand-colored embeds, rate limiting, event routing, zero-dependency (urllib only), env-var config",
+      "paths": [
+        "slate/slate_discord.py"
+      ]
     },
     {
       "id": "multi-runner",
@@ -133,7 +163,11 @@
       "phase": 2,
       "description": "19 parallel runners across 2 GPUs with resource-aware task distribution",
       "workflow": "multi-runner.yml",
-      "paths": ["slate/slate_multi_runner.py", "slate/slate_runner_benchmark.py", ".slate_runners.json"]
+      "paths": [
+        "slate/slate_multi_runner.py",
+        "slate/slate_runner_benchmark.py",
+        ".slate_runners.json"
+      ]
     },
     {
       "id": "vscode-sdk",
@@ -142,7 +176,11 @@
       "phase": 2,
       "description": "Local VSCode plugins synced to GitHub as complete SDK",
       "workflow": "ci.yml",
-      "paths": ["plugins/slate-copilot/", "plugins/slate-sdk/", ".vscode/"]
+      "paths": [
+        "plugins/slate-copilot/",
+        "plugins/slate-sdk/",
+        ".vscode/"
+      ]
     },
     {
       "id": "schematic-sdk",
@@ -151,29 +189,633 @@
       "phase": 2,
       "description": "Circuit-board style diagram generation for system visualization",
       "workflow": "ci.yml",
-      "paths": ["slate/schematic_sdk/", "specs/011-schematic-diagram-sdk/"]
+      "paths": [
+        "slate/schematic_sdk/",
+        "specs/011-schematic-diagram-sdk/"
+      ]
+    },
+    {
+      "id": "copilot-sdk",
+      "name": "Copilot SDK Integration",
+      "status": "complete",
+      "phase": 2,
+      "description": "GitHub Copilot SDK submodule with 14 SLATE tools, session manager, BYOK providers, MCP configs",
+      "workflow": "ci.yml",
+      "paths": [
+        "vendor/copilot-sdk/",
+        "slate/copilot_sdk_tools.py",
+        "slate/copilot_sdk_session.py",
+        "slate/slate_copilot_sdk_bridge.py"
+      ]
+    },
+    {
+      "id": "autonomous-loop",
+      "name": "Autonomous Task Loop",
+      "status": "complete",
+      "phase": 2,
+      "description": "Unified autonomous loop with 5-source discovery, ML classification, agent routing, self-healing",
+      "workflow": "agentic.yml",
+      "paths": [
+        "slate/slate_unified_autonomous.py",
+        "slate/integrated_autonomous_loop.py",
+        "slate/copilot_slate_runner.py"
+      ]
+    },
+    {
+      "id": "spec-system",
+      "name": "Specification System",
+      "status": "complete",
+      "phase": 2,
+      "description": "Spec-driven development with spec-kit processing, wiki generation, and roadmap tracking",
+      "paths": [
+        "slate/slate_spec_kit.py",
+        "specs/",
+        "docs/wiki/"
+      ]
+    },
+    {
+      "id": "k8s-infra",
+      "name": "Kubernetes Infrastructure",
+      "status": "complete",
+      "phase": 2,
+      "description": "Kubernetes manifests for SLATE deployment \u00e2\u20ac\u201d namespace, RBAC, deployments, network policies, dashboard service discovery",
+      "paths": [
+        "k8s/",
+        "slate/k8s_entrypoints.py",
+        "slate/k8s_integration.py"
+      ]
+    },
+    {
+      "id": "gpu-manager",
+      "name": "Dual-GPU Manager",
+      "status": "complete",
+      "phase": 2,
+      "description": "Load-balanced dual-GPU management with Ollama model placement and warmup",
+      "paths": [
+        "slate/slate_gpu_manager.py",
+        "slate/slate_warmup.py"
+      ]
+    },
+    {
+      "id": "custom-models",
+      "name": "Custom SLATE Models",
+      "status": "complete",
+      "phase": 2,
+      "description": "Ollama-based custom models: slate-coder (12B), slate-fast (3B), slate-planner (7B)",
+      "paths": [
+        "models/Modelfile.slate-coder",
+        "models/Modelfile.slate-fast",
+        "models/Modelfile.slate-planner",
+        "slate/slate_model_trainer.py"
+      ]
+    },
+    {
+      "id": "fork-sync",
+      "name": "Vendor Fork Sync",
+      "status": "complete",
+      "phase": 2,
+      "description": "Fork management for 16 vendor dependencies: OpenAI agents, Microsoft SK/AutoGen, NVIDIA TensorRT/NeMo, HuggingFace transformers",
+      "paths": [
+        "slate/slate_fork_sync.py",
+        ".gitmodules",
+        "vendor/"
+      ]
+    },
+    {
+      "id": "vendor-integration",
+      "name": "Vendor SDK Integration",
+      "status": "complete",
+      "phase": 2,
+      "description": "Unified SDK integration for 5 vendors: openai-agents, autogen, semantic-kernel, copilot-sdk, spec-kit with import helpers and type bridges",
+      "paths": [
+        "slate/vendor_integration.py",
+        "slate/vendor_agents_sdk.py",
+        "slate/vendor_autogen_sdk.py",
+        "slate/claude_agent_sdk_integration.py"
+      ]
+    },
+    {
+      "id": "spec-015-vendor",
+      "name": "Spec 015: Vendor SDK Integration",
+      "status": "complete",
+      "phase": 2,
+      "description": "Specification for unified vendor SDK integration layer",
+      "paths": [
+        "specs/015-vendor-sdk-integration/"
+      ]
+    },
+    {
+      "id": "spec-016-multirunner",
+      "name": "Spec 016: Multi-Runner System",
+      "status": "complete",
+      "phase": 2,
+      "description": "Specification for parallel runner infrastructure across dual GPUs",
+      "paths": [
+        "specs/016-multi-runner-system/"
+      ]
+    },
+    {
+      "id": "spec-017-claude-sdk",
+      "name": "Spec 017: Claude SDK Integration",
+      "status": "complete",
+      "phase": 2,
+      "description": "Specification for Claude Code plugin and Agent SDK integration",
+      "paths": [
+        "specs/017-claude-sdk-integration/"
+      ]
+    },
+    {
+      "id": "spec-018-k8s",
+      "name": "Spec 018: Kubernetes Infrastructure",
+      "status": "complete",
+      "phase": 2,
+      "description": "Specification for Kubernetes deployment and service orchestration",
+      "paths": [
+        "specs/018-kubernetes-infrastructure/"
+      ]
+    },
+    {
+      "id": "spec-019-gpu-manager",
+      "name": "Spec 019: Dual-GPU Manager",
+      "status": "complete",
+      "phase": 2,
+      "description": "Specification for load-balanced dual-GPU management",
+      "paths": [
+        "specs/019-dual-gpu-manager/"
+      ]
+    },
+    {
+      "id": "spec-020-custom-models",
+      "name": "Spec 020: Custom SLATE Models",
+      "status": "complete",
+      "phase": 2,
+      "description": "Specification for custom Ollama models training and deployment",
+      "paths": [
+        "specs/020-custom-slate-models/"
+      ]
+    },
+    {
+      "id": "spec-021-autonomous",
+      "name": "Spec 021: Autonomous Task Loop",
+      "status": "complete",
+      "phase": 2,
+      "description": "Specification for unified autonomous loop with self-healing capabilities",
+      "paths": [
+        "specs/021-autonomous-task-loop/"
+      ]
+    },
+    {
+      "id": "unified-ai-backend",
+      "name": "Unified AI Backend",
+      "status": "complete",
+      "phase": 2,
+      "description": "Central AI routing with 3 providers: Ollama, Claude Code, Foundry Local. Task classification and failover logic.",
+      "paths": [
+        "slate/unified_ai_backend.py",
+        "prompts/claude-code-inference.prompt.md"
+      ]
+    },
+    {
+      "id": "claude-code-integration",
+      "name": "Claude Code Full Integration",
+      "status": "complete",
+      "phase": 2,
+      "description": "Full Claude Code integration: MCP server (12 tools), plugin manifest, hooks, behaviors, instruction loader, copilot bridge, FORGE.md coordination",
+      "paths": [
+        ".claude-plugin/",
+        ".mcp.json",
+        "slate/mcp_server.py",
+        "slate/instruction_loader.py",
+        "slate/copilot_agent_bridge.py"
+      ]
+    },
+    {
+      "id": "token-system",
+      "name": "Token Management System",
+      "status": "complete",
+      "phase": 2,
+      "description": "Complete local token system: 7 token types, SHA-256 hashed storage, auto-rotation, audit logging, 26 bootstrapped tokens for services/agents/plugins",
+      "paths": [
+        "slate/slate_token_system.py",
+        ".slate_tokens/"
+      ]
+    },
+    {
+      "id": "brand-identity",
+      "name": "Brand Identity System",
+      "status": "complete",
+      "phase": 3,
+      "description": "Complete SLATE brand system: brand engine (slate_brand.py), design tokens (JSON/CSS/Python), 6 logo variants, 2 themes, brand dashboard page, color propagation validation, 18 brand assets, 127/127 tokens synced",
+      "paths": [
+        "specs/022-slate-brand-identity/",
+        ".slate_identity/",
+        "slate/slate_brand.py",
+        "docs/pages/brand.html"
+      ]
+    },
+    {
+      "id": "avatar-system",
+      "name": "SLATE Avatar System",
+      "status": "complete",
+      "phase": 3,
+      "description": "Living avatar system: state engine (slate_avatar.py), 17 nodes/4 rings/22 connections, D3.js orrery visualization, orbital animation, health jewels, evolution levels 1-5, Level 3 achieved at 84.1% completion",
+      "paths": [
+        "specs/023-slate-avatar-system/",
+        "slate/slate_avatar.py",
+        "docs/pages/avatar.html"
+      ]
+    },
+    {
+      "id": "trellis-3d",
+      "name": "TRELLIS.2 3D Integration",
+      "status": "complete",
+      "phase": 3,
+      "description": "TRELLIS.2 4B image-to-3D client (slate_trellis.py), K8s manifest (port 8086), TrellisProvider for unified AI backend, asset management with manifest tracking, NetworkPolicy, PVC storage (16Gi model + 8Gi assets)",
+      "paths": [
+        "specs/024-trellis-3d-integration/",
+        "slate/slate_trellis.py",
+        "k8s/trellis2-generator.yaml"
+      ]
+    },
+    {
+      "id": "graphrag",
+      "name": "GraphRAG Knowledge System",
+      "status": "complete",
+      "phase": 3,
+      "description": "In-memory knowledge graph with JSON persistence: 177 entities (104 modules, 20 specs, 9 services, 44 tech nodes), 141 relations (75 imports, 60 deps, 6 service connections), BFS traversal, hybrid RAG context generation",
+      "paths": [
+        "slate/slate_graphrag.py",
+        ".slate_index/graphrag/"
+      ]
+    },
+    {
+      "id": "prompt-compression",
+      "name": "Prompt Compression (LLMLingua)",
+      "status": "complete",
+      "phase": 3,
+      "description": "Multi-strategy prompt compression engine: whitespace, boilerplate, comments, imports, importance scoring. 4.0x average compression (CLAUDE.md 5.6x, README.md 8.0x). Enables 4x more context within 16GB VRAM inference windows",
+      "paths": [
+        "slate/slate_prompt_compression.py"
+      ]
+    },
+    {
+      "id": "spec-022-brand",
+      "name": "Spec 022: Brand Identity System",
+      "status": "complete",
+      "phase": 3,
+      "description": "Specification for complete SLATE brand identity across all surfaces",
+      "paths": [
+        "specs/022-slate-brand-identity/"
+      ]
+    },
+    {
+      "id": "spec-023-avatar",
+      "name": "Spec 023: Avatar System",
+      "status": "complete",
+      "phase": 3,
+      "description": "Specification for SLATE avatar: 2D orrery + 3D TRELLIS.2 generation",
+      "paths": [
+        "specs/023-slate-avatar-system/"
+      ]
+    },
+    {
+      "id": "spec-024-trellis",
+      "name": "Spec 024: TRELLIS.2 Integration",
+      "status": "complete",
+      "phase": 3,
+      "description": "Specification for Microsoft TRELLIS.2 3D generation as K8s microservice",
+      "paths": [
+        "specs/024-trellis-3d-integration/"
+      ]
+    },
+    {
+      "id": "semantic-kernel",
+      "name": "Semantic Kernel Integration",
+      "status": "complete",
+      "phase": 2,
+      "description": "Microsoft Semantic Kernel v1.39.3 with Ollama connector: chat completion, embeddings, SK function calling, unified AI backend provider",
+      "paths": [
+        "slate/slate_semantic_kernel.py",
+        "vendor/semantic-kernel/"
+      ]
+    },
+    {
+      "id": "github-models",
+      "name": "GitHub Models Integration",
+      "status": "complete",
+      "phase": 2,
+      "description": "GitHub Models local inference: 11 models (GPT-4o, Phi-4, Mistral, Llama, DeepSeek, Cohere), OpenAI-compatible API, throughput benchmarks, SK bridge",
+      "paths": [
+        "slate/slate_github_models.py"
+      ]
+    },
+    {
+      "id": "chromadb",
+      "name": "ChromaDB Vector Store",
+      "status": "complete",
+      "phase": 2,
+      "description": "ChromaDB v1.4.1 vector store: 10K+ embeddings, codebase indexing, semantic search, nomic-embed-text model, telemetry disabled",
+      "paths": [
+        "slate/slate_chromadb.py"
+      ]
+    },
+    {
+      "id": "generative-ui",
+      "name": "Generative UI System",
+      "status": "complete",
+      "phase": 2,
+      "description": "Dashboard generative UI: narrative engine, system schematic generation, step-by-step analysis, tech tree integration, component status visualization",
+      "paths": [
+        "slate/slate_generative_ui.py"
+      ]
+    },
+    {
+      "id": "adaptive-instructions",
+      "name": "Adaptive Instruction Layer",
+      "status": "complete",
+      "phase": 3,
+      "description": "K8s-driven dynamic instruction controller: 6 operating modes (NORMAL/DEGRADED/MAINTENANCE/AUTONOMOUS/EMERGENCY/DEVELOPMENT), ConfigMap source of truth, CronJob sync, agent availability levels, instruction API (port 8085)",
+      "paths": [
+        "slate/adaptive_instructions.py",
+        "k8s/instruction-controller.yaml"
+      ]
+    },
+    {
+      "id": "antigravity-agent",
+      "name": "Antigravity Agent System",
+      "status": "complete",
+      "phase": 3,
+      "description": "Google AI Ultra primary developer agent: GPU energy scheduling, permission gates, token counting, design token propagation (CSS/Python/YAML), agent verification",
+      "paths": [
+        "slate/energy_scheduler.py",
+        "slate/permission_gate.py",
+        "slate/token_counter.py",
+        "slate/token_propagator.py"
+      ]
+    },
+    {
+      "id": "discord-interactive",
+      "name": "Discord Interactive Bot",
+      "status": "complete",
+      "phase": 3,
+      "description": "Full Discord bot with slash commands, security gate (rate limiting, content filtering, role-based access), K8s deployment manifest, 4 command categories (status/workflow/runner/help)",
+      "paths": [
+        "slate/slate_discord_bot.py",
+        "slate/discord_security.py",
+        "k8s/discord-bot.yaml"
+      ]
+    },
+    {
+      "id": "project-boards",
+      "name": "GitHub Projects V2",
+      "status": "complete",
+      "phase": 2,
+      "description": "GitHub Projects V2 integration: 4 boards (KANBAN, Bug Tracking, Iterative Dev, Roadmap), bidirectional task sync, auto-routing by keywords, board processing pipeline",
+      "paths": [
+        "slate/slate_project_board.py"
+      ]
+    },
+    {
+      "id": "copilot-agent-bridge",
+      "name": "Copilot Agent Bridge",
+      "status": "complete",
+      "phase": 2,
+      "description": "Bidirectional IPC bridge between autonomous loop and @slate chat participant: JSON file-based task queue, result reporting, stale cleanup, COPILOT_CHAT agent routing",
+      "paths": [
+        "slate/copilot_agent_bridge.py"
+      ]
+    },
+    {
+      "id": "container-first-ext",
+      "name": "Container-First Extension",
+      "status": "complete",
+      "phase": 3,
+      "description": "@slate VS Code extension v5.1.0: K8s/Docker-only execution (no local fallback), 30 LM tools, Copilot SDK hooks (ActionGuard), runtime adapter, service monitor, 15 source files",
+      "paths": [
+        "plugins/slate-copilot/src/extension.ts",
+        "plugins/slate-copilot/src/slateRuntimeBackend.ts",
+        "plugins/slate-copilot/src/tools.ts"
+      ]
     }
   ],
   "edges": [
-    {"from": "core-sdk", "to": "workflow-system"},
-    {"from": "core-sdk", "to": "mcp-server"},
-    {"from": "workflow-system", "to": "github-runner"},
-    {"from": "workflow-system", "to": "workflow-pipeline"},
-    {"from": "mcp-server", "to": "dashboard"},
-    {"from": "dashboard", "to": "tech-tree-viz"},
-    {"from": "github-runner", "to": "workflow-pipeline"},
-    {"from": "workflow-pipeline", "to": "docker-infra"},
-    {"from": "workflow-pipeline", "to": "meta-workflow"},
-    {"from": "mcp-server", "to": "claude-dev"},
-    {"from": "core-sdk", "to": "copilot-dev"},
-    {"from": "core-sdk", "to": "agent-system"},
-    {"from": "dashboard", "to": "ui-dev"},
-    {"from": "core-sdk", "to": "uv-migration"},
-    {"from": "workflow-pipeline", "to": "discord-bot"},
-    {"from": "github-runner", "to": "multi-runner"},
-    {"from": "core-sdk", "to": "vscode-sdk"},
-    {"from": "multi-runner", "to": "docker-infra"},
-    {"from": "dashboard", "to": "schematic-sdk"},
-    {"from": "ui-dev", "to": "schematic-sdk"}
+    {
+      "from": "core-sdk",
+      "to": "workflow-system"
+    },
+    {
+      "from": "core-sdk",
+      "to": "mcp-server"
+    },
+    {
+      "from": "workflow-system",
+      "to": "github-runner"
+    },
+    {
+      "from": "workflow-system",
+      "to": "workflow-pipeline"
+    },
+    {
+      "from": "mcp-server",
+      "to": "dashboard"
+    },
+    {
+      "from": "dashboard",
+      "to": "tech-tree-viz"
+    },
+    {
+      "from": "github-runner",
+      "to": "workflow-pipeline"
+    },
+    {
+      "from": "workflow-pipeline",
+      "to": "docker-infra"
+    },
+    {
+      "from": "workflow-pipeline",
+      "to": "meta-workflow"
+    },
+    {
+      "from": "mcp-server",
+      "to": "claude-dev"
+    },
+    {
+      "from": "core-sdk",
+      "to": "copilot-dev"
+    },
+    {
+      "from": "core-sdk",
+      "to": "agent-system"
+    },
+    {
+      "from": "dashboard",
+      "to": "ui-dev"
+    },
+    {
+      "from": "core-sdk",
+      "to": "uv-migration"
+    },
+    {
+      "from": "workflow-pipeline",
+      "to": "discord-bot"
+    },
+    {
+      "from": "github-runner",
+      "to": "multi-runner"
+    },
+    {
+      "from": "core-sdk",
+      "to": "vscode-sdk"
+    },
+    {
+      "from": "multi-runner",
+      "to": "docker-infra"
+    },
+    {
+      "from": "dashboard",
+      "to": "schematic-sdk"
+    },
+    {
+      "from": "ui-dev",
+      "to": "schematic-sdk"
+    },
+    {
+      "from": "copilot-dev",
+      "to": "copilot-sdk"
+    },
+    {
+      "from": "vscode-sdk",
+      "to": "copilot-sdk"
+    },
+    {
+      "from": "workflow-pipeline",
+      "to": "autonomous-loop"
+    },
+    {
+      "from": "agent-system",
+      "to": "autonomous-loop"
+    },
+    {
+      "from": "core-sdk",
+      "to": "spec-system"
+    },
+    {
+      "from": "spec-system",
+      "to": "schematic-sdk"
+    },
+    {
+      "from": "docker-infra",
+      "to": "k8s-infra"
+    },
+    {
+      "from": "github-runner",
+      "to": "gpu-manager"
+    },
+    {
+      "from": "gpu-manager",
+      "to": "custom-models"
+    },
+    {
+      "from": "custom-models",
+      "to": "autonomous-loop"
+    },
+    {
+      "from": "core-sdk",
+      "to": "fork-sync"
+    },
+    {
+      "from": "fork-sync",
+      "to": "autonomous-loop"
+    },
+    {
+      "from": "fork-sync",
+      "to": "vendor-integration"
+    },
+    {
+      "from": "vendor-integration",
+      "to": "autonomous-loop"
+    },
+    {
+      "from": "spec-system",
+      "to": "spec-015-vendor"
+    },
+    {
+      "from": "spec-system",
+      "to": "spec-016-multirunner"
+    },
+    {
+      "from": "spec-system",
+      "to": "spec-017-claude-sdk"
+    },
+    {
+      "from": "spec-system",
+      "to": "spec-018-k8s"
+    },
+    {
+      "from": "spec-system",
+      "to": "spec-019-gpu-manager"
+    },
+    {
+      "from": "spec-system",
+      "to": "spec-020-custom-models"
+    },
+    {
+      "from": "spec-system",
+      "to": "spec-021-autonomous"
+    },
+    {
+      "from": "claude-dev",
+      "to": "claude-code-integration"
+    },
+    {
+      "from": "claude-code-integration",
+      "to": "unified-ai-backend"
+    },
+    {
+      "from": "autonomous-loop",
+      "to": "unified-ai-backend"
+    },
+    {
+      "from": "vendor-integration",
+      "to": "unified-ai-backend"
+    },
+    {"from": "core-sdk", "to": "token-system"},
+    {"from": "token-system", "to": "claude-code-integration"},
+    {"from": "spec-system", "to": "spec-022-brand"},
+    {"from": "spec-system", "to": "spec-023-avatar"},
+    {"from": "spec-system", "to": "spec-024-trellis"},
+    {"from": "ui-dev", "to": "brand-identity"},
+    {"from": "spec-022-brand", "to": "brand-identity"},
+    {"from": "brand-identity", "to": "avatar-system"},
+    {"from": "spec-023-avatar", "to": "avatar-system"},
+    {"from": "avatar-system", "to": "trellis-3d"},
+    {"from": "spec-024-trellis", "to": "trellis-3d"},
+    {"from": "k8s-infra", "to": "trellis-3d"},
+    {"from": "gpu-manager", "to": "trellis-3d"},
+    {"from": "fork-sync", "to": "graphrag"},
+    {"from": "unified-ai-backend", "to": "prompt-compression"},
+    {"from": "vendor-integration", "to": "semantic-kernel"},
+    {"from": "semantic-kernel", "to": "unified-ai-backend"},
+    {"from": "semantic-kernel", "to": "github-models"},
+    {"from": "github-models", "to": "unified-ai-backend"},
+    {"from": "custom-models", "to": "chromadb"},
+    {"from": "chromadb", "to": "autonomous-loop"},
+    {"from": "chromadb", "to": "graphrag"},
+    {"from": "ui-dev", "to": "generative-ui"},
+    {"from": "schematic-sdk", "to": "generative-ui"},
+    {"from": "k8s-infra", "to": "adaptive-instructions"},
+    {"from": "agent-system", "to": "adaptive-instructions"},
+    {"from": "adaptive-instructions", "to": "container-first-ext"},
+    {"from": "agent-system", "to": "antigravity-agent"},
+    {"from": "gpu-manager", "to": "antigravity-agent"},
+    {"from": "brand-identity", "to": "antigravity-agent"},
+    {"from": "discord-bot", "to": "discord-interactive"},
+    {"from": "k8s-infra", "to": "discord-interactive"},
+    {"from": "workflow-pipeline", "to": "project-boards"},
+    {"from": "project-boards", "to": "autonomous-loop"},
+    {"from": "autonomous-loop", "to": "copilot-agent-bridge"},
+    {"from": "copilot-sdk", "to": "copilot-agent-bridge"},
+    {"from": "copilot-sdk", "to": "container-first-ext"},
+    {"from": "k8s-infra", "to": "container-first-ext"}
   ]
 }

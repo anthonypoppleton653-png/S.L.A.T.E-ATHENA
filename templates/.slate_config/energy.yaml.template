@@ -1,0 +1,60 @@
+# SLATE Energy-Aware Scheduling Configuration
+# Modified: 2026-02-09T12:39:00-05:00 | Gemini (Antigravity)
+# NOTE: All AIs modifying this file must add a dated comment.
+# ──────────────────────────────────────────────────────────
+# This file is populated during onboarding Phase 7 (Tuning).
+# Users can skip energy configuration entirely.
+# ──────────────────────────────────────────────────────────
+
+energy:
+  enabled: false # Set to true after onboarding energy setup
+
+  # User location (for provider lookup + timezone)
+  location:
+    zip_code: ""
+    timezone: "America/New_York"
+
+  # Electrical provider (populated during onboarding)
+  provider:
+    name: ""
+    plan: ""
+    rates: {}
+
+  # System power draw estimates (watts) — auto-tuned by benchmark
+  power_draw:
+    idle: 120 # System idle
+    single_gpu_inference: 250 # One GPU active
+    dual_gpu_inference: 450 # Both GPUs active
+    full_load: 650 # GPU + CPU + storage heavy
+
+  # Operation scheduling
+  schedule:
+    heavy_operations:
+      prefer: super_off_peak
+      allowed:
+        - super_off_peak
+        - off_peak
+      forbidden:
+        - peak
+
+    normal_operations:
+      prefer: off_peak
+      allowed:
+        - super_off_peak
+        - off_peak
+        - peak
+      forbidden: []
+
+    light_operations:
+      prefer: any
+      allowed:
+        - super_off_peak
+        - off_peak
+        - peak
+      forbidden: []
+
+  # Monthly budget alert
+  budget:
+    monthly_limit_usd: 25.00
+    alert_at_percent: 80
+    hard_cap: false

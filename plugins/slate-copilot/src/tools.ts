@@ -1,4 +1,4 @@
-// Modified: 2026-02-07T06:30:00Z | Author: COPILOT | Change: Add handoff + service control tools, state-aware architecture for adaptive GUI buttons
+// Modified: 2026-02-08T04:00:00Z | Author: COPILOT | Change: Broaden GPU detection beyond RTX — support any NVIDIA/AMD/Intel GPU for end-user installs
 import * as vscode from 'vscode';
 import { execSlateCommand, execSlateCommandLong, execSlateCommandWithTimeout } from './slateRunner';
 
@@ -61,9 +61,9 @@ function updateStateFromOutput(toolName: string, output: string): void {
 		_systemState.runnerOnline = lower.includes('online') || lower.includes('idle') || lower.includes('listening');
 	}
 
-	// GPU detection
+	// GPU detection — detect any NVIDIA/AMD/Intel GPU, not just RTX
 	if (toolName === 'slate_hardwareInfo' || toolName === 'slate_gpuManager') {
-		_systemState.gpuLoaded = lower.includes('rtx') || lower.includes('gpu 0');
+		_systemState.gpuLoaded = lower.includes('gpu') && (lower.includes('cuda') || lower.includes('nvidia') || lower.includes('rtx') || lower.includes('gtx') || lower.includes('geforce') || lower.includes('radeon') || lower.includes('gpu 0'));
 	}
 
 	// Task detection
@@ -101,6 +101,9 @@ interface IAgentStatusParams { action?: string }
 interface IGpuManagerParams { action?: string }
 interface IAutonomousParams { action?: string; max?: number }
 interface ISlateRunProtocolParams { /* no params */ }
+interface ISemanticKernelParams { action?: string; prompt?: string; model?: string }
+// Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Add GitHub Models tool interface
+interface IGitHubModelsParams { action?: string; prompt?: string; model?: string; role?: string }
 interface IHandoffParams { task: string; priority?: string }
 interface IStartServicesParams { services?: string }
 interface IExecuteWorkParams { scope?: string; max?: number }
@@ -112,6 +115,14 @@ interface ISpecKitParams { action?: string; specId?: string }
 interface ILearningParams { action?: string; stepId?: string }
 interface IPlanContextParams { scope?: string }
 interface ICodeGuidanceParams { file?: string; context?: string }
+// Modified: 2026-02-09T04:00:00Z | Author: COPILOT | Change: Add Kubernetes deployment tool interface
+interface IKubernetesParams { action?: string; component?: string; overlay?: string }
+// Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Add Adaptive Instructions tool interface
+interface IAdaptiveInstructionsParams { action?: string }
+// Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add FORGE.md and Prompt Index tool interfaces
+interface IForgeParams { action: string; entry?: string; section?: string; filter?: string }
+interface IPromptIndexParams { action: string; name?: string; prompt?: string; model?: string }
+interface IAdaptiveInstructionsParams { action?: string }
 
 class SystemStatusTool implements vscode.LanguageModelTool<IStatusParams> {
 	async invoke(options: vscode.LanguageModelToolInvocationOptions<IStatusParams>, token: vscode.CancellationToken) {
@@ -274,6 +285,7 @@ class InstallTool implements vscode.LanguageModelTool<IInstallParams> {
 					'- pip dependencies (requirements.txt)\n' +
 					'- PyTorch (GPU-aware)\n' +
 					'- Ollama (local LLM)\n' +
+					'- LM Studio (OpenAI-compatible inference, port 1234)\n' +
 					'- Docker (containerization)\n' +
 					'- VS Code extension\n' +
 					'- SLATE custom models\n' +
@@ -679,7 +691,7 @@ class StartServicesTool implements vscode.LanguageModelTool<IStartServicesParams
 				message: new vscode.MarkdownString(
 					`Start the following services?\n\n` +
 					(target === 'all'
-						? '- Dashboard (127.0.0.1:8080)\n- Orchestrator\n- Copilot Runner'
+						? '- Dashboard (K8s/Docker runtime)\n- Orchestrator\n- Copilot Runner'
 						: `- ${target}`)
 				),
 			},
@@ -1149,7 +1161,191 @@ class CodeGuidanceTool implements vscode.LanguageModelTool<ICodeGuidanceParams> 
 	}
 }
 
+// Modified: 2026-02-08T10:00:00Z | Author: COPILOT | Change: Add Semantic Kernel tool class
+class SemanticKernelTool implements vscode.LanguageModelTool<ISemanticKernelParams> {
+	async invoke(options: vscode.LanguageModelToolInvocationOptions<ISemanticKernelParams>, token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		let cmd = 'slate/slate_semantic_kernel.py';
+		if (action === 'status') {
+			cmd += ' --status';
+		} else if (action === 'plugins') {
+			cmd += ' --plugins';
+		} else if (action === 'benchmark') {
+			cmd += ' --benchmark';
+		} else if (action === 'invoke' && options.input.prompt) {
+			const model = options.input.model ?? 'general';
+			cmd += ` --invoke "${options.input.prompt.replace(/"/g, '\\"')}" --model ${model}`;
+		}
+		const output = await execSlateCommandLong(cmd, token);
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(output)]);
+	}
+
+	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<ISemanticKernelParams>, _token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		return { invocationMessage: `Semantic Kernel: ${action}...` };
+	}
+}
+
 // ─── Registration ───────────────────────────────────────────────────────
+
+// Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Add GitHub Models tool for free-tier cloud inference
+class GitHubModelsTool implements vscode.LanguageModelTool<IGitHubModelsParams> {
+	async invoke(options: vscode.LanguageModelToolInvocationOptions<IGitHubModelsParams>, token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		let cmd = 'slate/slate_github_models.py';
+		if (action === 'status') {
+			cmd += ' --status';
+		} else if (action === 'list') {
+			cmd += ' --list-models';
+		} else if (action === 'benchmark') {
+			cmd += ' --benchmark';
+		} else if (action === 'chat' && options.input.prompt) {
+			const model = options.input.model ?? 'gpt-4o-mini';
+			const role = options.input.role ?? '';
+			cmd += ` --chat "${options.input.prompt.replace(/"/g, '\\"')}" --model ${model}`;
+			if (role) {
+				cmd += ` --role ${role}`;
+			}
+		} else if (action === 'fallback' && options.input.prompt) {
+			cmd += ` --fallback "${options.input.prompt.replace(/"/g, '\\"')}"`;
+			if (options.input.role) {
+				cmd += ` --role ${options.input.role}`;
+			}
+		}
+		const output = await execSlateCommandLong(cmd, token);
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(output)]);
+	}
+
+	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<IGitHubModelsParams>, _token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		return { invocationMessage: `GitHub Models: ${action}...` };
+	}
+}
+
+// Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Add Adaptive Instruction Layer tool — K8s-driven dynamic instructions
+class AdaptiveInstructionsTool implements vscode.LanguageModelTool<IAdaptiveInstructionsParams> {
+	async invoke(options: vscode.LanguageModelToolInvocationOptions<IAdaptiveInstructionsParams>, token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		let cmd = 'slate/adaptive_instructions.py';
+		if (action === 'status') {
+			cmd += ' --status --json';
+		} else if (action === 'evaluate') {
+			cmd += ' --evaluate --json';
+		} else if (action === 'sync') {
+			cmd += ' --sync --json';
+		} else if (action === 'get-context') {
+			cmd += ' --get-context';
+		} else if (action === 'get-active') {
+			cmd += ' --get-active --json';
+		} else if (action === 'apply') {
+			cmd += ' --apply --json';
+		}
+		const output = await execSlateCommandLong(cmd, token);
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(output)]);
+	}
+
+	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<IAdaptiveInstructionsParams>, _token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		return { invocationMessage: `Adaptive Instructions: ${action}...` };
+	}
+}
+
+// Modified: 2026-02-09T04:00:00Z | Author: COPILOT | Change: Add Kubernetes deployment management tool
+class KubernetesTool implements vscode.LanguageModelTool<IKubernetesParams> {
+	async invoke(options: vscode.LanguageModelToolInvocationOptions<IKubernetesParams>, token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		let cmd = 'slate/slate_k8s_deploy.py';
+		if (action === 'status') {
+			cmd += ' --status';
+		} else if (action === 'health') {
+			cmd += ' --health';
+		} else if (action === 'deploy') {
+			cmd += ' --deploy';
+		} else if (action === 'deploy-kustomize' && options.input.overlay) {
+			cmd += ` --deploy-kustomize ${options.input.overlay}`;
+		} else if (action === 'teardown') {
+			cmd += ' --teardown';
+		} else if (action === 'logs' && options.input.component) {
+			cmd += ` --logs ${options.input.component}`;
+		} else if (action === 'port-forward') {
+			cmd += ' --port-forward';
+		} else if (action === 'preload-models') {
+			cmd += ' --preload-models';
+		}
+		const output = await execSlateCommandLong(cmd, token);
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(output)]);
+	}
+
+	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<IKubernetesParams>, _token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'status';
+		return { invocationMessage: `Kubernetes: ${action}...` };
+	}
+}
+
+// ─── FORGE.md Collaborative Log ─────────────────────────────────────────
+// Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add FORGE.md collaborative log tool
+
+class ForgeTool implements vscode.LanguageModelTool<IForgeParams> {
+	async invoke(options: vscode.LanguageModelToolInvocationOptions<IForgeParams>, token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'read';
+		let cmd: string;
+		if (action === 'read') {
+			// Read FORGE.md contents — optionally filter by section
+			const section = options.input.section ? ` --section ${options.input.section}` : '';
+			const filter = options.input.filter ? ` --filter "${options.input.filter}"` : '';
+			cmd = `slate/slate_forge.py --read${section}${filter}`;
+		} else if (action === 'append' && options.input.entry) {
+			// Append a new entry to FORGE.md
+			cmd = `slate/slate_forge.py --append "${options.input.entry}"`;
+		} else if (action === 'status') {
+			cmd = 'slate/slate_forge.py --status';
+		} else if (action === 'sync') {
+			cmd = 'slate/slate_forge.py --sync';
+		} else {
+			cmd = 'slate/slate_forge.py --status';
+		}
+		const output = await execSlateCommand(cmd, token);
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(output)]);
+	}
+
+	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<IForgeParams>, _token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'read';
+		return { invocationMessage: `FORGE.md: ${action}...` };
+	}
+}
+
+// ─── Prompt Index — Query, list, run prompts ────────────────────────────
+// Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add Prompt Index tool for querying/running SLATE prompts
+
+class PromptIndexTool implements vscode.LanguageModelTool<IPromptIndexParams> {
+	async invoke(options: vscode.LanguageModelToolInvocationOptions<IPromptIndexParams>, token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'list';
+		let cmd: string;
+		if (action === 'list') {
+			cmd = 'slate/slate_prompt_runner.py --list';
+		} else if (action === 'get' && options.input.name) {
+			cmd = `slate/slate_prompt_runner.py --get "${options.input.name}"`;
+		} else if (action === 'run' && options.input.name) {
+			const model = options.input.model ? ` --model ${options.input.model}` : '';
+			const prompt = options.input.prompt ? ` --prompt "${options.input.prompt}"` : '';
+			cmd = `slate/slate_prompt_runner.py --run "${options.input.name}"${model}${prompt}`;
+		} else if (action === 'validate') {
+			cmd = 'slate/slate_prompt_runner.py --validate';
+		} else if (action === 'index') {
+			cmd = 'slate/slate_prompt_runner.py --index';
+		} else {
+			cmd = 'slate/slate_prompt_runner.py --list';
+		}
+		const output = await execSlateCommandLong(cmd, token);
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(output)]);
+	}
+
+	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<IPromptIndexParams>, _token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'list';
+		const name = options.input.name ? ` (${options.input.name})` : '';
+		return { invocationMessage: `Prompt Index: ${action}${name}...` };
+	}
+}
 
 export function registerSlateTools(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.lm.registerTool('slate_systemStatus', new SystemStatusTool()));
@@ -1180,4 +1376,17 @@ export function registerSlateTools(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.lm.registerTool('slate_learningProgress', new LearningProgressTool()));
 	context.subscriptions.push(vscode.lm.registerTool('slate_planContext', new PlanContextTool()));
 	context.subscriptions.push(vscode.lm.registerTool('slate_codeGuidance', new CodeGuidanceTool()));
+	// Semantic Kernel integration
+	context.subscriptions.push(vscode.lm.registerTool('slate_semanticKernel', new SemanticKernelTool()));
+	// GitHub Models free-tier cloud inference
+	context.subscriptions.push(vscode.lm.registerTool('slate_githubModels', new GitHubModelsTool()));
+	// Kubernetes deployment management
+	context.subscriptions.push(vscode.lm.registerTool('slate_kubernetes', new KubernetesTool()));
+	// Adaptive Instruction Layer — K8s-driven dynamic instructions
+	// Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Register adaptive instructions tool
+	context.subscriptions.push(vscode.lm.registerTool('slate_adaptiveInstructions', new AdaptiveInstructionsTool()));
+	// FORGE.md collaborative log + Prompt index
+	// Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Register FORGE.md and Prompt Index tools
+	context.subscriptions.push(vscode.lm.registerTool('slate_forge', new ForgeTool()));
+	context.subscriptions.push(vscode.lm.registerTool('slate_promptIndex', new PromptIndexTool()));
 }

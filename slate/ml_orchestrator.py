@@ -25,6 +25,7 @@ Usage:
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -38,6 +39,8 @@ WORKSPACE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(WORKSPACE_ROOT))
 
 OLLAMA_BASE = "http://127.0.0.1:11434"
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio as fallback inference endpoint
+LMSTUDIO_BASE = os.environ.get("LMSTUDIO_HOST", "http://127.0.0.1:1234").rstrip("/")
 
 # Lazy tracer import to avoid circular dependencies
 _tracer = None
@@ -143,7 +146,7 @@ class OllamaClient:
                  temperature: float = 0.7, max_tokens: int = 2048,
                  stream: bool = False, keep_alive: str = "24h") -> dict:
         """Generate text with a model."""
-        # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: Added keep_alive for GPU persistence
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add num_gpu 999 to force all layers to GPU VRAM, never CPU
         data = {
             "model": model,
             "prompt": prompt,
@@ -152,29 +155,102 @@ class OllamaClient:
             "options": {
                 "temperature": temperature,
                 "num_predict": max_tokens,
+                "num_gpu": 999,
             },
         }
         if system:
             data["system"] = system
-        return self._request("/api/generate", data, timeout=300)
+        # Modified: 2026-02-09T09:15:00Z | Author: COPILOT | Change: Increase timeout from 300s to 600s for large spec analysis
+        return self._request("/api/generate", data, timeout=600)
 
     def embed(self, model: str, text: str) -> list[float]:
         """Generate embeddings for text."""
-        # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: Added keep_alive
-        data = {"model": model, "input": text, "keep_alive": "24h"}
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add num_gpu 999 to force embedding layers to GPU VRAM
+        data = {"model": model, "input": text, "keep_alive": "24h", "options": {"num_gpu": 999}}
         result = self._request("/api/embed", data, timeout=60)
         embeddings = result.get("embeddings", [[]])
         return embeddings[0] if embeddings else []
 
     def chat(self, model: str, messages: list[dict], temperature: float = 0.7) -> dict:
         """Chat completion."""
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add num_gpu 999 to force chat layers to GPU VRAM
         data = {
             "model": model,
             "messages": messages,
             "stream": False,
-            "options": {"temperature": temperature},
+            "options": {"temperature": temperature, "num_gpu": 999},
         }
-        return self._request("/api/chat", data, timeout=300)
+        # Modified: 2026-02-09T09:15:00Z | Author: COPILOT | Change: Increase chat timeout from 300s to 600s
+        return self._request("/api/chat", data, timeout=600)
+
+
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LMStudioClient for fallback inference when Ollama is unavailable
+class LMStudioClient:
+    """Client for LM Studio's OpenAI-compatible API. Used as fallback when Ollama is down."""
+
+    def __init__(self, base_url: str = LMSTUDIO_BASE):
+        self.base_url = base_url.rstrip("/")
+
+    def _request(self, path: str, data: dict | None = None, timeout: int = 120) -> dict:
+        """Make a request to LM Studio OpenAI-compatible API."""
+        url = f"{self.base_url}{path}"
+        if data:
+            body = json.dumps(data).encode("utf-8")
+            req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
+        else:
+            req = urllib.request.Request(url)
+        resp = urllib.request.urlopen(req, timeout=timeout)
+        return json.loads(resp.read().decode("utf-8"))
+
+    def is_running(self) -> bool:
+        """Check if LM Studio server is reachable."""
+        try:
+            self._request("/v1/models", timeout=3)
+            return True
+        except Exception:
+            return False
+
+    def list_models(self) -> list[dict]:
+        """List available models via /v1/models."""
+        try:
+            data = self._request("/v1/models", timeout=5)
+            return data.get("data", [])
+        except Exception:
+            return []
+
+    def generate(self, model: str, prompt: str, system: str = "",
+                 temperature: float = 0.7, max_tokens: int = 2048,
+                 **kwargs) -> dict:
+        """Generate text via OpenAI-compatible chat completions."""
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+
+        data = {
+            "model": model if model != "auto" else "",
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": False,
+        }
+        result = self._request("/v1/chat/completions", data, timeout=600)
+        # Convert OpenAI format to Ollama-like response
+        choices = result.get("choices", [{}])
+        content = choices[0].get("message", {}).get("content", "") if choices else ""
+        usage = result.get("usage", {})
+        return {
+            "response": content,
+            "eval_count": usage.get("completion_tokens", 0),
+            "eval_duration": 0,  # Not available in OpenAI format
+        }
+
+    def embed(self, model: str, text: str) -> list[float]:
+        """Generate embeddings via OpenAI-compatible embeddings API."""
+        data = {"model": model if model != "auto" else "", "input": text}
+        result = self._request("/v1/embeddings", data, timeout=60)
+        embeddings_data = result.get("data", [{}])
+        return embeddings_data[0].get("embedding", []) if embeddings_data else []
 
 
 class MLOrchestrator:
@@ -183,6 +259,8 @@ class MLOrchestrator:
     # Modified: 2026-02-07T04:30:00Z | Author: COPILOT | Change: ML orchestrator core
     def __init__(self):
         self.ollama = OllamaClient()
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio fallback client
+        self.lmstudio = LMStudioClient()
         self.workspace = WORKSPACE_ROOT
         self.state = self._load_state()
 
@@ -565,6 +643,10 @@ Categories: implement, test, analyze, integrate, complex"""
         models = self.ollama.list_models() if ollama_running else []
         running = self.ollama.running_models() if ollama_running else []
 
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio status to ML orchestrator
+        lmstudio_running = self.lmstudio.is_running()
+        lmstudio_models = self.lmstudio.list_models() if lmstudio_running else []
+
         # GPU info
         gpu_info = []
         try:
@@ -624,6 +706,12 @@ Categories: implement, test, analyze, integrate, complex"""
             },
             "gpu": gpu_info,
             "pytorch": pytorch_status,
+            # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio info to status output
+            "lmstudio": {
+                "running": lmstudio_running,
+                "models_loaded": len(lmstudio_models),
+                "models": [{"id": m.get("id", "unknown")} for m in lmstudio_models],
+            },
             "stats": {
                 "total_inferences": self.state.get("total_inferences", 0),
                 "total_embeddings": self.state.get("total_embeddings", 0),
@@ -658,6 +746,15 @@ Categories: implement, test, analyze, integrate, complex"""
             print(f"  GPU {g['index']}:     {g['name']}")
             print(f"              Memory: {g['memory_used']} / {g['memory_total']}, Util: {g['utilization']}")
 
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Display LM Studio status in ML orchestrator
+        # LM Studio
+        lms = status.get("lmstudio", {})
+        lms_state = "RUNNING" if lms.get("running") else "STOPPED"
+        print(f"\n  LM Studio:  {lms_state}")
+        if lms.get("models"):
+            for m in lms["models"]:
+                print(f"              - {m['id']}")
+
         # PyTorch
         pt = status["pytorch"]
         if pt["installed"]:
@@ -678,6 +775,33 @@ Categories: implement, test, analyze, integrate, complex"""
             for model, ms in s["model_stats"].items():
                 avg_tps = ms["tokens"] / max(ms["time"], 0.001)
                 print(f"    {model}: {ms['calls']} calls, {ms['tokens']} tokens, {avg_tps:.0f} avg tok/s")
+
+        # Modified: 2026-02-09T05:00:00Z | Author: COPILOT | Change: Add K8s CronJob awareness to ML status
+        try:
+            import subprocess as _sp
+            r = _sp.run(["kubectl", "get", "cronjobs", "-n", "slate", "-o", "json"],
+                        capture_output=True, text=True, timeout=10)
+            if r.returncode == 0:
+                import json as _json
+                cj_data = _json.loads(r.stdout)
+                cj_items = cj_data.get("items", [])
+                ml_cronjobs = [c for c in cj_items if c["metadata"]["name"] in
+                               ("model-trainer", "codebase-indexer", "inference-benchmarks",
+                                "nightly-health", "workflow-cleanup",
+                                "slate-model-trainer", "slate-codebase-indexer",
+                                "slate-inference-benchmarks", "slate-nightly-health",
+                                "slate-workflow-cleanup")]
+                if ml_cronjobs:
+                    print("\n  K8s CronJobs:")
+                    for cj in ml_cronjobs:
+                        name = cj["metadata"]["name"]
+                        schedule = cj["spec"]["schedule"]
+                        suspended = cj["spec"].get("suspend", False)
+                        status_str = "suspended" if suspended else "active"
+                        last_run = cj.get("status", {}).get("lastScheduleTime", "never")
+                        print(f"    {name}: {schedule} ({status_str}, last: {last_run})")
+        except Exception:
+            pass  # K8s not available — skip silently
 
         print("\n" + "=" * 60)
 

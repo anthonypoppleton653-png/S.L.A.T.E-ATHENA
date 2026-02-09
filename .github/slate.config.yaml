@@ -1,5 +1,6 @@
 # SLATE Configuration - AI-Optimized Format
-# Version: 2.1 | Updated: 2026-02-06
+# Version: 2.2 | Updated: 2026-02-08
+# Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Add stable release policy, workflow integration map
 # Format: YAML for minimal token overhead, maximum structure
 
 system:
@@ -8,7 +9,7 @@ system:
   version: 2.4.0
   progress: 92%
   mode: active_development
-  security: local_only  # 127.0.0.1 ONLY
+  security: local_only # 127.0.0.1 ONLY
 
 # GitHub Integration - Dual Repo Setup
 github:
@@ -18,7 +19,7 @@ github:
     repo: S.L.A.T.E.
     url: https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.
     remote_name: origin
-    purpose: main_product  # The public SLATE that users install
+    purpose: main_product # The public SLATE that users install
 
   # SLATE-BETA - Developer's personal fork
   beta:
@@ -26,7 +27,7 @@ github:
     repo: S.L.A.T.E.-BETA
     url: https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.-BETA
     remote_name: beta
-    purpose: dev_fork  # Developer works here, contributes to main
+    purpose: dev_fork # Developer works here, contributes to main
 
   # Workflow: Developer works on BETA → contributes to SLATE (main) → other users fork SLATE
 
@@ -90,16 +91,16 @@ fork_security:
   security_scans:
     - malicious_code_patterns
     - credential_exposure
-    - network_binding_check  # Must be 127.0.0.1
+    - network_binding_check # Must be 127.0.0.1
     - sdk_source_validation
 
   # Dangerous patterns that fail validation
   blocked_patterns:
-    - "0.0.0.0"            # Network binding violation
-    - "eval("              # Code injection risk
-    - "exec(os"            # System command injection
-    - "rm -rf /"           # Destructive command
-    - "base64.b64decode"   # Obfuscation (warning)
+    - "0.0.0.0" # Network binding violation
+    - "eval(" # Code injection risk
+    - "exec(os" # System command injection
+    - "rm -rf /" # Destructive command
+    - "base64.b64decode" # Obfuscation (warning)
 
 # User Fork Management
 fork_manager:
@@ -115,6 +116,75 @@ fork_manager:
     3_validate: "python slate_fork_manager.py --validate"
     4_contribute: "python slate_fork_manager.py --contribute 'branch' --title 'title'"
     5_sync: "python slate_fork_manager.py --sync"
+
+# Modified: 2026-02-08T14:00:00Z | Author: COPILOT | Change: Add copilot-sdk dependency tracking
+# Copilot SDK Dependency (GitHub upstream → SLATE fork → submodule)
+copilot_sdk:
+  upstream: https://github.com/github/copilot-sdk.git
+  fork: https://github.com/SynchronizedLivingArchitecture/copilot-sdk.git
+  submodule_path: vendor/copilot-sdk
+  bridge: slate/slate_copilot_sdk_bridge.py
+  sync_workflow: .github/workflows/sync-copilot-sdk.yml
+  protocol_version: 2
+  components:
+    python:
+      path: vendor/copilot-sdk/python
+      package: github-copilot-sdk
+      imports: [CopilotClient, CopilotSession, define_tool]
+    nodejs:
+      path: vendor/copilot-sdk/nodejs
+      package: "@github/copilot-sdk"
+      version: 0.1.8
+  sync:
+    schedule: "0 6 * * *" # Daily at 06:00 UTC
+    auto_merge_threshold: 5 # Direct push if ≤5 commits
+    pr_labels: [automated, sdk-sync, copilot-sdk]
+
+# Modified: 2026-02-10T06:00:00Z | Author: COPILOT | Change: Add @slate extension v5.1.0 container-first config
+# @slate Extension v5.1.0 — Container-First Architecture
+extension:
+  name: slate-copilot
+  publisher: slate
+  version: 5.1.0
+  execution_mode: container-only # No local Python fallback
+  source_files: 15 # plugins/slate-copilot/src/
+  tool_count: 30 # LanguageModelTool implementations in tools.ts
+
+  backends:
+    kubernetes:
+      priority: 1 # Primary
+      endpoint: "http://127.0.0.1:8083/api/exec"
+      service: copilot-bridge-svc
+    docker:
+      priority: 2 # Secondary
+      container: slate
+      method: "docker exec"
+    local:
+      enabled: false # REMOVED in v5.1.0
+
+  sdk_hooks:
+    file: src/slateAgentSdkHooks.ts
+    hooks:
+      - PreToolUse # ActionGuard validation before execution
+      - PostToolUse # Audit logging after execution
+      - UserPromptSubmit # PII/security scanning
+    commands:
+      - slate.validateToolCall
+      - slate.validateBash
+      - slate.scanPrompt
+
+  service_ports:
+    dashboard: 8080
+    agent_router: 8081
+    autonomous_loop: 8082
+    copilot_bridge: 8083
+    workflow_manager: 8084
+    instruction_controller: 8085
+    metrics: 9090
+    ollama: 11434
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio to service ports config
+    lmstudio: 1234
+    chromadb: 8000
 
 # Release & Package System
 release:
@@ -136,11 +206,11 @@ release:
 # Agents
 # Modified: 2026-02-07T12:00:00Z | Author: COPILOT | Change: Add COPILOT_CHAT agent for @slate participant bridge
 agents:
-  ALPHA: {role: coding, gpu: true}
-  BETA: {role: testing, gpu: true}
-  GAMMA: {role: planning, gpu: false}
-  DELTA: {role: external_bridge, gpu: false}
-  COPILOT_CHAT: {role: chat_participant, gpu: false}
+  ALPHA: { role: coding, gpu: true }
+  BETA: { role: testing, gpu: true }
+  GAMMA: { role: planning, gpu: false }
+  DELTA: { role: external_bridge, gpu: false }
+  COPILOT_CHAT: { role: chat_participant, gpu: false }
 
 # Routing
 routing:
@@ -150,3 +220,284 @@ routing:
   claude|mcp|sdk|integration: DELTA
   diagnose|investigate|troubleshoot|interactive|explain: COPILOT_CHAT
   complex|multi-step: COPILOT
+
+# Modified: 2026-02-07T22:00:00Z | Author: COPILOT | Change: Add participant enforcement and execution routing
+# Participant Enforcement
+participant_routing:
+  # Primary execution interface — participants FIRST, terminal as fallback
+  execution_priority:
+    - participant_tool # e.g., slate_workflow, slate_specKit
+    - participant_command # e.g., @slate /status
+    - subagent_delegation # runSubagent with 'slate'
+    - terminal_fallback # ONLY if all participant paths fail
+
+  # Participant assignments
+  participants:
+    slate:
+      extension: slate.slate-copilot
+      version: 5.1.0 # Container-first, no local fallback
+      scope:
+        [
+          system,
+          runner,
+          ci,
+          gpu,
+          orchestrator,
+          specs,
+          agents,
+          benchmarks,
+          workflows,
+          kubernetes,
+          adaptive-instructions,
+        ]
+      tools:
+        [
+          slate_systemStatus,
+          slate_runtimeCheck,
+          slate_hardwareInfo,
+          slate_runnerStatus,
+          slate_orchestrator,
+          slate_workflow,
+          slate_benchmark,
+          slate_runCommand,
+          slate_install,
+          slate_update,
+          slate_checkDeps,
+          slate_forkCheck,
+          slate_securityAudit,
+          slate_agentStatus,
+          slate_gpuManager,
+          slate_autonomous,
+          slate_runProtocol,
+          slate_handoff,
+          slate_executeWork,
+          slate_startServices,
+          slate_agentBridge,
+          slate_devCycle,
+          slate_specKit,
+          slate_learningProgress,
+          slate_planContext,
+          slate_codeGuidance,
+          slate_semanticKernel,
+          slate_githubModels,
+          slate_adaptiveInstructions,
+          slate_kubernetes,
+        ]
+
+    vscode:
+      extension: built-in
+      scope: [files, settings, extensions, debugging, editor]
+
+  # Subagent routing with participant enforcement
+  subagent_participants:
+    slate: "@slate" # System health, runner, CI, specs, agents
+    Plan: null # Planning agent — no participant
+
+  # Spec-Kit mandate — all spec processing goes through slate_specKit
+  spec_kit:
+    tool: slate_specKit
+    command: "@slate /specs"
+    fallback: "python slate/slate_spec_kit.py"
+    enforce: true # NEVER bypass spec-kit for spec work
+
+# Document Evolution
+document_rules:
+  mode: append_only
+  require_timestamps: true
+  allow_deletions: false
+  deprecation_marker: "# DEPRECATED:"
+  governed_files:
+    - .github/copilot-instructions.md
+    - AGENTS.md
+    - .github/slate.config.yaml
+
+# Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Add stable release policy
+# Stable Release Policy
+# The "stable" channel is the SINGLE SOURCE OF TRUTH for install_slate.py --update
+# A version MUST pass the full validation pipeline before being locked as stable.
+stable_release:
+  manager: slate/slate_release_manager.py
+  live_update: slate/slate_live_update.py
+  state_file: .slate_release_state.json
+  deploy_state_file: .slate_deploy_state.json
+
+  channels:
+    stable:
+      description: "Production-ready, CI/CD passed, GPU validated"
+      tag_pattern: "v*.*.*"
+      requires_validation: true
+      requires_gpu_check: true
+      requires_docker_build: true
+    beta:
+      description: "Feature-complete, needs broader validation"
+      tag_pattern: "v*.*.*-beta.*"
+      requires_validation: true
+      requires_gpu_check: false
+    nightly:
+      description: "Auto-built from main, not tagged"
+      requires_validation: false
+
+  validation_pipeline:
+    - name: "CI Tests"
+      command: "python -m pytest tests/ -v --tb=short"
+      critical: true
+    - name: "System Health"
+      command: "python slate/slate_status.py --quick"
+      critical: true
+    - name: "Runtime Integrations"
+      command: "python slate/slate_runtime.py --check-all"
+      critical: true
+    - name: "Security Guards"
+      command: "python -c 'from slate.action_guard import ActionGuard; ActionGuard()'"
+      critical: true
+    - name: "SDK Bridge"
+      command: "python slate/slate_copilot_sdk_bridge.py --check"
+      critical: false
+    - name: "Install Script"
+      command: "python install_slate.py --check"
+      critical: true
+    - name: "Docker Compose Validity"
+      command: 'python -c ''import yaml; yaml.safe_load(open("docker-compose.yml"))'''
+      critical: false
+
+  deploy:
+    strategy: rolling # zero-downtime rolling updates
+    rollback: automatic # auto-rollback on health check failure
+    health_check_interval: 5 # seconds between health checks
+    max_health_retries: 12 # 60 seconds total health check window
+    components:
+      - git_repo
+      - dependencies
+      - python_services
+      - docker_containers
+      - ai_models
+
+# Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Add workflow integration map
+# Workflow Integration Map
+# Defines how all 28+ GitHub Actions workflows relate to each other.
+# Reference: https://github.com/features/actions
+workflow_integration:
+  primary_pipeline: stable-release.yml # MASTER pipeline — coordinates all others
+
+  # Pipeline chain: CI → Stable Release → CD → Docker → Deploy
+  chains:
+    release:
+      - ci.yml # Gate: tests, lint, security
+      - stable-release.yml # Coordinate: validate → build → deploy → lock
+      - cd.yml # Build: EXE, packages
+      - docker.yml # Build: container images
+      - release.yml # Publish: GitHub Release (manual fallback)
+
+    quality:
+      - ci.yml # On every push/PR
+      - pr.yml # PR-specific checks
+      - codeql.yml # Security analysis
+      - nightly.yml # Full test suite + release health
+
+    ai_inference:
+      - agentic.yml # Autonomous agent loop (every 4h)
+      - ai-maintenance.yml # Codebase analysis (every 4h)
+      - ai-training.yml # Weekly model training
+      - git-intelligence.yml # Weekly repo analysis
+
+    operations:
+      - service-management.yml # Service lifecycle (every 15min health)
+      - runner-check.yml # Runner selection (reusable)
+      - multi-runner.yml # Parallel runner proof
+      - fork-sync.yml # Dependency fork sync (daily)
+      - sync-copilot-sdk.yml # Copilot SDK sync (daily)
+      - dependency-update.yml # Pip dependency updates (weekly)
+      # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s workflow to operations chain
+      - k8s.yml # Kubernetes deployment management
+
+    community:
+      - fork-validation.yml # Fork PR security
+      - contributor-pr.yml # External contributor PRs
+      - discussion-automation.yml # Discussion management
+      - project-automation.yml # KANBAN board sync
+      - stale.yml # Stale issue/PR management
+      - label-sync.yml # Label consistency
+      - dependabot-auto-merge.yml # Dependabot auto-merge
+
+    # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s deployment chain
+    kubernetes:
+      - docker.yml # Build: container images first
+      - k8s.yml # Deploy: apply manifests to cluster
+
+    docs:
+      - docs.yml # Documentation validation
+      - pages.yml # GitHub Pages deployment (ubuntu-latest)
+
+    # Modified: 2026-02-09T04:25:00Z | Author: Gemini | Change: Add workflow-hub automation chain
+    automation:
+      - workflow-hub.yml # Central AI automation hub (docs, pages, research, planning)
+      - docs.yml # Documentation validation
+      - pages.yml # GitHub Pages deployment
+      - ai-maintenance.yml # Codebase analysis
+
+  # GitHub-hosted vs self-hosted classification
+  runner_types:
+    self_hosted: # All SLATE core workflows — FREE, local GPU access
+      - ci.yml
+      - cd.yml
+      - slate.yml
+      - stable-release.yml
+      - agentic.yml
+      - nightly.yml
+      - codeql.yml
+      - pr.yml
+      - docs.yml
+      - docker.yml
+      - release.yml
+      - ai-maintenance.yml
+      - ai-training.yml
+      - service-management.yml
+      - fork-sync.yml
+      - sync-copilot-sdk.yml
+      - fork-intelligence.yml
+      - git-intelligence.yml
+      - multi-runner.yml
+      - fork-validation.yml
+      - contributor-pr.yml
+      - discussion-automation.yml
+      - project-automation.yml
+      - stale.yml
+      - label-sync.yml
+      - dependabot-auto-merge.yml
+      - dependency-update.yml
+      # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s to self-hosted runners
+      - k8s.yml
+      # Modified: 2026-02-09T04:25:00Z | Author: Gemini | Change: Add workflow-hub to self-hosted runners
+      - workflow-hub.yml
+
+    github_hosted: # Only for operations that MUST run on GitHub infra
+      - pages.yml # GitHub Pages requires ubuntu-latest
+      - runner-check.yml # Checks runner availability from external perspective
+
+  # Schedule coordination — avoid overlaps
+  schedules:
+    # Every 15 minutes:
+    "*/15 * * * *": [service-management.yml]
+    # Every 30 minutes:
+    "*/30 * * * *": [project-automation.yml]
+    # Hourly:
+    "0 * * * *": [discussion-automation.yml]
+    # Every 4 hours:
+    "0 */4 * * *": [agentic.yml, ai-maintenance.yml]
+    # Every 6 hours:
+    # Modified: 2026-02-09T04:25:00Z | Author: Gemini | Change: Add workflow-hub to 6-hour schedule
+    "0 */6 * * *": [fork-intelligence.yml, workflow-hub.yml]
+    # Daily 03:30 UTC:
+    "30 3 * * *": [stable-release.yml]
+    # Daily 04:00 UTC:
+    "0 4 * * *": [nightly.yml]
+    # Daily 06:00 UTC:
+    "0 6 * * *": [stale.yml, sync-copilot-sdk.yml]
+    # Daily 07:00 UTC:
+    "0 7 * * *": [fork-sync.yml]
+    # Weekly Monday 05:00 UTC:
+    "0 5 * * 1": [git-intelligence.yml, codeql.yml]
+    # Weekly Monday 08:00 UTC:
+    "0 8 * * 1": [dependency-update.yml]
+    # Weekly Sunday 05:00 UTC:
+    "0 5 * * 0": [ai-training.yml]

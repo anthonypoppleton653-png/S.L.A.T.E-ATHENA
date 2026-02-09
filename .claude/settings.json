@@ -1,10 +1,102 @@
 {
-  "extraKnownMarketplaces": {
-    "slate-marketplace": {
-      "source": "."
+  "$schema": "https://claude.ai/schemas/settings.json",
+  "description": "SLATE Claude Code Configuration — Unified Plugin with S.L.A.T.E Mode",
+  "version": "5.3.0",
+  "behavior": {
+    "profile": "slate-operator",
+    "description": "SLATE System Operator with permission bypass and ActionGuard security",
+    "protocolsFile": ".claude/behaviors/slate-protocols.md",
+    "behaviorFile": ".claude/behaviors/slate-operator.md"
+  },
+  "permissions": {
+    "mode": "bypassWithActionGuard",
+    "actionGuardEnabled": true,
+    "confirmDestructive": false,
+    "confirmExternal": false,
+    "allow": [
+      "Bash(*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "Task(*)",
+      "TodoWrite(*)",
+      "mcp__slate__*(*)"
+    ]
+  },
+  "plugins": {
+    "local": {
+      "description": "Local plugin auto-loads from .claude-plugin/ directory at project scope",
+      "autoDetect": true
+    },
+    "marketplace": {
+      "description": "For external installs via /plugin install slate@slate-marketplace",
+      "source": {
+        "type": "github",
+        "repo": "SynchronizedLivingArchitecture/S.L.A.T.E"
+      }
     }
   },
-  "enabledPlugins": {
-    "slate-sdk@slate-marketplace": true
+  "mcpServers": {
+    "slate": {
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": [
+        "${workspaceFolder}/slate/mcp_server.py"
+      ],
+      "env": {
+        "SLATE_WORKSPACE": "${workspaceFolder}",
+        "PYTHONPATH": "${workspaceFolder}",
+        "SLATE_BEHAVIOR": "operator",
+        "SLATE_ACTIONGUARD": "enabled"
+      }
+    }
+  },
+  "tools": {
+    "preferMcp": true,
+    "mcpToolPrefix": "slate_",
+    "allowedTools": [
+      "slate_status",
+      "slate_workflow",
+      "slate_orchestrator",
+      "slate_runner",
+      "slate_ai",
+      "slate_runtime",
+      "slate_hardware",
+      "slate_benchmark",
+      "slate_gpu",
+      "slate_claude_code",
+      "slate_spec_kit",
+      "slate_schematic"
+    ]
+  },
+  "runtime": {
+    "backend": "auto",
+    "k8sEndpoint": "http://127.0.0.1:8083",
+    "dockerContainer": "slate",
+    "healthCheckInterval": 30000
+  },
+  "protocols": {
+    "init": "P001-INIT",
+    "execute": "P002-EXECUTE",
+    "workflow": "P003-WORKFLOW",
+    "gpu": "P004-GPU",
+    "security": "P005-SECURITY",
+    "recovery": "P006-RECOVERY",
+    "code": "P007-CODE",
+    "git": "P008-GIT",
+    "k8s": "P009-K8S",
+    "autonomous": "P010-AUTONOMOUS"
+  },
+  "hooks": {
+    "file": ".claude/hooks.json",
+    "enabled": true
+  },
+  "ui": {
+    "showRuntimeBadge": true,
+    "statusBarEnabled": true,
+    "notifyOnRuntimeChange": true
   }
 }

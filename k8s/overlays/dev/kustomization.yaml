@@ -1,0 +1,95 @@
+# Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Create dev overlay for K8s with agentic system + ML pipeline
+# SLATE Dev Overlay — Kustomize
+#
+# Development environment with:
+#   - Single replica for most services
+#   - GPU passthrough enabled
+#   - Debug logging
+#   - All agentic AI systems active
+#   - ML pipeline CronJobs active (reduced schedule)
+#
+# Deploy:  kubectl apply -k k8s/overlays/dev/
+# Teardown: kubectl delete -k k8s/overlays/dev/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: slate
+
+resources:
+  - ../../namespace.yaml
+  - ../../rbac.yaml
+  - ../../network-policy.yaml
+  - ../../storage.yaml
+  - ../../secrets.yaml
+  - ../../deployments.yaml
+  - ../../hpa-monitoring.yaml
+  - ../../pdb.yaml
+  - ../../agentic-system.yaml
+  - ../../ml-pipeline.yaml
+  - ../../ingress-gpu.yaml
+
+patches:
+  # ── Reduce core replicas for dev ──
+  - target:
+      kind: Deployment
+      name: slate-core
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: slate-core
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: slate
+                env:
+                  - name: SLATE_MODE
+                    value: dev
+                  - name: LOG_LEVEL
+                    value: DEBUG
+                resources:
+                  requests:
+                    cpu: 250m
+                    memory: 512Mi
+                  limits:
+                    cpu: 2000m
+                    memory: 4Gi
+
+  # ── Agent router: single replica in dev ──
+  - target:
+      kind: Deployment
+      name: slate-agent-router
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: slate-agent-router
+      spec:
+        replicas: 1
+
+  # ── Reduce ResourceQuota for dev ──
+  - target:
+      kind: ResourceQuota
+      name: slate-gpu-quota
+    patch: |
+      apiVersion: v1
+      kind: ResourceQuota
+      metadata:
+        name: slate-gpu-quota
+      spec:
+        hard:
+          requests.nvidia.com/gpu: "2"
+          requests.cpu: "8"
+          requests.memory: 24Gi
+          pods: "15"
+
+commonLabels:
+  app.kubernetes.io/managed-by: slate
+  app.kubernetes.io/version: "2.4.0"
+  slate.io/environment: dev
+
+commonAnnotations:
+  slate.io/overlay: dev
+  slate.io/security-policy: restricted

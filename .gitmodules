@@ -1,3 +1,15 @@
-[submodule "models/trellis2"]
-	path = models/trellis2
-	url = https://github.com/microsoft/TRELLIS.2.git
+[submodule "vendor/copilot-sdk"]
+	path = vendor/copilot-sdk
+	url = https://github.com/SynchronizedLivingArchitecture/copilot-sdk.git
+[submodule "vendor/spec-kit"]
+	path = vendor/spec-kit
+	url = https://github.com/SynchronizedLivingArchitecture/spec-kit.git
+[submodule "vendor/openai-agents-python"]
+	path = vendor/openai-agents-python
+	url = https://github.com/SynchronizedLivingArchitecture/openai-agents-python.git
+[submodule "vendor/semantic-kernel"]
+	path = vendor/semantic-kernel
+	url = https://github.com/SynchronizedLivingArchitecture/semantic-kernel.git
+[submodule "vendor/autogen"]
+	path = vendor/autogen
+	url = https://github.com/SynchronizedLivingArchitecture/autogen.git

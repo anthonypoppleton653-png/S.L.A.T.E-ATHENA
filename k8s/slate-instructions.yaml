@@ -1,0 +1,354 @@
+# Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Create ConfigMap for adaptive agent instructions
+# SLATE Instructions ConfigMap
+# =============================
+# Contains all SLATE agent instructions, prompts, and MCP tool definitions.
+# Hot-reloadable: Changes propagate to running pods within ~90 seconds.
+#
+# Usage:
+#   kubectl edit configmap slate-instructions -n slate  # Edit live
+#   kubectl apply -f k8s/slate-instructions.yaml        # Apply from file
+#
+# Mount Path: /config/instructions (read-only)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: slate-instructions
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: instructions
+    app.kubernetes.io/part-of: slate-system
+    app.kubernetes.io/managed-by: slate
+  annotations:
+    slate.io/description: "Adaptive agent instructions - edit to update all agents"
+    slate.io/hot-reload: "true"
+    slate.io/version: "2.4.0"
+data:
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Agent Prompt Definitions (YAML format)
+  # ═══════════════════════════════════════════════════════════════════════════════
+  agent-prompts.yaml: |
+    # SLATE Agent Prompts
+    # Each agent has a specific role and tool access
+    agents:
+      ALPHA:
+        name: slate-alpha
+        display_name: SLATE Alpha (Coder)
+        description: Coding agent - implements features, fixes bugs, builds components. GPU-accelerated.
+        prompt: |
+          You are ALPHA, the SLATE coding agent. You implement code changes, fix bugs,
+          and build new features for the S.L.A.T.E. framework. Use the slate_* tools to
+          check system health before making changes. Always follow SLATE code edit rules:
+          include timestamp+author comments. Local-only operations (127.0.0.1).
+        tools:
+          - slate_system_status
+          - slate_runtime_check
+          - slate_workflow
+          - slate_agent_registry
+          - slate_security_audit
+        gpu_required: true
+
+      BETA:
+        name: slate-beta
+        display_name: SLATE Beta (Tester)
+        description: Testing agent - validates, verifies, runs coverage analysis. GPU-accelerated.
+        prompt: |
+          You are BETA, the SLATE testing agent. You run tests, validate code changes,
+          verify integrations, and analyze test coverage. Use slate_benchmark for performance
+          testing. Ensure all 7 integrations pass before approving changes.
+        tools:
+          - slate_system_status
+          - slate_runtime_check
+          - slate_benchmark
+          - slate_security_audit
+        gpu_required: true
+
+      GAMMA:
+        name: slate-gamma
+        display_name: SLATE Gamma (Planner)
+        description: Planning agent - analyzes, plans, researches, documents. No GPU required.
+        prompt: |
+          You are GAMMA, the SLATE planning agent. You analyze codebases, create plans,
+          research solutions, and produce documentation. Use slate_workflow to manage tasks
+          and slate_chromadb for semantic code search.
+        tools:
+          - slate_system_status
+          - slate_workflow
+          - slate_chromadb
+          - slate_agent_registry
+        gpu_required: false
+
+      DELTA:
+        name: slate-delta
+        display_name: SLATE Delta (Integrator)
+        description: External bridge agent - manages SDK integrations, MCP, Claude. No GPU required.
+        prompt: |
+          You are DELTA, the SLATE integration agent. You manage SDK integrations,
+          MCP server configurations, and external tool bridges. Ensure all connections
+          bind to 127.0.0.1 only. Validate SDK sources against the approved publisher list.
+        tools:
+          - slate_system_status
+          - slate_runtime_check
+          - slate_security_audit
+        gpu_required: false
+
+      COPILOT:
+        name: slate-copilot
+        display_name: SLATE Copilot (Full Orchestration)
+        description: Full orchestration agent with access to all SLATE tools and agents.
+        prompt: |
+          You are the SLATE Copilot, a full-orchestration agent with access to all
+          SLATE subsystems. You can delegate tasks to specialized agents (ALPHA, BETA,
+          GAMMA, DELTA) or execute them directly. Follow SLATE security protocols:
+          local-only (127.0.0.1), ActionGuard validation, SDK Source Guard compliance.
+        tools:
+          - "*"  # All tools
+        gpu_required: false
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # MCP Tool Definitions (YAML format)
+  # ═══════════════════════════════════════════════════════════════════════════════
+  mcp-tools.yaml: |
+    # SLATE MCP Tool Definitions
+    # These are exposed via the MCP server to Claude Code / Copilot
+    tools:
+      - name: slate_status
+        description: Check the status of all SLATE services and system components (GPU, services, workflows)
+        input_schema:
+          type: object
+          properties:
+            format:
+              type: string
+              enum: [quick, json, full]
+              description: "Output format: quick (human readable), json (machine readable), full (detailed)"
+              default: quick
+
+      - name: slate_workflow
+        description: Manage the SLATE task workflow queue - view status, cleanup stale tasks, enforce rules
+        input_schema:
+          type: object
+          properties:
+            action:
+              type: string
+              enum: [status, cleanup, enforce]
+              description: "Action to perform: status (view queue), cleanup (fix stale tasks), enforce (check rules)"
+              default: status
+
+      - name: slate_orchestrator
+        description: Control the SLATE orchestrator - start, stop, or check status of all services
+        input_schema:
+          type: object
+          properties:
+            action:
+              type: string
+              enum: [start, stop, status]
+              description: Action to perform on the orchestrator
+              default: status
+          required: [action]
+
+      - name: slate_runner
+        description: Manage the GitHub Actions self-hosted runner - check status, setup, or dispatch workflows
+        input_schema:
+          type: object
+          properties:
+            action:
+              type: string
+              enum: [status, setup, dispatch]
+              description: Action to perform on the runner
+              default: status
+            workflow:
+              type: string
+              description: Workflow file to dispatch (only used with dispatch action)
+              default: ci.yml
+
+      - name: slate_ai
+        description: Execute AI tasks using SLATE's unified backend (routes to free local LLMs)
+        input_schema:
+          type: object
+          properties:
+            task:
+              type: string
+              description: The AI task to execute
+            check_status:
+              type: boolean
+              description: Check AI backend status instead of executing task
+              default: false
+
+      - name: slate_runtime
+        description: Check all SLATE runtime integrations and dependencies (Python, GPU, PyTorch, Ollama, venv)
+        input_schema:
+          type: object
+          properties:
+            format:
+              type: string
+              enum: [text, json]
+              description: Output format
+              default: text
+
+      - name: slate_hardware
+        description: Detect GPUs and optimize hardware configuration for PyTorch/CUDA
+        input_schema:
+          type: object
+          properties:
+            action:
+              type: string
+              enum: [detect, optimize, install-pytorch]
+              description: "detect: show GPU info, optimize: apply settings, install-pytorch: install correct PyTorch for GPU arch"
+              default: detect
+
+      - name: slate_benchmark
+        description: Run SLATE performance benchmarks (GPU, inference, system throughput)
+        input_schema:
+          type: object
+          properties: {}
+
+      - name: slate_gpu
+        description: Manage dual-GPU load balancing for Ollama LLMs (2x RTX 5070 Ti)
+        input_schema:
+          type: object
+          properties:
+            action:
+              type: string
+              enum: [status, configure, preload]
+              description: "status: show GPU/model placement, configure: set up dual-GPU env, preload: warm models on GPUs"
+              default: status
+
+      - name: slate_claude_code
+        description: Validate and manage Claude Code configuration for SLATE
+        input_schema:
+          type: object
+          properties:
+            action:
+              type: string
+              enum: [validate, report, status, agent-options]
+              description: "validate: run checks, report: full report, status: integration status, agent-options: show Agent SDK config"
+              default: status
+            format:
+              type: string
+              enum: [text, json]
+              description: Output format
+              default: text
+
+      - name: slate_spec_kit
+        description: Process specifications, run AI analysis on sections, and generate wiki pages
+        input_schema:
+          type: object
+          properties:
+            action:
+              type: string
+              enum: [status, process-all, wiki, analyze]
+              description: "status: show spec-kit state, process-all: parse and process all specs, wiki: generate wiki pages, analyze: run AI analysis"
+              default: status
+            format:
+              type: string
+              enum: [text, json]
+              description: Output format
+              default: text
+
+      - name: slate_schematic
+        description: Generate circuit-board style system diagrams and architecture visualizations using SLATE locked theme
+        input_schema:
+          type: object
+          properties:
+            action:
+              type: string
+              enum: [from-system, from-tech-tree, components]
+              description: "from-system: current system state, from-tech-tree: tech tree diagram, components: list available"
+              default: from-system
+            output:
+              type: string
+              description: "Output file path (default: docs/assets/slate-schematic.svg)"
+            theme:
+              type: string
+              enum: [blueprint, dark, light]
+              description: Diagram theme
+              default: blueprint
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Adaptive Instruction Layer — Active State (K8s-driven)
+  # Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Add adaptive instruction state fields
+  # ═══════════════════════════════════════════════════════════════════════════════
+  active-state.yaml: |
+    # This field is DYNAMICALLY UPDATED by the Adaptive Instruction Controller
+    # (slate/adaptive_instructions.py --sync)
+    #
+    # The controller evaluates system state and writes context-aware overrides here.
+    # All K8s pods mount this ConfigMap and react to changes within ~90 seconds.
+    #
+    # DO NOT manually edit this field — it will be overwritten by the controller.
+    mode: "normal"
+    agent_availability: "full"
+    active_protocols:
+      - session_start
+      - code_edit_rules
+      - security_enforcement
+      - document_evolution
+      - k8s_health_gate
+      - k8s_instruction_sync
+    disabled_protocols: []
+    active_tools: []
+    disabled_tools: []
+    agent_routing_overrides: {}
+    priority_directives:
+      - "All systems nominal. Instruction controller active."
+    caution_directives:
+      - "ALL network bindings: 127.0.0.1 ONLY"
+    enforcement_rules:
+      - "All code edits include # Modified: timestamp"
+      - "K8s ConfigMap is the source of truth for adaptive instructions"
+    timestamp: "2026-02-09T06:00:00Z"
+    generated_by: "slate-instruction-controller"
+
+  instruction-block.md: |
+    ## Adaptive Instruction Layer (K8s-Driven)
+    <!-- Generated: 2026-02-09T06:00:00Z | Mode: normal | Availability: full -->
+
+    **System Mode**: [OK] NORMAL
+    **Agent Availability**: full
+    **Instruction Source**: K8s ConfigMap `slate-instructions` in namespace `slate`
+
+    ### Active Directives
+    - All systems nominal. Instruction controller active.
+
+    ### Enforcement Rules (Always Active)
+    - All code edits MUST include: # Modified: YYYY-MM-DDTHH:MM:SSZ | Author: COPILOT | Change: description
+    - K8s ConfigMap is the source of truth for adaptive instructions
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Copilot Session Rules (consumed by @slate extension and copilot-instructions)
+  # Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Add copilot rules section
+  # ═══════════════════════════════════════════════════════════════════════════════
+  copilot-rules.yaml: |
+    # Rules injected into Copilot sessions via the adaptive instruction layer.
+    # The @slate extension reads these and presents them alongside static instructions.
+    session_protocol:
+      - name: k8s_health_gate
+        description: Gate all operations on K8s cluster health before proceeding
+        command: "python slate/adaptive_instructions.py --evaluate --json"
+        required: true
+      - name: instruction_sync
+        description: Sync instructions from K8s ConfigMap at session start
+        command: "python slate/adaptive_instructions.py --get-active --json"
+        required: true
+    tool_routing:
+      primary: "@slate participant tools"
+      fallback: "terminal commands"
+      instruction_source: "k8s:configmap/slate-instructions"
+    adaptive_behaviors:
+      - trigger: "gpu_unavailable"
+        action: "Disable GPU agents (ALPHA, BETA), route to GAMMA/DELTA"
+      - trigger: "ollama_down"
+        action: "Disable local AI inference, suggest restart"
+      - trigger: "k8s_unhealthy"
+        action: "Switch to MAINTENANCE mode, focus on cluster recovery"
+      - trigger: "stale_tasks"
+        action: "Enforce workflow cleanup before new task creation"
+      - trigger: "autonomous_active"
+        action: "Coordinate with autonomous loop, poll agent bridge"
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Version Tracking
+  # ═══════════════════════════════════════════════════════════════════════════════
+  version: "2.4.0"
+  last_updated: "2026-02-09T06:00:00Z"

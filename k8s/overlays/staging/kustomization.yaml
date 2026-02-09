@@ -1,0 +1,133 @@
+# Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Create staging overlay for K8s with production-like config
+# SLATE Staging Overlay — Kustomize
+#
+# Staging environment mimics production:
+#   - Multi-replica for core + agent router
+#   - GPU passthrough enabled (same as prod)
+#   - All agentic systems active
+#   - Full ML pipeline CronJobs active
+#   - Ingress configured (staging subdomain)
+#
+# Deploy:  kubectl apply -k k8s/overlays/staging/
+# Teardown: kubectl delete -k k8s/overlays/staging/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: slate-staging
+
+resources:
+  - ../../namespace.yaml
+  - ../../rbac.yaml
+  - ../../network-policy.yaml
+  - ../../storage.yaml
+  - ../../secrets.yaml
+  - ../../deployments.yaml
+  - ../../hpa-monitoring.yaml
+  - ../../pdb.yaml
+  - ../../agentic-system.yaml
+  - ../../ml-pipeline.yaml
+  - ../../ingress-gpu.yaml
+
+patches:
+  # ── Namespace override for staging ──
+  - target:
+      kind: Namespace
+      name: slate
+    patch: |
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: slate-staging
+        labels:
+          pod-security.kubernetes.io/enforce: restricted
+          pod-security.kubernetes.io/audit: restricted
+          pod-security.kubernetes.io/warn: restricted
+          app.kubernetes.io/part-of: slate
+          slate.io/environment: staging
+
+  # ── Core: 2 replicas, staging mode ──
+  - target:
+      kind: Deployment
+      name: slate-core
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: slate-core
+      spec:
+        replicas: 2
+        template:
+          spec:
+            containers:
+              - name: slate
+                env:
+                  - name: SLATE_MODE
+                    value: staging
+                  - name: LOG_LEVEL
+                    value: INFO
+                resources:
+                  requests:
+                    cpu: 500m
+                    memory: 1Gi
+                  limits:
+                    cpu: 4000m
+                    memory: 8Gi
+
+  # ── Agent router: 2 replicas for staging ──
+  - target:
+      kind: Deployment
+      name: slate-agent-router
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: slate-agent-router
+      spec:
+        replicas: 2
+
+  # ── Ingress: staging host ──
+  - target:
+      kind: Ingress
+      name: slate-ingress
+    patch: |
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: slate-ingress
+      spec:
+        rules:
+          - host: staging.slate.local
+            http:
+              paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: slate-dashboard-svc
+                      port:
+                        number: 8080
+
+  # ── GPU quota: same as prod ──
+  - target:
+      kind: ResourceQuota
+      name: slate-gpu-quota
+    patch: |
+      apiVersion: v1
+      kind: ResourceQuota
+      metadata:
+        name: slate-gpu-quota
+      spec:
+        hard:
+          requests.nvidia.com/gpu: "2"
+          requests.cpu: "16"
+          requests.memory: 48Gi
+          pods: "20"
+
+commonLabels:
+  app.kubernetes.io/managed-by: slate
+  app.kubernetes.io/version: "2.4.0"
+  slate.io/environment: staging
+
+commonAnnotations:
+  slate.io/overlay: staging
+  slate.io/security-policy: restricted

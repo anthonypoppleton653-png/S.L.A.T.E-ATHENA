@@ -1,384 +1,990 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- Modified: 2026-02-06T19:00:00Z | Author: COPILOT | Change: SLATE install progress dashboard -->
+<!-- Modified: 2026-02-08T08:00:00Z | Author: Claude Opus 4.5 | Change: Award-winning visual redesign with glassmorphism, 3D effects, animated traces -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>S.L.A.T.E. — Installation</title>
 <style>
-/* ═══ SLATE Install Dashboard — Dark Glass Theme ═══ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   S.L.A.T.E. INSTALL DASHBOARD — AWARD-WINNING VISUAL DESIGN
+   Inspired by: Awwwards dark mode + glassmorphism + 3D animated shapes
+   Design System: SLATE Watchmaker (Spec 013/014)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 :root {
-  --bg-root: #08090b;
-  --bg-card: #111114;
-  --bg-card-active: #13111f;
-  --bg-glass: rgba(17,17,20,0.85);
-  --border: #1e1e24;
-  --border-active: #a78bfa60;
-  --text: #d4d4d8;
-  --text-dim: #71717a;
-  --text-bright: #fafafa;
-  --accent: #a78bfa;
-  --accent2: #818cf8;
-  --success: #22c55e;
-  --error: #ef4444;
-  --warning: #eab308;
-  --skip: #6b7280;
-  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
+  /* ─── Surfaces — true black with depth layers ─── */
+  --bg-void: #000000;
+  --bg-root: #050505;
+  --bg-surface: #0a0a0a;
+  --bg-elevated: #111111;
+  --bg-glass: rgba(17, 17, 17, 0.75);
+  --bg-glass-hover: rgba(26, 26, 26, 0.85);
+
+  /* ─── Glassmorphism ─── */
+  --glass-blur: blur(24px);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-shine: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%);
+
+  /* ─── Copper/Bronze Primary (Watchmaker) ─── */
+  --copper: #B87333;
+  --copper-light: #D4956B;
+  --copper-dark: #8B5E2B;
+  --copper-glow: rgba(184, 115, 51, 0.4);
+  --copper-subtle: rgba(184, 115, 51, 0.12);
+
+  /* ─── Holographic Accents ─── */
+  --holo-1: #B87333;
+  --holo-2: #7EA8BE;
+  --holo-3: #D4A054;
+  --holo-gradient: linear-gradient(135deg, var(--holo-1), var(--holo-2), var(--holo-3));
+
+  /* ─── Text — warm hierarchy ─── */
+  --text: #F5F0EB;
+  --text-secondary: #CAC4BF;
+  --text-muted: #78716C;
+  --text-disabled: #44403C;
+
+  /* ─── Semantic Status ─── */
+  --success: #22C55E;
+  --success-glow: rgba(34, 197, 94, 0.3);
+  --error: #EF4444;
+  --error-glow: rgba(239, 68, 68, 0.3);
+  --warning: #F59E0B;
+  --warning-glow: rgba(245, 158, 11, 0.3);
+  --info: #7EA8BE;
+
+  /* ─── Typography ─── */
+  --font-display: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+
+  /* ─── Golden Ratio Spacing ─── */
+  --phi: 1.618;
+  --space-1: 5px;
+  --space-2: 8px;
+  --space-3: 13px;
+  --space-4: 21px;
+  --space-5: 34px;
+  --space-6: 55px;
+
+  /* ─── Animation ─── */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --duration-fast: 200ms;
+  --duration-normal: 400ms;
+  --duration-slow: 800ms;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html { font-size: 15px; }
+/* ═══ Reset & Base ═══ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 16px; scroll-behavior: smooth; }
 
 body {
-  background: var(--bg-root);
+  background: var(--bg-void);
   color: var(--text);
-  font-family: var(--font);
+  font-family: var(--font-display);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem 1rem;
+  padding: var(--space-5) var(--space-4);
   overflow-x: hidden;
+  position: relative;
 }
 
-/* ═══ Header ═══ */
-.header {
-  text-align: center;
-  margin-bottom: 2rem;
-  animation: fadeIn 0.6s ease;
+/* ═══ Animated Background System ═══ */
+.bg-system {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
 }
-.header h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 0.25rem;
+
+/* Radial gradient base */
+.bg-system::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(184, 115, 51, 0.15), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(126, 168, 190, 0.08), transparent 40%),
+    radial-gradient(ellipse 50% 30% at 10% 80%, rgba(184, 115, 51, 0.06), transparent 35%);
 }
-.header .version {
-  font-size: 0.8rem;
-  color: var(--text-dim);
-  font-family: var(--mono);
+
+/* Blueprint precision grid */
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(184,115,51,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(184,115,51,0.015) 1px, transparent 1px),
+    linear-gradient(rgba(184,115,51,0.008) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(184,115,51,0.008) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px;
+  mask: radial-gradient(ellipse 100% 70% at 50% 30%, black, transparent);
 }
-.header .subtitle {
-  font-size: 0.9rem;
-  color: var(--text-dim);
-  margin-top: 0.5rem;
+
+/* Animated circuit traces */
+.trace-container {
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+}
+
+.trace {
+  position: absolute;
+  stroke: var(--copper);
+  stroke-width: 1;
+  fill: none;
+  filter: drop-shadow(0 0 3px var(--copper-glow));
+}
+
+.trace-data {
+  stroke-dasharray: 8 4;
+  animation: traceFlow 2s linear infinite;
+}
+
+.trace-signal {
+  stroke-dasharray: 4 2;
+  animation: traceFlow 1.5s linear infinite;
+}
+
+@keyframes traceFlow {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* 3D Floating orbs (glassmorphism spheres) */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15), rgba(255,255,255,0.02) 50%, transparent);
+  backdrop-filter: blur(2px);
+  border: 1px solid rgba(255,255,255,0.05);
+  animation: orbFloat 20s ease-in-out infinite;
+}
+
+.orb-1 { width: 300px; height: 300px; top: -100px; right: -50px; animation-delay: 0s; }
+.orb-2 { width: 200px; height: 200px; bottom: 10%; left: -80px; animation-delay: -7s; }
+.orb-3 { width: 150px; height: 150px; top: 40%; right: 5%; animation-delay: -14s; }
+
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(10px, -20px) scale(1.02); }
+  50% { transform: translate(-5px, 10px) scale(0.98); }
+  75% { transform: translate(15px, 5px) scale(1.01); }
+}
+
+/* Holographic ring */
+.holo-ring {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  top: -200px;
+  right: -200px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent, var(--copper) 10%, transparent 20%, var(--holo-2) 30%, transparent 40%);
+  opacity: 0.1;
+  animation: holoRotate 30s linear infinite;
+  mask: radial-gradient(circle, transparent 45%, black 46%, black 54%, transparent 55%);
+}
+
+@keyframes holoRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ═══ Main Container ═══ */
-.main {
-  max-width: 720px;
+.install-container {
   width: 100%;
+  max-width: 800px;
+  position: relative;
+  z-index: 1;
 }
 
-/* ═══ System Info Bar ═══ */
-.sys-info {
-  display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-  padding: 0.75rem 1rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  margin-bottom: 1.5rem;
-  font-size: 0.78rem;
-  font-family: var(--mono);
-  color: var(--text-dim);
+/* ═══ Hero Header ═══ */
+.hero {
+  text-align: center;
+  margin-bottom: var(--space-5);
+  animation: heroFadeIn 1s var(--ease-out-expo);
 }
-.sys-info .chip {
+
+@keyframes heroFadeIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Animated SLATE logo */
+.logo-container {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto var(--space-4);
+  position: relative;
+}
+
+.logo-glow {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle, var(--copper-glow), transparent 70%);
+  animation: logoGlowPulse 3s ease-in-out infinite;
+}
+
+@keyframes logoGlowPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.logo-svg {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.logo-rays {
+  transform-origin: center;
+  animation: raysRotate 60s linear infinite;
+}
+
+@keyframes raysRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.logo-ray {
+  animation: rayPulse 2s ease-in-out infinite;
+}
+
+.logo-ray:nth-child(odd) { animation-delay: 0s; }
+.logo-ray:nth-child(even) { animation-delay: 1s; }
+
+@keyframes rayPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-1);
+  background: linear-gradient(135deg, var(--copper-light), var(--copper), var(--copper-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 40px var(--copper-glow);
+}
+
+.hero .version {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-3);
+}
+
+.hero .tagline {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ═══ Glass Cards ═══ */
+.glass-card {
+  background: var(--bg-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--duration-normal) var(--ease-out-expo),
+              box-shadow var(--duration-normal) var(--ease-out-expo),
+              border-color var(--duration-normal);
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--glass-shine);
+  pointer-events: none;
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ═══ System Info Panel ═══ */
+.system-panel {
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  animation: slideUp 0.8s var(--ease-out-expo) 0.2s both;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.system-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+}
+
+.chip {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-}
-.sys-info .chip .label { color: var(--text-dim); }
-.sys-info .chip .value { color: var(--text); font-weight: 500; }
-
-/* ═══ Progress Overview ═══ */
-.progress-overview {
-  margin-bottom: 1.5rem;
-}
-.progress-track {
-  height: 6px;
-  background: var(--border);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-}
-.progress-track-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--accent2), var(--success));
-  border-radius: 3px;
-  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  width: 0%;
-}
-.progress-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.78rem;
-  color: var(--text-dim);
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 100px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  transition: all var(--duration-fast);
 }
 
-/* ═══ Steps ═══ */
-.steps-container {
+.chip:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--copper);
+}
+
+.chip-label { color: var(--text-muted); }
+.chip-value { color: var(--text); font-weight: 500; }
+
+/* ═══ Progress Ring ═══ */
+.progress-section {
+  text-align: center;
+  margin-bottom: var(--space-4);
+  animation: slideUp 0.8s var(--ease-out-expo) 0.3s both;
+}
+
+.progress-ring-container {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto var(--space-3);
+}
+
+.progress-ring {
+  transform: rotate(-90deg);
+}
+
+.progress-ring-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 8;
+}
+
+.progress-ring-fill {
+  fill: none;
+  stroke: url(#progressGradient);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 377;
+  stroke-dashoffset: 377;
+  transition: stroke-dashoffset 1s var(--ease-out-expo);
+  filter: drop-shadow(0 0 8px var(--copper-glow));
+}
+
+.progress-center {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  align-items: center;
+  justify-content: center;
 }
+
+.progress-percent {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: var(--holo-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.progress-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ═══ Steps Container ═══ */
+.steps-section {
+  margin-bottom: var(--space-4);
+  animation: slideUp 0.8s var(--ease-out-expo) 0.4s both;
+}
+
+.steps-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.steps-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.steps-title::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--copper);
+  border-radius: 2px;
+  animation: titlePulse 2s ease-in-out infinite;
+}
+
+@keyframes titlePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.steps-count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.steps-list {
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* ═══ Individual Step ═══ */
 .step {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.85rem 1rem;
-  border-radius: 10px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  transition: all 0.35s ease;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  transition: all var(--duration-normal) var(--ease-out-expo);
   position: relative;
-  overflow: hidden;
 }
-.step::before {
+
+.step::after {
   content: '';
   position: absolute;
-  left: 0; top: 0; bottom: 0;
+  left: 0;
+  top: 0;
+  bottom: 0;
   width: 3px;
-  border-radius: 3px 0 0 3px;
+  border-radius: 0 3px 3px 0;
   background: transparent;
-  transition: background 0.3s;
+  transition: background var(--duration-fast);
 }
 
 /* Step states */
 .step.running {
-  border-color: var(--border-active);
-  background: var(--bg-card-active);
-  box-shadow: 0 0 20px rgba(167, 139, 250, 0.06);
+  background: rgba(184, 115, 51, 0.08);
+  border-color: rgba(184, 115, 51, 0.3);
+  box-shadow: 0 0 30px rgba(184, 115, 51, 0.1);
 }
-.step.running::before { background: var(--accent); }
-.step.success::before { background: var(--success); }
-.step.failed::before { background: var(--error); }
-.step.warning::before { background: var(--warning); }
+.step.running::after { background: var(--copper); }
+
+.step.success::after { background: var(--success); }
+.step.failed::after { background: var(--error); }
+.step.warning::after { background: var(--warning); }
 
 /* Step icon */
 .step-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 1.1rem;
+  font-weight: 600;
   flex-shrink: 0;
-  transition: all 0.3s;
+  transition: all var(--duration-normal);
+  position: relative;
 }
-.step-icon.pending { background: #27272a; color: #52525b; }
-.step-icon.running { background: rgba(167,139,250,0.15); color: var(--accent); }
-.step-icon.success { background: rgba(34,197,94,0.12); color: var(--success); }
-.step-icon.failed  { background: rgba(239,68,68,0.12); color: var(--error); }
-.step-icon.warning { background: rgba(234,179,8,0.12); color: var(--warning); }
-.step-icon.skipped { background: #27272a; color: var(--skip); }
 
-/* Pulse animation for running icon */
+.step-icon.pending {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-disabled);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
 .step-icon.running {
-  animation: iconPulse 1.8s cubic-bezier(0.4,0,0.6,1) infinite;
+  background: var(--copper-subtle);
+  color: var(--copper-light);
+  border: 1px solid var(--copper);
+  animation: iconPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--copper-glow); }
+  50% { box-shadow: 0 0 20px 5px var(--copper-glow); }
+}
+
+.step-icon.running .gear {
+  animation: gearSpin 2s linear infinite;
+}
+
+@keyframes gearSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.step-icon.success {
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--success);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.step-icon.failed {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.step-icon.warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.step-icon.skipped {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Step content */
-.step-content { flex: 1; min-width: 0; }
+.step-content {
+  flex: 1;
+  min-width: 0;
+}
+
 .step-name {
   font-weight: 600;
   font-size: 0.9rem;
-  color: var(--text-bright);
+  color: var(--text);
   margin-bottom: 2px;
 }
+
 .step-detail {
   font-size: 0.75rem;
-  color: var(--text-dim);
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .step-detail.error { color: var(--error); }
+.step-detail.success { color: var(--success); }
 
 /* Step progress bar */
 .step-progress {
   height: 3px;
-  background: #27272a;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 2px;
-  margin-top: 6px;
+  margin-top: var(--space-2);
   overflow: hidden;
 }
+
 .step-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  background: linear-gradient(90deg, var(--copper-dark), var(--copper), var(--copper-light));
   border-radius: 2px;
-  transition: width 0.5s ease;
+  transition: width 0.5s var(--ease-out-expo);
+  position: relative;
 }
 
-/* Step duration badge */
+.step-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 50px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
+  animation: progressShine 1.5s ease-in-out infinite;
+}
+
+@keyframes progressShine {
+  0% { transform: translateX(-100%); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+/* Step duration */
 .step-duration {
+  font-family: var(--font-mono);
   font-size: 0.7rem;
-  font-family: var(--mono);
-  color: var(--text-dim);
+  color: var(--text-muted);
+  padding: var(--space-1) var(--space-2);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
   flex-shrink: 0;
-  padding: 0.2rem 0.5rem;
-  background: #1a1a1e;
-  border-radius: 4px;
 }
 
 /* ═══ Summary Card ═══ */
-.summary-card {
-  padding: 1.25rem;
-  border-radius: 10px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  margin-bottom: 1.5rem;
-  transition: border-color 0.3s;
+.summary-section {
+  margin-bottom: var(--space-4);
+  animation: slideUp 0.8s var(--ease-out-expo) 0.5s both;
 }
-.summary-card.complete { border-color: rgba(34,197,94,0.3); }
-.summary-card.failed   { border-color: rgba(239,68,68,0.3); }
 
-.summary-title {
-  font-weight: 600;
-  font-size: 1rem;
-  margin-bottom: 0.5rem;
+.summary-content {
+  padding: var(--space-4);
 }
-.summary-detail {
-  font-size: 0.8rem;
-  color: var(--text-dim);
-  line-height: 1.6;
-}
-.summary-git {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
+
+.summary-status {
   display: flex;
-  gap: 1.5rem;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.summary-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.summary-icon.waiting {
+  background: rgba(255, 255, 255, 0.03);
+  animation: waitingPulse 2s ease-in-out infinite;
+}
+
+@keyframes waitingPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.summary-icon.installing {
+  background: var(--copper-subtle);
+  color: var(--copper-light);
+}
+
+.summary-icon.complete {
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--success);
+}
+
+.summary-icon.failed {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--error);
+}
+
+.summary-text h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.summary-text p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.summary-code {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--copper-light);
+  overflow-x: auto;
+}
+
+.summary-git {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-family: var(--font-mono);
   font-size: 0.75rem;
-  font-family: var(--mono);
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 /* ═══ Log Panel ═══ */
-.log-panel {
-  border-radius: 10px;
-  background: #0a0a0c;
-  border: 1px solid var(--border);
-  overflow: hidden;
+.log-section {
+  animation: slideUp 0.8s var(--ease-out-expo) 0.6s both;
 }
+
 .log-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.65rem 1rem;
-  background: var(--bg-card);
-  border-bottom: 1px solid var(--border);
-  font-size: 0.78rem;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.log-title {
+  font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-dim);
+  color: var(--text);
 }
+
+.log-count {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 100px;
+}
+
 .log-body {
-  max-height: 240px;
+  max-height: 180px;
   overflow-y: auto;
-  padding: 0.75rem 1rem;
-  font-family: var(--mono);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-mono);
   font-size: 0.72rem;
-  line-height: 1.7;
-  color: var(--text-dim);
+  line-height: 1.9;
 }
-.log-body .line { white-space: nowrap; }
-.log-body .line:has(.ok) { color: var(--success); }
-.log-body .line:has(.err) { color: var(--error); }
+
+.log-line {
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+.log-line .ok { color: var(--success); }
+.log-line .err { color: var(--error); }
+.log-line .warn { color: var(--warning); }
+.log-line .time { color: var(--text-disabled); margin-right: var(--space-2); }
 
 /* ═══ Scrollbar ═══ */
-::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-
-/* ═══ Animations ═══ */
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes iconPulse { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(167,139,250,0.3); } 50% { opacity: 0.7; box-shadow: 0 0 0 8px rgba(167,139,250,0); } }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  transition: background var(--duration-fast);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--copper); }
 
 /* ═══ Responsive ═══ */
-@media (max-width: 500px) {
-  html { font-size: 14px; }
-  .sys-info { flex-direction: column; gap: 0.5rem; }
+@media (max-width: 600px) {
+  body { padding: var(--space-3) var(--space-2); }
+
+  .hero h1 { font-size: 1.8rem; }
+
+  .system-chips { flex-direction: column; align-items: stretch; }
+  .chip { justify-content: center; }
+
+  .progress-ring-container { width: 120px; height: 120px; }
+  .progress-percent { font-size: 2rem; }
+
+  .step { padding: var(--space-2); }
+  .step-icon { width: 36px; height: 36px; font-size: 1rem; }
   .step-duration { display: none; }
+
+  .orb-1, .orb-2, .orb-3, .holo-ring { display: none; }
+}
+
+/* ═══ Reduced Motion ═══ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 </style>
 </head>
 <body>
 
-<!-- Header -->
-<div class="header">
-  <h1>S.L.A.T.E.</h1>
-  <div class="version" id="versionBadge">v?.?.?</div>
-  <div class="subtitle">System Learning Agent for Task Execution — Installing</div>
+<!-- Animated Background System -->
+<div class="bg-system" aria-hidden="true">
+  <div class="bg-grid"></div>
+
+  <!-- Floating orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- Holographic ring -->
+  <div class="holo-ring"></div>
+
+  <!-- Circuit traces -->
+  <div class="trace-container">
+    <svg width="100%" height="100%" style="position:absolute;inset:0;">
+      <path class="trace trace-data" d="M 0 200 Q 100 180, 200 200 T 400 180 T 600 200" />
+      <path class="trace trace-signal" d="M 100 400 L 200 400 L 220 380 L 350 380 L 370 400 L 500 400" />
+      <path class="trace trace-data" d="M 50 600 Q 150 580, 250 600 T 450 580" style="animation-delay: -0.5s" />
+      <path class="trace trace-signal" d="M 600 100 L 650 100 L 670 120 L 750 120" style="animation-delay: -1s" />
+      <path class="trace trace-data" d="M 700 300 Q 750 280, 800 300 T 900 280" style="animation-delay: -1.5s" />
+    </svg>
+  </div>
 </div>
 
-<div class="main">
+<!-- Main Content -->
+<div class="install-container">
 
-  <!-- System Info -->
-  <div class="sys-info" id="sysInfo">
-    <div class="chip"><span class="label">Platform:</span> <span class="value" id="siPlatform">—</span></div>
-    <div class="chip"><span class="label">Python:</span> <span class="value" id="siPython">—</span></div>
-    <div class="chip"><span class="label">RAM:</span> <span class="value" id="siRam">—</span></div>
-    <div class="chip"><span class="label">Branch:</span> <span class="value" id="siBranch">—</span></div>
-    <div class="chip"><span class="label">Commit:</span> <span class="value" id="siCommit">—</span></div>
-  </div>
+  <!-- Hero Header -->
+  <header class="hero">
+    <div class="logo-container">
+      <div class="logo-glow"></div>
+      <svg class="logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#D4956B"/>
+            <stop offset="50%" stop-color="#B87333"/>
+            <stop offset="100%" stop-color="#8B5E2B"/>
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
 
-  <!-- Overall Progress -->
-  <div class="progress-overview">
-    <div class="progress-track">
-      <div class="progress-track-fill" id="overallFill"></div>
+        <!-- Rotating rays -->
+        <g class="logo-rays" filter="url(#glow)">
+          <line class="logo-ray" x1="100" y1="100" x2="170" y2="128" stroke="url(#logoGradient)" stroke-width="3" stroke-linecap="round"/>
+          <line class="logo-ray" x1="100" y1="100" x2="124" y2="165" stroke="url(#logoGradient)" stroke-width="3" stroke-linecap="round"/>
+          <line class="logo-ray" x1="100" y1="100" x2="65" y2="168" stroke="url(#logoGradient)" stroke-width="3" stroke-linecap="round"/>
+          <line class="logo-ray" x1="100" y1="100" x2="30" y2="124" stroke="url(#logoGradient)" stroke-width="3" stroke-linecap="round"/>
+          <line class="logo-ray" x1="100" y1="100" x2="30" y2="72" stroke="url(#logoGradient)" stroke-width="3" stroke-linecap="round"/>
+          <line class="logo-ray" x1="100" y1="100" x2="72" y2="32" stroke="url(#logoGradient)" stroke-width="3" stroke-linecap="round"/>
+          <line class="logo-ray" x1="100" y1="100" x2="128" y2="30" stroke="url(#logoGradient)" stroke-width="3" stroke-linecap="round"/>
+          <line class="logo-ray" x1="100" y1="100" x2="165" y2="72" stroke="url(#logoGradient)" stroke-width="3" stroke-linecap="round"/>
+        </g>
+
+        <!-- Center circle -->
+        <circle cx="100" cy="100" r="28" fill="url(#logoGradient)"/>
+        <text x="100" y="100" font-family="'Segoe UI', system-ui" font-size="32" font-weight="800" fill="#0a0a0a" text-anchor="middle" dominant-baseline="central">S</text>
+      </svg>
     </div>
-    <div class="progress-label">
-      <span id="progressText">0 / 10 steps</span>
-      <span id="progressPct">0%</span>
+
+    <h1>S.L.A.T.E.</h1>
+    <div class="version" id="versionBadge">v2.5.0</div>
+    <p class="tagline">Synchronized Living Architecture for Transformation and Evolution</p>
+  </header>
+
+  <!-- System Info Panel -->
+  <div class="glass-card system-panel">
+    <div class="system-chips" id="sysInfo">
+      <div class="chip"><span class="chip-label">Platform</span><span class="chip-value" id="siPlatform">—</span></div>
+      <div class="chip"><span class="chip-label">Python</span><span class="chip-value" id="siPython">—</span></div>
+      <div class="chip"><span class="chip-label">RAM</span><span class="chip-value" id="siRam">—</span></div>
+      <div class="chip"><span class="chip-label">Branch</span><span class="chip-value" id="siBranch">—</span></div>
+      <div class="chip"><span class="chip-label">Commit</span><span class="chip-value" id="siCommit">—</span></div>
     </div>
   </div>
 
-  <!-- Steps -->
-  <div class="steps-container" id="stepsContainer">
-    <!-- populated by JS -->
-  </div>
-
-  <!-- Summary -->
-  <div class="summary-card" id="summaryCard">
-    <div class="summary-title" id="summaryTitle">Waiting for installation...</div>
-    <div class="summary-detail" id="summaryDetail">The SLATE Dashboard is the first system to come online during installation. Once the installer starts, each step will appear here in real-time.</div>
-    <div class="summary-git" id="summaryGit" style="display:none">
-      <span id="gitRemote"></span>
+  <!-- Progress Ring -->
+  <div class="progress-section">
+    <div class="progress-ring-container">
+      <svg class="progress-ring" width="140" height="140" viewBox="0 0 140 140">
+        <defs>
+          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#8B5E2B"/>
+            <stop offset="50%" stop-color="#B87333"/>
+            <stop offset="100%" stop-color="#22C55E"/>
+          </linearGradient>
+        </defs>
+        <circle class="progress-ring-bg" cx="70" cy="70" r="60"/>
+        <circle class="progress-ring-fill" id="progressRing" cx="70" cy="70" r="60"/>
+      </svg>
+      <div class="progress-center">
+        <span class="progress-percent" id="progressPct">0%</span>
+        <span class="progress-label" id="progressText">0 / 0</span>
+      </div>
     </div>
   </div>
 
-  <!-- Log -->
-  <div class="log-panel">
+  <!-- Steps Section -->
+  <div class="glass-card steps-section">
+    <div class="steps-header">
+      <span class="steps-title">Installation Progress</span>
+      <span class="steps-count" id="stepsCount">0 steps</span>
+    </div>
+    <div class="steps-list" id="stepsContainer">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- Summary Section -->
+  <div class="glass-card summary-section" id="summaryCard">
+    <div class="summary-content">
+      <div class="summary-status">
+        <div class="summary-icon waiting" id="summaryIcon">⏳</div>
+        <div class="summary-text">
+          <h2 id="summaryTitle">Waiting for installation...</h2>
+          <p id="summaryDetail">The SLATE Dashboard comes online first. Progress will appear here in real-time.</p>
+        </div>
+      </div>
+      <div class="summary-code" id="summaryCode" style="display:none"></div>
+      <div class="summary-git" id="summaryGit" style="display:none">
+        <span id="gitRemote"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log Panel -->
+  <div class="glass-card log-section">
     <div class="log-header">
-      <span>Install Log</span>
-      <span id="logCount">0 entries</span>
+      <span class="log-title">Install Log</span>
+      <span class="log-count" id="logCount">0 entries</span>
     </div>
     <div class="log-body" id="logBody">
-      <div class="line" style="color:var(--text-dim)">Waiting for install events...</div>
+      <div class="log-line" style="color:var(--text-muted)">Waiting for install events...</div>
     </div>
   </div>
 
 </div>
 
 <script>
-// ═══ SLATE Install Dashboard — Client Logic ═══
+/* ═══════════════════════════════════════════════════════════════════════════
+   S.L.A.T.E. INSTALL DASHBOARD — CLIENT LOGIC
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 const ICONS = {
-  pending: '○', running: '◉', success: '✓',
-  failed: '✗', warning: '⚠', skipped: '–'
+  pending: '○',
+  running: '<span class="gear">⚙</span>',
+  success: '✓',
+  failed: '✗',
+  warning: '⚠',
+  skipped: '–'
 };
 
 let currentState = null;
 let isConnected = false;
 
-// ─── Render Functions ───
+// ─── Progress Ring Animation ───
+function updateProgressRing(percent) {
+  const ring = document.getElementById('progressRing');
+  const circumference = 2 * Math.PI * 60;
+  const offset = circumference - (percent / 100) * circumference;
+  ring.style.strokeDashoffset = offset;
+}
 
+// ─── Render Functions ───
 function renderSysInfo(si, gi) {
   if (si) {
     document.getElementById('siPlatform').textContent = si.platform || '—';
@@ -387,70 +993,92 @@ function renderSysInfo(si, gi) {
   }
   if (gi) {
     document.getElementById('siBranch').textContent = gi.branch || '—';
-    document.getElementById('siCommit').textContent = gi.commit || '—';
+    document.getElementById('siCommit').textContent = gi.commit?.slice(0, 7) || '—';
   }
 }
 
 function renderSteps(steps) {
   const container = document.getElementById('stepsContainer');
-  container.innerHTML = steps.map(s => {
+  container.innerHTML = steps.map((s, i) => {
     const dur = s.duration_ms ? formatDuration(s.duration_ms) : '';
     const detail = s.error || s.details || s.description || '';
-    const detailClass = s.error ? 'error' : '';
+    const detailClass = s.error ? 'error' : (s.status === 'success' ? 'success' : '');
+
     return `
-      <div class="step ${s.status}" data-step="${s.id}">
+      <div class="step ${s.status}" style="animation-delay: ${i * 50}ms">
         <div class="step-icon ${s.status}">${ICONS[s.status] || '○'}</div>
         <div class="step-content">
           <div class="step-name">${s.name}</div>
           <div class="step-detail ${detailClass}">${detail}</div>
-          ${s.status === 'running' ? `<div class="step-progress"><div class="step-progress-fill" style="width:${s.progress_pct || 10}%"></div></div>` : ''}
+          ${s.status === 'running' ? `<div class="step-progress"><div class="step-progress-fill" style="width:${s.progress_pct || 15}%"></div></div>` : ''}
         </div>
         ${dur ? `<div class="step-duration">${dur}</div>` : ''}
       </div>
     `;
   }).join('');
+
+  document.getElementById('stepsCount').textContent = steps.length + ' steps';
 }
 
 function renderOverallProgress(steps) {
   const total = steps.length;
-  const done = steps.filter(s => ['success','warning','skipped'].includes(s.status)).length;
+  const done = steps.filter(s => ['success', 'warning', 'skipped'].includes(s.status)).length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-  document.getElementById('overallFill').style.width = pct + '%';
-  document.getElementById('progressText').textContent = `${done} / ${total} steps`;
+
+  updateProgressRing(pct);
   document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressText').textContent = `${done} / ${total}`;
 }
 
 function renderSummary(st) {
   const card = document.getElementById('summaryCard');
+  const icon = document.getElementById('summaryIcon');
   const title = document.getElementById('summaryTitle');
   const detail = document.getElementById('summaryDetail');
+  const codeBox = document.getElementById('summaryCode');
   const gitDiv = document.getElementById('summaryGit');
 
-  card.className = 'summary-card';
+  // Reset classes
+  icon.className = 'summary-icon';
 
   if (st.status === 'not_started') {
+    icon.classList.add('waiting');
+    icon.innerHTML = '⏳';
     title.textContent = 'Waiting for installation...';
-    detail.textContent = 'The SLATE Dashboard is the first system to come online. Once the installer starts, progress will appear here in real-time.';
+    detail.textContent = 'The SLATE Dashboard comes online first. Progress will appear here in real-time.';
+    codeBox.style.display = 'none';
     return;
   }
+
   if (st.status === 'in_progress') {
+    icon.classList.add('installing');
+    icon.innerHTML = '<span class="gear" style="display:inline-block;animation:gearSpin 2s linear infinite">⚙</span>';
     const current = st.steps.find(s => s.status === 'running');
-    title.innerHTML = '◉ Installing...';
-    detail.textContent = current ? `Current: ${current.name}` : 'Processing...';
+    title.innerHTML = 'Installing SLATE...';
+    detail.textContent = current ? `Currently: ${current.name}` : 'Processing...';
+    codeBox.style.display = 'none';
     return;
   }
+
   if (st.status === 'completed') {
-    card.classList.add('complete');
+    icon.classList.add('complete');
+    icon.innerHTML = '✓';
     const ok = st.steps.filter(s => s.status === 'success').length;
     const warn = st.steps.filter(s => s.status === 'warning').length;
-    title.innerHTML = '<span style="color:var(--success)">✓ Installation Complete</span>';
-    detail.innerHTML = `SLATE v${st.slate_version || '?'} — ${ok} passed` + (warn ? `, ${warn} warnings` : '') + `<br>Ready to use: <code>python slate/slate_status.py --quick</code>`;
+    title.innerHTML = 'Installation Complete';
+    title.style.color = 'var(--success)';
+    detail.innerHTML = `SLATE v${st.slate_version || '?'} installed — ${ok} passed` + (warn ? `, ${warn} warnings` : '');
+    codeBox.style.display = 'block';
+    codeBox.textContent = 'python slate/slate_status.py --quick';
   } else {
-    card.classList.add('failed');
+    icon.classList.add('failed');
+    icon.innerHTML = '✗';
     const fail = st.steps.filter(s => s.status === 'failed').length;
-    title.innerHTML = '<span style="color:var(--error)">✗ Installation Failed</span>';
+    title.innerHTML = 'Installation Failed';
+    title.style.color = 'var(--error)';
     const errors = st.errors || [];
-    detail.innerHTML = `${fail} step(s) failed` + (errors.length ? `: ${errors.map(e=>e.error).join(', ')}` : '');
+    detail.innerHTML = `${fail} step(s) failed` + (errors.length ? `: ${errors.map(e => e.error).join(', ')}` : '');
+    codeBox.style.display = 'none';
   }
 
   // Git info
@@ -464,22 +1092,24 @@ function renderLog(lines) {
   const body = document.getElementById('logBody');
   const count = document.getElementById('logCount');
   if (!lines || lines.length === 0) return;
+
   body.innerHTML = lines.map(l => {
     let cls = '';
     if (l.includes('[OK]') || l.includes('✓')) cls = 'ok';
     if (l.includes('[ERROR]') || l.includes('✗')) cls = 'err';
-    return `<div class="line"><span class="${cls}">${escHtml(l)}</span></div>`;
+    if (l.includes('[WARN]') || l.includes('⚠')) cls = 'warn';
+    return `<div class="log-line"><span class="${cls}">${escHtml(l)}</span></div>`;
   }).join('');
+
   count.textContent = lines.length + ' entries';
   body.scrollTop = body.scrollHeight;
 }
 
 function renderVersion(st) {
-  document.getElementById('versionBadge').textContent = st.slate_version ? `v${st.slate_version}` : 'v?.?.?';
+  document.getElementById('versionBadge').textContent = st.slate_version ? `v${st.slate_version}` : 'v2.5.0';
 }
 
 // ─── Helpers ───
-
 function formatDuration(ms) {
   if (ms < 1000) return ms + 'ms';
   return (ms / 1000).toFixed(1) + 's';
@@ -492,7 +1122,6 @@ function escHtml(s) {
 }
 
 // ─── Data Flow ───
-
 function applyState(st) {
   currentState = st;
   if (st.system_info || st.git_info) renderSysInfo(st.system_info, st.git_info);
@@ -512,16 +1141,15 @@ async function poll() {
       const st = await r.json();
       applyState(st);
     }
-  } catch(e) { /* dashboard not ready yet */ }
+  } catch (e) { /* Dashboard not ready yet */ }
 }
 
 // ─── SSE Connection ───
-
 function connectSSE() {
   let es;
   try {
     es = new EventSource('/api/install/events');
-  } catch(e) {
+  } catch (e) {
     fallbackToPolling();
     return;
   }
@@ -531,11 +1159,10 @@ function connectSSE() {
       const st = JSON.parse(e.data);
       applyState(st);
       isConnected = true;
-    } catch(err) {}
+    } catch (err) {}
   });
 
   es.addEventListener('update', e => {
-    // Re-poll on any update to get fresh state
     poll();
   });
 
@@ -552,19 +1179,16 @@ function fallbackToPolling() {
   setInterval(poll, 2000);
 }
 
-// ─── Init ───
-
-// Initial poll
+// ─── Initialize ───
 poll();
 
-// Try SSE, fall back to polling
 try {
   connectSSE();
-} catch(e) {
+} catch (e) {
   fallbackToPolling();
 }
 
-// Also poll periodically as backup
+// Periodic refresh
 setInterval(poll, 3000);
 </script>
 </body>

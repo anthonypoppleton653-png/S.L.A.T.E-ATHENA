@@ -1,0 +1,9 @@
+{
+  "name": "slate-orchestrator",
+  "displayName": "SLATE Orchestrator",
+  "description": "Control SLATE service lifecycle — start, stop, and check status of dashboard, runner, and monitoring services",
+  "version": "2.4.0",
+  "publisher": "slate",
+  "prompts": ["SKILL.md"],
+  "tools": ["slate_orchestrator"]
+}

@@ -1,6 +1,12 @@
 # Modified: 2026-02-07T09:00:00Z | Author: COPILOT | Change: Create Kustomize base for SLATE K8s deployment
+# Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Add HPA, monitoring, PDB resources for Pass 3 stability
+# Modified: 2026-02-09T07:00:00Z | Author: COPILOT | Change: Remove CRD-dependent resources — runners-arc.yaml and monitoring-crds.yaml are optional extras
 # SLATE Kustomize Configuration
 # Deploy with: kubectl apply -k k8s/
+#
+# Optional CRD-dependent resources (apply separately after installing CRDs):
+#   kubectl apply -f k8s/runners-arc.yaml      # Requires: actions-runner-controller
+#   kubectl apply -f k8s/monitoring-crds.yaml   # Requires: kube-prometheus-stack
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -12,13 +18,24 @@ resources:
   - network-policy.yaml
   - storage.yaml
   - secrets.yaml
+  - slate-instructions.yaml  # Adaptive agent instructions ConfigMap
+  - instruction-controller.yaml  # Adaptive instruction controller (Deployment + CronJob)
   - deployments.yaml
+  - slate-dashboard.yaml  # Full SLATE Dashboard UI with integrations
+  - hpa-monitoring.yaml
+  - pdb.yaml
+  - agentic-system.yaml
+  - ml-pipeline.yaml
+  - runners.yaml
+  - ingress-gpu.yaml
 
-commonLabels:
-  app.kubernetes.io/managed-by: slate
-  app.kubernetes.io/version: "2.4.0"
-
-# Security: Enforce common annotations
-commonAnnotations:
-  slate.io/security-policy: restricted
-  slate.io/network-policy: deny-all-default
+# Modified: 2026-02-08T23:25:00Z | Author: COPILOT | Change: Migrate commonLabels/commonAnnotations to labels for kustomize v5 compat
+labels:
+  - pairs:
+      app.kubernetes.io/managed-by: slate
+      app.kubernetes.io/version: "2.4.0"
+    includeSelectors: false
+  - pairs:
+      slate.io/security-policy: restricted
+      slate.io/network-policy: deny-all-default
+    includeSelectors: false

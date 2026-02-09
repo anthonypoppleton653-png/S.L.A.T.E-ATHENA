@@ -1,0 +1,113 @@
+# Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Create GitHub Actions Runner Controller K8s config
+# Modified: 2026-02-09T07:00:00Z | Author: COPILOT | Change: Split CRD-dependent resources to runners-arc.yaml, harden DNS egress
+# SLATE Actions Runner Controller (ARC) — Base Resources
+# ServiceAccount, RBAC, and NetworkPolicy for runner pods.
+# CRD-dependent resources (RunnerDeployment, HorizontalRunnerAutoscaler) are in runners-arc.yaml
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ServiceAccount for Actions Runners
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: slate-runner
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: runner
+automountServiceAccountToken: true  # Required for ARC
+
+---
+# Role for runner pods — needs access to workspace PVCs and configmaps
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: slate-runner-role
+  namespace: slate
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch", "create"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: slate-runner-binding
+  namespace: slate
+subjects:
+  - kind: ServiceAccount
+    name: slate-runner
+    namespace: slate
+roleRef:
+  kind: Role
+  name: slate-runner-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# NetworkPolicy: Allow runners to communicate with SLATE services
+# DNS scoped to kube-system only, GitHub egress restricted to known CIDRs
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-runner-to-slate
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: runner-network
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: runner
+  policyTypes:
+    - Egress
+  egress:
+    # DNS — scoped to kube-system only
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Intra-namespace (Ollama, ChromaDB, dashboard)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: slate
+    # GitHub API (HTTPS) — restricted to GitHub CIDR blocks
+    - to:
+        - ipBlock:
+            cidr: 140.82.112.0/20
+        - ipBlock:
+            cidr: 143.55.64.0/20
+        - ipBlock:
+            cidr: 185.199.108.0/22
+        - ipBlock:
+            cidr: 192.30.252.0/22
+        - ipBlock:
+            cidr: 20.201.28.0/24
+        - ipBlock:
+            cidr: 4.208.26.0/24
+      ports:
+        - protocol: TCP
+          port: 443

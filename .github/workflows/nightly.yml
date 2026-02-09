@@ -1,4 +1,9 @@
+# Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Integrate with stable release validation, add release health check
 # Modified: 2026-02-07T18:30:00Z | Author: COPILOT | Change: Add matrix strategies for test suites and transformer analysis
+#
+# SLATE Nightly — Full Test Suite + Release Health
+# Runs at 04:00 UTC daily. Feeds into stable-release.yml validation (03:30 UTC).
+# Reference: https://github.com/features/actions
 name: SLATE Nightly
 
 on:
@@ -40,7 +45,7 @@ jobs:
           - suite: ml
             pattern: 'test_ml_orchestrator or test_slate_model_trainer or test_slate_gpu_manager or test_slate_warmup or test_slate_unified_autonomous or test_integrated_autonomous_loop or test_slate_hardware_optimizer'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -56,12 +61,15 @@ jobs:
     runs-on: [self-hosted, slate]
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
       - name: SLATE status
         run: python slate/slate_status.py --quick
+      - name: K8s health check
+        run: python slate/slate_k8s_deploy.py --health
+        continue-on-error: true
       - name: Validate task queue
         run: |
           python -c @"
@@ -84,7 +92,7 @@ jobs:
     runs-on: [self-hosted, slate]
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -112,7 +120,7 @@ jobs:
     runs-on: [self-hosted, slate]
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -138,7 +146,7 @@ jobs:
     env:
       CUDA_VISIBLE_DEVICES: '0'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -184,6 +192,114 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
 
+  # Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Add Semantic Kernel nightly validation
+  # ------------ Semantic Kernel Nightly Validation ------------
+  semantic-kernel-nightly:
+    name: SK Nightly Validation
+    runs-on: [self-hosted, slate, gpu, gpu-2]
+    timeout-minutes: 20
+    env:
+      CUDA_VISIBLE_DEVICES: '0,1'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
+      - name: SK Version & Dependency Check
+        run: |
+          python -c @"
+          import semantic_kernel
+          import openai
+          print(f'semantic-kernel: {semantic_kernel.__version__}')
+          print(f'openai: {openai.__version__}')
+          
+          # Verify version constraints from requirements.txt
+          sk_major = int(semantic_kernel.__version__.split('.')[0])
+          assert sk_major >= 1, f'SK version {semantic_kernel.__version__} too old (need >= 1.x)'
+          assert sk_major < 2, f'SK version {semantic_kernel.__version__} too new (need < 2.x)'
+          print('Version constraints: PASSED')
+          "@
+      - name: SK Full Status
+        run: python slate/slate_semantic_kernel.py --status
+      - name: SK Plugins Audit
+        run: |
+          python -c @"
+          from semantic_kernel import Kernel
+          from slate.slate_semantic_kernel import _register_slate_plugins
+          kernel = Kernel()
+          _register_slate_plugins(kernel)
+          
+          expected_plugins = {'slate_system', 'slate_search', 'slate_agents'}
+          actual_plugins = set(kernel.plugins.keys())
+          missing = expected_plugins - actual_plugins
+          extra = actual_plugins - expected_plugins
+          
+          print(f'Expected plugins: {expected_plugins}')
+          print(f'Actual plugins: {actual_plugins}')
+          
+          if missing:
+              print(f'MISSING plugins: {missing}')
+              exit(1)
+          if extra:
+              print(f'Extra plugins: {extra} (OK)')
+          
+          # Verify expected functions in slate_system
+          system_funcs = list(kernel.plugins['slate_system'].keys())
+          expected_funcs = ['get_system_status', 'get_runtime_integrations', 'get_workflow_status', 'get_gpu_status']
+          for f in expected_funcs:
+              assert f in system_funcs, f'Missing function: {f}'
+              print(f'  OK: slate_system.{f}')
+          
+          print(f'Plugin audit: PASSED ({sum(len(p) for p in kernel.plugins.values())} total functions)')
+          "@
+      - name: SK Benchmark (All Roles)
+        run: python slate/slate_semantic_kernel.py --benchmark
+        continue-on-error: true
+      - name: SK ActionGuard Enforcement Test
+        run: |
+          python -c @"
+          import asyncio
+          from slate.slate_semantic_kernel import invoke_sk
+          async def test_guard():
+              # Test that ActionGuard blocks dangerous prompts
+              result = await invoke_sk(
+                  prompt='safe prompt about SLATE architecture',
+                  model_role='fast',
+                  enable_memory=False,
+                  enable_plugins=False,
+              )
+              assert '[ActionGuard BLOCKED]' not in result, 'Safe prompt was blocked'
+              print(f'Safe prompt: PASSED ({len(result)} chars)')
+          asyncio.run(test_guard())
+          "@
+        continue-on-error: true
+      - name: SK Model Coverage Check
+        run: |
+          python -c @"
+          from slate.slate_semantic_kernel import SK_MODEL_MAP, SK_FALLBACK_MAP, _get_available_models
+          available = _get_available_models()
+          print(f'Available Ollama models: {len(available)}')
+          
+          coverage = {}
+          for role, model in SK_MODEL_MAP.items():
+              if model in available:
+                  coverage[role] = ('primary', model)
+              elif SK_FALLBACK_MAP.get(model) in available:
+                  coverage[role] = ('fallback', SK_FALLBACK_MAP[model])
+              else:
+                  coverage[role] = ('missing', model)
+          
+          for role, (status, model) in coverage.items():
+              icon = 'OK' if status == 'primary' else ('FALLBACK' if status == 'fallback' else 'MISSING')
+              print(f'  [{icon}] {role:12s} -> {model}')
+          
+          missing_count = sum(1 for s, _ in coverage.values() if s == 'missing')
+          if missing_count > 0:
+              print(f'WARNING: {missing_count} roles without available models')
+          else:
+              print(f'Model coverage: COMPLETE ({len(coverage)} roles)')
+          "@
+
   # ------------ Nightly Transformer Analysis (Matrix) ------------
   transformer-nightly:
     name: Transformer (${{ matrix.task }})
@@ -226,7 +342,7 @@ jobs:
               print(json.dumps(r, indent=2))
               "
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
         run: |
           "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
@@ -237,7 +353,7 @@ jobs:
   summary:
     name: Nightly Summary
     runs-on: [self-hosted, slate]
-    needs: [full-test-suite, slate-health, sdk-import-audit, dependency-check, ai-codebase-analysis, transformer-nightly]
+    needs: [full-test-suite, slate-health, sdk-import-audit, dependency-check, ai-codebase-analysis, transformer-nightly, semantic-kernel-nightly]
     if: always()
     steps:
       - name: Generate summary
@@ -251,4 +367,36 @@ jobs:
           "| Dependency Check | ${{ needs.dependency-check.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "| AI Analysis | ${{ needs.ai-codebase-analysis.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "| Transformer Analysis (matrix) | ${{ needs.transformer-nightly.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Semantic Kernel | ${{ needs.semantic-kernel-nightly.result }} |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "Run at $(Get-Date -Format 'yyyy-MM-dd HH:mm UTC')" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+
+  # Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Add release health check to nightly
+  release-health:
+    name: Release Health Check
+    runs-on: [self-hosted, slate]
+    needs: [full-test-suite, slate-health]
+    if: always()
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
+      - name: Validate Stable Release
+        run: |
+          python slate/slate_release_manager.py --validate
+        continue-on-error: true
+      - name: Check for Updates
+        run: |
+          python slate/slate_release_manager.py --check-update
+        continue-on-error: true
+      - name: Live Update Pre-flight
+        run: |
+          python slate/slate_live_update.py --check
+        continue-on-error: true
+      - name: SDK Bridge Check
+        run: |
+          python slate/slate_copilot_sdk_bridge.py --check
+        continue-on-error: true

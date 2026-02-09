@@ -1,0 +1,9 @@
+{
+  "name": "slate-schematic",
+  "displayName": "SLATE Schematic",
+  "description": "Generate circuit-board style system diagrams and architecture visualizations",
+  "version": "1.0.0",
+  "publisher": "slate",
+  "prompts": ["SKILL.md"],
+  "tools": ["slate_schematic"]
+}

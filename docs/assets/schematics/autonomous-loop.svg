@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1100" height="700" viewBox="0 0 1100 700"
+     xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-label="SLATE Autonomous Loop">
+
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0D1B2A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1B3A4B;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Primary Accent Gradient -->
+    <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#B87333;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D4956A;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Loop Gradient (circular) -->
+    <linearGradient id="loopGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22C55E;stop-opacity:0.3" />
+      <stop offset="50%" style="stop-color:#98C1D9;stop-opacity:0.2" />
+      <stop offset="100%" style="stop-color:#B87333;stop-opacity:0.3" />
+    </linearGradient>
+
+    <!-- Glow Effect -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Drop Shadow -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4"
+                    flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+
+    <!-- Arrow Marker -->
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#B87333"/>
+    </marker>
+
+    <!-- Arrow Marker (Active) -->
+    <marker id="arrowhead-active" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22C55E"/>
+    </marker>
+
+    <!-- Arrow Marker (Loop) -->
+    <marker id="arrowhead-loop" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#98C1D9"/>
+    </marker>
+
+    <!-- Grid Pattern -->
+    <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1B3A4B" stroke-width="0.5" opacity="0.3"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1100" height="700" fill="url(#bgGradient)"/>
+
+  <!-- Grid Overlay -->
+  <rect width="1100" height="700" fill="url(#gridPattern)" opacity="0.5"/>
+
+  <!-- Title -->
+  <text x="40" y="45"
+        font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="24" font-weight="700"
+        fill="#E8E2DE">SLATE Autonomous Loop</text>
+
+  <!-- Subtitle -->
+  <text x="40" y="70"
+        font-family="'Consolas', 'JetBrains Mono', monospace" font-size="12"
+        fill="#98C1D9">5-Source Task Discovery | ML Classification | Self-Healing Loop</text>
+
+  <!-- Self-Healing Loop Circle (background) -->
+  <g class="loop-background">
+    <ellipse cx="550" cy="400" rx="420" ry="220"
+             fill="none" stroke="url(#loopGradient)" stroke-width="40" opacity="0.15"/>
+    <ellipse cx="550" cy="400" rx="420" ry="220"
+             fill="none" stroke="#98C1D9" stroke-width="2" stroke-dasharray="10,10" opacity="0.3"/>
+  </g>
+
+  <!-- Connection Lines -->
+  <g class="connections-layer">
+    <!-- 5 Sources to Aggregator -->
+    <path d="M 140 165 L 280 300" fill="none" stroke="#B87333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M 290 165 L 330 300" fill="none" stroke="#B87333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M 440 165 L 380 300" fill="none" stroke="#B87333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M 590 165 L 430 300" fill="none" stroke="#B87333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M 740 165 L 480 300" fill="none" stroke="#B87333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+    <!-- Aggregator to ML Classifier -->
+    <path d="M 480 360 L 620 380" fill="none" stroke="#B87333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+    <!-- ML Classifier to Agent Router -->
+    <path d="M 800 400 L 900 400" fill="none" stroke="#22C55E" stroke-width="2" marker-end="url(#arrowhead-active)"/>
+
+    <!-- Agent Router to Agents -->
+    <path d="M 970 450 L 900 520" fill="none" stroke="#B87333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M 970 450 L 970 520" fill="none" stroke="#B87333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M 970 450 L 1040 520" fill="none" stroke="#B87333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+    <!-- Self-Healing Loop Path -->
+    <path d="M 850 590 C 700 650, 300 650, 180 550" fill="none" stroke="#98C1D9" stroke-width="2"
+          stroke-dasharray="8,4" marker-end="url(#arrowhead-loop)" opacity="0.7"/>
+
+    <!-- Health Monitor to Loop -->
+    <path d="M 180 490 L 300 360" fill="none" stroke="#98C1D9" stroke-width="2"
+          stroke-dasharray="5,5" marker-end="url(#arrowhead-loop)" opacity="0.6"/>
+  </g>
+
+  <!-- Components Layer -->
+  <g class="components-layer" filter="url(#shadow)">
+
+    <!-- 5 Task Discovery Sources -->
+    <g class="sources-layer">
+      <!-- Source 1: GitHub Issues -->
+      <g class="source" data-id="github-issues">
+        <rect x="80" y="100" width="120" height="65" rx="6"
+              fill="#2A2624" stroke="#B87333" stroke-width="2"/>
+        <circle cx="95" cy="115" r="5" fill="#22C55E"/>
+        <text x="140" y="130" text-anchor="middle"
+              font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="11" font-weight="600"
+              fill="#E8E2DE">GitHub Issues</text>
+        <text x="140" y="150" text-anchor="middle"
+              font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+              fill="#98C1D9">labels + milestones</text>
+      </g>
+
+      <!-- Source 2: Task Queue -->
+      <g class="source" data-id="task-queue">
+        <rect x="230" y="100" width="120" height="65" rx="6"
+              fill="#2A2624" stroke="#B87333" stroke-width="2"/>
+        <circle cx="245" cy="115" r="5" fill="#22C55E"/>
+        <text x="290" y="130" text-anchor="middle"
+              font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="11" font-weight="600"
+              fill="#E8E2DE">Task Queue</text>
+        <text x="290" y="150" text-anchor="middle"
+              font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+              fill="#98C1D9">current_tasks.json</text>
+      </g>
+
+      <!-- Source 3: Tech Tree -->
+      <g class="source" data-id="tech-tree">
+        <rect x="380" y="100" width="120" height="65" rx="6"
+              fill="#2A2624" stroke="#B87333" stroke-width="2"/>
+        <circle cx="395" cy="115" r="5" fill="#22C55E"/>
+        <text x="440" y="130" text-anchor="middle"
+              font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="11" font-weight="600"
+              fill="#E8E2DE">Tech Tree</text>
+        <text x="440" y="150" text-anchor="middle"
+              font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+              fill="#98C1D9">feature priorities</text>
+      </g>
+
+      <!-- Source 4: Spec Lifecycle -->
+      <g class="source" data-id="specs">
+        <rect x="530" y="100" width="120" height="65" rx="6"
+              fill="#2A2624" stroke="#B87333" stroke-width="2"/>
+        <circle cx="545" cy="115" r="5" fill="#22C55E"/>
+        <text x="590" y="130" text-anchor="middle"
+              font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="11" font-weight="600"
+              fill="#E8E2DE">Spec Lifecycle</text>
+        <text x="590" y="150" text-anchor="middle"
+              font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+              fill="#98C1D9">draft > complete</text>
+      </g>
+
+      <!-- Source 5: Error Logs -->
+      <g class="source" data-id="errors">
+        <rect x="680" y="100" width="120" height="65" rx="6"
+              fill="#2A2624" stroke="#B87333" stroke-width="2"/>
+        <circle cx="695" cy="115" r="5" fill="#F59E0B"/>
+        <text x="740" y="130" text-anchor="middle"
+              font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="11" font-weight="600"
+              fill="#E8E2DE">Error Logs</text>
+        <text x="740" y="150" text-anchor="middle"
+              font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+              fill="#98C1D9">.slate_errors/</text>
+      </g>
+    </g>
+
+    <!-- Task Aggregator -->
+    <g class="aggregator" data-id="aggregator">
+      <rect x="280" y="300" width="200" height="80" rx="8"
+            fill="#2A2436" stroke="#B87333" stroke-width="2"/>
+      <circle cx="295" cy="315" r="5" fill="#22C55E"/>
+      <text x="380" y="335" text-anchor="middle"
+            font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="13" font-weight="600"
+            fill="#E8E2DE">Task Aggregator</text>
+      <text x="380" y="355" text-anchor="middle"
+            font-family="'Consolas', 'JetBrains Mono', monospace" font-size="10"
+            fill="#98C1D9">Dedup + Priority Merge</text>
+      <text x="380" y="370" text-anchor="middle"
+            font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+            fill="#6B7280">unified_task_queue</text>
+    </g>
+
+    <!-- ML Classifier -->
+    <g class="classifier" data-id="ml-classifier">
+      <rect x="620" y="340" width="180" height="120" rx="8"
+            fill="#3D1E10" stroke="#B87333" stroke-width="2"/>
+      <circle cx="635" cy="355" r="5" fill="#22C55E"/>
+      <text x="710" y="375" text-anchor="middle"
+            font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="13" font-weight="600"
+            fill="#E8E2DE">ML Classifier</text>
+
+      <!-- Classification categories -->
+      <text x="640" y="400"
+            font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+            fill="#98C1D9">code_generation</text>
+      <text x="640" y="415"
+            font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+            fill="#98C1D9">test_generation</text>
+      <text x="640" y="430"
+            font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+            fill="#98C1D9">documentation</text>
+      <text x="640" y="445"
+            font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+            fill="#98C1D9">analysis | planning</text>
+    </g>
+
+    <!-- Agent Router -->
+    <g class="router" data-id="agent-router">
+      <polygon points="940,350 1000,400 940,450 880,400"
+               fill="#2A2624" stroke="#22C55E" stroke-width="2"/>
+      <text x="940" y="395" text-anchor="middle"
+            font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="11" font-weight="600"
+            fill="#E8E2DE">Agent</text>
+      <text x="940" y="410" text-anchor="middle"
+            font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="11" font-weight="600"
+            fill="#E8E2DE">Router</text>
+    </g>
+
+    <!-- Agent Nodes -->
+    <g class="agents-layer">
+      <!-- Agent 1: Coder -->
+      <g class="agent" data-id="coder">
+        <rect x="840" y="520" width="100" height="70" rx="6"
+              fill="#3D1E10" stroke="#B87333" stroke-width="2"/>
+        <circle cx="855" cy="535" r="4" fill="#22C55E"/>
+        <text x="890" y="555" text-anchor="middle"
+              font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="11" font-weight="600"
+              fill="#E8E2DE">Coder</text>
+        <text x="890" y="575" text-anchor="middle"
+              font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+              fill="#98C1D9">slate-coder</text>
+      </g>
+
+      <!-- Agent 2: Fast -->
+      <g class="agent" data-id="fast">
+        <rect x="950" y="520" width="100" height="70" rx="6"
+              fill="#3D1E10" stroke="#B87333" stroke-width="2"/>
+        <circle cx="965" cy="535" r="4" fill="#22C55E"/>
+        <text x="1000" y="555" text-anchor="middle"
+              font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="11" font-weight="600"
+              fill="#E8E2DE">Fast</text>
+        <text x="1000" y="575" text-anchor="middle"
+              font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+              fill="#98C1D9">slate-fast</text>
+      </g>
+
+      <!-- Agent 3: Planner -->
+      <g class="agent" data-id="planner">
+        <rect x="1000" y="520" width="100" height="70" rx="6"
+              fill="#3D1E10" stroke="#B87333" stroke-width="2" transform="translate(60, 0)"/>
+        <circle cx="1075" cy="535" r="4" fill="#22C55E"/>
+        <text x="1060" y="555" text-anchor="middle"
+              font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="11" font-weight="600"
+              fill="#E8E2DE">Planner</text>
+        <text x="1060" y="575" text-anchor="middle"
+              font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+              fill="#98C1D9">slate-planner</text>
+      </g>
+    </g>
+
+    <!-- Self-Healing Monitor -->
+    <g class="health-monitor" data-id="health">
+      <rect x="100" y="450" width="160" height="100" rx="8"
+            fill="#1E3A5F" stroke="#98C1D9" stroke-width="2"/>
+      <circle cx="115" cy="465" r="5" fill="#22C55E"/>
+      <text x="180" y="485" text-anchor="middle"
+            font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="12" font-weight="600"
+            fill="#E8E2DE">Health Monitor</text>
+
+      <text x="120" y="510"
+            font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+            fill="#98C1D9">Task timeouts</text>
+      <text x="120" y="525"
+            font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+            fill="#98C1D9">Error detection</text>
+      <text x="120" y="540"
+            font-family="'Consolas', 'JetBrains Mono', monospace" font-size="9"
+            fill="#98C1D9">Auto-retry logic</text>
+    </g>
+
+    <!-- Loop Annotation -->
+    <g class="loop-annotation">
+      <text x="450" y="640" text-anchor="middle"
+            font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="12" font-weight="600"
+            fill="#98C1D9">Self-Healing Loop</text>
+      <text x="450" y="660" text-anchor="middle"
+            font-family="'Consolas', 'JetBrains Mono', monospace" font-size="10"
+            fill="#6B7280">Failed tasks re-enter pipeline with context</text>
+    </g>
+
+  </g>
+
+  <!-- Flow Annotations -->
+  <g class="annotations-layer">
+    <text x="200" y="250"
+          font-family="'Consolas', 'JetBrains Mono', monospace" font-size="10"
+          fill="#6B7280">1. Discovery</text>
+    <text x="500" y="290"
+          font-family="'Consolas', 'JetBrains Mono', monospace" font-size="10"
+          fill="#6B7280">2. Aggregate</text>
+    <text x="700" y="310"
+          font-family="'Consolas', 'JetBrains Mono', monospace" font-size="10"
+          fill="#6B7280">3. Classify</text>
+    <text x="870" y="340"
+          font-family="'Consolas', 'JetBrains Mono', monospace" font-size="10"
+          fill="#6B7280">4. Route</text>
+    <text x="980" y="510"
+          font-family="'Consolas', 'JetBrains Mono', monospace" font-size="10"
+          fill="#6B7280">5. Execute</text>
+  </g>
+
+  <!-- Legend -->
+  <g class="legend" transform="translate(880, 100)">
+    <text x="0" y="0" font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="11" font-weight="600" fill="#E8E2DE">Flow Types</text>
+
+    <line x1="0" y1="20" x2="30" y2="20" stroke="#B87333" stroke-width="2"/>
+    <text x="40" y="24" font-family="'Consolas', 'JetBrains Mono', monospace" font-size="10" fill="#CAC4BF">Task Flow</text>
+
+    <line x1="0" y1="40" x2="30" y2="40" stroke="#22C55E" stroke-width="2"/>
+    <text x="40" y="44" font-family="'Consolas', 'JetBrains Mono', monospace" font-size="10" fill="#CAC4BF">Routed Task</text>
+
+    <line x1="0" y1="60" x2="30" y2="60" stroke="#98C1D9" stroke-width="2" stroke-dasharray="5,5"/>
+    <text x="40" y="64" font-family="'Consolas', 'JetBrains Mono', monospace" font-size="10" fill="#CAC4BF">Self-Heal Loop</text>
+  </g>
+
+  <!-- Version Badge -->
+  <g class="version-badge">
+    <rect x="990" y="40" width="90" height="24" rx="12" fill="#B87333"/>
+    <text x="1035" y="56" text-anchor="middle"
+          font-family="'Segoe UI', 'Inter', system-ui, sans-serif" font-size="11" font-weight="600"
+          fill="#FFFFFF">v2.5</text>
+  </g>
+
+</svg>

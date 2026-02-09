@@ -1,20 +1,40 @@
-# S.L.A.T.E. Docker Image (CPU Variant)
-# Base: Python 3.11 Slim
-# Author: SLATE | Created: 2026-02-06
+# S.L.A.T.E. Docker Image — RELEASE / STABLE (CPU Variant)
+# Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Full release image matching GPU variant, PyTorch CPU, all runtimes
+# Base: Python 3.11 Slim (no CUDA — for CPU-only hosts or CI)
+#
+# This is the CPU RELEASE image — identical to the GPU variant but with PyTorch CPU.
+# Use when NVIDIA GPUs are not available (CI runners, ARM hosts, testing).
+#
+# Build:  docker build -f Dockerfile.cpu -t slate:cpu -t ghcr.io/synchronizedlivingarchitecture/slate:latest-cpu .
+# Push:   docker push ghcr.io/synchronizedlivingarchitecture/slate:latest-cpu
+#
+# Runtimes included (same as GPU variant minus CUDA acceleration):
+#   - SLATE Core (orchestrator, dashboard, status)
+#   - Agent Router + Agent Workers (ALPHA/BETA/GAMMA/DELTA/COPILOT)
+#   - Autonomous Loop (self-healing task brain)
+#   - Copilot Bridge (VS Code <-> K8s)
+#   - Workflow Manager (task lifecycle, PR workflows)
+#   - ML Pipeline (model training, codebase indexing, benchmarks — CPU inference)
+#   - ChromaDB client (vector store for RAG)
+#   - Semantic Kernel (AI orchestration)
+#   - Security guards (ActionGuard, PII scanner, SDK source guard)
+#   - GitHub Actions runner integration
+#   - Spec Kit (spec processing, wiki generation)
 
 FROM python:3.11-slim
 
 LABEL org.opencontainers.image.source="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E"
 LABEL org.opencontainers.image.description="SLATE - Synchronized Living Architecture for Transformation and Evolution (CPU)"
 LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.version="2.4.0"
+LABEL slate.image.type="release-cpu"
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Install minimal system dependencies
+# Install minimal system dependencies (no curl — blocked by SLATE security policy)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -23,43 +43,62 @@ WORKDIR /slate
 # Copy requirements first for layer caching
 COPY requirements.txt .
 
-# Install Python dependencies (skip GPU-only packages)
+# Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Full dependency install with PyTorch CPU
+# Install Python dependencies (full runtime — all SLATE integrations, CPU PyTorch)
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir \
-        python-dotenv>=1.0.0 \
-        psutil>=5.9.0 \
-        rich>=13.0.0 \
-        typing-extensions>=4.0.0 \
-        aiohttp>=3.9.0 \
-        hypercorn>=0.16.0 \
-        quart>=0.19.0 \
-        pytest>=8.0.0 \
-        pytest-asyncio>=0.23.0
+    && pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir -r requirements.txt
 
-# Copy SLATE codebase
+# Copy complete SLATE codebase — every runtime module (matches GPU variant)
 COPY slate/ ./slate/
 COPY agents/ ./agents/
 COPY slate_core/ ./slate_core/
+COPY slate_web/ ./slate_web/
+COPY models/ ./models/
+COPY skills/ ./skills/
+COPY plugins/ ./plugins/
+COPY vendor/ ./vendor/
+COPY docs/ ./docs/
+COPY specs/ ./specs/
 COPY pyproject.toml .
 COPY current_tasks.json .
-COPY .slate_tech_tree/ ./.slate_tech_tree/
+COPY AGENTS.md .
+COPY .github/copilot-instructions.md ./.github/copilot-instructions.md
+
+# Copy K8s & Helm configs (for self-management inside cluster)
+COPY k8s/ ./k8s/
+COPY helm/ ./helm/
 
 # Set Python path
-ENV PYTHONPATH="/slate:${PYTHONPATH}"
+ENV PYTHONPATH="/slate"
+ENV SLATE_MODE=prod
+ENV SLATE_DOCKER=1
+ENV SLATE_K8S=true
+ENV SLATE_VERSION=2.4.0
 
 # Create non-root user for security
 RUN useradd -m -s /bin/bash slate \
     && chown -R slate:slate /slate
 USER slate
 
-# Expose dashboard port
+# Expose service ports
 EXPOSE 8080
+# 8080 = Dashboard/Core API
+EXPOSE 8081
+# 8081 = Agent Router API
+EXPOSE 8082
+# 8082 = Autonomous Loop API
+EXPOSE 8083
+# 8083 = Copilot Bridge API (extension v5.1.0 runtime backend)
+EXPOSE 8084
+# 8084 = Workflow Manager API
+EXPOSE 9090
+# 9090 = Prometheus Metrics
 
-# Modified: 2026-02-07T12:00:00Z | Author: COPILOT | Change: Fix healthcheck to use Python instead of curl
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)" || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health', timeout=5)" || exit 1
 
 # Default entrypoint: start SLATE orchestrator
 ENTRYPOINT ["python", "slate/slate_orchestrator.py"]
-CMD ["start"]
+CMD ["start", "--mode", "prod"]

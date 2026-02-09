@@ -275,7 +275,7 @@ class OllamaClient:
             "prompt": prompt,
             "stream": False,
             "keep_alive": "24h",
-            "options": {"temperature": temperature, "num_predict": max_tokens},
+            "options": {"temperature": temperature, "num_predict": max_tokens, "num_gpu": 999},
         }
         if system:
             data["system"] = system

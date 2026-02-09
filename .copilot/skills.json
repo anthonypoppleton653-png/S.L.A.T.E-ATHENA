@@ -1,0 +1,52 @@
+[
+  {
+    "name": "slate-status",
+    "displayName": "SLATE Status",
+    "description": "Check SLATE system health \u2014 GPU, services, workflows, Python, K8s",
+    "version": "2.4.0",
+    "tools": [
+      "slate_status",
+      "slate_runtime",
+      "slate_hardware"
+    ],
+    "prompt": "---\nname: slate-status\ndescription: Check SLATE services and system status. Use when checking GPU, services, or environment health.\n---\n\n# /slate-status\n\nCheck the status of all SLATE services and system components.\n\n## Usage\n/slate-status [--quick | --json | --full]\n\n## Description\n<!-- Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s status to skill description -->\nThis skill provides comprehensive system status for the SLATE development environment including:\n- GPU detection and configuration\n- Service health (Dashboard, Ollama, Foundry Local)\n- GitHub Actions runner status\n- Workflow queue health\n- Python environment validation\n- Kubernetes cluster status (pods, deployments, services)\n- Docker container state\n\n## Instructions\n\nWhen the user invokes this skill, run the SLATE status command:\n\n```powershell\n.\\.venv\\Scripts\\python.exe slate/slate_status.py --quick\n```\n\nFor JSON output (automation):\n```powershell\n.\\.venv\\Scripts\\python.exe slate/slate_status.py --json\n```\n\nReport the results in a clear, formatted summary showing:\n1. Service status (running/stopped)\n2. GPU availability and configuration\n3. Any warnings or issues detected\n4. Recommendations for fixes if issues found\n\n## Examples\n\nUser: \"/slate-status\"\n\u2192 Run quick status check and report all services\n\nUser: \"/slate-status --json\"\n\u2192 Output machine-readable JSON for pipeline integration\n\nUser: \"What's the status of SLATE?\"\n\u2192 Invoke this skill automatically\n\nUser: \"Check K8s pods\"\n\u2192 Run `python slate/slate_k8s_deploy.py --status` and report pod health\n"
+  },
+  {
+    "name": "slate-runner",
+    "displayName": "SLATE Runner",
+    "description": "Manage GitHub Actions self-hosted runner with GPU access",
+    "version": "2.4.0",
+    "tools": [
+      "slate_runner"
+    ],
+    "prompt": "---\nname: slate-runner\ndescription: Manage GitHub Actions self-hosted runner. Use when checking runner status, setting up hooks, or dispatching workflows.\n---\n\n# /slate-runner\n\nManage the GitHub Actions self-hosted runner for SLATE.\n\n## Usage\n/slate-runner [--status | --setup | --dispatch <workflow>]\n\n## Description\nSLATE uses a self-hosted GitHub Actions runner for agentic task execution. This skill manages:\n- Runner status and configuration\n- Auto-detection of GPU and environment\n- Workflow dispatch for agentic execution\n- Hook configuration for environment setup\n\n## Instructions\n\nWhen the user invokes this skill:\n\n**Check runner status:**\n```powershell\n.\\.venv\\Scripts\\python.exe slate/slate_runner_manager.py --status\n```\n\n**Auto-configure runner:**\n```powershell\n.\\.venv\\Scripts\\python.exe slate/slate_runner_manager.py --setup\n```\n\n**Dispatch a workflow:**\n```powershell\n.\\.venv\\Scripts\\python.exe slate/slate_runner_manager.py --dispatch \"ci.yml\"\n```\n\nReport findings including:\n1. Runner online/offline status\n2. GPU configuration detected\n3. Labels configured (self-hosted, slate, gpu, cuda, etc.)\n4. Pre-job hooks status\n5. Recent workflow runs\n\n## Auto-Detected Labels\nThe runner manager automatically generates labels:\n- `self-hosted` - Always present\n- `slate` - SLATE environment configured\n- `gpu` - GPU available\n- `cuda` - CUDA toolkit available\n- `blackwell` - NVIDIA Blackwell architecture (5xxx series)\n- `multi-gpu` - Multiple GPUs detected\n\n## Examples\n\nUser: \"/slate-runner\"\n\u2192 Check runner status\n\nUser: \"/slate-runner --setup\"\n\u2192 Auto-configure runner with hooks and labels\n\nUser: \"/slate-runner --dispatch ci.yml\"\n\u2192 Trigger the CI workflow\n\nUser: \"Is the GitHub runner online?\"\n\u2192 Check runner status\n"
+  },
+  {
+    "name": "slate-orchestrator",
+    "displayName": "SLATE Orchestrator",
+    "description": "Control SLATE service lifecycle \u2014 start, stop, status",
+    "version": "2.4.0",
+    "tools": [
+      "slate_orchestrator"
+    ],
+    "prompt": "---\nname: slate-orchestrator\ndescription: Start, stop, or check the SLATE orchestrator. Use when managing SLATE services, starting/stopping the dashboard, or checking service status.\n---\n\n# /slate\n\nStart, stop, or check the SLATE orchestrator and all services.\n\n## Usage\n/slate [start | stop | status | restart]\n\n## Description\n<!-- Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s deployment management to orchestrator skill -->\nThe SLATE orchestrator manages all SLATE services:\n- Dashboard server (port 8080)\n- Workflow monitor\n- GitHub Actions runner integration\n- Background task processing\n- Kubernetes deployments (`kubectl apply -k k8s/overlays/local/`)\n- Docker container lifecycle (`docker-compose up/down`)\n\n## Instructions\n\nWhen the user invokes this skill:\n\n**Start SLATE:**\n```powershell\n.\\.venv\\Scripts\\python.exe slate/slate_orchestrator.py start\n```\n\n**Stop SLATE:**\n```powershell\n.\\.venv\\Scripts\\python.exe slate/slate_orchestrator.py stop\n```\n\n**Check status:**\n```powershell\n.\\.venv\\Scripts\\python.exe slate/slate_orchestrator.py status\n```\n\n**Restart (stop then start):**\n```powershell\n.\\.venv\\Scripts\\python.exe slate/slate_orchestrator.py stop\n.\\.venv\\Scripts\\python.exe slate/slate_orchestrator.py start\n```\n\nReport the results showing:\n1. Which services started/stopped\n2. Dashboard URL (http://localhost:8080)\n3. Any errors encountered\n4. PID file location\n\n## Examples\n\nUser: \"/slate start\"\n\u2192 Start all SLATE services\n\nUser: \"/slate stop\"\n\u2192 Stop all running services\n\nUser: \"/slate\"\n\u2192 Show current orchestrator status\n\nUser: \"Start SLATE\"\n\u2192 Invoke /slate start\n"
+  },
+  {
+    "name": "slate-workflow",
+    "displayName": "SLATE Workflow",
+    "description": "Manage SLATE task workflow queue \u2014 status, cleanup, enforce",
+    "version": "2.4.0",
+    "tools": [
+      "slate_workflow"
+    ],
+    "prompt": "---\nname: slate-workflow\ndescription: Manage SLATE task workflow queue. Use when checking task status, cleaning up stale tasks, or viewing workflow health.\n---\n\n# /slate-workflow\n\nManage the SLATE task workflow queue and monitor task health.\n\n## Usage\n/slate-workflow [--status | --cleanup | --enforce]\n\n## Description\nThis skill manages the SLATE workflow system which tracks tasks through their lifecycle:\n- View current task queue and status\n- Identify stale, abandoned, or duplicate tasks\n- Clean up problematic tasks automatically\n- Enforce workflow rules (max concurrent tasks)\n\n## Instructions\n\nWhen the user invokes this skill:\n\n**For status check (default):**\n```powershell\n.\\.venv\\Scripts\\python.exe slate/slate_workflow_manager.py --status\n```\n\n**For cleanup:**\n```powershell\n.\\.venv\\Scripts\\python.exe slate/slate_workflow_manager.py --cleanup\n```\n\n**For enforcement check:**\n```powershell\n.\\.venv\\Scripts\\python.exe slate/slate_workflow_manager.py --enforce\n```\n\nReport findings including:\n1. Number of tasks by status (pending, in_progress, completed)\n2. Stale tasks (in-progress > 4 hours)\n3. Abandoned tasks (pending > 24 hours)\n4. Duplicate tasks detected\n5. Whether new tasks can be accepted\n\n## Automatic Rules\n- **Stale** (in-progress > 4h) \u2192 auto-reset to pending\n- **Abandoned** (pending > 24h) \u2192 flagged for review\n- **Duplicates** \u2192 auto-archived\n- **Max concurrent** \u2192 5 tasks before blocking\n\n## Examples\n\nUser: \"/slate-workflow\"\n\u2192 Show current workflow status\n\nUser: \"/slate-workflow --cleanup\"\n\u2192 Auto-clean stale and duplicate tasks\n\nUser: \"Are there any stuck tasks?\"\n\u2192 Check for stale/abandoned tasks\n"
+  },
+  {
+    "name": "slate-help",
+    "displayName": "SLATE Help",
+    "description": "Get help with SLATE commands, tools, and architecture",
+    "version": "2.4.0",
+    "tools": [],
+    "prompt": "---\nname: slate-help\ndescription: Show all available SLATE commands. Use when user asks for help with SLATE or available commands.\n---\n\n# /slate-help\n\nDisplay help for all SLATE slash commands.\n\n## Instructions\n\nShow this help information:\n\n## SLATE Commands\n\n<!-- Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s commands to help skill -->\n\n| Command | Description |\n|---------|-------------|\n| `/slate-sdk:slate-orchestrator [start\\|stop\\|status]` | Manage SLATE orchestrator |\n| `/slate-sdk:slate-status [--quick\\|--json]` | Check system and service status |\n| `/slate-sdk:slate-workflow [--status\\|--cleanup]` | Manage task workflow queue |\n| `/slate-sdk:slate-runner [--status\\|--setup]` | Manage GitHub Actions runner |\n| `/slate-sdk:slate-k8s [--status\\|--deploy\\|--health\\|--teardown]` | Kubernetes cluster management |\n| `/slate-sdk:slate-help` | Show this help |\n\n## Quick Examples\n\n```bash\n/slate-sdk:slate-orchestrator start   # Start all SLATE services\n/slate-sdk:slate-orchestrator stop    # Stop all services\n/slate-sdk:slate-status --quick       # Check GPU, services, environment\n/slate-sdk:slate-workflow --status    # View task queue health\n/slate-sdk:slate-runner --status      # Check GitHub runner status\n```\n\nNote: Commands are namespaced with `slate-sdk:` prefix to avoid conflicts with other plugins.\n\n## MCP Tools\n\nThe SLATE MCP server also provides these tools:\n- `slate_status` - Check all services and GPU status\n- `slate_workflow` - Manage task queue\n- `slate_orchestrator` - Start/stop services\n- `slate_runner` - Manage GitHub runner\n- `slate_ai` - Execute AI tasks via local LLMs\n- `slate_kubernetes` - K8s cluster status, deploy, health, teardown\n"
+  }
+]

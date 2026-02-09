@@ -1,4 +1,4 @@
-# Modified: 2026-02-07T22:00:00Z | Author: COPILOT | Change: Add upper-bound version pins for dep stability
+# Modified: 2026-02-08T18:00:00Z | Author: COPILOT | Change: Add SK extras (ollama,hugging_face,chroma), security optional deps (msticpy, azure-mgmt-security), sentence-transformers
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
@@ -33,6 +33,10 @@ dependencies = [
     "httpx>=0.26.0,<1",
     "chromadb>=0.4.22,<2",
     "typing-extensions>=4.0.0,<5",
+    "watchfiles>=1.0.0,<2",
+    "semantic-kernel[ollama,hugging_face,chroma]>=1.39.0,<2",
+    "github-copilot-sdk>=0.1.0",
+    "pydantic>=2.0,<3",
 ]
 
 [project.optional-dependencies]
@@ -40,6 +44,11 @@ ai = [
     "transformers>=4.40.0,<6",
     "accelerate>=0.30.0,<2",
     "peft>=0.10.0,<1",
+    "sentence-transformers>=5.0.0,<6",
+]
+security = [
+    "msticpy>=2.18.0,<3",
+    "azure-mgmt-security>=7.0.0,<8",
 ]
 dev = [
     "pytest>=8.0.0,<10",
@@ -53,28 +62,14 @@ observability = [
     "opentelemetry-sdk>=1.20.0,<2",
     "opentelemetry-exporter-otlp>=1.20.0,<2",
 ]
-# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Add TRELLIS.2 3D generation deps
-trellis = [
-    "Pillow>=10.0.0,<12",
-    "opencv-python>=4.8.0,<5",
-    "imageio>=2.31.0,<3",
-    "imageio-ffmpeg>=0.4.9,<1",
-    "trimesh>=4.0.0,<5",
-    "scipy>=1.11.0,<2",
-    "einops>=0.7.0,<1",
-    "safetensors>=0.4.0,<1",
-    "huggingface-hub>=0.20.0,<1",
-    "transformers>=4.40.0,<6",
-    "accelerate>=0.30.0,<2",
-    "diffusers>=0.27.0,<1",
-]
 
 [project.scripts]
 slate-status = "slate.slate_status:main"
 slate-runtime = "slate.slate_runtime:main"
 slate-benchmark = "slate.slate_benchmark:main"
 slate-hardware = "slate.slate_hardware_optimizer:main"
-slate-trellis = "slate.slate_trellis:main"
+slate-copilot = "slate.slate_copilot_sdk:main"
+slate-copilot-install = "slate.install_copilot_sdk:main"
 
 [project.urls]
 Homepage = "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E"
@@ -116,3 +111,6 @@ ignore = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.uv]
+prerelease = "allow"

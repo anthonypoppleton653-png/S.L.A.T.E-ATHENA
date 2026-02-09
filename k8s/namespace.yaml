@@ -8,6 +8,6 @@ metadata:
   labels:
     app.kubernetes.io/name: slate
     app.kubernetes.io/part-of: slate-system
-    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce: baseline
     pod-security.kubernetes.io/audit: restricted
     pod-security.kubernetes.io/warn: restricted

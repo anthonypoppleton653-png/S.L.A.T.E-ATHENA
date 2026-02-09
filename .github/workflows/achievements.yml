@@ -1,0 +1,168 @@
+# Modified: 2026-02-09T23:30:00Z | Author: ClaudeCode (Opus 4.6) | Change: GitHub Achievements tracking workflow
+#
+# SLATE GitHub Achievements Pipeline
+# Tracks contributor progress toward GitHub Achievements and
+# integrates with the SLATE development workflow to maximize badge earning.
+#
+# Achievement Targets:
+#   Pull Shark (Gold):           1,024 merged PRs
+#   Pair Extraordinaire (Gold):  48 co-authored merged PRs
+#   Galaxy Brain (Gold):         32 accepted Discussion answers
+#   Starstruck (Bronze+):        128+ repository stars
+#
+# Triggers:
+#   - On PR merge (tracks Pull Shark, Pair Extraordinaire)
+#   - Weekly schedule (comprehensive stats refresh)
+#   - Manual dispatch (on-demand refresh)
+
+name: SLATE Achievements
+
+on:
+  pull_request:
+    types: [closed]
+  schedule:
+    # Weekly Monday 6am UTC -- comprehensive achievement refresh
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      refresh_all:
+        description: 'Force refresh all achievement stats'
+        required: false
+        default: 'true'
+        type: boolean
+
+permissions:
+  contents: read
+  pull-requests: read
+  discussions: read
+
+defaults:
+  run:
+    shell: powershell
+
+jobs:
+  track-pr-achievements:
+    name: Track PR Achievements
+    runs-on: [self-hosted, slate]
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged == true
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH
+
+      - name: Track Merged PR
+        run: |
+          Write-Host "=== PR Merged: #${{ github.event.pull_request.number }} ==="
+          Write-Host "Title: ${{ github.event.pull_request.title }}"
+          Write-Host "Author: ${{ github.event.pull_request.user.login }}"
+
+          # Check for co-authored commits (Pair Extraordinaire)
+          $commits = git log --oneline "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}" 2>$null
+          $coauthored = git log --grep="Co-authored-by" --oneline "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}" 2>$null
+
+          Write-Host ""
+          Write-Host "Commits in PR: $($commits.Count)"
+          Write-Host "Co-authored commits: $($coauthored.Count)"
+
+          if ($coauthored.Count -gt 0) {
+            Write-Host ""
+            Write-Host "[ACHIEVEMENT] Pair Extraordinaire progress! Co-authored commits detected."
+          }
+
+          # Track Pull Shark progress
+          Write-Host ""
+          Write-Host "[ACHIEVEMENT] Pull Shark progress! PR #${{ github.event.pull_request.number }} merged."
+
+      - name: Refresh Achievement Stats
+        run: |
+          python slate/github_achievements.py --refresh --json | Out-File -FilePath achievement_stats.json
+          python slate/github_achievements.py --status
+        continue-on-error: true
+
+  weekly-refresh:
+    name: Weekly Achievement Refresh
+    runs-on: [self-hosted, slate]
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.refresh_all == 'true')
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Python
+        run: |
+          "$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH
+
+      - name: Comprehensive Achievement Refresh
+        run: |
+          Write-Host "=============================================="
+          Write-Host "  SLATE GitHub Achievement Tracker"
+          Write-Host "  Weekly Comprehensive Refresh"
+          Write-Host "=============================================="
+          Write-Host ""
+
+          # Refresh from GitHub API
+          python slate/github_achievements.py --refresh
+        continue-on-error: true
+
+      - name: Achievement Recommendations
+        run: |
+          Write-Host ""
+          Write-Host "=== Achievement Recommendations ==="
+          python slate/github_achievements.py --recommendations
+        continue-on-error: true
+
+      - name: List All Achievements
+        run: |
+          Write-Host ""
+          Write-Host "=== Full Achievement Status ==="
+          python slate/github_achievements.py --list
+        continue-on-error: true
+
+      - name: Repository Stats (Starstruck Progress)
+        run: |
+          Write-Host ""
+          Write-Host "=== Repository Stats ==="
+
+          # Get star count
+          $stars = gh api repos/${{ github.repository }} --jq '.stargazers_count' 2>$null
+          Write-Host "Stars: $stars"
+
+          # Starstruck tier check
+          if ([int]$stars -ge 4096) { Write-Host "[ACHIEVEMENT] Starstruck: GOLD!" }
+          elseif ([int]$stars -ge 512) { Write-Host "[ACHIEVEMENT] Starstruck: SILVER" }
+          elseif ([int]$stars -ge 128) { Write-Host "[ACHIEVEMENT] Starstruck: BRONZE" }
+          elseif ([int]$stars -ge 16) { Write-Host "[ACHIEVEMENT] Starstruck: DEFAULT" }
+          else { Write-Host "Starstruck: $stars/16 to Default tier" }
+
+          # Get discussion count (Galaxy Brain potential)
+          $discussions = gh api repos/${{ github.repository }}/discussions --jq 'length' 2>$null
+          Write-Host "Discussions: $discussions"
+
+          # Get merged PR count (Pull Shark)
+          $prs = gh pr list --state merged --json number --jq 'length' 2>$null
+          Write-Host "Merged PRs: $prs"
+
+          # Co-authored commit count (Pair Extraordinaire)
+          $coauthored = git log --all --oneline --grep="Co-authored-by" | Measure-Object -Line
+          Write-Host "Co-authored commits: $($coauthored.Lines)"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        continue-on-error: true
+
+      - name: Achievement Summary
+        run: |
+          Write-Host ""
+          Write-Host "=============================================="
+          Write-Host "  Achievement Targets"
+          Write-Host "=============================================="
+          Write-Host "  Pull Shark Gold:           1,024 merged PRs"
+          Write-Host "  Pair Extraordinaire Gold:  48 co-authored merged PRs"
+          Write-Host "  Galaxy Brain Gold:         32 accepted answers"
+          Write-Host "  Starstruck Bronze:         128 stars"
+          Write-Host "=============================================="

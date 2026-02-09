@@ -1,0 +1,302 @@
+# Modified: 2026-02-09T03:51:00-05:00 | Author: ANTIGRAVITY (Gemini) | Change: K8s deployment for Antigravity dashboard bridge
+# AI Note: When modifying, add a comment with the current date, time, and a 'Gemini' marker.
+# ─────────────────────────────────────────────────────────────────────────────
+# SLATE Antigravity Dashboard Bridge
+# Provides Antigravity agent runtime access to the same SLATE Dashboard
+# that the @slate VS Code extension serves in its sidebar.
+#
+# Architecture:
+#   @slate Extension → copilot-bridge-svc:8083 → Dashboard
+#   @antigravity      → antigravity-bridge-svc:8085 → Dashboard
+#
+# Both runtimes access the SAME dashboard at slate-dashboard-svc:8080
+# ─────────────────────────────────────────────────────────────────────────────
+---
+# ConfigMap: Antigravity bridge configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: antigravity-bridge-config
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: antigravity-bridge
+    app.kubernetes.io/component: bridge
+    app.kubernetes.io/part-of: slate-system
+data:
+  AGENT_NAME: "ANTIGRAVITY"
+  AGENT_TYPE: "architect"
+  BRIDGE_PORT: "8085"
+  DASHBOARD_URL: "http://slate-dashboard-svc:8080"
+  AGENT_ROUTER_URL: "http://agent-router-svc:8081"
+  OLLAMA_HOST: "ollama-svc:11434"
+  CHROMADB_HOST: "chromadb-svc:8000"
+  SLATE_K8S: "true"
+  SLATE_MODE: "prod"
+
+---
+# Deployment: Antigravity Dashboard Bridge
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: antigravity-bridge
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: antigravity-bridge
+    app.kubernetes.io/component: bridge
+    app.kubernetes.io/part-of: slate-system
+  annotations:
+    slate.io/description: "Antigravity agent bridge — proxies dashboard + agent router for Gemini runtime"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: antigravity-bridge
+      app.kubernetes.io/component: bridge
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: antigravity-bridge
+        app.kubernetes.io/component: bridge
+        app.kubernetes.io/part-of: slate-system
+    spec:
+      serviceAccountName: slate-core
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: bridge
+          image: slate:local
+          imagePullPolicy: IfNotPresent
+          command: ["python"]
+          args: ["/entrypoint/antigravity-bridge.py"]
+          ports:
+            - name: http
+              containerPort: 8085
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: antigravity-bridge-config
+          env:
+            - name: PYTHONPATH
+              value: /slate:/workspace
+            - name: SLATE_WORKSPACE
+              value: /workspace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: slate-github-secret
+                  key: token
+                  optional: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+              readOnly: true
+            - name: entrypoint
+              mountPath: /entrypoint
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8085
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8085
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: slate-workspace-pvc
+        - name: entrypoint
+          configMap:
+            name: antigravity-bridge-entrypoint
+            defaultMode: 0755
+        - name: tmp
+          emptyDir:
+            sizeLimit: 200Mi
+
+---
+# ConfigMap: Antigravity Bridge Entrypoint Script
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: antigravity-bridge-entrypoint
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: antigravity-bridge
+    app.kubernetes.io/component: bridge
+data:
+  antigravity-bridge.py: |
+    #!/usr/bin/env python3
+    """
+    Antigravity Dashboard Bridge
+    ============================
+    Lightweight reverse proxy that gives the Antigravity runtime
+    access to the same SLATE Dashboard that @slate's copilot-bridge serves.
+
+    Endpoints:
+      /health          → Bridge health check
+      /api/dashboard/* → Proxies to slate-dashboard-svc:8080
+      /api/agents      → Agent registry with ANTIGRAVITY context
+      /api/exec        → Task execution via agent-router
+      /                → Dashboard UI (proxied)
+    """
+    import os
+    import sys
+    import json
+    import http.server
+    import urllib.request
+    import urllib.error
+    from datetime import datetime, timezone
+
+    AGENT_NAME = os.environ.get("AGENT_NAME", "ANTIGRAVITY")
+    BRIDGE_PORT = int(os.environ.get("BRIDGE_PORT", "8085"))
+    DASHBOARD_URL = os.environ.get("DASHBOARD_URL", "http://slate-dashboard-svc:8080")
+    AGENT_ROUTER_URL = os.environ.get("AGENT_ROUTER_URL", "http://agent-router-svc:8081")
+
+    class AntigravityBridgeHandler(http.server.BaseHTTPRequestHandler):
+        """HTTP handler that proxies requests to the SLATE Dashboard."""
+
+        def do_GET(self):
+            if self.path == "/health":
+                self._respond_json({
+                    "status": "ok",
+                    "agent": AGENT_NAME,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "dashboard_url": DASHBOARD_URL,
+                    "bridge_port": BRIDGE_PORT,
+                })
+                return
+
+            # Proxy everything else to the dashboard
+            self._proxy_to_dashboard()
+
+        def do_POST(self):
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length) if content_length > 0 else b""
+
+            if self.path.startswith("/api/exec"):
+                # Route task execution through agent router
+                self._proxy_request(AGENT_ROUTER_URL + self.path, body, method="POST")
+            else:
+                # Proxy to dashboard
+                self._proxy_request(DASHBOARD_URL + self.path, body, method="POST")
+
+        def _proxy_to_dashboard(self):
+            """Proxy GET request to the SLATE Dashboard."""
+            target_url = DASHBOARD_URL + self.path
+            try:
+                req = urllib.request.Request(
+                    target_url,
+                    headers={"User-Agent": f"SLATE-{AGENT_NAME}-Bridge/1.0"},
+                )
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    content = resp.read()
+                    content_type = resp.headers.get("Content-Type", "application/json")
+                    self.send_response(resp.status)
+                    self.send_header("Content-Type", content_type)
+                    self.send_header("Content-Length", str(len(content)))
+                    self.send_header("X-Served-By", f"antigravity-bridge")
+                    self.end_headers()
+                    self.wfile.write(content)
+            except Exception as e:
+                self._respond_json({"error": str(e), "target": target_url}, status=502)
+
+        def _proxy_request(self, url, body=b"", method="GET"):
+            """Proxy a request to a target URL."""
+            try:
+                req = urllib.request.Request(
+                    url, data=body if method == "POST" else None,
+                    headers={
+                        "Content-Type": "application/json",
+                        "User-Agent": f"SLATE-{AGENT_NAME}-Bridge/1.0",
+                    },
+                    method=method,
+                )
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    content = resp.read()
+                    self.send_response(resp.status)
+                    self.send_header("Content-Type", resp.headers.get("Content-Type", "application/json"))
+                    self.send_header("Content-Length", str(len(content)))
+                    self.end_headers()
+                    self.wfile.write(content)
+            except Exception as e:
+                self._respond_json({"error": str(e), "target": url}, status=502)
+
+        def _respond_json(self, data, status=200):
+            """Send a JSON response."""
+            body = json.dumps(data).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, format, *args):
+            ts = datetime.now(timezone.utc).strftime("%H:%M:%S")
+            print(f"[{ts}] [{AGENT_NAME}] {format % args}")
+
+    def main():
+        print(f"[+] Antigravity Bridge starting on :{BRIDGE_PORT}")
+        print(f"[+] Dashboard upstream: {DASHBOARD_URL}")
+        print(f"[+] Agent router: {AGENT_ROUTER_URL}")
+        print(f"[+] Agent: {AGENT_NAME}")
+
+        server = http.server.HTTPServer(("0.0.0.0", BRIDGE_PORT), AntigravityBridgeHandler)
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            print(f"[-] Bridge shutting down")
+            server.server_close()
+
+    if __name__ == "__main__":
+        main()
+
+---
+# Service: Antigravity Bridge
+apiVersion: v1
+kind: Service
+metadata:
+  name: antigravity-bridge-svc
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: antigravity-bridge
+    app.kubernetes.io/component: bridge
+    app.kubernetes.io/part-of: slate-system
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: antigravity-bridge
+    app.kubernetes.io/component: bridge
+  ports:
+    - name: http
+      port: 8085
+      targetPort: 8085
+      nodePort: 30085
+      protocol: TCP

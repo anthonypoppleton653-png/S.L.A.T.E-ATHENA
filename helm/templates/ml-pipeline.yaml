@@ -1,0 +1,425 @@
+{{/* Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Create Helm template for ML pipeline CronJobs */}}
+{{- if .Values.mlPipeline.enabled }}
+---
+# Model Files ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "slate.fullname" . }}-model-files
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: model-files
+data:
+  Modelfile.slate-coder: |
+    FROM mistral-nemo
+    PARAMETER temperature 0.3
+    PARAMETER top_p 0.9
+    PARAMETER num_ctx 8192
+    SYSTEM """You are SLATE-Coder, a 12B code generation model."""
+  Modelfile.slate-fast: |
+    FROM llama3.2
+    PARAMETER temperature 0.2
+    PARAMETER top_p 0.8
+    PARAMETER num_ctx 4096
+    SYSTEM """You are SLATE-Fast, a 3B classification and summary model."""
+  Modelfile.slate-planner: |
+    FROM mistral
+    PARAMETER temperature 0.4
+    PARAMETER top_p 0.85
+    PARAMETER num_ctx 8192
+    SYSTEM """You are SLATE-Planner, a 7B planning and analysis model."""
+
+{{- if .Values.mlPipeline.modelTrainer.enabled }}
+---
+# CronJob: Model Trainer (weekly)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "slate.fullname" . }}-model-trainer
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: model-trainer
+spec:
+  schedule: {{ .Values.mlPipeline.modelTrainer.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: {{ .Values.mlPipeline.modelTrainer.timeoutSeconds }}
+      template:
+        metadata:
+          labels:
+            {{- include "slate.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: model-trainer
+            app.kubernetes.io/part-of: slate-system
+        spec:
+          serviceAccountName: slate-agent
+          automountServiceAccountToken: false
+          securityContext:
+            {{- include "slate.podSecurityContext" . | nindent 12 }}
+          containers:
+            - name: trainer
+              image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag }}"
+              command: ["python", "-m", "slate.slate_model_trainer", "--build-all", "--update-context"]
+              env:
+                - name: SLATE_WORKSPACE
+                  value: /workspace
+                - name: SLATE_K8S
+                  value: "true"
+                - name: OLLAMA_HOST
+                  value: "{{ include "slate.fullname" . }}-ollama:{{ .Values.ollama.service.port }}"
+                - name: PYTHONPATH
+                  value: /slate:/workspace
+              securityContext:
+                {{- include "slate.containerSecurityContext" . | nindent 16 }}
+              resources:
+                {{- toYaml .Values.mlPipeline.modelTrainer.resources | nindent 16 }}
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+                - name: models
+                  mountPath: /slate/models
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          restartPolicy: OnFailure
+          volumes:
+            - name: workspace
+              persistentVolumeClaim:
+                claimName: {{ include "slate.fullname" . }}-workspace
+            - name: models
+              configMap:
+                name: {{ include "slate.fullname" . }}-model-files
+            - name: tmp
+              emptyDir:
+                sizeLimit: 500Mi
+          {{- if .Values.gpu.enabled }}
+          nodeSelector:
+            {{- toYaml .Values.gpu.nodeSelector | nindent 12 }}
+          tolerations:
+            {{- toYaml .Values.gpu.tolerations | nindent 12 }}
+          {{- end }}
+{{- end }}
+
+{{- if .Values.mlPipeline.codebaseIndexer.enabled }}
+---
+# CronJob: Codebase Indexer (daily)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "slate.fullname" . }}-indexer
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: codebase-indexer
+spec:
+  schedule: {{ .Values.mlPipeline.codebaseIndexer.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: {{ .Values.mlPipeline.codebaseIndexer.timeoutSeconds }}
+      template:
+        metadata:
+          labels:
+            {{- include "slate.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: codebase-indexer
+            app.kubernetes.io/part-of: slate-system
+        spec:
+          serviceAccountName: slate-agent
+          automountServiceAccountToken: false
+          securityContext:
+            {{- include "slate.podSecurityContext" . | nindent 12 }}
+          initContainers:
+            - name: wait-for-chromadb
+              image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag }}"
+              command:
+                - python
+                - -c
+                - |
+                  import urllib.request, time, sys
+                  for i in range(30):
+                      try:
+                          urllib.request.urlopen('http://{{ include "slate.fullname" . }}-chromadb:{{ .Values.chromadb.service.port }}/api/v1/heartbeat', timeout=5)
+                          sys.exit(0)
+                      except: time.sleep(5)
+                  sys.exit(1)
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+          containers:
+            - name: indexer
+              image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag }}"
+              command: ["python", "-m", "slate.slate_chromadb", "--index"]
+              env:
+                - name: SLATE_WORKSPACE
+                  value: /workspace
+                - name: SLATE_K8S
+                  value: "true"
+                - name: CHROMADB_HOST
+                  value: "{{ include "slate.fullname" . }}-chromadb:{{ .Values.chromadb.service.port }}"
+                - name: OLLAMA_HOST
+                  value: "{{ include "slate.fullname" . }}-ollama:{{ .Values.ollama.service.port }}"
+                - name: PYTHONPATH
+                  value: /slate:/workspace
+                - name: ANONYMIZED_TELEMETRY
+                  value: "FALSE"
+              securityContext:
+                {{- include "slate.containerSecurityContext" . | nindent 16 }}
+              resources:
+                {{- toYaml .Values.mlPipeline.codebaseIndexer.resources | nindent 16 }}
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          restartPolicy: OnFailure
+          volumes:
+            - name: workspace
+              persistentVolumeClaim:
+                claimName: {{ include "slate.fullname" . }}-workspace
+            - name: tmp
+              emptyDir:
+                sizeLimit: 500Mi
+{{- end }}
+
+{{- if .Values.mlPipeline.benchmarks.enabled }}
+---
+# CronJob: Inference Benchmarks (weekly)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "slate.fullname" . }}-benchmarks
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: benchmarks
+spec:
+  schedule: {{ .Values.mlPipeline.benchmarks.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: {{ .Values.mlPipeline.benchmarks.timeoutSeconds }}
+      template:
+        metadata:
+          labels:
+            {{- include "slate.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: benchmarks
+            app.kubernetes.io/part-of: slate-system
+        spec:
+          serviceAccountName: slate-agent
+          automountServiceAccountToken: false
+          securityContext:
+            {{- include "slate.podSecurityContext" . | nindent 12 }}
+          containers:
+            - name: benchmarks
+              image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag }}"
+              command: ["python", "-m", "slate.ml_orchestrator", "--benchmarks", "--json"]
+              env:
+                - name: SLATE_WORKSPACE
+                  value: /workspace
+                - name: SLATE_K8S
+                  value: "true"
+                - name: OLLAMA_HOST
+                  value: "{{ include "slate.fullname" . }}-ollama:{{ .Values.ollama.service.port }}"
+                - name: PYTHONPATH
+                  value: /slate:/workspace
+              securityContext:
+                {{- include "slate.containerSecurityContext" . | nindent 16 }}
+              resources:
+                {{- toYaml .Values.mlPipeline.benchmarks.resources | nindent 16 }}
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+                - name: tmp
+                  mountPath: /tmp
+          restartPolicy: Never
+          volumes:
+            - name: workspace
+              persistentVolumeClaim:
+                claimName: {{ include "slate.fullname" . }}-workspace
+            - name: tmp
+              emptyDir:
+                sizeLimit: 200Mi
+          {{- if .Values.gpu.enabled }}
+          nodeSelector:
+            {{- toYaml .Values.gpu.nodeSelector | nindent 12 }}
+          tolerations:
+            {{- toYaml .Values.gpu.tolerations | nindent 12 }}
+          {{- end }}
+{{- end }}
+
+{{- if .Values.mlPipeline.nightlyHealth.enabled }}
+---
+# CronJob: Nightly Health Check
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "slate.fullname" . }}-health
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: health-check
+spec:
+  schedule: {{ .Values.mlPipeline.nightlyHealth.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 7
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+            {{- include "slate.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: health-check
+            app.kubernetes.io/part-of: slate-system
+        spec:
+          serviceAccountName: slate-agent
+          automountServiceAccountToken: false
+          securityContext:
+            {{- include "slate.podSecurityContext" . | nindent 12 }}
+          containers:
+            - name: health-check
+              image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag }}"
+              command:
+                - python
+                - -c
+                - |
+                  import subprocess, sys, datetime
+                  checks = [
+                      ('status', ['python', '-m', 'slate.slate_status', '--json']),
+                      ('runtime', ['python', '-m', 'slate.slate_runtime', '--json']),
+                      ('workflow', ['python', '-m', 'slate.slate_workflow_manager', '--status']),
+                  ]
+                  all_ok = True
+                  for name, cmd in checks:
+                      try:
+                          r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+                          print(f'{"PASS" if r.returncode == 0 else "FAIL"}: {name}')
+                          if r.returncode != 0: all_ok = False
+                      except Exception as e:
+                          print(f'FAIL: {name} ({e})'); all_ok = False
+                  print(f'\n{datetime.datetime.utcnow().isoformat()}Z — {"PASS" if all_ok else "FAIL"}')
+                  sys.exit(0 if all_ok else 1)
+              env:
+                - name: SLATE_WORKSPACE
+                  value: /workspace
+                - name: SLATE_K8S
+                  value: "true"
+                - name: OLLAMA_HOST
+                  value: "{{ include "slate.fullname" . }}-ollama:{{ .Values.ollama.service.port }}"
+                - name: CHROMADB_HOST
+                  value: "{{ include "slate.fullname" . }}-chromadb:{{ .Values.chromadb.service.port }}"
+                - name: PYTHONPATH
+                  value: /slate:/workspace
+              securityContext:
+                {{- include "slate.containerSecurityContext" . | nindent 16 }}
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 512Mi
+                limits:
+                  cpu: 1000m
+                  memory: 2Gi
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+                - name: tmp
+                  mountPath: /tmp
+          restartPolicy: Never
+          volumes:
+            - name: workspace
+              persistentVolumeClaim:
+                claimName: {{ include "slate.fullname" . }}-workspace
+            - name: tmp
+              emptyDir:
+                sizeLimit: 200Mi
+{{- end }}
+
+{{- if .Values.mlPipeline.workflowCleanup.enabled }}
+---
+# CronJob: Workflow Cleanup (every 4 hours)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "slate.fullname" . }}-cleanup
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "slate.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workflow-cleanup
+spec:
+  schedule: {{ .Values.mlPipeline.workflowCleanup.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 300
+      template:
+        metadata:
+          labels:
+            {{- include "slate.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: workflow-cleanup
+            app.kubernetes.io/part-of: slate-system
+        spec:
+          serviceAccountName: slate-agent
+          automountServiceAccountToken: false
+          securityContext:
+            {{- include "slate.podSecurityContext" . | nindent 12 }}
+          containers:
+            - name: cleanup
+              image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag }}"
+              command: ["python", "-m", "slate.slate_workflow_manager", "--cleanup", "--enforce"]
+              env:
+                - name: SLATE_WORKSPACE
+                  value: /workspace
+                - name: SLATE_K8S
+                  value: "true"
+                - name: PYTHONPATH
+                  value: /slate:/workspace
+              securityContext:
+                {{- include "slate.containerSecurityContext" . | nindent 16 }}
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 1Gi
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+                - name: tmp
+                  mountPath: /tmp
+          restartPolicy: OnFailure
+          volumes:
+            - name: workspace
+              persistentVolumeClaim:
+                claimName: {{ include "slate.fullname" . }}-workspace
+            - name: tmp
+              emptyDir:
+                sizeLimit: 100Mi
+{{- end }}
+{{- end }}

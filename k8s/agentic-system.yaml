@@ -1,0 +1,907 @@
+# Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Create full agentic AI system K8s manifests
+# SLATE Agentic AI System — Agent Deployments, Autonomous Loop, ML Pipeline
+# Deploys: Agent Router, Autonomous Loop, Copilot Bridge, Agent Workers
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ConfigMap: Agent Routing Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: slate-agent-config
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: agent-config
+    app.kubernetes.io/part-of: slate-system
+data:
+  agent-routing.yaml: |
+    # SLATE Agent Routing — loaded by agent router deployment
+    version: "2.4.0"
+    agents:
+      ALPHA:
+        role: Coding
+        patterns: ["implement", "code", "build", "fix"]
+        gpu: true
+        replicas: 1
+        model: slate-coder
+      BETA:
+        role: Testing
+        patterns: ["test", "validate", "verify", "coverage"]
+        gpu: true
+        replicas: 1
+        model: slate-fast
+      GAMMA:
+        role: Planning
+        patterns: ["analyze", "plan", "research", "document"]
+        gpu: false
+        replicas: 1
+        model: slate-planner
+      DELTA:
+        role: External Bridge
+        patterns: ["claude", "mcp", "sdk", "integration"]
+        gpu: false
+        replicas: 1
+        model: slate-fast
+      COPILOT:
+        role: Full Orchestration
+        patterns: ["complex", "multi-step"]
+        gpu: true
+        replicas: 1
+        model: slate-coder
+    routing:
+      default_agent: GAMMA
+      max_concurrent_tasks: 10
+      task_timeout_seconds: 14400
+      stale_task_threshold_hours: 4
+  models.yaml: |
+    # SLATE Custom Models — Ollama model definitions
+    models:
+      slate-coder:
+        base: mistral-nemo
+        parameters: 12B
+        gpu: 0
+        throughput: "91 tok/s"
+      slate-fast:
+        base: llama3.2
+        parameters: 3B
+        gpu: 1
+        throughput: "308 tok/s"
+      slate-planner:
+        base: mistral
+        parameters: 7B
+        gpu: 0
+        throughput: "154 tok/s"
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Deployment: SLATE Agent Router
+# Central task router that classifies incoming tasks and dispatches to agents
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slate-agent-router
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: agent-router
+    app.kubernetes.io/part-of: slate-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: slate
+      app.kubernetes.io/component: agent-router
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: slate
+        app.kubernetes.io/component: agent-router
+        app.kubernetes.io/part-of: slate-system
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+    spec:
+      serviceAccountName: slate-core
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: agent-router
+          image: slate:local
+          imagePullPolicy: IfNotPresent
+          # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Run real agent router service with task classification
+          command:
+            ["python", "slate/k8s_entrypoints.py", "--service", "agent-router"]
+          ports:
+            - containerPort: 8081
+              name: router-api
+              protocol: TCP
+            - containerPort: 9090
+              name: metrics
+              protocol: TCP
+          # Modified: 2026-02-09T01:52:00Z | Author: Antigravity (Gemini) | Change: Add SLATE_DOCKER for container-aware checks
+          env:
+            - name: SLATE_WORKSPACE
+              value: /workspace
+            - name: SLATE_K8S
+              value: "true"
+            - name: SLATE_MODE
+              value: prod
+            - name: SLATE_DOCKER
+              value: "1"
+            - name: OLLAMA_HOST
+              value: ollama-svc:11434
+            - name: CHROMADB_HOST
+              value: chromadb-svc:8000
+            - name: PYTHONPATH
+              value: /slate:/workspace
+            - name: SLATE_AGENT_CONFIG
+              value: /config/agent-routing.yaml
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: agent-config
+              mountPath: /config
+              readOnly: true
+            # Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Add instructions ConfigMap mount
+            - name: instructions
+              mountPath: /config/instructions
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+            - name: slate-data
+              mountPath: /slate/.slate_index
+          # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Use HTTP probes for real agent router
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: slate-workspace-pvc
+        - name: agent-config
+          configMap:
+            name: slate-agent-config
+        # Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Add instructions ConfigMap volume
+        - name: instructions
+          configMap:
+            name: slate-instructions
+        - name: tmp
+          emptyDir:
+            sizeLimit: 500Mi
+        - name: slate-data
+          persistentVolumeClaim:
+            claimName: slate-data-pvc
+
+---
+# Service: Agent Router
+apiVersion: v1
+kind: Service
+metadata:
+  name: slate-agent-router-svc
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: agent-router
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: agent-router
+  ports:
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: router-api
+    - port: 9090
+      targetPort: 9090
+      protocol: TCP
+      name: metrics
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Deployment: SLATE Autonomous Loop
+# The self-healing autonomous brain — discovers, classifies, and executes tasks
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slate-autonomous-loop
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: autonomous-loop
+    app.kubernetes.io/part-of: slate-system
+spec:
+  replicas: 1 # Single instance — leader election prevents conflicts
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: slate
+      app.kubernetes.io/component: autonomous-loop
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: slate
+        app.kubernetes.io/component: autonomous-loop
+        app.kubernetes.io/part-of: slate-system
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+    spec:
+      serviceAccountName: slate-core
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # Wait for Ollama to be ready before starting autonomous loop
+        - name: wait-for-ollama
+          image: slate:local
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -c
+            - |
+              import urllib.request, time, sys
+              for i in range(60):
+                  try:
+                      urllib.request.urlopen('http://ollama-svc:11434/api/tags', timeout=5)
+                      print('Ollama is ready')
+                      sys.exit(0)
+                  except Exception:
+                      print(f'Waiting for Ollama... ({i+1}/60)')
+                      time.sleep(5)
+              print('Ollama not ready after 5 minutes')
+              sys.exit(1)
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+        # Wait for ChromaDB
+        - name: wait-for-chromadb
+          image: slate:local
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -c
+            - |
+              import urllib.request, time, sys
+              for i in range(30):
+                  try:
+                      urllib.request.urlopen('http://chromadb-svc:8000/api/v2/heartbeat', timeout=5)
+                      print('ChromaDB is ready')
+                      sys.exit(0)
+                  except Exception:
+                      print(f'Waiting for ChromaDB... ({i+1}/30)')
+                      time.sleep(5)
+              print('ChromaDB not ready after 2.5 minutes')
+              sys.exit(1)
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+      containers:
+        - name: autonomous-loop
+          image: slate:local
+          imagePullPolicy: IfNotPresent
+          # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Run real autonomous loop with task discovery
+          command:
+            ["python", "slate/k8s_entrypoints.py", "--service", "autonomous"]
+          ports:
+            - containerPort: 8082
+              name: loop-api
+              protocol: TCP
+            - containerPort: 9090
+              name: metrics
+              protocol: TCP
+          # Modified: 2026-02-09T01:52:00Z | Author: Antigravity (Gemini) | Change: Add SLATE_DOCKER for container-aware checks
+          env:
+            - name: SLATE_WORKSPACE
+              value: /workspace
+            - name: SLATE_K8S
+              value: "true"
+            - name: SLATE_MODE
+              value: prod
+            - name: SLATE_DOCKER
+              value: "1"
+            - name: OLLAMA_HOST
+              value: ollama-svc:11434
+            - name: CHROMADB_HOST
+              value: chromadb-svc:8000
+            - name: PYTHONPATH
+              value: /slate:/workspace
+            - name: SLATE_AGENT_CONFIG
+              value: /config/agent-routing.yaml
+            - name: SLATE_AUTONOMOUS_MAX_TASKS
+              value: "1000"
+            - name: SLATE_AUTONOMOUS_INTERVAL
+              value: "60"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+              # GPU: uncomment when NVIDIA device plugin is available
+              # nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: agent-config
+              mountPath: /config
+              readOnly: true
+            # Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Add instructions ConfigMap mount
+            - name: instructions
+              mountPath: /config/instructions
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+            - name: slate-data
+              mountPath: /slate/.slate_index
+            - name: slate-memory
+              mountPath: /slate/slate_memory
+          # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Use HTTP probes for real autonomous loop
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 15
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 15
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: slate-workspace-pvc
+        - name: agent-config
+          configMap:
+            name: slate-agent-config
+        # Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Add instructions ConfigMap volume
+        - name: instructions
+          configMap:
+            name: slate-instructions
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: slate-data
+          persistentVolumeClaim:
+            claimName: slate-data-pvc
+        - name: slate-memory
+          persistentVolumeClaim:
+            claimName: slate-memory-pvc
+      # GPU nodeSelector: uncomment when NVIDIA device plugin is available
+      # nodeSelector:
+      #   nvidia.com/gpu.present: "true"
+      # tolerations:
+      #   - key: nvidia.com/gpu
+      #     operator: Exists
+      #     effect: NoSchedule
+
+---
+# Service: Autonomous Loop
+apiVersion: v1
+kind: Service
+metadata:
+  name: slate-autonomous-svc
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: autonomous-loop
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: autonomous-loop
+  ports:
+    - port: 8082
+      targetPort: 8082
+      protocol: TCP
+      name: loop-api
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Deployment: SLATE Copilot Agent Bridge
+# Bridges the autonomous loop with VS Code @slate chat participant
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slate-copilot-bridge
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: copilot-bridge
+    app.kubernetes.io/part-of: slate-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: slate
+      app.kubernetes.io/component: copilot-bridge
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: slate
+        app.kubernetes.io/component: copilot-bridge
+        app.kubernetes.io/part-of: slate-system
+    spec:
+      serviceAccountName: slate-agent
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: copilot-bridge
+          image: slate:local
+          imagePullPolicy: IfNotPresent
+          # Modified: 2026-02-10T03:00:00Z | Author: Claude Opus 4.5 | Change: Add task queue endpoints for VS Code extension integration
+          command:
+            - python
+            - -c
+            - |
+              import http.server, json, subprocess, os, sys, time, traceback
+              from pathlib import Path
+              from datetime import datetime, timezone
+
+              WORKSPACE = os.environ.get('SLATE_WORKSPACE', '/workspace')
+              PYTHONPATH = os.environ.get('PYTHONPATH', '/slate:/workspace')
+              VERSION = '5.1.0'
+              BRIDGE_QUEUE = Path(WORKSPACE) / '.slate_copilot_bridge.json'
+              BRIDGE_RESULTS = Path(WORKSPACE) / '.slate_copilot_bridge_results.json'
+
+              def ensure_files():
+                  now = datetime.now(timezone.utc).isoformat()
+                  if not BRIDGE_QUEUE.exists():
+                      BRIDGE_QUEUE.write_text(json.dumps({'tasks': [], 'created_at': now}, indent=2))
+                  if not BRIDGE_RESULTS.exists():
+                      BRIDGE_RESULTS.write_text(json.dumps({'results': [], 'created_at': now}, indent=2))
+
+              def read_queue():
+                  try: return json.loads(BRIDGE_QUEUE.read_text())
+                  except: return {'tasks': []}
+
+              def write_queue(data):
+                  BRIDGE_QUEUE.write_text(json.dumps(data, indent=2, default=str))
+
+              def read_results():
+                  try: return json.loads(BRIDGE_RESULTS.read_text())
+                  except: return {'results': []}
+
+              def write_results(data):
+                  BRIDGE_RESULTS.write_text(json.dumps(data, indent=2, default=str))
+
+              class BridgeHandler(http.server.BaseHTTPRequestHandler):
+                  def do_GET(self):
+                      if self.path == '/api/health':
+                          self._json_response(200, {
+                              'status': 'ok',
+                              'component': 'copilot-bridge',
+                              'version': VERSION,
+                              'backend': 'kubernetes',
+                              'workspace': WORKSPACE,
+                          })
+                      elif self.path == '/api/status':
+                          queue = read_queue()
+                          results = read_results()
+                          tasks = queue.get('tasks', [])
+                          pending = [t for t in tasks if t.get('status') == 'pending']
+                          self._json_response(200, {
+                              'component': 'copilot-bridge',
+                              'version': VERSION,
+                              'uptime': time.time() - START_TIME,
+                              'requests_served': REQUEST_COUNT,
+                              'pending_tasks': len(pending),
+                              'total_results': len(results.get('results', [])),
+                          })
+                      elif self.path == '/api/tasks/pending':
+                          queue = read_queue()
+                          pending = [t for t in queue.get('tasks', []) if t.get('status') == 'pending']
+                          self._json_response(200, {'pending': len(pending), 'tasks': pending})
+                      else:
+                          self._json_response(404, {'error': 'Not found'})
+
+                  def do_POST(self):
+                      global REQUEST_COUNT
+                      if self.path == '/api/exec':
+                          REQUEST_COUNT += 1
+                          try:
+                              length = int(self.headers.get('Content-Length', 0))
+                              body = json.loads(self.rfile.read(length).decode('utf-8'))
+                              command = body.get('command', '')
+                              timeout = min(body.get('timeout', 90000), 600000) / 1000
+
+                              if not command:
+                                  self._json_response(400, {'error': 'Missing command'})
+                                  return
+
+                              blocked = ['eval(', 'exec(os', 'rm -rf /', 'base64.b64decode']
+                              for pat in blocked:
+                                  if pat in command:
+                                      self._json_response(403, {'error': f'Blocked pattern: {pat}'})
+                                      return
+
+                              args = command.split()
+                              result = subprocess.run(
+                                  ['python'] + args,
+                                  cwd=WORKSPACE,
+                                  capture_output=True,
+                                  text=True,
+                                  timeout=timeout,
+                                  env={**os.environ, 'PYTHONPATH': PYTHONPATH},
+                              )
+                              self._json_response(200, {
+                                  'output': result.stdout.strip() or result.stderr.strip() or '[completed]',
+                                  'exit_code': result.returncode,
+                                  'error': result.stderr.strip() if result.returncode != 0 else None,
+                              })
+                          except subprocess.TimeoutExpired:
+                              self._json_response(408, {'error': 'Command timed out', 'output': ''})
+                          except json.JSONDecodeError:
+                              self._json_response(400, {'error': 'Invalid JSON body'})
+                          except Exception as e:
+                              self._json_response(500, {'error': str(e), 'traceback': traceback.format_exc()})
+
+                      elif self.path == '/api/tasks/enqueue':
+                          try:
+                              length = int(self.headers.get('Content-Length', 0))
+                              body = json.loads(self.rfile.read(length).decode('utf-8'))
+                              task = {
+                                  'id': f"bridge_{int(time.time())}_{REQUEST_COUNT}",
+                                  'title': body.get('title', 'Untitled')[:200],
+                                  'description': body.get('description', '')[:2000],
+                                  'priority': body.get('priority', 'medium'),
+                                  'source': 'k8s-bridge',
+                                  'status': 'pending',
+                                  'dispatched_at': datetime.now(timezone.utc).isoformat(),
+                              }
+                              queue = read_queue()
+                              queue['tasks'].append(task)
+                              queue['last_updated'] = datetime.now(timezone.utc).isoformat()
+                              write_queue(queue)
+                              self._json_response(201, {'task_id': task['id'], 'status': 'enqueued'})
+                          except Exception as e:
+                              self._json_response(500, {'error': str(e)})
+
+                      elif self.path == '/api/tasks/complete':
+                          try:
+                              length = int(self.headers.get('Content-Length', 0))
+                              body = json.loads(self.rfile.read(length).decode('utf-8'))
+                              task_id = body.get('task_id', '')
+                              success = body.get('success', True)
+                              result_text = body.get('result', '')[:5000]
+
+                              results = read_results()
+                              results['results'].append({
+                                  'task_id': task_id,
+                                  'success': success,
+                                  'result': result_text,
+                                  'completed_at': datetime.now(timezone.utc).isoformat(),
+                              })
+                              if len(results['results']) > 100:
+                                  results['results'] = results['results'][-100:]
+                              write_results(results)
+
+                              queue = read_queue()
+                              queue['tasks'] = [t for t in queue.get('tasks', []) if t.get('id') != task_id]
+                              write_queue(queue)
+                              self._json_response(200, {'task_id': task_id, 'status': 'completed'})
+                          except Exception as e:
+                              self._json_response(500, {'error': str(e)})
+                      else:
+                          self._json_response(404, {'error': 'Not found'})
+
+                  def _json_response(self, code, data):
+                      body = json.dumps(data).encode('utf-8')
+                      self.send_response(code)
+                      self.send_header('Content-Type', 'application/json')
+                      self.send_header('Content-Length', str(len(body)))
+                      self.end_headers()
+                      self.wfile.write(body)
+
+                  def log_message(self, format, *args):
+                      if '/api/health' not in (args[0] if args else ''):
+                          print(f'[Bridge] {args[0] if args else ""}', flush=True)
+
+              ensure_files()
+              START_TIME = time.time()
+              REQUEST_COUNT = 0
+              server = http.server.HTTPServer(('0.0.0.0', 8083), BridgeHandler)
+              print(f'SLATE Copilot Bridge v{VERSION} ready on :8083', flush=True)
+              server.serve_forever()
+          ports:
+            - containerPort: 8083
+              name: bridge-api
+              protocol: TCP
+          # Modified: 2026-02-09T01:52:00Z | Author: Antigravity (Gemini) | Change: Add SLATE_DOCKER for container-aware checks
+          env:
+            - name: SLATE_WORKSPACE
+              value: /workspace
+            - name: SLATE_K8S
+              value: "true"
+            - name: SLATE_DOCKER
+              value: "1"
+            - name: OLLAMA_HOST
+              value: ollama-svc:11434
+            - name: CHROMADB_HOST
+              value: chromadb-svc:8000
+            - name: PYTHONPATH
+              value: /slate:/workspace
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            # Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Add instructions ConfigMap mount
+            - name: instructions
+              mountPath: /config/instructions
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8083
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8083
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: slate-workspace-pvc
+        # Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Add instructions ConfigMap volume
+        - name: instructions
+          configMap:
+            name: slate-instructions
+        - name: tmp
+          emptyDir:
+            sizeLimit: 200Mi
+
+---
+# Service: Copilot Bridge
+apiVersion: v1
+kind: Service
+metadata:
+  name: slate-copilot-bridge-svc
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: copilot-bridge
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: copilot-bridge
+  ports:
+    - port: 8083
+      targetPort: 8083
+      protocol: TCP
+      name: bridge-api
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Deployment: SLATE Workflow Manager
+# Manages task lifecycle, PR workflows, and enforces completion rules
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slate-workflow-manager
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: workflow-manager
+    app.kubernetes.io/part-of: slate-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: slate
+      app.kubernetes.io/component: workflow-manager
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: slate
+        app.kubernetes.io/component: workflow-manager
+        app.kubernetes.io/part-of: slate-system
+    spec:
+      serviceAccountName: slate-core
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: workflow-manager
+          image: slate:local
+          imagePullPolicy: IfNotPresent
+          # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Run real workflow manager service
+          command:
+            ["python", "slate/k8s_entrypoints.py", "--service", "workflow"]
+          ports:
+            - containerPort: 8084
+              name: workflow-api
+              protocol: TCP
+          # Modified: 2026-02-09T01:52:00Z | Author: Antigravity (Gemini) | Change: Add SLATE_DOCKER for container-aware checks
+          env:
+            - name: SLATE_WORKSPACE
+              value: /workspace
+            - name: SLATE_K8S
+              value: "true"
+            - name: SLATE_DOCKER
+              value: "1"
+            - name: OLLAMA_HOST
+              value: ollama-svc:11434
+            - name: CHROMADB_HOST
+              value: chromadb-svc:8000
+            - name: PYTHONPATH
+              value: /slate:/workspace
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: slate-github-credentials
+                  key: GITHUB_TOKEN
+                  optional: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            # Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Add instructions ConfigMap mount
+            - name: instructions
+              mountPath: /config/instructions
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+            - name: slate-data
+              mountPath: /slate/.slate_index
+          # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Use HTTP probes for real workflow service
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8084
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8084
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: slate-workspace-pvc
+        # Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Add instructions ConfigMap volume
+        - name: instructions
+          configMap:
+            name: slate-instructions
+        - name: tmp
+          emptyDir:
+            sizeLimit: 200Mi
+        - name: slate-data
+          persistentVolumeClaim:
+            claimName: slate-data-pvc
+
+---
+# Service: Workflow Manager
+apiVersion: v1
+kind: Service
+metadata:
+  name: slate-workflow-svc
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: workflow-manager
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: workflow-manager
+  ports:
+    - port: 8084
+      targetPort: 8084
+      protocol: TCP
+      name: workflow-api

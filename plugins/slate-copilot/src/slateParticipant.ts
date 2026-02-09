@@ -1,4 +1,4 @@
-﻿// Modified: 2026-02-07T16:00:00Z | Author: COPILOT | Change: Agentic transformation — @slate is now an autonomous agent brain that plans, decides, delegates, and executes
+﻿// Modified: 2026-02-08T12:00:00Z | Author: COPILOT | Change: Add /pr /issues /git /tests /scan commands, GitHub integration tools, update system prompt ecosystem layer
 import * as vscode from 'vscode';
 import { getSystemState, type SlateSystemState } from './tools';
 
@@ -12,8 +12,9 @@ const HANDLER_TIMEOUT_MS = 900_000; // 15 min — autonomous agents may chain ma
 // The SLATE ecosystem has 21 subsystems organized in 8 dependent layers.
 // Every tool call is part of a coherent process, not an isolated action.
 // ─────────────────────────────────────────────────────────────────────────────
+// Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: v5.2.0 — add FORGE.md, ANTIGRAVITY, prompt system, /forge & /prompts commands
 const SYSTEM_PROMPT = `You are SLATE — an autonomous AI agent that OWNS the development lifecycle of the S.L.A.T.E. project.
-Version 2.5.0. ALL operations LOCAL ONLY (127.0.0.1).
+Version 5.2.0. ALL operations LOCAL ONLY (127.0.0.1).
 
 ## YOUR IDENTITY — AUTONOMOUS AGENT
 
@@ -78,6 +79,37 @@ For any non-trivial request:
 - CUDA_VISIBLE_DEVICES: 0,1
 - SLATE Models: slate-coder (12B, GPU 0), slate-fast (3B, GPU 1), slate-planner (7B, GPU 0)
 - Agents: 8 registered (ALPHA, BETA, GAMMA, DELTA, EPSILON, ZETA, COPILOT, COPILOT_CHAT)
+- Collaborator: ANTIGRAVITY (Google AI Ultra) — coordinates via FORGE.md
+
+## FORGE.md — COLLABORATIVE AI LOG
+
+FORGE = Framework for Orchestrated Research, Generation & Evolution.
+A shared append-only log between AI team members (Copilot, Antigravity, autonomous agents).
+
+- **Read** teammate updates: slate_forge(action="read")
+- **Append** your work: slate_forge(action="append", entry="[COPILOT] ... | ACTION: ...")
+- **Check status**: slate_forge(action="status")
+- **Sync across runtimes**: slate_forge(action="sync")
+
+Sections: STATUS, PLAN, OUTPUT, HANDOFF, MAGIC (super prompts)
+Always log significant work to FORGE.md. Your teammate ANTIGRAVITY reads it.
+
+## PROMPT SYSTEM — 9 SUPER PROMPTS
+
+9 Ollama-routed automation prompts in prompts/index.json:
+| Prompt | Model | Purpose |
+|--------|-------|---------|
+| system-health | slate-fast | System diagnostics |
+| deploy-kubernetes | slate-planner | K8s deployment |
+| run-benchmarks | slate-coder | GPU/inference benchmarks |
+| workflow-cleanup | slate-fast | Task maintenance |
+| issue-to-task | slate-planner | GitHub issue → Ollama task → PR |
+| pr-review | slate-coder | Local code review via Ollama |
+| task-router | slate-fast | Intent classification → agent routing |
+| dashboard-sync | slate-fast | Dashboard refresh + board sync |
+| forge-collab | slate-planner | AI-to-AI collaboration meta-prompt |
+
+Use slate_promptIndex to list, view, run, or validate prompts.
 
 ## ECOSYSTEM — 8 LAYERS
 
@@ -88,12 +120,16 @@ SLATE is layered. Fix the LOWEST broken layer first. Progress upward.
 | 1 | Foundation | slate_systemStatus, slate_runtimeCheck, slate_checkDeps |
 | 2 | Hardware | slate_hardwareInfo, slate_gpuManager |
 | 3 | Infrastructure | slate_runnerStatus, slate_orchestrator, slate_startServices |
-| 4 | AI Pipeline | slate_gpuManager(preload), slate_runtimeCheck |
+| 4 | AI Pipeline | slate_gpuManager(preload), slate_runtimeCheck, slate_githubModels, LM Studio (port 1234) |
 | 5 | Agent Registry | slate_agentStatus, slate_agentBridge |
 | 6 | Services | slate_orchestrator, slate_startServices |
 | 7 | Task Mgmt | slate_workflow, slate_autonomous, slate_executeWork, slate_handoff |
 | 8 | Quality | slate_securityAudit, slate_benchmark, slate_forkCheck |
 | + | Roadmap | slate_planContext, slate_devCycle, slate_specKit, slate_codeGuidance |
+| + | GitHub | slate_ciMonitor, slate_prManager, slate_issueTracker, slate_gitOps |
+| + | AI Cloud | slate_githubModels, slate_semanticKernel |
+| + | Collaboration | slate_forge, slate_promptIndex |
+| + | K8s/Instructions | slate_kubernetes, slate_adaptiveInstructions |
 
 ## TOOL USAGE — 20 rounds available
 
@@ -198,7 +234,7 @@ Report: service name | was | now. Concise table.`,
 1. slate_hardwareInfo + slate_gpuManager(action="status") — gather GPU state
 2. If not optimized → slate_hardwareInfo(optimize=true) immediately
 3. If models not loaded → slate_gpuManager(action="preload") immediately
-4. slate_runtimeCheck — verify Ollama/PyTorch/ChromaDB
+4. slate_runtimeCheck — verify Ollama/LM Studio/PyTorch/ChromaDB
 5. Report: GPU table with VRAM, model assignments, optimizations applied.`,
 
 	// ─── /agents — Agent orchestration mission ─────────────────────────
@@ -305,6 +341,89 @@ Stages: PLAN → CODE → TEST → DEPLOY → FEEDBACK → (cycle)`,
 
 Call slate_planContext(scope="full"). Return the compressed context line.
 This is the TOKEN SAVER — use before complex operations.`,
+
+	// ─── /pr — Pull request agent ──────────────────────────────────────
+	pr: `MISSION: Manage pull requests autonomously.
+
+1. slate_prManager(action="list") — list open PRs with CI status
+2. If user wants to create → slate_prManager(action="create", branch, title, body)
+3. If user wants status → slate_prManager(action="status", prNumber) — includes check runs
+4. Cross-reference with slate_workflow(action="status") for task alignment
+5. Report: PR table with number, title, branch, CI status, age.`,
+
+	// ─── /issues — Issue tracking agent ────────────────────────────────
+	issues: `MISSION: Manage GitHub issues autonomously.
+
+1. slate_issueTracker(action="list") — list open issues with labels
+2. If user wants to create → slate_issueTracker(action="create", title, body, labels)
+3. If user wants to comment → slate_issueTracker(action="comment", issueNumber, body)
+4. If user wants to close → slate_issueTracker(action="close", issueNumber)
+5. Cross-reference with slate_workflow(action="status") for task-to-issue mapping
+6. Report: Issue table with number, title, labels, assignees, age.`,
+
+	// ─── /git — Git operations agent ───────────────────────────────────
+	git: `MISSION: Provide git repository awareness and operations.
+
+1. slate_gitOps(action="status") — working tree status (modified, staged, untracked)
+2. slate_gitOps(action="branch") — list branches, highlight current
+3. slate_gitOps(action="log") — recent commit log
+4. slate_gitOps(action="diff") — diff stats for uncommitted changes
+5. If stash requested → slate_gitOps(action="stash")
+6. Report: Concise git state summary — branch, changes, recent commits.`,
+
+	// ─── /tests — Test explorer agent ──────────────────────────────────
+	tests: `MISSION: Run tests and report results through VS Code Test Explorer.
+
+1. slate_runCommand(script="-m pytest tests/ -v --tb=short") — run the full test suite
+2. Report: Test results table with pass/fail/skip counts per suite (core, security, agents, ml)
+3. If failures → analyze output and delegate fixes to ALPHA agent via slate_handoff
+4. If coverage gaps → delegate test writing to BETA agent via slate_handoff
+5. The VS Code Test Explorer sidebar is also populated for interactive test runs.`,
+
+	// ─── /scan — Security scan agent ───────────────────────────────────
+	scan: `MISSION: Run security scan and publish findings to VS Code Problems panel.
+
+1. slate_securityAudit(scan="full") — run ActionGuard, PII scanner, SDK guard
+2. Findings are automatically published to the VS Code Problems panel via Diagnostics API
+3. For ANY critical finding → delegate fix to ALPHA agent via slate_handoff
+4. Re-scan to verify remediation
+5. Report: finding table with file, line, severity, description, action taken.`,
+
+	// ─── /forge — FORGE.md collaborative log ──────────────────────────
+	// Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add /forge command prompt for collaborative AI log
+	forge: `MISSION: Manage the FORGE.md collaborative AI operations log.
+
+FORGE = Framework for Orchestrated Research, Generation & Evolution.
+This is the shared append-only log between Copilot, Antigravity, and autonomous agents.
+
+1. slate_forge(action="status") — collaboration summary: recent entries, active agents, sync state
+2. slate_forge(action="read") — read the full FORGE.md log or filter by section/text
+3. If user wants to log work → slate_forge(action="append", entry="[COPILOT] {timestamp} | {section}: {description}")
+4. If sync needed → slate_forge(action="sync") — sync FORGE.md across Docker volumes and MCP
+5. Cross-reference with slate_workflow(action="status") for task-to-FORGE mapping
+
+Sections: STATUS (system state), PLAN (objectives), OUTPUT (deliverables), HANDOFF (task delegation), MAGIC (super prompts)
+Format: [AgentName] YYYY-MM-DDTHH:MM:SSZ | Action: description
+
+Report: Recent entries table with agent, timestamp, section, and summary.`,
+
+	// ─── /prompts — Prompt Index management ────────────────────────────
+	// Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add /prompts command prompt for prompt index management
+	prompts: `MISSION: Manage and execute SLATE super prompts via the Prompt Index.
+
+9 super prompts in prompts/index.json — Ollama-routed automation workflows:
+- system-health, deploy-kubernetes, run-benchmarks, workflow-cleanup
+- issue-to-task, pr-review, task-router, dashboard-sync, forge-collab
+
+Each targets a SLATE model: slate-coder (12B), slate-fast (3B), or slate-planner (7B).
+
+1. slate_promptIndex(action="list") — show all available prompts with names, models, and descriptions
+2. If user wants to view one → slate_promptIndex(action="get", name="{prompt-name}")
+3. If user wants to run one → slate_promptIndex(action="run", name="{prompt-name}") — executes via Ollama
+4. If user wants to validate → slate_promptIndex(action="validate") — check all prompts
+5. If index is stale → slate_promptIndex(action="index") — rebuild prompts/index.json
+
+Report: Prompt table with name, model, description, tags. For runs, show Ollama output.`,
 
 	help: '',
 };
@@ -575,6 +694,19 @@ function getToolDisplayName(toolName: string): string {
 		slate_learningProgress: 'Learning Progress',
 		slate_planContext: 'Plan Context',
 		slate_codeGuidance: 'Code Guidance',
+		// GitHub integration tools
+		slate_ciMonitor: 'CI Monitor',
+		slate_prManager: 'PR Manager',
+		slate_issueTracker: 'Issue Tracker',
+		slate_gitOps: 'Git Operations',
+		// Semantic Kernel, GitHub Models, K8s, Adaptive Instructions
+		slate_semanticKernel: 'Semantic Kernel',
+		slate_githubModels: 'GitHub Models',
+		slate_kubernetes: 'Kubernetes',
+		slate_adaptiveInstructions: 'Adaptive Instructions',
+		// Collaboration tools
+		slate_forge: 'FORGE.md',
+		slate_promptIndex: 'Prompt Index',
 	};
 	return names[toolName] ?? toolName;
 }
@@ -610,7 +742,18 @@ function renderHelp(stream: vscode.ChatResponseStream) {
 	stream.markdown('| `/context` | Token-efficient compressed state (TOKEN SAVER) |\n');
 	stream.markdown('| `/specs` | Process all specs autonomously |\n');
 	stream.markdown('| `/learn` | Track learning progress + auto-advance |\n\n');
-	stream.markdown('**26 Tools** | **20 tool rounds per request** | **15 min timeout**\n');
+	stream.markdown('### GitHub & Source Control\n');
+	stream.markdown('| Command | Mission |\n|---------|---------|\n');
+	stream.markdown('| `/pr` | Pull request management — list, create, check CI status |\n');
+	stream.markdown('| `/issues` | GitHub issue tracking — list, create, close, comment |\n');
+	stream.markdown('| `/git` | Git operations — status, branches, log, diff, stash |\n');
+	stream.markdown('| `/tests` | Run tests + populate Test Explorer sidebar |\n');
+	stream.markdown('| `/scan` | Security scan → Problems panel + auto-remediate |\n\n');
+	stream.markdown('### Collaboration & Prompts\n');
+	stream.markdown('| Command | Mission |\n|---------|---------|\n');
+	stream.markdown('| `/forge` | FORGE.md — read/append collaborative AI log, sync |\n');
+	stream.markdown('| `/prompts` | Prompt Index — list, view, run super prompts via Ollama |\n\n');
+	stream.markdown('**32 Tools** | **20 tool rounds per request** | **15 min timeout**\n');
 	stream.markdown('\n> **Tip:** Just talk to @slate naturally. Commands are optional — the agent will figure out what to do.\n');
 }
 
@@ -693,6 +836,15 @@ function getStateAwareFollowups(lastCommand: string, state: SlateSystemState): S
 		specs: { prompt: 'Check learning progress, achievements, and XP', label: 'View progress', command: 'learn' },
 		learn: { prompt: 'Get compressed context for token-efficient operations', label: 'Get context', command: 'context' },
 		context: { prompt: 'Check roadmap alignment: dev stage, specs, tasks', label: 'View roadmap', command: 'roadmap' },
+		// Collaboration swaps
+		forge: { prompt: 'List and run available SLATE super prompts via Ollama', label: 'Run prompts', command: 'prompts' },
+		prompts: { prompt: 'Read the FORGE.md collaborative log for teammate updates', label: 'View FORGE log', command: 'forge' },
+		// GitHub & source control swaps
+		pr: { prompt: 'List open GitHub issues and recent activity', label: 'View issues', command: 'issues' },
+		issues: { prompt: 'Check git status — branches, uncommitted changes, recent commits', label: 'Git status', command: 'git' },
+		git: { prompt: 'List open pull requests with CI status', label: 'View PRs', command: 'pr' },
+		tests: { prompt: 'Run security scan and publish findings to Problems panel', label: 'Security scan', command: 'scan' },
+		scan: { prompt: 'Run full test suite and check coverage', label: 'Run tests', command: 'tests' },
 	};
 
 	// Replace any pillar whose command matches the last command

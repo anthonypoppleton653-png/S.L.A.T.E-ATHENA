@@ -611,7 +611,7 @@ Focus on efficiency, error reduction, or better tool usage."""
                         "model": "mistral-nemo",
                         "prompt": prompt,
                         "stream": False,
-                        "options": {"temperature": 0.7, "num_predict": 150},
+                        "options": {"temperature": 0.7, "num_predict": 150, "num_gpu": 999},
                     },
                     timeout=aiohttp.ClientTimeout(total=30),
                 ) as response:
@@ -718,7 +718,7 @@ Focus on the most likely fix."""
                         "model": "mistral-nemo",
                         "prompt": prompt,
                         "stream": False,
-                        "options": {"temperature": 0.5, "num_predict": 100},
+                        "options": {"temperature": 0.5, "num_predict": 100, "num_gpu": 999},
                     },
                     timeout=aiohttp.ClientTimeout(total=20),
                 ) as response:

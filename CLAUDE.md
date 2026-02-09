@@ -1,10 +1,10 @@
 # S.L.A.T.E. Development Guidelines
-<!-- Modified: 2026-02-08T05:00:00Z | Author: Claude Opus 4.5 | Change: Add evolving system ethos and schematic background -->
+<!-- Modified: 2026-02-09T19:30:00Z | Author: Claude Opus 4.6 | Change: Add Discord bot, spec enforcement, SEO, feedback loops -->
 
 **S.L.A.T.E.** = Synchronized Living Architecture for Transformation and Evolution
 
 **Constitution**: `.specify/memory/constitution.md` — Supersedes all other practices
-Last updated: 2026-02-08
+Last updated: 2026-02-09
 
 ## Core Ethos: Systems Evolve With Progress
 
@@ -50,47 +50,326 @@ The background is generated from real system state:
 - D3.js v7 (bundled locally, tech tree visualization)
 - **Ollama** (local LLM inference, mistral-nemo on dual RTX 5070 Ti) - localhost:11434
 - **Foundry Local** (ONNX-optimized local inference) - localhost:5272
+- **Claude Code** (Opus 4.6, local MCP bridge inference provider) - copilot agent bridge
 - ChromaDB (local vector store for RAG memory)
+- **TRELLIS.2** (Microsoft 4B image-to-3D generation) - K8s service port 8085
 
-## Claude Code Integration
+## Token System
 
-SLATE provides slash commands and MCP tools for Claude Code integration.
+SLATE has a complete local token management system for service auth, agent identity, and plugin verification.
 
-### Slash Commands (Project-Level)
+```powershell
+# Bootstrap token system (generates all service/agent/plugin tokens)
+.\.venv\Scripts\python.exe slate/slate_token_system.py --bootstrap
 
-Commands are defined in `.claude/commands/` and available when working in this project:
+# Check token system status
+.\.venv\Scripts\python.exe slate/slate_token_system.py --status
+
+# Generate a new token
+.\.venv\Scripts\python.exe slate/slate_token_system.py --generate service --name my-service
+
+# Rotate expiring tokens
+.\.venv\Scripts\python.exe slate/slate_token_system.py --rotate
+
+# Validate a token
+.\.venv\Scripts\python.exe slate/slate_token_system.py --validate TOKEN_VALUE
+
+# Audit log
+.\.venv\Scripts\python.exe slate/slate_token_system.py --audit
+
+# Export config (no secrets)
+.\.venv\Scripts\python.exe slate/slate_token_system.py --export-config
+```
+
+### Token Types
+
+| Type | Prefix | TTL | Purpose |
+|------|--------|-----|---------|
+| `service` | `slsvc_` | 30 days | Internal service-to-service auth |
+| `agent` | `slagt_` | 7 days | Agent identity tokens |
+| `github` | `slghp_` | 90 days | GitHub PAT tracking |
+| `wiki` | `slwik_` | 30 days | Wiki API access |
+| `plugin` | `slplg_` | 30 days | Plugin authentication |
+| `session` | `slsess_` | 4 hours | Ephemeral session tokens |
+| `api` | `slapi_` | 24 hours | External API tokens |
+
+**Security**: Tokens stored in `.slate_tokens/` (git-ignored), hashed with SHA-256, never stored as plaintext after generation.
+
+## GitHub Interface Layer
+
+SLATE uses GitHub as a complete interface layer. All systems are managed through GitHub surfaces:
+
+### Wiki Management
+
+```powershell
+# Generate wiki from specs
+.\.venv\Scripts\python.exe slate/slate_spec_kit.py --wiki
+
+# Process specs with AI analysis
+.\.venv\Scripts\python.exe slate/slate_spec_kit.py --analyze-spec specs/022-slate-brand-identity/spec.md
+```
+
+Wiki pages auto-generated from 26+ specifications to `docs/wiki/`.
+
+### Project Board Management
+
+```powershell
+# Sync all project boards
+.\.venv\Scripts\python.exe slate/slate_project_board.py --status
+
+# Push tasks to KANBAN
+.\.venv\Scripts\python.exe slate/slate_project_board.py --push
+
+# Bidirectional sync
+.\.venv\Scripts\python.exe slate/slate_project_board.py --sync
+```
+
+8 project boards: KANBAN (#5), BUG TRACKING (#7), ITERATIVE DEV (#8), ROADMAP (#10), PLANNING (#4), FUTURE RELEASE (#6), LAUNCH (#9), INTROSPECTION (#11).
+
+### Discussion Management
+
+```powershell
+# Check discussions
+.\.venv\Scripts\python.exe slate/slate_discussion_manager.py --status
+
+# Sync actionable discussions to tasks
+.\.venv\Scripts\python.exe slate/slate_discussion_manager.py --sync-tasks
+```
+
+### Fork Management (24 Dependencies)
+
+```powershell
+# Check all fork status
+.\.venv\Scripts\python.exe slate/slate_fork_sync.py --status
+
+# Sync all forks with upstream
+.\.venv\Scripts\python.exe slate/slate_fork_sync.py --sync-all
+
+# AI-powered fork analysis
+.\.venv\Scripts\python.exe slate/slate_fork_sync.py --analyze
+```
+
+24 forked dependencies across Microsoft, NVIDIA, OpenAI, Anthropic, HuggingFace, and more.
+
+## Brand Identity
+
+SLATE brand follows the **Watchmaker Design Philosophy** with locked design tokens.
+
+### Brand Specs
+
+| Spec | Title | Status |
+|------|-------|--------|
+| 007 | Design System | Complete |
+| 012 | Watchmaker 3D Dashboard | Complete |
+| 013 | Engineering Drawing Theme | Complete |
+| 014 | Watchmaker Golden Ratio UI | Complete |
+| 022 | Brand Identity System | Specified |
+| 023 | Avatar System | Specified |
+| 024 | TRELLIS.2 3D Integration | Specified |
+
+### Design Tokens
+
+Source of truth: `.slate_identity/design-tokens.json`
+
+Distributed to: CSS (`design-tokens.css`), Python (`design_tokens.py`), VS Code theme, GitHub Pages, wiki templates.
+
+### SLATE Avatar
+
+The SLATE avatar is a **living orrery** — a watchmaker mechanism reflecting system state:
+- 2D: D3.js force-directed graph (dashboard, GitHub Pages)
+- 3D: TRELLIS.2-generated GLB mesh with PBR materials
+- State-reactive: Responds to service health, GPU load, task execution
+
+## Unified AI Backend
+
+SLATE routes ALL AI tasks through `slate/unified_ai_backend.py` which manages 3 FREE local providers:
+
+| Provider | Endpoint | Role | Cost |
+|----------|----------|------|------|
+| **Ollama** | localhost:11434 | Primary for classification, docs, planning | FREE |
+| **Claude Code** | local MCP bridge | Complex reasoning, code gen, refactoring | FREE |
+| **Foundry Local** | localhost:5272 | ONNX-optimized fallback | FREE |
+
+### Task Routing
+
+```
+Task Type          -> Primary          -> Fallback       (Cost)
+─────────────────────────────────────────────────────────────────
+code_generation    -> ollama (coder)   -> claude_code    (FREE)
+code_review        -> ollama (coder)   -> claude_code    (FREE)
+bug_fix            -> claude_code      -> ollama         (FREE)
+refactoring        -> claude_code      -> ollama         (FREE)
+analysis           -> claude_code      -> ollama         (FREE)
+research           -> claude_code      -> ollama         (FREE)
+planning           -> ollama (planner) -> claude_code    (FREE)
+classification     -> ollama (fast)    -> ---            (FREE)
+prompt_engineering -> claude_code      -> ollama         (FREE)
+documentation      -> ollama (fast)    -> claude_code    (FREE)
+```
+
+### Commands
+
+```powershell
+# Check all provider status
+.\.venv\Scripts\python.exe slate/unified_ai_backend.py --status
+
+# Execute task with auto-routing
+.\.venv\Scripts\python.exe slate/unified_ai_backend.py --task "your task"
+
+# Force specific provider
+.\.venv\Scripts\python.exe slate/unified_ai_backend.py --task "your task" --provider claude_code
+
+# Show routing for a task type
+.\.venv\Scripts\python.exe slate/unified_ai_backend.py --route "code_generation"
+```
+
+## Claude Code Plugin
+
+SLATE is distributed as a **Claude Code plugin** with commands, skills, and MCP tools. Plugins load dynamically without restart.
+
+### Installation
+
+**Option 1: Local Workspace (Recommended)**
+```bash
+# Plugin auto-loads when working in SLATE workspace
+# The .claude-plugin/ directory is detected automatically
+cd /path/to/S.L.A.T.E
+claude  # Plugin loads at project scope
+```
+
+**Option 2: From GitHub Marketplace**
+```bash
+# Add SLATE marketplace (one-time setup)
+/plugin marketplace add SynchronizedLivingArchitecture/S.L.A.T.E
+
+# Install SLATE plugin
+/plugin install slate@slate-marketplace
+```
+
+**Option 3: Development Mode**
+```bash
+claude --plugin-dir /path/to/S.L.A.T.E
+```
+
+### Plugin Scope Rules
+
+**IMPORTANT**: Local and marketplace plugins have different scopes:
+
+| Plugin Type | Scope | How It Loads |
+|-------------|-------|--------------|
+| Local (`.claude-plugin/` exists) | Project | Auto-loads when `cd` into workspace |
+| Marketplace (`/plugin install`) | User | Must explicitly enable |
+
+**Do NOT mix scopes.** If you have a local `.claude-plugin/` directory, don't also try to enable it as a marketplace plugin - this causes the scope mismatch error.
+
+### For Local Development (This Repo)
+
+```bash
+# Just cd into the workspace - plugin auto-loads
+cd /path/to/S.L.A.T.E
+claude  # Plugin loads automatically at project scope
+```
+
+No configuration needed - the `.claude-plugin/plugin.json` is detected automatically.
+
+### For External Users (Installing from GitHub)
+
+```bash
+# Add marketplace and install
+/plugin marketplace add SynchronizedLivingArchitecture/S.L.A.T.E
+/plugin install slate@slate-marketplace
+
+# Manage at user scope
+/plugin list
+/plugin enable slate@slate-marketplace --scope user
+/plugin disable slate@slate-marketplace --scope user
+```
+
+### Plugin Structure
+
+```
+.claude-plugin/
+├── plugin.json       # Plugin manifest (name, version, component paths)
+└── marketplace.json  # Distribution catalog for /plugin install
+.claude/commands/     # Slash commands
+skills/               # Agent skills (skills/*/SKILL.md)
+.mcp.json             # MCP server configuration
+```
+
+### Commands
+
+Commands are available as `/slate:<command>` or `/slate-<command>`:
 
 | Command | Description |
 |---------|-------------|
-| `/slate [start\|stop\|status]` | Manage SLATE orchestrator |
-| `/slate-status` | Check system and service status |
-| `/slate-workflow` | Manage task workflow queue |
-| `/slate-runner` | Manage GitHub Actions runner |
-| `/slate-discussions` | Manage GitHub Discussions |
-| `/slate-multirunner` | Manage multi-runner system |
-| `/slate-gpu` | Manage dual-GPU load balancing |
-| `/slate-claude` | Validate Claude Code integration |
-| `/slate-spec-kit` | Process specs, run AI analysis, generate wiki |
-| `/slate-help` | Show all available commands |
+| `/slate:status` | Check system and service status |
+| `/slate:workflow` | Manage task workflow queue |
+| `/slate:runner` | Manage GitHub Actions runner |
+| `/slate:gpu` | Manage dual-GPU load balancing |
+| `/slate:help` | Show all available commands |
 
-### MCP Server Setup
+### MCP Tools
 
-The SLATE MCP server provides AI tools. Add to `~/.claude/config.json`:
+MCP tools are auto-configured via `.mcp.json`:
 
-```json
-{
-  "mcpServers": {
-      "slate": {
-         "command": "<workspace>\\.venv\\Scripts\\python.exe",
-         "args": ["<workspace>\\slate\\mcp_server.py"],
-         "env": {
-            "SLATE_WORKSPACE": "<workspace>",
-            "PYTHONPATH": "<workspace>"
-         }
-      }
-  }
-}
+| Tool | Description |
+|------|-------------|
+| `slate_status` | Check all services and GPU status |
+| `slate_workflow` | Manage task queue |
+| `slate_orchestrator` | Start/stop services |
+| `slate_runner` | Manage GitHub runner |
+| `slate_ai` | Execute AI tasks via local LLMs |
+| `slate_gpu` | Manage dual-GPU load balancing |
+
+## SLATE Operator Behavior (Permission Bypass Mode)
+
+SLATE provides a **locked-in behavior profile** that enables permission bypass while maintaining security through ActionGuard.
+
+### Behavior Configuration
+
+```yaml
+Profile: slate-operator
+Security: ActionGuard (Python-side validation)
+Permissions: Bypass with ActionGuard protection
+Runtime: K8s > Docker (container-first)
 ```
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `.claude/settings.json` | Main configuration with behavior reference |
+| `.claude/settings.local.json` | Permission overrides (bypass all) |
+| `.claude/behaviors/slate-operator.md` | Behavior profile definition |
+| `.claude/behaviors/slate-protocols.md` | Operational protocols (P001-P010) |
+| `.claude/hooks.json` | ActionGuard hook integration |
+
+### Key Protocols
+
+| Protocol | Trigger | Description |
+|----------|---------|-------------|
+| P001-INIT | Session start | Check runtime, load instructions |
+| P002-EXECUTE | Task request | DIAGNOSE → ACT → VERIFY pattern |
+| P003-WORKFLOW | Queue ops | Task management, stale cleanup |
+| P005-SECURITY | Bash commands | ActionGuard validation |
+| P009-K8S | K8s deploy | Kustomize/Helm deployment |
+
+### Permission Bypass
+
+With SLATE Operator behavior, Claude Code operates without confirmation prompts because:
+
+1. **ActionGuard validates all commands** before execution (Python-side)
+2. **SDK Source Guard** ensures trusted package publishers
+3. **PII Scanner** blocks credential exposure
+4. **Container isolation** runs commands in K8s/Docker, not host
+5. **K8s RBAC** provides minimal service account permissions
+
+### Activation
+
+The behavior activates automatically when:
+- Working in SLATE workspace
+- `settings.json` has `"behavior": { "profile": "slate-operator" }`
+- `settings.local.json` has permission bypass rules
 
 ## Built-In Safeguards
 
@@ -395,6 +674,108 @@ Phase 3: Agentic      → agentic.yml (task execution with updated models)
 Phase 4: Validation   → ci.yml, nightly.yml (parallel)
 Phase 5: Services     → service-management.yml (always last)
 ```
+
+## Kubernetes Deployment (Containerized Local Cloud)
+
+SLATE runs as a complete containerized local cloud in Kubernetes. The entire system is deployed as microservices with full integration.
+
+### Quick Deploy
+
+```powershell
+# Deploy SLATE to Kubernetes
+.\k8s\deploy.ps1 -Environment local
+
+# Check status
+.\k8s\status.ps1
+
+# Access dashboard
+kubectl port-forward -n slate svc/slate-dashboard-svc 8080:8080
+# Open: http://localhost:8080
+```
+
+### K8s Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Ingress (slate.local)                        │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │
+    ┌──────────────────────────┼──────────────────────────────────┐
+    │                          │                                  │
+    ▼                          ▼                                  ▼
+┌─────────────┐     ┌─────────────────┐     ┌──────────────────────┐
+│  Dashboard  │     │  Agent Router   │     │  Autonomous Loop     │
+│  (HPA 2-6)  │     │    (2 pods)     │     │   (1 pod + GPU)      │
+└──────┬──────┘     └────────┬────────┘     └──────────┬───────────┘
+       │                     │                         │
+       └─────────────────────┼─────────────────────────┘
+                             │
+         ┌───────────────────┼───────────────────┐
+         │                   │                   │
+         ▼                   ▼                   ▼
+   ┌──────────┐       ┌──────────┐       ┌──────────────┐
+   │  Ollama  │       │ ChromaDB │       │ GitHub Runner│
+   │  (GPU)   │       │ (Vector) │       │   (GPU)      │
+   └──────────┘       └──────────┘       └──────────────┘
+```
+
+### Services & Ports
+
+| Service | K8s Service | Port | Purpose |
+|---------|-------------|------|---------|
+| Dashboard | `slate-dashboard-svc` | 8080 | Full UI + WebSocket + K8s API |
+| Ollama | `ollama-svc` | 11434 | Local LLM inference |
+| ChromaDB | `chromadb-svc` | 8000 | Vector store for RAG |
+| Agent Router | `slate-agent-router-svc` | 8081 | Task routing |
+| Autonomous | `slate-autonomous-svc` | 8082 | Self-healing loop |
+| Copilot Bridge | `slate-copilot-bridge-svc` | 8083 | VS Code integration |
+| Workflow | `slate-workflow-svc` | 8084 | Task lifecycle |
+| Metrics | `slate-metrics-svc` | 9090 | Prometheus scrape |
+
+### K8s Integration API
+
+When running in Kubernetes, the dashboard exposes K8s-aware endpoints:
+
+```powershell
+# Check K8s service health
+curl http://localhost:8080/api/k8s/status
+
+# List all SLATE services
+curl http://localhost:8080/api/k8s/services
+
+# Check specific service
+curl http://localhost:8080/api/k8s/health/ollama
+
+# Get pod info
+curl http://localhost:8080/api/k8s/pod
+```
+
+### Deployment Methods
+
+```powershell
+# Kustomize (recommended)
+kubectl apply -k k8s/
+
+# Environment-specific
+kubectl apply -k k8s/overlays/local/   # Minikube/kind
+kubectl apply -k k8s/overlays/dev/     # Development
+kubectl apply -k k8s/overlays/prod/    # Production
+
+# Helm
+helm install slate ./helm -n slate --create-namespace
+helm upgrade slate ./helm -n slate -f custom-values.yaml
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `k8s/slate-dashboard.yaml` | Full dashboard deployment with WebSocket |
+| `k8s/agentic-system.yaml` | Agent router, autonomous loop, bridges |
+| `k8s/ml-pipeline.yaml` | Training CronJobs, model preloading |
+| `k8s/runners.yaml` | GitHub Actions runners |
+| `slate/k8s_integration.py` | K8s-aware service discovery |
+| `helm/values.yaml` | Helm configuration |
 
 ## Project Structure
 
@@ -863,7 +1244,173 @@ SLATE auto-detects all components on startup:
 | Dashboard | 8080 | `slate/slate_status.py` |
 | Ollama | 11434 | `slate/slate_status.py` |
 | Foundry Local | 5272 | `slate/slate_status.py` |
+| Discord Bot | 8086 | `slate/slate_discord_bot.py` |
 | GitHub Runner | N/A | `slate/slate_runner_manager.py` |
+
+## Discord Bot — Community Integration
+
+SLATE has a Discord bot for community interaction at the SLATE-Community server.
+
+### Bot Configuration
+
+| Setting | Value |
+|---------|-------|
+| Application | SLATE.GIT (`1470475063386964153`) |
+| Server | SLATE-Community (`1469890015780933786`) |
+| Port | 8086 |
+| Install | Guild-only (private, owner-installable) |
+| Intents | Minimal (no message content, no presences, no members) |
+| Rate Limit | 1 command per user per minute |
+
+### Slash Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/slate-status` | Sanitized system health (no IPs, ports, paths) |
+| `/slate-feedback` | Submit feature requests, bug reports, ideas |
+| `/slate-tree` | Tech tree progress (public-safe info only) |
+| `/slate-about` | Static project info, links to GitHub/docs |
+
+### Security Architecture (7-Layer Defense)
+
+The bot NEVER exposes system internals to Discord users:
+
+1. **DiscordSecurityGate** (`slate/discord_security.py`) — Blocks IPs, paths, tokens, GPU UUIDs, hostnames, PIDs from all output
+2. **PII Scanner** (`slate/pii_scanner.py`) — Redacts personal data
+3. **ActionGuard** (`slate/action_guard.py`) — Validates all Discord network calls
+4. **Input Validation** — Max 500 chars, no URLs, no code blocks, no mentions
+5. **Rate Limiting** — 1/min per user, 30/min per channel
+6. **Hashed User IDs** — SHA-256, first 16 chars; never store raw Discord user IDs
+7. **Audit Trail** — All interactions logged to `slate_logs/discord_audit.json`
+
+### Commands
+
+```powershell
+# Start Discord bot
+.\.venv\Scripts\python.exe -m slate.slate_discord_bot --start
+
+# Check bot status
+.\.venv\Scripts\python.exe -m slate.slate_discord_bot --status
+
+# Test security gate
+.\.venv\Scripts\python.exe -m slate.slate_discord_bot --test-security
+
+# Run security tests
+.\.venv\Scripts\python.exe -m pytest tests/test_discord_security.py -v
+```
+
+### Community Feedback Pipeline
+
+```
+Discord /slate-feedback → DiscordSecurityGate → PII Scanner
+    → .slate_discussions/discord_feedback.json
+    → ChromaDB (community_feedback collection)
+    → current_tasks.json (source: "discord", priority: low)
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `slate/discord_security.py` | Security isolation gate |
+| `slate/slate_discord_bot.py` | Bot module with slash commands |
+| `slate/slate_discord.py` | Discord webhook config |
+| `.slate_identity/discord_config.json` | Bot configuration |
+| `.slate_discussions/discord_feedback.json` | Feedback storage |
+| `docker/discord-bot/Dockerfile` | Bot container image |
+| `k8s/discord-bot.yaml` | K8s deployment manifest |
+
+## Specification Enforcement
+
+**All non-trivial features MUST go through the spec lifecycle.** This is a constitution-level requirement.
+
+### Spec Lifecycle
+
+```
+draft → specified → planned → tasked → implementing → complete
+```
+
+### When Specs Are Required
+
+- New features or capabilities
+- Architecture changes
+- External integrations (APIs, SDKs, services)
+- Security-sensitive changes
+- User-facing workflows
+
+### Spec Commands
+
+```powershell
+# Create a new spec
+/speckit.specify "Feature description"
+
+# Plan implementation
+/speckit.plan
+
+# Generate tasks
+/speckit.tasks
+
+# Implement from tasks
+/speckit.implement
+
+# Analyze consistency
+/speckit.analyze
+```
+
+### Spec Directory Convention
+
+```
+specs/NNN-feature-name/
+├── spec.md          # Feature specification
+├── plan.md          # Implementation plan
+├── tasks.md         # Task breakdown
+└── checklist.md     # Verification checklist
+```
+
+### Feedback Loop Integration
+
+All feedback sources feed back into the spec system:
+- **Discord feedback** → `current_tasks.json` → spec if non-trivial
+- **GitHub Issues** → project board → spec if feature/architecture
+- **GitHub Discussions** → discussion manager → spec if actionable
+- **Test failures** → bug spec or fix directly
+- **AI analysis** → orchestrator recommendations → spec if significant
+
+## SEO and Public Presence
+
+SLATE follows Google's SEO Starter Guide for all public-facing content.
+
+### SEO Requirements (Enforced)
+
+Per [Google SEO Starter Guide](https://developers.google.com/search/docs/fundamentals/seo-starter-guide):
+
+1. **GitHub Pages** (`docs/pages/`)
+   - Semantic HTML5 with proper heading hierarchy
+   - Meta descriptions on all pages
+   - Open Graph tags for social sharing
+   - Structured data (JSON-LD) for project info
+   - Mobile-responsive design
+   - Fast page load (no external CDN dependencies)
+
+2. **GitHub README**
+   - Clear project description in first paragraph
+   - Keywords: AI, DevOps, local inference, GPU, autonomous
+   - Badges for build status, license, version
+   - Table of contents for discoverability
+   - Links to documentation, wiki, discussions
+
+3. **Social Media / Community**
+   - Consistent brand identity across platforms
+   - Discord server with clear onboarding
+   - GitHub Discussions for community engagement
+   - Project boards visible for transparency
+
+### SSO and User Engagement
+
+- GitHub OAuth for contributor authentication
+- Discord server linked from GitHub Pages and README
+- GitHub Discussions integrated with Discord feedback pipeline
+- Project boards public for community visibility
 
 ## Quick Reference
 
@@ -876,6 +1423,9 @@ SLATE auto-detects all components on startup:
 
 # Runner status and auto-config
 .\.venv\Scripts\python.exe slate/slate_runner_manager.py --status
+
+# Discord bot
+.\.venv\Scripts\python.exe -m slate.slate_discord_bot --start
 
 # Run tests
 .\.venv\Scripts\python.exe -m pytest tests/ -v

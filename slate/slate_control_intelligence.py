@@ -97,6 +97,7 @@ class SlateControlIntelligence:
                 "options": {
                     "num_predict": 100,
                     "temperature": 0.3,
+                    "num_gpu": 999,
                 }
             }).encode("utf-8")
             req = urllib.request.Request(

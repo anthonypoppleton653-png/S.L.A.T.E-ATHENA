@@ -1,0 +1,12 @@
+# Exclude source/dev files
+.vscode/**
+.vscode-test/**
+src/**
+.gitignore
+tsconfig.json
+**/*.ts
+!out/**/*.js
+**/*.map
+node_modules/**
+rebrand.py
+**/*.d.ts

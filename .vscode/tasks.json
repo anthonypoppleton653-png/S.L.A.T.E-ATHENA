@@ -104,7 +104,7 @@
 		{
 			"label": "SLATE: Ollama (Dual GPU)",
 			"type": "shell",
-			"command": "powershell",
+			"command": "pwsh",
 			"args": [
 				"-ExecutionPolicy", "Bypass",
 				"-Command", "Stop-Process -Name ollama -ErrorAction SilentlyContinue; $env:OLLAMA_NUM_GPU='2'; ollama serve"
@@ -711,11 +711,62 @@
 			"detail": "Clean up unused Docker images and stopped containers"
 		},
 		{
-			"label": "SLATE: TRELLIS Status",
+			"label": "SLATE: GitHub Models Status",
 			"type": "shell",
 			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
 			"args": [
-				"${workspaceFolder}/slate/slate_trellis.py",
+				"${workspaceFolder}/slate/slate_github_models.py",
+				"--status"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"detail": "GitHub Models free-tier status, auth, rate limits, call counts"
+		},
+		{
+			"label": "SLATE: GitHub Models List",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"${workspaceFolder}/slate/slate_github_models.py",
+				"--list-models"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"detail": "List all available GitHub Models with rate limits"
+		},
+		{
+			"label": "SLATE: GitHub Models Benchmark",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"${workspaceFolder}/slate/slate_github_models.py",
+				"--benchmark"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"detail": "Benchmark GitHub Models API latency and throughput"
+		},
+		{
+			"label": "SLATE: GitHub Models Chat",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"${workspaceFolder}/slate/slate_github_models.py",
+				"--chat",
+				"${input:ghModelsPrompt}",
+				"--model",
+				"${input:ghModelsModel}"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"detail": "Send a chat prompt to a GitHub Models model"
+		},
+		{
+			"label": "SLATE: K8s Status",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"${workspaceFolder}/slate/slate_k8s_deploy.py",
 				"--status"
 			],
 			"isBackground": false,
@@ -724,69 +775,94 @@
 				"reveal": "always",
 				"panel": "dedicated"
 			},
-			"detail": "TRELLIS.2 image-to-3D integration status"
+			"detail": "Kubernetes deployment status — pods, services, CronJobs, PVCs"
 		},
 		{
-			"label": "SLATE: TRELLIS Install",
+			"label": "SLATE: K8s Health",
 			"type": "shell",
 			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
 			"args": [
-				"${workspaceFolder}/slate/slate_trellis.py",
-				"--install"
+				"${workspaceFolder}/slate/slate_k8s_deploy.py",
+				"--health"
 			],
 			"isBackground": false,
 			"problemMatcher": [],
-			"presentation": {
-				"reveal": "always",
-				"panel": "dedicated"
-			},
-			"detail": "Install TRELLIS.2 dependencies into SLATE venv"
+			"detail": "K8s health check — deployments, PVCs, crashed pods"
 		},
 		{
-			"label": "SLATE: TRELLIS Generate 3D",
+			"label": "SLATE: K8s Deploy",
 			"type": "shell",
 			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
 			"args": [
-				"${workspaceFolder}/slate/slate_trellis.py",
-				"--generate", "${input:trellisImage}",
-				"--preset", "${input:trellisPreset}",
-				"--video"
+				"${workspaceFolder}/slate/slate_k8s_deploy.py",
+				"--deploy"
 			],
 			"isBackground": false,
+			"group": "build",
 			"problemMatcher": [],
-			"presentation": {
-				"reveal": "always",
-				"panel": "dedicated"
-			},
-			"detail": "Generate 3D asset from image using TRELLIS.2"
+			"detail": "Deploy full SLATE stack to Kubernetes (auto-detect Helm or Kustomize)"
 		},
 		{
-			"label": "SLATE: TRELLIS Benchmark",
+			"label": "SLATE: K8s Deploy (Kustomize)",
 			"type": "shell",
 			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
 			"args": [
-				"${workspaceFolder}/slate/slate_trellis.py",
-				"--benchmark"
+				"${workspaceFolder}/slate/slate_k8s_deploy.py",
+				"--deploy-kustomize"
 			],
 			"isBackground": false,
+			"group": "build",
 			"problemMatcher": [],
-			"presentation": {
-				"reveal": "always",
-				"panel": "dedicated"
-			},
-			"detail": "Run TRELLIS.2 3D generation benchmark"
+			"detail": "Deploy SLATE via Kustomize (kubectl apply -k)"
 		},
 		{
-			"label": "SLATE: TRELLIS Unload",
+			"label": "SLATE: K8s Teardown",
 			"type": "shell",
 			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
 			"args": [
-				"${workspaceFolder}/slate/slate_trellis.py",
-				"--unload"
+				"${workspaceFolder}/slate/slate_k8s_deploy.py",
+				"--teardown"
 			],
 			"isBackground": false,
 			"problemMatcher": [],
-			"detail": "Unload TRELLIS.2 pipeline to free GPU memory"
+			"detail": "Remove all SLATE K8s resources (Helm uninstall + namespace delete)"
+		},
+		{
+			"label": "SLATE: K8s Port Forward",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"${workspaceFolder}/slate/slate_k8s_deploy.py",
+				"--port-forward"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"detail": "Port-forward all SLATE K8s services to localhost"
+		},
+		{
+			"label": "SLATE: K8s Preload Models",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"${workspaceFolder}/slate/slate_k8s_deploy.py",
+				"--preload-models"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"detail": "Trigger SLATE model preload job in K8s Ollama"
+		},
+		{
+			"label": "SLATE: K8s Logs",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"${workspaceFolder}/slate/slate_k8s_deploy.py",
+				"--logs",
+				"${input:k8sComponent}"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"detail": "View logs for a SLATE K8s component"
 		}
 	],
 	"inputs": [
@@ -812,17 +888,24 @@
 			"default": "default"
 		},
 		{
-			"id": "trellisPreset",
-			"type": "pickString",
-			"description": "TRELLIS.2 resolution preset",
-			"options": ["fast", "standard", "high"],
-			"default": "fast"
+			"id": "ghModelsPrompt",
+			"type": "promptString",
+			"description": "Enter prompt for GitHub Models chat",
+			"default": "Hello, what can you do?"
 		},
 		{
-			"id": "trellisImage",
-			"type": "promptString",
-			"description": "Path to input image for 3D generation",
-			"default": ""
+			"id": "ghModelsModel",
+			"type": "pickString",
+			"description": "Select GitHub Models model",
+			"options": ["gpt-4o", "gpt-4o-mini", "Mistral-large-2411", "Mistral-small-2503", "DeepSeek-R1", "Phi-4", "Llama-3.3-70B-Instruct", "AI21-Jamba-1.5-Large"],
+			"default": "gpt-4o-mini"
+		},
+		{
+			"id": "k8sComponent",
+			"type": "pickString",
+			"description": "Select K8s component for logs",
+			"options": ["core", "ollama", "vectorstore", "agent-router", "autonomous-loop", "copilot-bridge", "workflow-manager", "model-trainer", "codebase-indexer", "benchmarks", "health-check", "workflow-cleanup"],
+			"default": "core"
 		}
 	]
 }

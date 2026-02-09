@@ -89,39 +89,48 @@ class SlateDesignTokens:
     - Semantic: Muted professional traffic-light system
     """
 
-    # Modified: 2026-02-07T12:00:00Z | Author: COPILOT | Change: ASUS ProArt black/white/copper palette
-    # SLATE Brand Colors — ASUS ProArt inspired (black + white + copper)
+    # Modified: 2026-02-08T08:30:00Z | Author: Claude Opus 4.5 | Change: QT Capital fintech + 2026 glassmorphism
+    # SLATE Brand Colors — Premium Fintech (QT Capital + Dark Glassmorphism 2026)
     BRAND = {
-        "primary": "#0a0a0a",       # True black — professional substrate
-        "accent": "#B87333",        # Copper — ProArt precision engineering
-        "accent_light": "#C9956B", # Light copper — hover/highlight states
-        "surface": "#111111",       # Near-black — card/container surfaces
-        "neutral": "#1a1a1a",       # Charcoal — subtle elevation
-        "white": "#F5F0EB",         # Warm white — primary text
-        "white_dim": "#A8A29E",    # Muted warm gray — secondary text
+        "primary": "#000000",       # Pure black — premium fintech substrate
+        "accent": "#B87333",        # Copper — Watchmaker signature
+        "accent_light": "#D4956B",  # Light copper — hover states
+        "accent_dark": "#8B5E2B",   # Dark copper — pressed states
+        "secondary": "#3B82F6",     # Electric blue — tech/data
+        "tertiary": "#8B5CF6",      # Neon violet — premium highlights
+        "surface": "#0A0A0A",       # Near-black — card surfaces
+        "surface_elevated": "#111111",
+        "surface_highest": "#1A1A1A",
+        "neutral": "#222222",       # Charcoal — subtle elevation
+        "white": "#FAFAFA",         # Pure white — primary text
+        "white_dim": "#A1A1AA",     # Cool gray — secondary text
+        "white_muted": "#52525B",   # Dark gray — tertiary text
     }
 
-    # Modified: 2026-02-08T02:35:00Z | Author: COPILOT | Change: add SLATE-ATHENA palette
-    ATHENA = {
-        "gold": "#D4AF37",         # Parthenon Gold
-        "gold_light": "#E2C25A",   # Highlight gold
-        "gold_dim": "#B08A2E",     # Aged gold
-        "aegean": "#1A3A52",       # Aegean Deep
-        "acropolis": "#3A3A3A",    # Acropolis Gray
-        "owl": "#B0B0B0",          # Owl Silver
-        "torch": "#FF6B1A",        # Torch Flame
-        "olive": "#4A6741",        # Olive Green
-        "thunderbolt": "#F8F8F8",  # Thunderbolt White
-        "shadow": "#0D0D0D",       # Shadow Black
-        "bronze": "#6B4423",       # Wisdom Bronze
-    }
-
-    # Semantic Colors (muted, professional)
+    # Semantic Colors — Vibrant fintech status (high contrast on black)
     SEMANTIC = {
-        "success": "#78B89A",       # Muted sage green
-        "warning": "#D4A054",       # Warm amber
-        "error": "#C47070",         # Muted rose
-        "info": "#7EA8BE",          # Steel blue
+        "success": "#22C55E",       # Vibrant green — active/success
+        "warning": "#F59E0B",       # Amber — pending/caution
+        "error": "#EF4444",         # Red — error/critical
+        "info": "#06B6D4",          # Cyan — informational
+    }
+
+    # Glassmorphism tokens (2026 dark glass aesthetic)
+    GLASS = {
+        "bg": "rgba(0,0,0,0.6)",
+        "bg_elevated": "rgba(10,10,10,0.8)",
+        "border": "rgba(255,255,255,0.06)",
+        "border_hover": "rgba(255,255,255,0.12)",
+        "blur": "24px",
+        "saturate": "1.2",
+        "shine": "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%)",
+    }
+
+    # Ambient gradients (floating light orbs)
+    AMBIENT = {
+        "copper": "radial-gradient(ellipse 50% 50% at 50% 0%, rgba(184,115,51,0.15), transparent 70%)",
+        "blue": "radial-gradient(ellipse 40% 40% at 80% 80%, rgba(59,130,246,0.1), transparent 60%)",
+        "violet": "radial-gradient(ellipse 30% 30% at 20% 70%, rgba(139,92,246,0.08), transparent 50%)",
     }
 
     @classmethod
@@ -132,108 +141,159 @@ class SlateDesignTokens:
         neutral_palette = M3TonalPalette.generate(cls.BRAND["neutral"])
 
         if theme == "dark":
-            tokens = {
-                # Surfaces — true black foundation (ProArt inspired)
-                "--sl-bg-root": "#050505",
-                "--sl-bg-surface": "#0a0a0a",
+            return {
+                # ═══════════════════════════════════════════════════════════════
+                # SURFACES — Pure Black Foundation (QT Capital Fintech)
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-bg-root": "#000000",
+                "--sl-bg-surface": "#0A0A0A",
                 "--sl-bg-surface-dim": "#030303",
-                "--sl-bg-surface-bright": "#161616",
-                "--sl-bg-container": "#111111",
-                "--sl-bg-container-high": "#1a1a1a",
-                "--sl-bg-container-highest": "#222222",
-                "--sl-bg-inverse": "#F5F0EB",
+                "--sl-bg-surface-bright": "#111111",
+                "--sl-bg-container": "#0A0A0A",
+                "--sl-bg-container-high": "#111111",
+                "--sl-bg-container-highest": "#1A1A1A",
+                "--sl-bg-inverse": "#FAFAFA",
 
-                # Elevation overlays — subtle copper-tinted shadows
-                "--sl-elevation-1": "0 1px 3px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(184,115,51,0.04)",
-                "--sl-elevation-2": "0 2px 6px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(184,115,51,0.06)",
-                "--sl-elevation-3": "0 4px 12px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.4)",
-                "--sl-elevation-4": "0 8px 24px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.4)",
-                "--sl-elevation-5": "0 12px 32px rgba(0,0,0,0.7), 0 4px 12px rgba(0,0,0,0.5)",
+                # ═══════════════════════════════════════════════════════════════
+                # ELEVATION — Dark Glass Shadows with Ambient Glow
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-elevation-1": "0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3)",
+                "--sl-elevation-2": "0 3px 6px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3)",
+                "--sl-elevation-3": "0 6px 12px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.3)",
+                "--sl-elevation-4": "0 12px 24px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.3)",
+                "--sl-elevation-5": "0 24px 48px rgba(0,0,0,0.6), 0 12px 24px rgba(0,0,0,0.4)",
+                "--sl-glass-elevation": "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
 
-                # Text — warm white hierarchy
-                "--sl-text-primary": "#F5F0EB",
-                "--sl-text-secondary": "#A8A29E",
-                "--sl-text-tertiary": "#78716C",
-                "--sl-text-disabled": "#44403C",
-                "--sl-text-on-primary": "#0a0a0a",
-                "--sl-text-on-accent": "#0a0a0a",
+                # ═══════════════════════════════════════════════════════════════
+                # TEXT — High Contrast White Hierarchy
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-text-primary": "#FAFAFA",
+                "--sl-text-secondary": "#A1A1AA",
+                "--sl-text-tertiary": "#71717A",
+                "--sl-text-disabled": "#3F3F46",
+                "--sl-text-on-primary": "#000000",
+                "--sl-text-on-accent": "#000000",
 
-                # Accent — copper/bronze (ProArt)
+                # ═══════════════════════════════════════════════════════════════
+                # PRIMARY ACCENT — Copper (Watchmaker Heritage)
+                # ═══════════════════════════════════════════════════════════════
                 "--sl-accent": "#B87333",
-                "--sl-accent-dim": "#8B5E2B",
-                "--sl-accent-light": "#C9956B",
+                "--sl-accent-light": "#D4956B",
+                "--sl-accent-dark": "#8B5E2B",
                 "--sl-accent-container": "rgba(184,115,51,0.12)",
-                "--sl-accent-on-container": "#D4A97A",
-                "--sl-accent-glow": "rgba(184,115,51,0.15)",
+                "--sl-accent-on-container": "#F5DCC8",
+                "--sl-accent-glow": "0 0 40px rgba(184,115,51,0.2)",
 
-                # Borders — subtle, monochrome
-                "--sl-border": "rgba(255,255,255,0.08)",
+                # ═══════════════════════════════════════════════════════════════
+                # SECONDARY — Electric Blue (Tech/Data)
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-secondary": "#3B82F6",
+                "--sl-secondary-light": "#60A5FA",
+                "--sl-secondary-dark": "#2563EB",
+                "--sl-secondary-container": "rgba(59,130,246,0.12)",
+                "--sl-secondary-glow": "0 0 30px rgba(59,130,246,0.25)",
+
+                # ═══════════════════════════════════════════════════════════════
+                # TERTIARY — Neon Violet (Premium)
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-tertiary": "#8B5CF6",
+                "--sl-tertiary-light": "#A78BFA",
+                "--sl-tertiary-dark": "#7C3AED",
+                "--sl-tertiary-container": "rgba(139,92,246,0.12)",
+
+                # ═══════════════════════════════════════════════════════════════
+                # BORDERS — Subtle Glass Edges
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-border": "rgba(255,255,255,0.06)",
                 "--sl-border-variant": "rgba(255,255,255,0.12)",
                 "--sl-border-focus": "#B87333",
-                "--sl-outline": "rgba(255,255,255,0.06)",
+                "--sl-outline": "rgba(255,255,255,0.04)",
 
-                # Semantic status (muted professional)
+                # ═══════════════════════════════════════════════════════════════
+                # SEMANTIC STATUS — Vibrant Fintech
+                # ═══════════════════════════════════════════════════════════════
                 "--sl-success": cls.SEMANTIC["success"],
                 "--sl-warning": cls.SEMANTIC["warning"],
                 "--sl-error": cls.SEMANTIC["error"],
                 "--sl-info": cls.SEMANTIC["info"],
-                "--sl-success-container": f"{cls.SEMANTIC['success']}15",
-                "--sl-warning-container": f"{cls.SEMANTIC['warning']}15",
-                "--sl-error-container": f"{cls.SEMANTIC['error']}15",
-                "--sl-info-container": f"{cls.SEMANTIC['info']}15",
+                "--sl-success-container": "rgba(34,197,94,0.12)",
+                "--sl-warning-container": "rgba(245,158,11,0.12)",
+                "--sl-error-container": "rgba(239,68,68,0.12)",
+                "--sl-info-container": "rgba(6,182,212,0.12)",
+                "--sl-success-glow": "0 0 30px rgba(34,197,94,0.3)",
+                "--sl-warning-glow": "0 0 30px rgba(245,158,11,0.3)",
+                "--sl-error-glow": "0 0 30px rgba(239,68,68,0.3)",
 
-                # Glass effects — dark, copper-tinged
-                "--sl-glass-bg": "rgba(10, 10, 10, 0.78)",
-                "--sl-glass-border": "rgba(184,115,51,0.08)",
-                "--sl-glass-blur": "20px",
-                "--sl-glass-saturate": "1.1",
+                # ═══════════════════════════════════════════════════════════════
+                # GLASSMORPHISM — 2026 Dark Glass Aesthetic
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-glass-bg": cls.GLASS["bg"],
+                "--sl-glass-bg-elevated": cls.GLASS["bg_elevated"],
+                "--sl-glass-border": cls.GLASS["border"],
+                "--sl-glass-border-hover": cls.GLASS["border_hover"],
+                "--sl-glass-blur": cls.GLASS["blur"],
+                "--sl-glass-saturate": cls.GLASS["saturate"],
+                "--sl-glass-shine": cls.GLASS["shine"],
 
-                # Typography
-                "--sl-font-sans": "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
-                "--sl-font-mono": "'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace",
-                "--sl-font-display": "'Inter', 'Segoe UI', system-ui, sans-serif",
+                # ═══════════════════════════════════════════════════════════════
+                # AMBIENT GRADIENTS — Floating Light Orbs
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-ambient-copper": cls.AMBIENT["copper"],
+                "--sl-ambient-blue": cls.AMBIENT["blue"],
+                "--sl-ambient-violet": cls.AMBIENT["violet"],
 
-                # Spacing (8px grid)
-                "--sl-space-1": "4px",
+                # ═══════════════════════════════════════════════════════════════
+                # HOLOGRAPHIC — Premium Gradient Effects
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-holo-gradient": "linear-gradient(135deg, #B87333, #3B82F6, #8B5CF6)",
+                "--sl-holo-text": "linear-gradient(90deg, #B87333 0%, #D4956B 25%, #3B82F6 50%, #8B5CF6 75%, #B87333 100%)",
+
+                # ═══════════════════════════════════════════════════════════════
+                # TYPOGRAPHY — Premium Fonts
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-font-sans": "'Inter', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif",
+                "--sl-font-mono": "'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace",
+                "--sl-font-display": "'Inter', 'SF Pro Display', system-ui, sans-serif",
+
+                # ═══════════════════════════════════════════════════════════════
+                # SPACING — Golden Ratio (Fibonacci)
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-space-1": "5px",
                 "--sl-space-2": "8px",
-                "--sl-space-3": "12px",
-                "--sl-space-4": "16px",
-                "--sl-space-5": "20px",
-                "--sl-space-6": "24px",
-                "--sl-space-8": "32px",
-                "--sl-space-10": "40px",
-                "--sl-space-12": "48px",
-                "--sl-space-16": "64px",
+                "--sl-space-3": "13px",
+                "--sl-space-4": "21px",
+                "--sl-space-5": "34px",
+                "--sl-space-6": "55px",
+                "--sl-space-8": "89px",
 
-                # Radii (M3 shape)
+                # ═══════════════════════════════════════════════════════════════
+                # RADII — Premium Curves
+                # ═══════════════════════════════════════════════════════════════
                 "--sl-radius-xs": "4px",
                 "--sl-radius-sm": "8px",
                 "--sl-radius-md": "12px",
                 "--sl-radius-lg": "16px",
-                "--sl-radius-xl": "28px",
+                "--sl-radius-xl": "24px",
+                "--sl-radius-2xl": "32px",
                 "--sl-radius-full": "9999px",
 
-                # Motion (M3 easing)
-                "--sl-ease-standard": "cubic-bezier(0.2, 0, 0, 1)",
-                "--sl-ease-decelerate": "cubic-bezier(0, 0, 0, 1)",
-                "--sl-ease-accelerate": "cubic-bezier(0.3, 0, 1, 1)",
+                # ═══════════════════════════════════════════════════════════════
+                # MOTION — Premium 2026 Easing
+                # ═══════════════════════════════════════════════════════════════
+                "--sl-ease-standard": "cubic-bezier(0.4, 0, 0.2, 1)",
+                "--sl-ease-decelerate": "cubic-bezier(0, 0, 0.2, 1)",
+                "--sl-ease-accelerate": "cubic-bezier(0.4, 0, 1, 1)",
                 "--sl-ease-emphasized": "cubic-bezier(0.2, 0, 0, 1)",
-                "--sl-duration-short": "150ms",
-                "--sl-duration-medium": "300ms",
-                "--sl-duration-long": "500ms",
+                "--sl-ease-expo-out": "cubic-bezier(0.16, 1, 0.3, 1)",
+                "--sl-ease-spring": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+                "--sl-duration-fast": "150ms",
+                "--sl-duration-normal": "300ms",
+                "--sl-duration-slow": "500ms",
+                "--sl-duration-ambient": "20s",
             }
-            tokens.update({
-                "--sl-bg-hover": "#141414",
-                "--sl-bg-inset": "#0c0c0c",
-                "--sl-border-subtle": "rgba(255,255,255,0.06)",
-                "--sl-copper": tokens["--sl-accent"],
-                "--sl-copper-light": tokens["--sl-accent-light"],
-                "--sl-copper-dark": tokens["--sl-accent-dim"],
-            })
-            return tokens
-        elif theme == "light":
+        else:
             # Light theme variant (warm white + copper)
-            tokens = {
+            return {
                 "--sl-bg-root": "#FAF8F5",
                 "--sl-bg-surface": "#F5F0EB",
                 "--sl-bg-surface-dim": "#EDE8E3",
@@ -292,117 +352,6 @@ class SlateDesignTokens:
                 "--sl-duration-medium": "300ms",
                 "--sl-duration-long": "500ms",
             }
-            tokens.update({
-                "--sl-bg-hover": "#E6E1DC",
-                "--sl-bg-inset": "#EDE8E3",
-                "--sl-border-subtle": "rgba(0,0,0,0.08)",
-                "--sl-copper": tokens["--sl-accent"],
-                "--sl-copper-light": tokens["--sl-accent-light"],
-                "--sl-copper-dark": tokens["--sl-accent-dim"],
-            })
-            return tokens
-        elif theme == "athena":
-            tokens = {
-                # Surfaces — Athena dark marble + Aegean depth
-                "--sl-bg-root": cls.ATHENA["shadow"],
-                "--sl-bg-surface": "#11161C",
-                "--sl-bg-surface-dim": "#0B0F14",
-                "--sl-bg-surface-bright": cls.ATHENA["aegean"],
-                "--sl-bg-container": "#16212C",
-                "--sl-bg-container-high": "#1E2B38",
-                "--sl-bg-container-highest": "#263646",
-                "--sl-bg-inverse": cls.ATHENA["thunderbolt"],
-
-                # Elevation overlays
-                "--sl-elevation-1": "0 1px 3px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,175,55,0.06)",
-                "--sl-elevation-2": "0 2px 6px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,175,55,0.08)",
-                "--sl-elevation-3": "0 4px 12px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.4)",
-                "--sl-elevation-4": "0 8px 24px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.4)",
-                "--sl-elevation-5": "0 12px 32px rgba(0,0,0,0.7), 0 4px 12px rgba(0,0,0,0.5)",
-
-                # Text — marble hierarchy
-                "--sl-text-primary": cls.ATHENA["thunderbolt"],
-                "--sl-text-secondary": cls.ATHENA["owl"],
-                "--sl-text-tertiary": "#8B8B8B",
-                "--sl-text-disabled": "#5F5F5F",
-                "--sl-text-on-primary": cls.ATHENA["shadow"],
-                "--sl-text-on-accent": cls.ATHENA["shadow"],
-
-                # Accent — Parthenon gold
-                "--sl-accent": cls.ATHENA["gold"],
-                "--sl-accent-dim": cls.ATHENA["gold_dim"],
-                "--sl-accent-light": cls.ATHENA["gold_light"],
-                "--sl-accent-container": "rgba(212,175,55,0.12)",
-                "--sl-accent-on-container": "#F1D98C",
-                "--sl-accent-glow": "rgba(212,175,55,0.20)",
-
-                # Borders
-                "--sl-border": "rgba(248,248,248,0.10)",
-                "--sl-border-variant": "rgba(212,175,55,0.35)",
-                "--sl-border-focus": cls.ATHENA["gold"],
-                "--sl-outline": "rgba(248,248,248,0.06)",
-
-                # Semantic status
-                "--sl-success": "#2D5F2E",
-                "--sl-warning": cls.ATHENA["torch"],
-                "--sl-error": "#8B0000",
-                "--sl-info": cls.ATHENA["aegean"],
-                "--sl-success-container": "rgba(45,95,46,0.15)",
-                "--sl-warning-container": "rgba(255,107,26,0.15)",
-                "--sl-error-container": "rgba(139,0,0,0.15)",
-                "--sl-info-container": "rgba(26,58,82,0.15)",
-
-                # Glass effects
-                "--sl-glass-bg": "rgba(13, 13, 13, 0.78)",
-                "--sl-glass-border": "rgba(212,175,55,0.12)",
-                "--sl-glass-blur": "18px",
-                "--sl-glass-saturate": "1.1",
-
-                # Typography
-                "--sl-font-sans": "'Optima', 'Segoe UI', 'Trebuchet MS', sans-serif",
-                "--sl-font-mono": "'Monaco', 'Courier New', monospace",
-                "--sl-font-display": "Georgia, 'Times New Roman', serif",
-
-                # Spacing (8px grid)
-                "--sl-space-1": "4px",
-                "--sl-space-2": "8px",
-                "--sl-space-3": "12px",
-                "--sl-space-4": "16px",
-                "--sl-space-5": "20px",
-                "--sl-space-6": "24px",
-                "--sl-space-8": "32px",
-                "--sl-space-10": "40px",
-                "--sl-space-12": "48px",
-                "--sl-space-16": "64px",
-
-                # Radii (Athena: sharper, Doric)
-                "--sl-radius-xs": "2px",
-                "--sl-radius-sm": "4px",
-                "--sl-radius-md": "8px",
-                "--sl-radius-lg": "10px",
-                "--sl-radius-xl": "16px",
-                "--sl-radius-full": "9999px",
-
-                # Motion
-                "--sl-ease-standard": "cubic-bezier(0.4, 0, 0.2, 1)",
-                "--sl-ease-decelerate": "cubic-bezier(0, 0, 0.2, 1)",
-                "--sl-ease-accelerate": "cubic-bezier(0.4, 0, 1, 1)",
-                "--sl-ease-emphasized": "cubic-bezier(0.4, 0, 0.2, 1)",
-                "--sl-duration-short": "200ms",
-                "--sl-duration-medium": "400ms",
-                "--sl-duration-long": "600ms",
-            }
-            tokens.update({
-                "--sl-bg-hover": "#223247",
-                "--sl-bg-inset": "#0F141B",
-                "--sl-border-subtle": "rgba(248,248,248,0.06)",
-                "--sl-copper": tokens["--sl-accent"],
-                "--sl-copper-light": tokens["--sl-accent-light"],
-                "--sl-copper-dark": tokens["--sl-accent-dim"],
-            })
-            return tokens
-
-        return cls.generate_tokens("dark")
 
     @classmethod
     def to_css(cls, theme: str = "dark") -> str:
@@ -430,20 +379,12 @@ class GeometricPatternGenerator:
     - SLATE identity: interconnected nodes (agents, GPUs, workflows)
     """
 
-    # Modified: 2026-02-08T02:38:00Z | Author: COPILOT | Change: allow theme accent colors in patterns
-    @staticmethod
-    def _hex_to_rgb(hex_color: str) -> Tuple[int, int, int]:
-        hex_color = hex_color.lstrip("#")
-        return int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
-
     @staticmethod
     def constellation_grid(width: int = 1200, height: int = 800,
-                           nodes: int = 40, seed: int = 42,
-                           accent_hex: str = "#B87333") -> str:
+                           nodes: int = 40, seed: int = 42) -> str:
         """Generate a constellation/network pattern — interconnected nodes."""
         import random
         rng = random.Random(seed)
-        accent_r, accent_g, accent_b = GeometricPatternGenerator._hex_to_rgb(accent_hex)
         points = [(rng.randint(20, width-20), rng.randint(20, height-20)) for _ in range(nodes)]
 
         lines_svg = []
@@ -459,14 +400,14 @@ class GeometricPatternGenerator:
                     opacity = max(0.02, 0.08 * (1 - dist/200))
                     lines_svg.append(
                         f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
-                        f'stroke="rgba({accent_r},{accent_g},{accent_b},{opacity:.3f})" stroke-width="0.4"/>'
+                        f'stroke="rgba(184,115,51,{opacity:.3f})" stroke-width="0.4"/>'
                     )
 
         for x, y in points:
             r = rng.uniform(1, 2.5)
             opacity = rng.uniform(0.06, 0.25)
             dots_svg.append(
-                f'<circle cx="{x}" cy="{y}" r="{r}" fill="rgba({accent_r},{accent_g},{accent_b},{opacity:.2f})"/>'
+                f'<circle cx="{x}" cy="{y}" r="{r}" fill="rgba(184,115,51,{opacity:.2f})"/>'
             )
 
         return (
@@ -478,10 +419,8 @@ class GeometricPatternGenerator:
         )
 
     @staticmethod
-    def hex_mesh(size: int = 60, cols: int = 20, rows: int = 12,
-                 accent_hex: str = "#B87333") -> str:
+    def hex_mesh(size: int = 60, cols: int = 20, rows: int = 12) -> str:
         """Generate hexagonal mesh background pattern."""
-        accent_r, accent_g, accent_b = GeometricPatternGenerator._hex_to_rgb(accent_hex)
         hexagons = []
         for row in range(rows):
             for col in range(cols):
@@ -496,7 +435,7 @@ class GeometricPatternGenerator:
                 opacity = 0.02 + 0.015 * math.sin(col * 0.3 + row * 0.5)
                 hexagons.append(
                     f'<polygon points="{" ".join(points)}" fill="none" '
-                    f'stroke="rgba({accent_r},{accent_g},{accent_b},{opacity:.3f})" stroke-width="0.4"/>'
+                    f'stroke="rgba(184,115,51,{opacity:.3f})" stroke-width="0.4"/>'
                 )
         w = cols * size * 1.5
         h = rows * size * math.sqrt(3)
@@ -508,12 +447,10 @@ class GeometricPatternGenerator:
         )
 
     @staticmethod
-    def crystalline_field(width: int = 1200, height: int = 800, facets: int = 25, seed: int = 7,
-                          accent_hex: str = "#B87333") -> str:
+    def crystalline_field(width: int = 1200, height: int = 800, facets: int = 25, seed: int = 7) -> str:
         """Generate crystalline/faceted background — Anthropic-style geometric art."""
         import random
         rng = random.Random(seed)
-        accent_r, accent_g, accent_b = GeometricPatternGenerator._hex_to_rgb(accent_hex)
         triangles = []
         points = [(rng.randint(0, width), rng.randint(0, height)) for _ in range(facets)]
         # Add corners
@@ -529,10 +466,11 @@ class GeometricPatternGenerator:
                     side_c = math.sqrt((x1-x3)**2 + (y1-y3)**2)
                     if max(side_a, side_b, side_c) < 300:
                         opacity = rng.uniform(0.008, 0.03)
+                        copper = rng.randint(90, 140)
                         triangles.append(
                             f'<polygon points="{x1},{y1} {x2},{y2} {x3},{y3}" '
-                            f'fill="rgba({accent_r},{accent_g},{accent_b},{opacity:.3f})" '
-                            f'stroke="rgba({accent_r},{accent_g},{accent_b},0.015)" stroke-width="0.4"/>'
+                            f'fill="rgba(184,{copper},51,{opacity:.3f})" '
+                            f'stroke="rgba(184,115,51,0.015)" stroke-width="0.4"/>'
                         )
                     if len(triangles) > 120:
                         break
@@ -710,11 +648,19 @@ class SlateLogoGenerator:
     """
 
     @staticmethod
-    # Modified: 2026-02-08T02:39:00Z | Author: COPILOT | Change: support theme accent colors in logo
-    def generate(size: int = 128, variant: str = "full",
-                 accent: str = "#B87333", accent_dim: str = "#8B5E2B") -> str:
-        """Generate SLATE logo SVG (hexagonal lattice variant)."""
+    def generate(size: int = 128, variant: str = "full") -> str:
+        """Generate SLATE logo SVG.
+
+        Variants:
+          - "full": Complete logo with text
+          - "icon": Icon only (square, for favicons/avatars)
+          - "wordmark": Text only
+        """
         half = size / 2
+        accent = "#B87333"     # Copper
+        accent_dim = "#8B5E2B"  # Dark copper
+
+        # Core hexagon shape
         hex_points = []
         for i in range(6):
             angle = math.pi / 3 * i - math.pi / 6
@@ -723,6 +669,8 @@ class SlateLogoGenerator:
                 half + half * 0.65 * math.sin(angle)
             ))
         hex_str = " ".join(f"{x:.1f},{y:.1f}" for x, y in hex_points)
+
+        # Inner structure: 3 concentric rings of nodes
         inner_nodes = []
         for ring in range(3):
             r = half * (0.15 + ring * 0.18)
@@ -734,6 +682,8 @@ class SlateLogoGenerator:
                 node_r = 1.5 - ring * 0.3
                 opacity = 0.8 - ring * 0.2
                 inner_nodes.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{node_r}" fill="{accent}" opacity="{opacity}"/>')
+
+        # Neural connection lines
         connections = []
         for ring in range(2):
             r1 = half * (0.15 + ring * 0.18)
@@ -748,233 +698,55 @@ class SlateLogoGenerator:
                     f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" '
                     f'stroke="{accent}" stroke-width="0.5" opacity="0.2"/>'
                 )
+
+        # Center glow
         center_glow = (
             f'<circle cx="{half}" cy="{half}" r="{half*0.12}" fill="url(#centerGlow)"/>'
             f'<circle cx="{half}" cy="{half}" r="{half*0.06}" fill="{accent}" opacity="0.9"/>'
         )
-        defs = (
-            f'<defs>'
-            f'<radialGradient id="centerGlow"><stop offset="0%" stop-color="{accent}" stop-opacity="0.5"/>'
-            f'<stop offset="100%" stop-color="{accent}" stop-opacity="0"/></radialGradient>'
-            f'<linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="{accent}" stop-opacity="0.12"/>'
-            f'<stop offset="100%" stop-color="{accent_dim}" stop-opacity="0.04"/></linearGradient>'
-            f'</defs>'
-        )
-        body = (
-            f'<polygon points="{hex_str}" fill="url(#hexGrad)" stroke="{accent}" stroke-width="1.2" opacity="0.7"/>'
-            f'{"".join(connections)}{"".join(inner_nodes)}{center_glow}'
-        )
+
         if variant == "icon":
-            return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {size} {size}" width="{size}" height="{size}">{defs}{body}</svg>'
+            return (
+                f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {size} {size}" width="{size}" height="{size}">\n'
+                f'  <defs>\n'
+                f'    <radialGradient id="centerGlow"><stop offset="0%" stop-color="{accent}" stop-opacity="0.5"/>'
+                f'<stop offset="100%" stop-color="{accent}" stop-opacity="0"/></radialGradient>\n'
+                f'    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="{accent}" stop-opacity="0.12"/>'
+                f'<stop offset="100%" stop-color="{accent_dim}" stop-opacity="0.04"/></linearGradient>\n'
+                f'  </defs>\n'
+                f'  <polygon points="{hex_str}" fill="url(#hexGrad)" stroke="{accent}" stroke-width="1.2" opacity="0.7"/>\n'
+                f'  {"".join(connections)}\n'
+                f'  {"".join(inner_nodes)}\n'
+                f'  {center_glow}\n'
+                f'</svg>'
+            )
         elif variant == "full":
             total_w = size + 220
             return (
-                f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {total_w} {size}" width="{total_w}" height="{size}">'
-                f'{defs}{body}'
-                f'<text x="{size + 16}" y="{half - 8}" fill="#F8F8F8" font-family="Georgia, serif" '
-                f'font-size="{size*0.28}" font-weight="700" letter-spacing="0.08em">S.L.A.T.E.</text>'
-                f'<text x="{size + 16}" y="{half + size*0.16}" fill="#B0B0B0" font-family="Georgia, serif" '
-                f'font-size="{size*0.1}" font-weight="400" letter-spacing="0.15em">SYNCHRONIZED LIVING ARCHITECTURE</text>'
+                f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {total_w} {size}" width="{total_w}" height="{size}">\n'
+                f'  <defs>\n'
+                f'    <radialGradient id="centerGlow"><stop offset="0%" stop-color="{accent}" stop-opacity="0.5"/>'
+                f'<stop offset="100%" stop-color="{accent}" stop-opacity="0"/></radialGradient>\n'
+                f'    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="{accent}" stop-opacity="0.12"/>'
+                f'<stop offset="100%" stop-color="{accent_dim}" stop-opacity="0.04"/></linearGradient>\n'
+                f'  </defs>\n'
+                f'  <polygon points="{hex_str}" fill="url(#hexGrad)" stroke="{accent}" stroke-width="1.2" opacity="0.7"/>\n'
+                f'  {"".join(connections)}\n'
+                f'  {"".join(inner_nodes)}\n'
+                f'  {center_glow}\n'
+                f'  <text x="{size + 16}" y="{half - 8}" fill="#F5F0EB" font-family="Inter, Segoe UI, sans-serif" '
+                f'font-size="{size*0.28}" font-weight="700" letter-spacing="0.08em">S.L.A.T.E.</text>\n'
+                f'  <text x="{size + 16}" y="{half + size*0.16}" fill="#78716C" font-family="Inter, Segoe UI, sans-serif" '
+                f'font-size="{size*0.1}" font-weight="400" letter-spacing="0.15em">SYNCHRONIZED LIVING ARCHITECTURE</text>\n'
                 f'</svg>'
             )
         else:
             return (
-                f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 60" width="400" height="60">'
-                f'<text x="0" y="38" fill="#F8F8F8" font-family="Georgia, serif" '
-                f'font-size="36" font-weight="700" letter-spacing="0.08em">S.L.A.T.E.</text>'
-                f'<text x="0" y="55" fill="#B0B0B0" font-family="Georgia, serif" '
-                f'font-size="11" font-weight="400" letter-spacing="0.15em">SYNCHRONIZED LIVING ARCHITECTURE</text>'
-                f'</svg>'
-            )
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# ATHENA LOGO GENERATOR
-# Modified: 2026-02-08T03:00:00Z | Author: COPILOT | Change: dedicated Athena owl+shield logo
-# ═══════════════════════════════════════════════════════════════════════════════
-
-class AthenaLogoGenerator:
-    """
-    Procedural SVG logo generator for SLATE-ATHENA identity.
-
-    Design concept: Owl of Athena perched on a shield — minimalist line art
-    inspired by ancient Greek pottery/coin art. The owl's eyes are concentric
-    circles (representing wisdom/vigilance), sitting atop an inverted
-    triangular shield (representing strategic protection). A subtle spear
-    line crosses behind, referencing Athena's martial aspect.
-
-    The logo is generated entirely as SVG paths — no raster assets.
-    Scales from 16px favicon to 512px hero without quality loss.
-    """
-
-    @staticmethod
-    def generate(size: int = 128, variant: str = "full",
-                 gold: str = "#D4AF37", gold_dim: str = "#B08A2E",
-                 aegean: str = "#1A3A52", white: str = "#F8F8F8") -> str:
-        """Generate Athena owl+shield logo SVG.
-
-        Variants:
-          - "icon": Owl mark only (square)
-          - "full": Owl + S.L.A.T.E. wordmark
-          - "wordmark": Text with Greek key underline
-        """
-        s = size  # shorthand
-        h = s / 2
-        # Scale factor relative to 128-unit grid
-        k = s / 128
-
-        # ── Owl body paths (designed on 128×128 grid, scaled by k) ──
-        # Ear tufts
-        ear_l = f"M{42*k:.1f},{38*k:.1f} L{50*k:.1f},{22*k:.1f} L{56*k:.1f},{36*k:.1f}"
-        ear_r = f"M{86*k:.1f},{38*k:.1f} L{78*k:.1f},{22*k:.1f} L{72*k:.1f},{36*k:.1f}"
-        # Head dome
-        head = f"M{40*k:.1f},{50*k:.1f} C{40*k:.1f},{30*k:.1f} {52*k:.1f},{24*k:.1f} {64*k:.1f},{24*k:.1f} C{76*k:.1f},{24*k:.1f} {88*k:.1f},{30*k:.1f} {88*k:.1f},{50*k:.1f}"
-        # Body (rounded trapezoid)
-        body = (
-            f"M{40*k:.1f},{50*k:.1f} "
-            f"C{38*k:.1f},{62*k:.1f} {40*k:.1f},{82*k:.1f} {48*k:.1f},{90*k:.1f} "
-            f"L{80*k:.1f},{90*k:.1f} "
-            f"C{88*k:.1f},{82*k:.1f} {90*k:.1f},{62*k:.1f} {88*k:.1f},{50*k:.1f}"
-        )
-        # Breast feather chevrons
-        chevrons = []
-        for i in range(3):
-            y_off = 64 + i * 8
-            chevrons.append(
-                f"M{54*k:.1f},{y_off*k:.1f} L{64*k:.1f},{(y_off+5)*k:.1f} L{74*k:.1f},{y_off*k:.1f}"
-            )
-        chevron_paths = " ".join(chevrons)
-        # Feet / talons
-        feet_l = f"M{52*k:.1f},{90*k:.1f} L{48*k:.1f},{98*k:.1f} M{52*k:.1f},{90*k:.1f} L{54*k:.1f},{98*k:.1f}"
-        feet_r = f"M{76*k:.1f},{90*k:.1f} L{74*k:.1f},{98*k:.1f} M{76*k:.1f},{90*k:.1f} L{80*k:.1f},{98*k:.1f}"
-        # Wing hints
-        wing_l = f"M{40*k:.1f},{55*k:.1f} C{30*k:.1f},{60*k:.1f} {28*k:.1f},{72*k:.1f} {36*k:.1f},{80*k:.1f}"
-        wing_r = f"M{88*k:.1f},{55*k:.1f} C{98*k:.1f},{60*k:.1f} {100*k:.1f},{72*k:.1f} {92*k:.1f},{80*k:.1f}"
-        # Spear (diagonal behind owl)
-        spear = f"M{18*k:.1f},{104*k:.1f} L{110*k:.1f},{14*k:.1f}"
-        spear_tip = f"M{108*k:.1f},{18*k:.1f} L{110*k:.1f},{14*k:.1f} L{113*k:.1f},{20*k:.1f}"
-
-        # ── Eyes (concentric circles — the signature element) ──
-        eye_r_size = 7 * k
-        eye_lx, eye_rx = 52 * k, 76 * k
-        eye_y = 46 * k
-        eyes = (
-            # Left eye — outer ring
-            f'<circle cx="{eye_lx:.1f}" cy="{eye_y:.1f}" r="{eye_r_size:.1f}" fill="none" stroke="{gold}" stroke-width="{1.5*k:.1f}"/>'
-            # Left eye — iris
-            f'<circle cx="{eye_lx:.1f}" cy="{eye_y:.1f}" r="{4*k:.1f}" fill="{gold}" opacity="0.7"/>'
-            # Left eye — pupil
-            f'<circle cx="{eye_lx:.1f}" cy="{eye_y:.1f}" r="{2*k:.1f}" fill="{aegean}"/>'
-            # Right eye — outer ring
-            f'<circle cx="{eye_rx:.1f}" cy="{eye_y:.1f}" r="{eye_r_size:.1f}" fill="none" stroke="{gold}" stroke-width="{1.5*k:.1f}"/>'
-            # Right eye — iris
-            f'<circle cx="{eye_rx:.1f}" cy="{eye_y:.1f}" r="{4*k:.1f}" fill="{gold}" opacity="0.7"/>'
-            # Right eye — pupil
-            f'<circle cx="{eye_rx:.1f}" cy="{eye_y:.1f}" r="{2*k:.1f}" fill="{aegean}"/>'
-        )
-        # Beak
-        beak = f'<path d="M{61*k:.1f},{52*k:.1f} L{64*k:.1f},{58*k:.1f} L{67*k:.1f},{52*k:.1f}" fill="none" stroke="{gold}" stroke-width="{1.2*k:.1f}" stroke-linejoin="round"/>'
-
-        # ── Shield outline (subtle, behind owl) ──
-        shield = (
-            f'<path d="M{30*k:.1f},{36*k:.1f} L{64*k:.1f},{108*k:.1f} L{98*k:.1f},{36*k:.1f} Z" '
-            f'fill="none" stroke="{gold}" stroke-width="{0.8*k:.1f}" opacity="0.18"/>'
-        )
-
-        # ── Greek key border (decorative bottom bar) ──
-        gk_y = 112 * k
-        gk_step = 6 * k
-        greek_key_d = f"M{32*k:.1f},{gk_y:.1f}"
-        for i in range(8):
-            x = 32 * k + i * gk_step * 2
-            greek_key_d += (
-                f" l{gk_step:.1f},0 l0,{-gk_step*0.6:.1f}"
-                f" l{-gk_step*0.5:.1f},0 l0,{gk_step*0.6:.1f}"
-                f" l{gk_step:.1f},0"
-            )
-
-        stroke_w = max(1.5, 2 * k)
-
-        defs = (
-            f'<defs>'
-            f'<radialGradient id="athenaGlow">'
-            f'<stop offset="0%" stop-color="{gold}" stop-opacity="0.30"/>'
-            f'<stop offset="100%" stop-color="{gold}" stop-opacity="0"/>'
-            f'</radialGradient>'
-            f'<linearGradient id="athenaBodyGrad" x1="0" y1="0" x2="0" y2="1">'
-            f'<stop offset="0%" stop-color="{gold}" stop-opacity="0.08"/>'
-            f'<stop offset="100%" stop-color="{gold_dim}" stop-opacity="0.02"/>'
-            f'</linearGradient>'
-            f'</defs>'
-        )
-
-        owl_group = (
-            # Background glow
-            f'<circle cx="{h:.1f}" cy="{55*k:.1f}" r="{42*k:.1f}" fill="url(#athenaGlow)"/>'
-            # Shield behind owl
-            f'{shield}'
-            # Spear behind owl
-            f'<path d="{spear}" stroke="{gold}" stroke-width="{0.7*k:.1f}" opacity="0.22"/>'
-            f'<path d="{spear_tip}" fill="none" stroke="{gold}" stroke-width="{1*k:.1f}" opacity="0.30"/>'
-            # Body fill (subtle)
-            f'<path d="{body}" fill="url(#athenaBodyGrad)" stroke="none"/>'
-            # Head + body outline
-            f'<path d="{head}" fill="none" stroke="{gold}" stroke-width="{stroke_w:.1f}" stroke-linecap="round"/>'
-            f'<path d="{body}" fill="none" stroke="{gold}" stroke-width="{stroke_w:.1f}" stroke-linecap="round"/>'
-            # Ear tufts
-            f'<path d="{ear_l}" fill="none" stroke="{gold}" stroke-width="{stroke_w:.1f}" stroke-linecap="round"/>'
-            f'<path d="{ear_r}" fill="none" stroke="{gold}" stroke-width="{stroke_w:.1f}" stroke-linecap="round"/>'
-            # Wings
-            f'<path d="{wing_l}" fill="none" stroke="{gold}" stroke-width="{1*k:.1f}" opacity="0.5"/>'
-            f'<path d="{wing_r}" fill="none" stroke="{gold}" stroke-width="{1*k:.1f}" opacity="0.5"/>'
-            # Breast chevrons
-            f'<path d="{chevron_paths}" fill="none" stroke="{gold}" stroke-width="{0.8*k:.1f}" opacity="0.4"/>'
-            # Eyes (signature)
-            f'{eyes}'
-            # Beak
-            f'{beak}'
-            # Feet
-            f'<path d="{feet_l}" fill="none" stroke="{gold}" stroke-width="{1*k:.1f}" opacity="0.5"/>'
-            f'<path d="{feet_r}" fill="none" stroke="{gold}" stroke-width="{1*k:.1f}" opacity="0.5"/>'
-            # Greek key bottom
-            f'<path d="{greek_key_d}" fill="none" stroke="{gold}" stroke-width="{0.6*k:.1f}" opacity="0.25"/>'
-        )
-
-        if variant == "icon":
-            return (
-                f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {s} {s}" '
-                f'width="{s}" height="{s}">{defs}{owl_group}</svg>'
-            )
-        elif variant == "full":
-            total_w = s + int(s * 2.2)
-            text_x = s + 12 * k
-            title_y = h - 4 * k
-            sub_y = h + 14 * k
-            return (
-                f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {total_w} {s}" '
-                f'width="{total_w}" height="{s}">{defs}{owl_group}'
-                f'<text x="{text_x:.0f}" y="{title_y:.0f}" fill="{white}" '
-                f'font-family="Georgia, \'Times New Roman\', serif" '
-                f'font-size="{s*0.24:.0f}" font-weight="700" letter-spacing="0.10em">'
-                f'S.L.A.T.E.</text>'
-                f'<text x="{text_x:.0f}" y="{sub_y:.0f}" fill="{gold}" opacity="0.7" '
-                f'font-family="Georgia, \'Times New Roman\', serif" '
-                f'font-size="{s*0.07:.0f}" font-weight="400" letter-spacing="0.22em">'
-                f'WISDOM MEETS PRECISION</text>'
-                f'</svg>'
-            )
-        else:  # wordmark
-            kw = 60 / 128
-            bar_y = 46
-            return (
-                f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 60" width="400" height="60">'
-                f'<text x="0" y="36" fill="{white}" font-family="Georgia, \'Times New Roman\', serif" '
-                f'font-size="34" font-weight="700" letter-spacing="0.10em">S.L.A.T.E.</text>'
-                f'<line x1="0" y1="{bar_y}" x2="240" y2="{bar_y}" stroke="{gold}" stroke-width="1" opacity="0.4"/>'
-                f'<text x="0" y="56" fill="{gold}" opacity="0.6" '
-                f'font-family="Georgia, \'Times New Roman\', serif" '
-                f'font-size="10" font-weight="400" letter-spacing="0.22em">'
-                f'WISDOM MEETS PRECISION</text>'
+                f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 60" width="400" height="60">\n'
+                f'  <text x="0" y="38" fill="#F5F0EB" font-family="Inter, Segoe UI, sans-serif" '
+                f'font-size="36" font-weight="700" letter-spacing="0.08em">S.L.A.T.E.</text>\n'
+                f'  <text x="0" y="55" fill="#78716C" font-family="Inter, Segoe UI, sans-serif" '
+                f'font-size="11" font-weight="400" letter-spacing="0.15em">SYNCHRONIZED LIVING ARCHITECTURE</text>\n'
                 f'</svg>'
             )
 
@@ -991,42 +763,25 @@ def build_design_assets(output_dir: str = None) -> Dict[str, str]:
     os.makedirs(output_dir, exist_ok=True)
     assets = {}
 
-    # 1. Design tokens CSS (dark + light + athena)
+    # 1. Design tokens CSS
     dark_css = SlateDesignTokens.to_css("dark")
     light_css = SlateDesignTokens.to_css("light")
-    athena_css = SlateDesignTokens.to_css("athena")
     tokens_path = os.path.join(output_dir, "tokens.css")
     with open(tokens_path, "w", encoding="utf-8") as f:
         f.write(f"/* SLATE Design Tokens - Generated {datetime.now(timezone.utc).isoformat()} */\n\n")
         f.write("/* Dark Theme (default) */\n")
         f.write(dark_css + "\n\n")
         f.write("/* Light Theme */\n")
-        f.write("[data-theme='light'] " + light_css.replace(":root", "") + "\n\n")
-        f.write("/* Athena Theme */\n")
-        f.write("[data-theme='athena'] " + athena_css.replace(":root", "") + "\n")
+        f.write("[data-theme='light'] " + light_css.replace(":root", "") + "\n")
     assets["tokens_css"] = tokens_path
 
-    # Modified: 2026-02-08T03:15:00Z | Author: COPILOT | Change: export Athena owl logo variants
-    # 2. Logo variants (lattice + Athena owl)
+    # 2. Logo variants
     for variant in ["icon", "full", "wordmark"]:
         logo_svg = SlateLogoGenerator.generate(128 if variant != "wordmark" else 60, variant)
         logo_path = os.path.join(output_dir, f"logo-{variant}.svg")
         with open(logo_path, "w", encoding="utf-8") as f:
             f.write(logo_svg)
         assets[f"logo_{variant}"] = logo_path
-
-    # 2b. Athena owl logo variants
-    athena = SlateDesignTokens.ATHENA
-    for variant in ["icon", "full", "wordmark"]:
-        owl_svg = AthenaLogoGenerator.generate(
-            128 if variant != "wordmark" else 60, variant,
-            gold=athena["gold"], gold_dim=athena["gold_dim"],
-            aegean=athena["aegean"], white=athena["thunderbolt"]
-        )
-        owl_path = os.path.join(output_dir, f"athena-{variant}.svg")
-        with open(owl_path, "w", encoding="utf-8") as f:
-            f.write(owl_svg)
-        assets[f"athena_{variant}"] = owl_path
 
     # 3. Background patterns
     patterns = {

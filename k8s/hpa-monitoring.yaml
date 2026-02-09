@@ -1,0 +1,101 @@
+# Modified: 2026-02-08T15:00:00Z | Author: COPILOT | Change: Add HPA for auto-scaling SLATE pods, ServiceMonitor for Prometheus
+# Modified: 2026-02-09T07:00:00Z | Author: COPILOT | Change: Split CRD-dependent Prometheus resources to monitoring-crds.yaml
+# SLATE Horizontal Pod Autoscaler & Metrics Service
+# CRD-dependent resources (ServiceMonitor, PrometheusRule) are in monitoring-crds.yaml
+# Requires: metrics-server installed in cluster
+---
+# HPA for SLATE Core
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: slate-core-hpa
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: autoscaling
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: slate-core
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+
+---
+# HPA for ChromaDB (vector store can benefit from horizontal scaling)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: chromadb-hpa
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: chromadb
+    app.kubernetes.io/component: autoscaling
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: chromadb
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 75
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+# Modified: 2026-02-11T00:30:00Z | Author: COPILOT | Change: Fix metrics service selector to point to agent-router (which hosts metrics on :9090)
+# Metrics Service (expose metrics port for monitoring)
+apiVersion: v1
+kind: Service
+metadata:
+  name: slate-metrics-svc
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate-metrics
+    app.kubernetes.io/component: monitoring
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: agent-router
+  ports:
+    - port: 9090
+      targetPort: 9090
+      protocol: TCP
+      name: metrics

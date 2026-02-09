@@ -141,9 +141,9 @@ class WorkflowRun:
     workflow: str
     run_id: int
     status: str
-    conclusion: Optional[str]
-    started_at: Optional[str]
-    completed_at: Optional[str]
+    conclusion: Optional[str] = None
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
     duration_minutes: float = 0
 
 

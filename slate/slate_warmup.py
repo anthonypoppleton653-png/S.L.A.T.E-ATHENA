@@ -178,19 +178,22 @@ class SlateWarmup:
 
                 if "embed" in model_name:
                     # Embedding model — use embed API
+                    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add num_gpu 999 to force GPU VRAM
                     self._ollama_request("/api/embed", {
                         "model": model_name,
                         "input": "SLATE warmup initialization",
                         "keep_alive": keep_alive,
+                        "options": {"num_gpu": 999},
                     }, timeout=60)
                 else:
                     # Generation model — use generate API with keep_alive
+                    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add num_gpu 999 to force GPU VRAM
                     self._ollama_request("/api/generate", {
                         "model": model_name,
                         "prompt": "Ready.",
                         "stream": False,
                         "keep_alive": keep_alive,
-                        "options": {"num_predict": 1},
+                        "options": {"num_predict": 1, "num_gpu": 999},
                     }, timeout=120)
 
                 elapsed = round(time.time() - start, 1)
@@ -364,7 +367,7 @@ class SlateWarmup:
                 "prompt": "ping",
                 "stream": False,
                 "keep_alive": "24h",
-                "options": {"num_predict": 5},
+                "options": {"num_predict": 5, "num_gpu": 999},
             }, timeout=30)
             checks["inference_latency_ms"] = round((time.time() - start) * 1000)
             checks["inference_ok"] = True

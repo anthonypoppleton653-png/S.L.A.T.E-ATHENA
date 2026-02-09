@@ -1,13 +1,17 @@
 {
   "mcpServers": {
     "slate": {
-      "command": ".venv\\Scripts\\python.exe",
-      "args": ["slate/mcp_server.py"],
+      "command": "${workspaceFolder}/.venv_slate_ag/Scripts/python.exe",
+      "args": [
+        "slate/mcp_server.py"
+      ],
+      "cwd": "${workspaceFolder}",
       "env": {
-        "SLATE_WORKSPACE": ".",
-        "PYTHONPATH": "."
+        "PYTHONPATH": "${workspaceFolder}",
+        "SLATE_BEHAVIOR": "operator",
+        "SLATE_ACTIONGUARD": "enabled"
       },
-      "description": "SLATE MCP Server - Provides tools for orchestration, workflow management, and system status"
+      "description": "SLATE MCP Server - AI orchestration, workflow management, GPU, K8s deployment"
     }
   }
 }

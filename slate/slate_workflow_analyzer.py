@@ -71,6 +71,13 @@ WORKFLOW_CATEGORIES = {
         "paths": ["pyproject.toml", "CHANGELOG.md"],
         "workflows": ["cd.yml", "release.yml"],
     },
+    # Modified: 2026-02-09T05:00:00Z | Author: COPILOT | Change: Add Kubernetes workflow category
+    "kubernetes": {
+        "name": "Kubernetes",
+        "description": "K8s cluster deployment, Helm charts, Kustomize overlays",
+        "paths": ["k8s/", "helm/", "slate/slate_k8s_deploy.py"],
+        "workflows": ["k8s.yml"],
+    },
 }
 
 # Known redundant/deprecated patterns

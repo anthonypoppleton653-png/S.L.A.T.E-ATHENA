@@ -11,12 +11,15 @@ Check the status of all SLATE services and system components.
 /slate-status [--quick | --json | --full]
 
 ## Description
+<!-- Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s status to skill description -->
 This skill provides comprehensive system status for the SLATE development environment including:
 - GPU detection and configuration
 - Service health (Dashboard, Ollama, Foundry Local)
 - GitHub Actions runner status
 - Workflow queue health
 - Python environment validation
+- Kubernetes cluster status (pods, deployments, services)
+- Docker container state
 
 ## Instructions
 
@@ -47,3 +50,6 @@ User: "/slate-status --json"
 
 User: "What's the status of SLATE?"
 → Invoke this skill automatically
+
+User: "Check K8s pods"
+→ Run `python slate/slate_k8s_deploy.py --status` and report pod health

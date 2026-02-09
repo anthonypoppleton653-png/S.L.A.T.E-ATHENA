@@ -286,7 +286,7 @@ Response:"""
                         "model": "mistral-nemo",
                         "prompt": prompt,
                         "stream": False,
-                        "options": {"temperature": 0.7, "num_predict": 150}
+                        "options": {"temperature": 0.7, "num_predict": 150, "num_gpu": 999}
                     },
                     timeout=10
                 )

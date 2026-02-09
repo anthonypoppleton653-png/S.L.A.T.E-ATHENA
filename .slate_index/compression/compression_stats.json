@@ -1,0 +1,11 @@
+{
+  "total_compressions": 5,
+  "total_original_tokens": 22731,
+  "total_compressed_tokens": 5606,
+  "avg_ratio": 4.05,
+  "best_ratio": 7.95,
+  "strategy_counts": {
+    "whitespace+boilerplate+comments+imports+importance": 5
+  },
+  "updated": "2026-02-09T13:14:41.535928+00:00"
+}

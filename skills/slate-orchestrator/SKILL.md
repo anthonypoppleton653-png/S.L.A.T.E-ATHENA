@@ -11,11 +11,14 @@ Start, stop, or check the SLATE orchestrator and all services.
 /slate [start | stop | status | restart]
 
 ## Description
+<!-- Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s deployment management to orchestrator skill -->
 The SLATE orchestrator manages all SLATE services:
 - Dashboard server (port 8080)
 - Workflow monitor
 - GitHub Actions runner integration
 - Background task processing
+- Kubernetes deployments (`kubectl apply -k k8s/overlays/local/`)
+- Docker container lifecycle (`docker-compose up/down`)
 
 ## Instructions
 

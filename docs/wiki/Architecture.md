@@ -309,8 +309,67 @@ host = "127.0.0.1"  # Never "0.0.0.0"
    Hardcoded in modules
 ```
 
+## Kubernetes & Container Architecture
+<!-- Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s architecture section to wiki -->
+
+SLATE runs as a **local cloud** using Kubernetes for production stability. The Docker release
+image (`slate:local`) packages all SLATE runtimes into a single CUDA 12.8 container, which
+Kubernetes then deploys and manages.
+
+### Release Image
+
+```
+docker build -t slate:local .
+```
+
+The image includes: Core SDK, Dashboard, Agent Router, Autonomous Loop, Copilot Bridge,
+Workflow Manager, ML Pipeline, GPU Manager, Security Guards, Models, and Skills.
+
+### K8s Deployments
+
+| Deployment | Replicas | Purpose |
+|------------|----------|---------|
+| `slate-core` | 2 | Core SDK + Dashboard (ports 8080-8084) |
+| `ollama` | 1 | LLM inference with GPU access |
+| `chromadb` | 1 | Vector store for RAG memory |
+| `slate-agent-router` | 2 | Agent task routing |
+| `slate-autonomous-loop` | 1 | Autonomous task execution |
+| `slate-copilot-bridge` | 1 | Copilot ↔ agent bridge |
+| `slate-workflow-manager` | 1 | Task lifecycle management |
+
+### K8s Resources
+
+- **Namespace**: `slate`
+- **HPAs**: Auto-scaling based on CPU/memory
+- **PDBs**: Pod disruption budgets for availability
+- **NetworkPolicies**: Namespace-scoped isolation
+- **CronJobs**: ML training, codebase indexing, health checks
+- **PVCs**: Persistent storage for models, ChromaDB, configs
+- **RBAC**: Service accounts with scoped permissions
+
+### Deployment Options
+
+```bash
+# Kustomize (recommended for local)
+kubectl apply -k k8s/overlays/local/
+
+# Helm
+helm install slate ./helm -f helm/values.yaml
+
+# Status
+python slate/slate_k8s_deploy.py --status
+python slate/slate_k8s_deploy.py --health
+```
+
+### Docker Compose (Alternative)
+
+For simpler scenarios:
+- **Dev:** `docker-compose -f docker-compose.dev.yml up`
+- **Prod:** `docker-compose -f docker-compose.prod.yml up -d`
+
 ## Next Steps
 
 - [Learn about Agents](Agents)
 - [Configure AI Backends](AI-Backends)
 - [CLI Reference](CLI-Reference)
+- [Kubernetes Deployment](CLI-Reference#kubernetes--containers)

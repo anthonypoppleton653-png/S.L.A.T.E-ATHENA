@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Modified: 2026-02-09T02:10:00Z | Author: COPILOT | Change: Add timestamp comment for SLATE compliance
 """
 SLATE Guided Workflow Engine
 ============================
@@ -30,6 +31,18 @@ import logging
 WORKSPACE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(WORKSPACE_ROOT))
 
+import os
+
+# K8s-aware service configuration
+def _normalize_url(host: str) -> str:
+    """Normalize host to include protocol."""
+    if host.startswith("http://") or host.startswith("https://"):
+        return host.rstrip("/")
+    return f"http://{host}"
+
+OLLAMA_URL = _normalize_url(os.environ.get("OLLAMA_HOST", "127.0.0.1:11434"))
+K8S_MODE = os.environ.get("SLATE_K8S", "false").lower() == "true"
+
 logger = logging.getLogger(__name__)
 
 
@@ -52,6 +65,7 @@ class JobCategory(Enum):
     AI_ANALYSIS = "ai_analysis"        # AI code analysis
     MAINTENANCE = "maintenance"        # Cleanup/maintenance
     DEPLOYMENT = "deployment"          # Deploy/release
+    PROJECT_PLANNING = "project_planning"  # Spec & roadmap work
 
 
 @dataclass
@@ -164,6 +178,72 @@ JOB_TEMPLATES: List[JobTemplate] = [
         parameters={"custom": True},
         estimated_duration="varies",
         priority=5
+    ),
+    # Project Planning Templates
+    JobTemplate(
+        id="spec_create",
+        name="Create Feature Spec",
+        description="Create a new specification from feature description using Spec-Kit",
+        category=JobCategory.PROJECT_PLANNING,
+        workflow="agentic.yml",
+        ai_capable=True,
+        parameters={"action": "spec_create"},
+        estimated_duration="~5 min",
+        priority=8
+    ),
+    JobTemplate(
+        id="spec_plan",
+        name="Generate Implementation Plan",
+        description="Create implementation plan from existing spec using Spec-Kit",
+        category=JobCategory.PROJECT_PLANNING,
+        workflow="agentic.yml",
+        ai_capable=True,
+        parameters={"action": "spec_plan"},
+        estimated_duration="~10 min",
+        priority=7
+    ),
+    JobTemplate(
+        id="spec_tasks",
+        name="Generate Task List",
+        description="Create actionable tasks from spec and plan using Spec-Kit",
+        category=JobCategory.PROJECT_PLANNING,
+        workflow="agentic.yml",
+        ai_capable=True,
+        parameters={"action": "spec_tasks"},
+        estimated_duration="~5 min",
+        priority=7
+    ),
+    JobTemplate(
+        id="tech_tree_update",
+        name="Update Tech Tree",
+        description="Analyze and update tech tree progress based on codebase changes",
+        category=JobCategory.PROJECT_PLANNING,
+        workflow="slate.yml",
+        ai_capable=True,
+        parameters={"analyze_tech_tree": True},
+        estimated_duration="~3 min",
+        priority=6
+    ),
+    JobTemplate(
+        id="roadmap_sync",
+        name="Sync Roadmap",
+        description="Sync project boards, issues, and roadmap status",
+        category=JobCategory.PROJECT_PLANNING,
+        workflow="project-automation.yml",
+        parameters={"sync_all": True},
+        estimated_duration="~2 min",
+        priority=5
+    ),
+    JobTemplate(
+        id="spec_implement",
+        name="Implement Spec Tasks",
+        description="Execute implementation of tasks from a spec's tasks.md",
+        category=JobCategory.PROJECT_PLANNING,
+        workflow="agentic.yml",
+        ai_capable=True,
+        parameters={"action": "spec_implement"},
+        estimated_duration="~30 min",
+        priority=9
     )
 ]
 
@@ -202,6 +282,7 @@ WORKFLOW_GUIDE_STEPS: List[GuidedWorkflowStep] = [
         instruction="Choose the category that best matches your task:",
         action_type="select",
         options=[
+            {"id": "project_planning", "label": "Project Planning", "icon": "blueprint", "desc": "Specs, roadmap, and planning"},
             {"id": "testing", "label": "Testing", "icon": "flask", "desc": "Run tests and validations"},
             {"id": "ai_analysis", "label": "AI Analysis", "icon": "brain", "desc": "Local AI code review"},
             {"id": "maintenance", "label": "Maintenance", "icon": "wrench", "desc": "Cleanup and checks"},
@@ -275,7 +356,7 @@ class WorkflowNarrator:
         """Check if Ollama is available."""
         try:
             import httpx
-            response = httpx.get("http://localhost:11434/api/tags", timeout=2)
+            response = httpx.get(f"{OLLAMA_URL}/api/tags", timeout=2)
             self.ollama_available = response.status_code == 200
         except Exception:
             self.ollama_available = False
@@ -339,12 +420,12 @@ Focus on: testing, AI analysis, security, or maintenance."""
 
             async with httpx.AsyncClient() as client:
                 response = await client.post(
-                    "http://localhost:11434/api/generate",
+                    f"{OLLAMA_URL}/api/generate",
                     json={
                         "model": "mistral-nemo",
                         "prompt": prompt,
                         "stream": False,
-                        "options": {"temperature": 0.5, "num_predict": 100}
+                        "options": {"temperature": 0.5, "num_predict": 100, "num_gpu": 999}
                     },
                     timeout=10
                 )
@@ -454,6 +535,7 @@ class GuidedWorkflowEngine:
             "maintenance": JobCategory.MAINTENANCE,
             "deployment": JobCategory.DEPLOYMENT,
             "documentation": JobCategory.DOCUMENTATION,
+            "project_planning": JobCategory.PROJECT_PLANNING,
             "custom": JobCategory.CODE_CHANGE
         }
 

@@ -1,30 +1,29 @@
 #!/usr/bin/env python3
-# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Create TRELLIS.2 integration module for SLATE
+# Modified: 2026-02-09T22:30:00Z | Author: ClaudeCode (Opus 4.6) | Change: Initial TRELLIS.2 client and pipeline manager
 """
-SLATE TRELLIS.2 Integration — Image-to-3D Generation Pipeline
-==============================================================
+SLATE TRELLIS.2 3D Generation Client
+======================================
+Client module for the TRELLIS.2 K8s microservice (Microsoft 4B image-to-3D model).
 
-Integrates Microsoft TRELLIS.2 (4B parameter model) into the SLATE
-agentic framework for high-fidelity image-to-3D asset generation.
+Provides:
+- Service health monitoring and status
+- Image-to-3D mesh generation requests
+- Asset retrieval and caching
+- Integration with unified_ai_backend.py
+- CLI for testing and management
 
-Capabilities:
-- Image-to-3D generation (single image → full 3D mesh with PBR materials)
-- Shape-conditioned PBR texture generation
-- GLB/OBJ/PLY export with full PBR material support
-- GPU memory-aware pipeline management
-- Resolution scaling (512³ / 1024³ / 1536³)
-
-Requirements:
-- NVIDIA GPU with >= 8 GB VRAM (16 GB+ recommended for 1024³+)
-- CUDA Toolkit 12.4+
-- TRELLIS.2 submodule at models/trellis2/
-- Dependencies: trellis2, o_voxel, flash-attn or xformers
+Service architecture:
+    slate_trellis.py (client) --> trellis2-svc:8086 (K8s service)
+                                    |
+                                    v
+                              TRELLIS.2 4B model
+                              (CUDA 12.4, low_vram mode)
 
 Usage:
-    python slate/slate_trellis.py --status          # Check TRELLIS.2 status
-    python slate/slate_trellis.py --generate <img>  # Generate 3D from image
-    python slate/slate_trellis.py --benchmark       # Run generation benchmark
-    python slate/slate_trellis.py --install         # Install TRELLIS.2 deps
+    python slate/slate_trellis.py --status
+    python slate/slate_trellis.py --generate IMAGE_PATH
+    python slate/slate_trellis.py --assets
+    python slate/slate_trellis.py --json
 """
 
 import argparse
@@ -33,849 +32,712 @@ import logging
 import os
 import sys
 import time
+import urllib.error
+import urllib.request
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
-# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Workspace setup
-WORKSPACE_ROOT = Path(__file__).parent.parent
-TRELLIS_ROOT = WORKSPACE_ROOT / "models" / "trellis2"
-OUTPUT_DIR = WORKSPACE_ROOT / "slate_memory" / "trellis_outputs"
-STATE_FILE = WORKSPACE_ROOT / ".slate_trellis_state.json"
+# Add workspace root to path
+WORKSPACE_ROOT = Path(__file__).parent.parent.resolve()
+sys.path.insert(0, str(WORKSPACE_ROOT))
 
-# Ensure trellis2 is importable
-if TRELLIS_ROOT.exists():
-    sys.path.insert(0, str(TRELLIS_ROOT))
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 logger = logging.getLogger("slate.trellis")
 
-# ── Resolution Presets ──────────────────────────────────────────────────
+# ==============================================================================
+# Configuration
+# ==============================================================================
 
-# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Resolution presets with VRAM estimates
-RESOLUTION_PRESETS = {
-    "fast": {
-        "resolution": 512,
-        "description": "Fast preview (512³)",
-        "estimated_time_s": 3,
-        "min_vram_mb": 6000,
-        "decimation_target": 500000,
-        "texture_size": 2048,
-    },
-    "standard": {
-        "resolution": 1024,
-        "description": "Standard quality (1024³)",
-        "estimated_time_s": 17,
-        "min_vram_mb": 12000,
-        "decimation_target": 1000000,
-        "texture_size": 4096,
-    },
-    "high": {
-        "resolution": 1536,
-        "description": "High quality (1536³)",
-        "estimated_time_s": 60,
-        "min_vram_mb": 20000,
-        "decimation_target": 2000000,
-        "texture_size": 4096,
-    },
+TRELLIS_HOST = os.environ.get("TRELLIS_HOST", "http://127.0.0.1:8086")
+TRELLIS_K8S_SERVICE = "trellis2-svc.slate.svc.cluster.local:8086"
+TRELLIS_TIMEOUT = int(os.environ.get("TRELLIS_TIMEOUT", "120"))  # 3D gen can be slow
+
+# Asset storage
+ASSET_DIR = WORKSPACE_ROOT / ".slate_identity" / "avatar_assets"
+ASSET_DIR.mkdir(parents=True, exist_ok=True)
+
+# Model configuration
+DEFAULT_CONFIG = {
+    "resolution": 512,          # 512^3 voxels (low_vram mode)
+    "low_vram": True,           # Required for 16GB RTX 5070 Ti
+    "output_format": "glb",     # GLB with PBR materials
+    "seed": 42,                 # Deterministic generation
+    "texture_resolution": 1024, # Texture map resolution
+    "remesh": True,             # Post-process mesh for web delivery
+    "target_faces": 50000,      # Face budget for web-friendly mesh
 }
 
-# ── State Management ────────────────────────────────────────────────────
+# Supported input formats
+SUPPORTED_FORMATS = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
 
-# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Pipeline state tracking
-def _load_state() -> dict:
-    """Load persistent TRELLIS state."""
-    if STATE_FILE.exists():
+
+# ==============================================================================
+# Data Classes
+# ==============================================================================
+
+@dataclass
+class TrellisServiceStatus:
+    """Status of the TRELLIS.2 K8s service."""
+    available: bool = False
+    endpoint: str = TRELLIS_HOST
+    version: str = ""
+    gpu_name: str = ""
+    gpu_memory_mb: int = 0
+    model_loaded: bool = False
+    low_vram_mode: bool = True
+    resolution: int = 512
+    uptime_seconds: float = 0.0
+    error: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "available": self.available,
+            "endpoint": self.endpoint,
+            "version": self.version,
+            "gpu": {
+                "name": self.gpu_name,
+                "memory_mb": self.gpu_memory_mb,
+            },
+            "model_loaded": self.model_loaded,
+            "low_vram_mode": self.low_vram_mode,
+            "resolution": self.resolution,
+            "uptime_seconds": self.uptime_seconds,
+            "error": self.error,
+        }
+
+
+@dataclass
+class GenerationRequest:
+    """Request to generate a 3D mesh from a 2D image."""
+    image_path: str
+    resolution: int = 512
+    output_format: str = "glb"
+    seed: int = 42
+    low_vram: bool = True
+    texture_resolution: int = 1024
+    remesh: bool = True
+    target_faces: int = 50000
+
+    def validate(self) -> tuple[bool, str]:
+        """Validate the generation request."""
+        path = Path(self.image_path)
+        if not path.exists():
+            return False, f"Image not found: {self.image_path}"
+        if path.suffix.lower() not in SUPPORTED_FORMATS:
+            return False, f"Unsupported format: {path.suffix} (supported: {SUPPORTED_FORMATS})"
+        if self.resolution not in (512, 768, 1024, 1536):
+            return False, f"Invalid resolution: {self.resolution} (supported: 512, 768, 1024, 1536)"
+        if self.resolution > 512 and self.low_vram:
+            return False, f"Resolution {self.resolution} requires low_vram=false (>16GB VRAM)"
+        return True, ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "resolution": self.resolution,
+            "output_format": self.output_format,
+            "seed": self.seed,
+            "low_vram": self.low_vram,
+            "texture_resolution": self.texture_resolution,
+            "remesh": self.remesh,
+            "target_faces": self.target_faces,
+        }
+
+
+@dataclass
+class GenerationResult:
+    """Result from a 3D generation request."""
+    success: bool = False
+    asset_id: str = ""
+    output_path: str = ""
+    format: str = "glb"
+    vertices: int = 0
+    faces: int = 0
+    file_size_bytes: int = 0
+    generation_time_ms: float = 0.0
+    error: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "success": self.success,
+            "asset_id": self.asset_id,
+            "output_path": self.output_path,
+            "format": self.format,
+            "mesh": {
+                "vertices": self.vertices,
+                "faces": self.faces,
+            },
+            "file_size_bytes": self.file_size_bytes,
+            "generation_time_ms": self.generation_time_ms,
+            "error": self.error,
+        }
+
+
+@dataclass
+class AssetInfo:
+    """Information about a stored 3D asset."""
+    asset_id: str
+    filename: str
+    format: str
+    file_size_bytes: int
+    created: str
+    source_image: str = ""
+    vertices: int = 0
+    faces: int = 0
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "asset_id": self.asset_id,
+            "filename": self.filename,
+            "format": self.format,
+            "file_size_bytes": self.file_size_bytes,
+            "created": self.created,
+            "source_image": self.source_image,
+            "mesh": {
+                "vertices": self.vertices,
+                "faces": self.faces,
+            },
+        }
+
+
+# ==============================================================================
+# TRELLIS.2 Client
+# ==============================================================================
+
+class TrellisClient:
+    """Client for the TRELLIS.2 K8s microservice."""
+
+    def __init__(self, host: Optional[str] = None):
+        self.host = (host or TRELLIS_HOST).rstrip("/")
+        self.asset_dir = ASSET_DIR
+        self._asset_manifest = self._load_manifest()
+
+    def _load_manifest(self) -> dict[str, Any]:
+        """Load the asset manifest."""
+        manifest_path = self.asset_dir / "manifest.json"
+        if manifest_path.exists():
+            try:
+                return json.loads(manifest_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                pass
+        return {"assets": [], "generated_count": 0, "last_updated": ""}
+
+    def _save_manifest(self) -> None:
+        """Save the asset manifest."""
+        self._asset_manifest["last_updated"] = datetime.now(timezone.utc).isoformat()
+        manifest_path = self.asset_dir / "manifest.json"
+        manifest_path.write_text(
+            json.dumps(self._asset_manifest, indent=2),
+            encoding="utf-8",
+        )
+
+    def _api_request(
+        self,
+        path: str,
+        method: str = "GET",
+        data: Optional[bytes] = None,
+        headers: Optional[dict[str, str]] = None,
+        timeout: int = TRELLIS_TIMEOUT,
+    ) -> tuple[bool, Any]:
+        """Make an API request to the TRELLIS.2 service."""
+        url = f"{self.host}{path}"
+        req_headers = {"Accept": "application/json"}
+        if headers:
+            req_headers.update(headers)
+
         try:
-            with open(STATE_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+            req = urllib.request.Request(
+                url,
+                data=data,
+                headers=req_headers,
+                method=method,
+            )
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                body = resp.read()
+                if resp.headers.get("Content-Type", "").startswith("application/json"):
+                    return True, json.loads(body)
+                return True, body
+        except urllib.error.HTTPError as e:
+            error_body = ""
+            try:
+                error_body = e.read().decode("utf-8", errors="replace")
+            except Exception:
+                pass
+            return False, f"HTTP {e.code}: {error_body or e.reason}"
+        except urllib.error.URLError as e:
+            return False, f"Connection failed: {e.reason}"
+        except TimeoutError:
+            return False, f"Request timed out after {timeout}s"
+        except Exception as e:
+            return False, f"Request error: {e}"
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Service Health
+    # ──────────────────────────────────────────────────────────────────────────
+
+    def get_status(self) -> TrellisServiceStatus:
+        """Check the TRELLIS.2 service status."""
+        status = TrellisServiceStatus(endpoint=self.host)
+
+        ok, data = self._api_request("/status", timeout=10)
+        if not ok:
+            status.error = str(data)
+            return status
+
+        if isinstance(data, dict):
+            status.available = True
+            status.version = data.get("version", "unknown")
+            status.gpu_name = data.get("gpu", {}).get("name", "")
+            status.gpu_memory_mb = data.get("gpu", {}).get("memory_mb", 0)
+            status.model_loaded = data.get("model_loaded", False)
+            status.low_vram_mode = data.get("low_vram", True)
+            status.resolution = data.get("resolution", 512)
+            status.uptime_seconds = data.get("uptime_seconds", 0.0)
+
+        return status
+
+    def is_available(self) -> bool:
+        """Quick check if the service is reachable."""
+        try:
+            req = urllib.request.Request(f"{self.host}/status", method="GET")
+            with urllib.request.urlopen(req, timeout=5):
+                return True
         except Exception:
-            pass
-    return {
-        "installed": False,
-        "model_loaded": False,
-        "pipeline_ready": False,
-        "last_generation": None,
-        "total_generations": 0,
-        "last_error": None,
-    }
+            return False
 
+    # ──────────────────────────────────────────────────────────────────────────
+    # 3D Generation
+    # ──────────────────────────────────────────────────────────────────────────
 
-def _save_state(state: dict) -> None:
-    """Persist TRELLIS state."""
-    try:
-        with open(STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump(state, f, indent=2, default=str)
-    except Exception as e:
-        logger.warning("Failed to save TRELLIS state: %s", e)
+    def generate(self, request: GenerationRequest) -> GenerationResult:
+        """Generate a 3D mesh from a 2D image."""
+        # Validate request
+        valid, error = request.validate()
+        if not valid:
+            return GenerationResult(success=False, error=error)
 
-
-# ── Dependency Checker ──────────────────────────────────────────────────
-
-# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Dependency validation
-def check_dependencies() -> dict:
-    """Check all TRELLIS.2 dependencies and return status dict."""
-    results = {
-        "submodule": False,
-        "trellis2_package": False,
-        "torch_cuda": False,
-        "o_voxel": False,
-        "attention_backend": None,
-        "pillow": False,
-        "opencv": False,
-        "gpu_available": False,
-        "gpu_name": None,
-        "gpu_vram_mb": 0,
-    }
-
-    # Check submodule
-    results["submodule"] = (TRELLIS_ROOT / "trellis2" / "__init__.py").exists()
-
-    # Check trellis2 importable
-    try:
-        import trellis2  # noqa: F401
-        results["trellis2_package"] = True
-    except ImportError:
-        pass
-
-    # Check PyTorch + CUDA
-    try:
-        import torch
-        results["torch_cuda"] = torch.cuda.is_available()
-        if results["torch_cuda"]:
-            results["gpu_available"] = True
-            results["gpu_name"] = torch.cuda.get_device_name(0)
-            results["gpu_vram_mb"] = torch.cuda.get_device_properties(0).total_memory // (1024 * 1024)
-    except ImportError:
-        pass
-
-    # Check o_voxel
-    try:
-        import o_voxel  # noqa: F401
-        results["o_voxel"] = True
-    except ImportError:
-        pass
-
-    # Modified: 2026-02-09T16:30:00Z | Author: COPILOT | Change: Recognize torch native SDPA as valid backend
-    # Check attention backend
-    try:
-        import flash_attn  # noqa: F401
-        results["attention_backend"] = "flash-attn"
-    except ImportError:
-        try:
-            import xformers  # noqa: F401
-            results["attention_backend"] = "xformers"
-        except ImportError:
-            # PyTorch 2.0+ has built-in scaled_dot_product_attention (SDPA)
-            try:
-                import torch
-                if hasattr(torch.nn.functional, 'scaled_dot_product_attention'):
-                    results["attention_backend"] = "torch-sdpa"
-                else:
-                    results["attention_backend"] = "none"
-            except ImportError:
-                results["attention_backend"] = "none"
-
-    # Check PIL
-    try:
-        from PIL import Image  # noqa: F401
-        results["pillow"] = True
-    except ImportError:
-        pass
-
-    # Check OpenCV
-    try:
-        import cv2  # noqa: F401
-        results["opencv"] = True
-    except ImportError:
-        pass
-
-    return results
-
-
-def is_ready() -> bool:
-    """Quick check: can TRELLIS.2 run inference?"""
-    # Modified: 2026-02-09T16:30:00Z | Author: COPILOT | Change: Accept torch-sdpa as valid attention backend
-    deps = check_dependencies()
-    return all([
-        deps["submodule"],
-        deps["trellis2_package"],
-        deps["torch_cuda"],
-        deps["o_voxel"],
-        deps["attention_backend"] not in ("none", None),
-    ])
-
-
-# ── Pipeline Management ─────────────────────────────────────────────────
-
-# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Lazy-loaded pipeline with GPU memory management
-_pipeline = None
-_envmap = None
-
-
-def get_pipeline():
-    """Lazy-load the TRELLIS.2 Image-to-3D pipeline. Returns None on failure."""
-    global _pipeline
-    if _pipeline is not None:
-        return _pipeline
-
-    if not is_ready():
-        logger.error("TRELLIS.2 dependencies not satisfied. Run --install first.")
-        return None
-
-    try:
-        os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
-        os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
-
-        from trellis2.pipelines import Trellis2ImageTo3DPipeline
-
-        logger.info("Loading TRELLIS.2-4B pipeline from HuggingFace...")
-        _pipeline = Trellis2ImageTo3DPipeline.from_pretrained("microsoft/TRELLIS.2-4B")
-        _pipeline.cuda()
-        logger.info("TRELLIS.2 pipeline loaded successfully on GPU")
-
-        state = _load_state()
-        state["model_loaded"] = True
-        state["pipeline_ready"] = True
-        _save_state(state)
-
-        return _pipeline
-    except Exception as e:
-        logger.error("Failed to load TRELLIS.2 pipeline: %s", e)
-        state = _load_state()
-        state["last_error"] = str(e)
-        _save_state(state)
-        return None
-
-
-def get_envmap():
-    """Load default environment map for PBR rendering."""
-    global _envmap
-    if _envmap is not None:
-        return _envmap
-
-    envmap_path = TRELLIS_ROOT / "assets" / "hdri" / "forest.exr"
-    if not envmap_path.exists():
-        logger.warning("Default envmap not found at %s", envmap_path)
-        return None
-
-    try:
-        import cv2
-        import torch
-        from trellis2.renderers import EnvMap
-
-        envmap_data = cv2.imread(str(envmap_path), cv2.IMREAD_UNCHANGED)
-        envmap_rgb = cv2.cvtColor(envmap_data, cv2.COLOR_BGR2RGB)
-        _envmap = EnvMap(torch.tensor(envmap_rgb, dtype=torch.float32, device="cuda"))
-        return _envmap
-    except Exception as e:
-        logger.warning("Failed to load envmap: %s", e)
-        return None
-
-
-def unload_pipeline() -> None:
-    """Unload pipeline to free GPU memory."""
-    global _pipeline, _envmap
-    if _pipeline is not None:
-        del _pipeline
-        _pipeline = None
-    if _envmap is not None:
-        del _envmap
-        _envmap = None
-
-    try:
-        import torch
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-    except ImportError:
-        pass
-
-    state = _load_state()
-    state["model_loaded"] = False
-    state["pipeline_ready"] = False
-    _save_state(state)
-    logger.info("TRELLIS.2 pipeline unloaded, GPU memory freed")
-
-
-# ── Generation API ──────────────────────────────────────────────────────
-
-# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Core generation functions
-def generate_3d_from_image(
-    image_path: str,
-    output_dir: Optional[str] = None,
-    preset: str = "fast",
-    export_glb: bool = True,
-    export_video: bool = False,
-    name: Optional[str] = None,
-) -> dict:
-    """
-    Generate a 3D asset from a single image.
-
-    Args:
-        image_path: Path to input image (PNG, JPG, WEBP)
-        output_dir: Directory for outputs (default: slate_memory/trellis_outputs/)
-        preset: Resolution preset — 'fast' (512³), 'standard' (1024³), 'high' (1536³)
-        export_glb: Export as GLB file with PBR materials
-        export_video: Render a preview video (MP4)
-        name: Base filename for outputs (default: derived from image)
-
-    Returns:
-        dict with generation results:
-            - success: bool
-            - mesh_path: path to GLB file (if export_glb)
-            - video_path: path to MP4 (if export_video)
-            - duration_s: generation time
-            - resolution: voxel resolution used
-            - vertices: vertex count
-            - faces: face count
-    """
-    result = {
-        "success": False,
-        "mesh_path": None,
-        "video_path": None,
-        "duration_s": 0,
-        "resolution": 0,
-        "vertices": 0,
-        "faces": 0,
-        "error": None,
-    }
-
-    # Validate preset
-    if preset not in RESOLUTION_PRESETS:
-        result["error"] = f"Invalid preset '{preset}'. Use: {list(RESOLUTION_PRESETS.keys())}"
-        return result
-
-    config = RESOLUTION_PRESETS[preset]
-
-    # Validate input image
-    img_path = Path(image_path)
-    if not img_path.exists():
-        result["error"] = f"Image not found: {image_path}"
-        return result
-
-    # Setup output directory
-    if output_dir:
-        out_dir = Path(output_dir)
-    else:
-        out_dir = OUTPUT_DIR
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    # Determine output name
-    if not name:
-        name = img_path.stem
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    base_name = f"{name}_{timestamp}"
-
-    # Check GPU VRAM
-    deps = check_dependencies()
-    if deps["gpu_vram_mb"] < config["min_vram_mb"]:
-        logger.warning(
-            "GPU VRAM %d MB < recommended %d MB for %s preset. "
-            "May run out of memory.",
-            deps["gpu_vram_mb"], config["min_vram_mb"], preset
-        )
-
-    # Load pipeline
-    pipeline = get_pipeline()
-    if pipeline is None:
-        result["error"] = "Failed to load TRELLIS.2 pipeline"
-        return result
-
-    try:
-        from PIL import Image
-        # Modified: 2026-02-09T16:00:00Z | Author: COPILOT | Change: Better import error for o_voxel
-        try:
-            import o_voxel
-        except ImportError:
-            result["error"] = (
-                "o_voxel package not installed. Required for GLB export. "
-                "Run: python slate/slate_trellis.py --install"
+        # Check service availability
+        if not self.is_available():
+            return GenerationResult(
+                success=False,
+                error=f"TRELLIS.2 service not available at {self.host}",
             )
+
+        # Read image file
+        image_path = Path(request.image_path)
+        image_data = image_path.read_bytes()
+
+        # Build multipart form data
+        import uuid
+        boundary = f"----SLATEBoundary{uuid.uuid4().hex[:16]}"
+        body = b""
+
+        # Add image file
+        body += f"--{boundary}\r\n".encode()
+        body += f'Content-Disposition: form-data; name="image"; filename="{image_path.name}"\r\n'.encode()
+        body += f"Content-Type: image/{image_path.suffix.lstrip('.').replace('jpg', 'jpeg')}\r\n\r\n".encode()
+        body += image_data
+        body += b"\r\n"
+
+        # Add config as JSON field
+        body += f"--{boundary}\r\n".encode()
+        body += b'Content-Disposition: form-data; name="config"\r\n'
+        body += b"Content-Type: application/json\r\n\r\n"
+        body += json.dumps(request.to_dict()).encode()
+        body += b"\r\n"
+
+        body += f"--{boundary}--\r\n".encode()
+
+        headers = {
+            "Content-Type": f"multipart/form-data; boundary={boundary}",
+        }
+
+        start = time.monotonic()
+        ok, data = self._api_request(
+            "/generate",
+            method="POST",
+            data=body,
+            headers=headers,
+            timeout=TRELLIS_TIMEOUT,
+        )
+        elapsed_ms = (time.monotonic() - start) * 1000
+
+        if not ok:
+            return GenerationResult(
+                success=False,
+                error=str(data),
+                generation_time_ms=elapsed_ms,
+            )
+
+        # Handle JSON response (asset metadata)
+        if isinstance(data, dict):
+            asset_id = data.get("asset_id", "")
+            # Download the generated asset
+            if asset_id:
+                return self._download_asset(asset_id, elapsed_ms, image_path.name)
+            return GenerationResult(
+                success=False,
+                error="No asset_id in response",
+                generation_time_ms=elapsed_ms,
+            )
+
+        # Handle binary response (direct GLB)
+        if isinstance(data, bytes):
+            asset_id = f"trellis_{int(time.time())}_{image_path.stem}"
+            output_path = self.asset_dir / f"{asset_id}.glb"
+            output_path.write_bytes(data)
+
+            result = GenerationResult(
+                success=True,
+                asset_id=asset_id,
+                output_path=str(output_path),
+                format="glb",
+                file_size_bytes=len(data),
+                generation_time_ms=elapsed_ms,
+            )
+
+            # Update manifest
+            self._asset_manifest["assets"].append({
+                "asset_id": asset_id,
+                "filename": f"{asset_id}.glb",
+                "source_image": image_path.name,
+                "created": datetime.now(timezone.utc).isoformat(),
+                "file_size_bytes": len(data),
+            })
+            self._asset_manifest["generated_count"] += 1
+            self._save_manifest()
+
             return result
 
-        start_time = time.time()
+        return GenerationResult(
+            success=False,
+            error="Unexpected response format",
+            generation_time_ms=elapsed_ms,
+        )
 
-        # Load and process image
-        image = Image.open(str(img_path)).convert("RGBA")
-        logger.info("Generating 3D from '%s' at %s resolution...", img_path.name, config["resolution"])
+    def _download_asset(
+        self, asset_id: str, elapsed_ms: float, source_image: str = ""
+    ) -> GenerationResult:
+        """Download a generated asset by ID."""
+        ok, data = self._api_request(f"/assets/{asset_id}", timeout=60)
+        if not ok:
+            return GenerationResult(
+                success=False,
+                asset_id=asset_id,
+                error=f"Failed to download asset: {data}",
+                generation_time_ms=elapsed_ms,
+            )
 
-        # Run pipeline
-        # Modified: 2026-02-09T16:00:00Z | Author: COPILOT | Change: Guard against empty pipeline results
-        pipeline_output = pipeline.run(image)
-        if not pipeline_output:
-            result["error"] = "Pipeline returned no output. Check model and input image."
+        if isinstance(data, bytes):
+            output_path = self.asset_dir / f"{asset_id}.glb"
+            output_path.write_bytes(data)
+
+            result = GenerationResult(
+                success=True,
+                asset_id=asset_id,
+                output_path=str(output_path),
+                format="glb",
+                file_size_bytes=len(data),
+                generation_time_ms=elapsed_ms,
+            )
+
+            # Update manifest
+            self._asset_manifest["assets"].append({
+                "asset_id": asset_id,
+                "filename": f"{asset_id}.glb",
+                "source_image": source_image,
+                "created": datetime.now(timezone.utc).isoformat(),
+                "file_size_bytes": len(data),
+            })
+            self._asset_manifest["generated_count"] += 1
+            self._save_manifest()
+
             return result
-        mesh = pipeline_output[0]
-        mesh.simplify(16777216)  # nvdiffrast limit
 
-        result["resolution"] = config["resolution"]
-        result["vertices"] = len(mesh.vertices) if hasattr(mesh, "vertices") else 0
-        result["faces"] = len(mesh.faces) if hasattr(mesh, "faces") else 0
-
-        # Export GLB
-        if export_glb:
-            glb_path = out_dir / f"{base_name}.glb"
-            glb = o_voxel.postprocess.to_glb(
-                vertices=mesh.vertices,
-                faces=mesh.faces,
-                attr_volume=mesh.attrs,
-                coords=mesh.coords,
-                attr_layout=mesh.layout,
-                voxel_size=mesh.voxel_size,
-                aabb=[[-0.5, -0.5, -0.5], [0.5, 0.5, 0.5]],
-                decimation_target=config["decimation_target"],
-                texture_size=config["texture_size"],
-                remesh=True,
-                remesh_band=1,
-                remesh_project=0,
-                verbose=False,
-            )
-            glb.export(str(glb_path), extension_webp=True)
-            result["mesh_path"] = str(glb_path)
-            logger.info("Exported GLB: %s", glb_path)
-
-        # Render preview video
-        if export_video:
-            try:
-                import imageio
-                from trellis2.utils import render_utils
-
-                envmap = get_envmap()
-                video_frames = render_utils.make_pbr_vis_frames(
-                    render_utils.render_video(mesh, envmap=envmap)
-                )
-                video_path = out_dir / f"{base_name}.mp4"
-                imageio.mimsave(str(video_path), video_frames, fps=15)
-                result["video_path"] = str(video_path)
-                logger.info("Exported video: %s", video_path)
-            except Exception as ve:
-                logger.warning("Video export failed: %s", ve)
-
-        elapsed = time.time() - start_time
-        result["success"] = True
-        result["duration_s"] = round(elapsed, 2)
-
-        # Update state
-        state = _load_state()
-        state["last_generation"] = datetime.now(timezone.utc).isoformat()
-        state["total_generations"] = state.get("total_generations", 0) + 1
-        state["last_error"] = None
-        _save_state(state)
-
-        logger.info(
-            "3D generation complete: %d vertices, %d faces in %.1fs",
-            result["vertices"], result["faces"], elapsed
+        return GenerationResult(
+            success=False,
+            asset_id=asset_id,
+            error="Asset download returned non-binary data",
+            generation_time_ms=elapsed_ms,
         )
 
-    except Exception as e:
-        result["error"] = str(e)
-        state = _load_state()
-        state["last_error"] = str(e)
-        _save_state(state)
-        logger.error("3D generation failed: %s", e)
+    # ──────────────────────────────────────────────────────────────────────────
+    # Asset Management
+    # ──────────────────────────────────────────────────────────────────────────
 
-    return result
+    def list_assets(self) -> list[AssetInfo]:
+        """List all locally cached 3D assets."""
+        assets = []
+        for entry in self._asset_manifest.get("assets", []):
+            filepath = self.asset_dir / entry.get("filename", "")
+            if filepath.exists():
+                assets.append(AssetInfo(
+                    asset_id=entry.get("asset_id", ""),
+                    filename=entry.get("filename", ""),
+                    format=entry.get("filename", "").rsplit(".", 1)[-1] if "." in entry.get("filename", "") else "unknown",
+                    file_size_bytes=filepath.stat().st_size,
+                    created=entry.get("created", ""),
+                    source_image=entry.get("source_image", ""),
+                    vertices=entry.get("vertices", 0),
+                    faces=entry.get("faces", 0),
+                ))
+        return assets
+
+    def get_asset_path(self, asset_id: str) -> Optional[Path]:
+        """Get the local file path for an asset."""
+        for entry in self._asset_manifest.get("assets", []):
+            if entry.get("asset_id") == asset_id:
+                filepath = self.asset_dir / entry.get("filename", "")
+                if filepath.exists():
+                    return filepath
+        return None
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Models & Configuration
+    # ──────────────────────────────────────────────────────────────────────────
+
+    def get_models(self) -> list[dict[str, Any]]:
+        """Get available model configurations from the service."""
+        ok, data = self._api_request("/models", timeout=10)
+        if ok and isinstance(data, dict):
+            return data.get("models", [])
+        return []
+
+    def get_config(self) -> dict[str, Any]:
+        """Get the default generation configuration."""
+        return dict(DEFAULT_CONFIG)
 
 
-# ── Texture Generation ──────────────────────────────────────────────────
+# ==============================================================================
+# Unified AI Backend Integration
+# ==============================================================================
 
-# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: PBR texture generation for existing meshes
-def generate_texture(
-    mesh_path: str,
-    image_path: str,
-    output_dir: Optional[str] = None,
-    name: Optional[str] = None,
-) -> dict:
+class TrellisProvider:
+    """Provider adapter for unified_ai_backend.py integration.
+
+    Registers as a '3d_generation' task type in the SLATE AI routing system.
     """
-    Generate PBR textures for an existing 3D shape.
 
-    Args:
-        mesh_path: Path to input mesh (GLB/OBJ)
-        image_path: Reference image for texturing
-        output_dir: Output directory
-        name: Output filename base
+    PROVIDER_NAME = "trellis2"
+    TASK_TYPES = ["3d_generation", "avatar_generation", "asset_generation"]
 
-    Returns:
-        dict with texture generation results
-    """
-    result = {"success": False, "output_path": None, "error": None, "duration_s": 0}
+    def __init__(self, host: Optional[str] = None):
+        self.client = TrellisClient(host)
 
-    if not Path(mesh_path).exists():
-        result["error"] = f"Mesh not found: {mesh_path}"
-        return result
-    if not Path(image_path).exists():
-        result["error"] = f"Image not found: {image_path}"
-        return result
+    def is_available(self) -> bool:
+        """Check if TRELLIS.2 service is reachable."""
+        return self.client.is_available()
 
-    out_dir = Path(output_dir) if output_dir else OUTPUT_DIR
-    out_dir.mkdir(parents=True, exist_ok=True)
+    def get_status(self) -> dict[str, Any]:
+        """Get provider status for unified backend."""
+        status = self.client.get_status()
+        return {
+            "name": self.PROVIDER_NAME,
+            "available": status.available,
+            "endpoint": status.endpoint,
+            "gpu": status.gpu_name,
+            "model_loaded": status.model_loaded,
+            "resolution": status.resolution,
+            "error": status.error,
+        }
 
-    if not name:
-        name = Path(mesh_path).stem
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    def execute(self, task: str, **kwargs) -> dict[str, Any]:
+        """Execute a 3D generation task.
 
-    try:
-        # Texture generation uses the texturing pipeline from TRELLIS.2
-        # This requires the shape-conditioned texture model
-        logger.info("PBR texture generation for '%s'...", Path(mesh_path).name)
-        start_time = time.time()
+        Args:
+            task: Task description or image path
+            **kwargs: Generation configuration overrides
 
-        # NOTE: Full texture pipeline requires shape encoder + texture DiT
-        # This is a placeholder for the full texturing API
-        result["error"] = (
-            "Texture-only generation requires the TRELLIS.2 texturing pipeline. "
-            "Use generate_3d_from_image() for full image-to-3D with textures."
+        Returns:
+            Result dict compatible with unified_ai_backend InferenceResult
+        """
+        image_path = kwargs.get("image_path", task)
+        if not Path(image_path).exists():
+            return {
+                "success": False,
+                "provider": self.PROVIDER_NAME,
+                "error": f"Image not found: {image_path}",
+            }
+
+        request = GenerationRequest(
+            image_path=image_path,
+            resolution=kwargs.get("resolution", DEFAULT_CONFIG["resolution"]),
+            output_format=kwargs.get("output_format", DEFAULT_CONFIG["output_format"]),
+            seed=kwargs.get("seed", DEFAULT_CONFIG["seed"]),
+            low_vram=kwargs.get("low_vram", DEFAULT_CONFIG["low_vram"]),
+            texture_resolution=kwargs.get("texture_resolution", DEFAULT_CONFIG["texture_resolution"]),
+            remesh=kwargs.get("remesh", DEFAULT_CONFIG["remesh"]),
+            target_faces=kwargs.get("target_faces", DEFAULT_CONFIG["target_faces"]),
         )
-        result["duration_s"] = round(time.time() - start_time, 2)
 
-    except Exception as e:
-        result["error"] = str(e)
-
-    return result
-
-
-# ── Benchmark ───────────────────────────────────────────────────────────
-
-# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: TRELLIS.2 benchmark suite
-def run_benchmark() -> dict:
-    """Run TRELLIS.2 generation benchmark and return timing results."""
-    results = {
-        "gpu": None,
-        "vram_mb": 0,
-        "pipeline_load_s": 0,
-        "presets": {},
-    }
-
-    deps = check_dependencies()
-    results["gpu"] = deps.get("gpu_name", "N/A")
-    results["vram_mb"] = deps.get("gpu_vram_mb", 0)
-
-    if not is_ready():
-        results["error"] = "TRELLIS.2 not ready. Run --install first."
-        return results
-
-    # Time pipeline load
-    unload_pipeline()
-    start = time.time()
-    pipeline = get_pipeline()
-    results["pipeline_load_s"] = round(time.time() - start, 2)
-
-    if pipeline is None:
-        results["error"] = "Pipeline failed to load"
-        return results
-
-    # Test with a simple synthetic image
-    try:
-        from PIL import Image
-
-        test_img = Image.new("RGBA", (512, 512), (128, 128, 128, 255))
-        test_dir = OUTPUT_DIR / "benchmarks"
-        test_dir.mkdir(parents=True, exist_ok=True)
-
-        for preset_name in ["fast"]:  # Only benchmark fast preset to save time
-            config = RESOLUTION_PRESETS[preset_name]
-            if deps["gpu_vram_mb"] < config["min_vram_mb"]:
-                results["presets"][preset_name] = {"skipped": True, "reason": "insufficient VRAM"}
-                continue
-
-            start = time.time()
-            try:
-                mesh = pipeline.run(test_img)[0]
-                elapsed = time.time() - start
-                results["presets"][preset_name] = {
-                    "duration_s": round(elapsed, 2),
-                    "vertices": len(mesh.vertices) if hasattr(mesh, "vertices") else 0,
-                    "faces": len(mesh.faces) if hasattr(mesh, "faces") else 0,
-                }
-            except Exception as e:
-                results["presets"][preset_name] = {"error": str(e)}
-
-    except Exception as e:
-        results["error"] = str(e)
-
-    return results
+        result = self.client.generate(request)
+        return {
+            "success": result.success,
+            "provider": self.PROVIDER_NAME,
+            "model": "trellis2-4b",
+            "response": result.output_path if result.success else result.error,
+            "asset_id": result.asset_id,
+            "generation_time_ms": result.generation_time_ms,
+            "cost": "FREE",
+        }
 
 
-# ── Install Helper ──────────────────────────────────────────────────────
+# ==============================================================================
+# CLI Output
+# ==============================================================================
 
-# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Windows-compatible TRELLIS.2 installer
-def install_dependencies() -> dict:
-    """
-    Install TRELLIS.2 dependencies into the SLATE venv.
+# ANSI colors matching SLATE brand
+RUST = "\033[38;2;184;90;60m"
+BLUE = "\033[38;2;13;27;42m"
+TEAL = "\033[38;2;27;58;75m"
+GREEN = "\033[38;2;0;230;118m"
+AMBER = "\033[38;2;255;183;77m"
+RED = "\033[38;2;244;67;54m"
+WHITE = "\033[38;2;224;224;224m"
+DIM = "\033[38;2;128;128;128m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
 
-    Returns dict with installation results per package.
-    """
-    results = {}
-    python_exe = str(WORKSPACE_ROOT / ".venv" / "Scripts" / "python.exe")
-    pip_args = [python_exe, "-m", "pip", "install", "--no-cache-dir"]
 
-    # Core dependencies from TRELLIS.2
-    # Modified: 2026-02-09T16:30:00Z | Author: COPILOT | Change: Remove xformers (version conflicts), use torch SDPA
-    packages = [
-        ("pillow", "Pillow>=10.0.0"),
-        ("opencv-python", "opencv-python>=4.8.0"),
-        ("opencv-contrib-python", "opencv-contrib-python>=4.8.0"),
-        ("imageio", "imageio>=2.31.0"),
-        ("imageio-ffmpeg", "imageio[ffmpeg]"),
-        ("trimesh", "trimesh>=4.0.0"),
-        ("scipy", "scipy>=1.11.0"),
-        ("einops", "einops>=0.7.0"),
-        ("safetensors", "safetensors>=0.4.0"),
-        ("huggingface-hub", "huggingface-hub>=0.20.0"),
-        ("transformers", "transformers>=4.40.0"),
-        ("accelerate", "accelerate>=0.30.0"),
-        ("diffusers", "diffusers>=0.27.0"),
-        ("spconv", "spconv-cu124"),
-        # Note: xformers removed due to torch version conflicts.
-        # PyTorch 2.0+ built-in SDPA (scaled_dot_product_attention) is used instead.
-    ]
+def _print_status(client: TrellisClient) -> None:
+    """Print TRELLIS.2 service status."""
+    status = client.get_status()
 
-    for name, spec in packages:
-        try:
-            import subprocess
-            proc = subprocess.run(
-                pip_args + [spec],
-                capture_output=True, text=True, timeout=300,
-                encoding="utf-8",
-            )
-            results[name] = {
-                "success": proc.returncode == 0,
-                "output": proc.stdout[-200:] if proc.stdout else "",
-                "error": proc.stderr[-200:] if proc.returncode != 0 else "",
-            }
-            if proc.returncode == 0:
-                logger.info("Installed: %s", name)
-            else:
-                logger.warning("Failed to install %s: %s", name, proc.stderr[-100:])
-        except Exception as e:
-            results[name] = {"success": False, "error": str(e)}
+    print(f"\n{'=' * 60}")
+    print(f"  {RUST}{BOLD}TRELLIS.2 3D Generation Service{RESET}")
+    print(f"{'=' * 60}")
 
-    # Install trellis2 package itself (editable from submodule)
-    if TRELLIS_ROOT.exists():
-        try:
-            import subprocess
-            proc = subprocess.run(
-                pip_args + ["-e", str(TRELLIS_ROOT)],
-                capture_output=True, text=True, timeout=600,
-                encoding="utf-8",
-            )
-            results["trellis2"] = {
-                "success": proc.returncode == 0,
-                "output": proc.stdout[-200:] if proc.stdout else "",
-                "error": proc.stderr[-200:] if proc.returncode != 0 else "",
-            }
-        except Exception as e:
-            results["trellis2"] = {"success": False, "error": str(e)}
+    avail_color = GREEN if status.available else RED
+    avail_text = "Online" if status.available else "Offline"
+    print(f"\n  {WHITE}Status:{RESET}     {avail_color}{avail_text}{RESET}")
+    print(f"  {WHITE}Endpoint:{RESET}   {DIM}{status.endpoint}{RESET}")
 
-    # Install o_voxel from TRELLIS.2 submodule (extension module)
-    # Modified: 2026-02-09T19:30:00Z | Author: COPILOT | Change: Fix path to o-voxel (hyphen, not underscore)
-    o_voxel_dir = TRELLIS_ROOT / "o-voxel"  # Directory uses hyphen, package uses underscore
-    if o_voxel_dir.exists() and (o_voxel_dir / "setup.py").exists():
-        try:
-            import subprocess
-            proc = subprocess.run(
-                pip_args + ["-e", str(o_voxel_dir)],
-                capture_output=True, text=True, timeout=600,
-                encoding="utf-8",
-            )
-            results["o_voxel"] = {
-                "success": proc.returncode == 0,
-                "output": proc.stdout[-200:] if proc.stdout else "",
-                "error": proc.stderr[-200:] if proc.returncode != 0 else "",
-            }
-        except Exception as e:
-            results["o_voxel"] = {"success": False, "error": str(e)}
-    elif (TRELLIS_ROOT / "setup.py").exists():
-        # o_voxel may be bundled in the main trellis2 package
-        results["o_voxel"] = {"success": True, "output": "Bundled with trellis2"}
+    if status.available:
+        print(f"  {WHITE}Version:{RESET}    {DIM}{status.version}{RESET}")
+        print(f"  {WHITE}GPU:{RESET}        {DIM}{status.gpu_name} ({status.gpu_memory_mb}MB){RESET}")
+
+        model_color = GREEN if status.model_loaded else AMBER
+        model_text = "Loaded" if status.model_loaded else "Not loaded"
+        print(f"  {WHITE}Model:{RESET}      {model_color}{model_text}{RESET}")
+        print(f"  {WHITE}Low VRAM:{RESET}   {DIM}{'Yes' if status.low_vram_mode else 'No'}{RESET}")
+        print(f"  {WHITE}Resolution:{RESET} {DIM}{status.resolution}^3 voxels{RESET}")
+        print(f"  {WHITE}Uptime:{RESET}     {DIM}{status.uptime_seconds:.0f}s{RESET}")
     else:
-        results["o_voxel"] = {"success": False, "error": "o_voxel directory not found in submodule"}
+        print(f"  {WHITE}Error:{RESET}      {RED}{status.error}{RESET}")
+        print(f"\n  {DIM}The TRELLIS.2 service runs as a K8s microservice.")
+        print(f"  Deploy with: kubectl apply -f k8s/trellis2-generator.yaml{RESET}")
 
-    # Update state
-    state = _load_state()
-    all_ok = all(r.get("success", False) for r in results.values())
-    state["installed"] = all_ok
-    _save_state(state)
+    # Local assets
+    assets = client.list_assets()
+    print(f"\n  {WHITE}Local Assets:{RESET} {DIM}{len(assets)} cached{RESET}")
+    for asset in assets[:5]:
+        size_kb = asset.file_size_bytes / 1024
+        print(f"    {DIM}- {asset.asset_id} ({size_kb:.1f}KB, {asset.format}){RESET}")
+    if len(assets) > 5:
+        print(f"    {DIM}... and {len(assets) - 5} more{RESET}")
 
-    return results
+    # Configuration
+    config = client.get_config()
+    print(f"\n  {WHITE}Default Config:{RESET}")
+    print(f"    {DIM}Resolution:   {config['resolution']}^3 voxels{RESET}")
+    print(f"    {DIM}Low VRAM:     {config['low_vram']}{RESET}")
+    print(f"    {DIM}Format:       {config['output_format']}{RESET}")
+    print(f"    {DIM}Texture:      {config['texture_resolution']}px{RESET}")
+    print(f"    {DIM}Target faces: {config['target_faces']}{RESET}")
 
-
-# ── Status Display ──────────────────────────────────────────────────────
-
-# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Rich status output
-def print_status() -> None:
-    """Print TRELLIS.2 integration status."""
-    deps = check_dependencies()
-    state = _load_state()
-
-    ok = "\u2713"
-    fail = "\u2717"
-    warn = "\u25cb"
-
-    print("=" * 60)
-    print("  SLATE TRELLIS.2 Integration Status")
-    print("=" * 60)
-    print()
-
-    # Dependencies
-    print("  Dependencies:")
-    print(f"    {ok if deps['submodule'] else fail} Submodule (models/trellis2/)")
-    print(f"    {ok if deps['trellis2_package'] else fail} trellis2 package")
-    print(f"    {ok if deps['torch_cuda'] else fail} PyTorch + CUDA")
-    print(f"    {ok if deps['o_voxel'] else fail} O-Voxel (mesh processing)")
-    attn = deps['attention_backend']
-    attn_ok = attn and attn != "none"
-    print(f"    {ok if attn_ok else fail} Attention backend: {attn or 'none'}")
-    print(f"    {ok if deps['pillow'] else fail} Pillow")
-    print(f"    {ok if deps['opencv'] else fail} OpenCV")
-    print()
-
-    # GPU
-    print("  GPU:")
-    if deps["gpu_available"]:
-        print(f"    {ok} {deps['gpu_name']}")
-        print(f"      VRAM: {deps['gpu_vram_mb']} MB")
-        # Recommend resolution
-        for preset_name, preset in RESOLUTION_PRESETS.items():
-            capable = deps["gpu_vram_mb"] >= preset["min_vram_mb"]
-            print(f"      {ok if capable else warn} {preset['description']}: "
-                  f"{'supported' if capable else 'may OOM'}")
-    else:
-        print(f"    {fail} No CUDA GPU detected")
-    print()
-
-    # Pipeline state
-    print("  Pipeline:")
-    print(f"    Model loaded: {'Yes' if state.get('model_loaded') else 'No'}")
-    print(f"    Pipeline ready: {'Yes' if state.get('pipeline_ready') else 'No'}")
-    print(f"    Total generations: {state.get('total_generations', 0)}")
-    if state.get("last_generation"):
-        print(f"    Last generation: {state['last_generation']}")
-    if state.get("last_error"):
-        print(f"    Last error: {state['last_error']}")
-    print()
-
-    # Overall readiness
-    # Modified: 2026-02-09T19:30:00Z | Author: COPILOT | Change: Better not-ready remedies incl CUDA Toolkit + o_voxel
-    ready = is_ready()
-    print(f"  Overall: {'READY' if ready else 'NOT READY'}")
-    if not ready:
-        missing = []
-        if not deps["submodule"]:
-            missing.append("git submodule update --init --recursive")
-        if not deps["trellis2_package"]:
-            missing.append("python slate/slate_trellis.py --install")
-        if not deps["torch_cuda"]:
-            missing.append("pip install torch --index-url https://download.pytorch.org/whl/cu124")
-        if not deps["o_voxel"]:
-            # Check if CUDA Toolkit is available (needed to compile o-voxel)
-            cuda_home = os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH")
-            if not cuda_home:
-                missing.append("install CUDA Toolkit 12.4 (winget install Nvidia.CUDA --version 12.4)")
-            missing.append("pip install -e models/trellis2/o-voxel/")
-        if not attn_ok:
-            missing.append("PyTorch SDPA should be available with torch>=2.0")
-        if missing:
-            print("  Fix steps:")
-            for i, m in enumerate(missing, 1):
-                print(f"    {i}. {m}")
-
-    print()
-    print("=" * 60)
+    print(f"\n{'=' * 60}")
 
 
-def print_status_json() -> None:
-    """Print TRELLIS.2 status as JSON."""
-    deps = check_dependencies()
-    state = _load_state()
+def _print_json(client: TrellisClient) -> None:
+    """Print status as JSON."""
+    status = client.get_status()
+    assets = client.list_assets()
     output = {
-        "ready": is_ready(),
-        "dependencies": deps,
-        "state": state,
-        "resolution_presets": RESOLUTION_PRESETS,
+        "service": status.to_dict(),
+        "assets": [a.to_dict() for a in assets],
+        "config": client.get_config(),
+        "provider": TrellisProvider(client.host).get_status(),
     }
-    print(json.dumps(output, indent=2, default=str))
+    print(json.dumps(output, indent=2))
 
 
-# ── CLI Entrypoint ──────────────────────────────────────────────────────
+def _print_assets(client: TrellisClient) -> None:
+    """Print local asset inventory."""
+    assets = client.list_assets()
 
-# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Full CLI interface
-def main():
-    parser = argparse.ArgumentParser(
-        description="SLATE TRELLIS.2 Integration — Image-to-3D Generation"
-    )
-    parser.add_argument("--status", action="store_true", help="Show TRELLIS.2 status")
-    parser.add_argument("--json", action="store_true", help="JSON output for --status")
-    parser.add_argument("--install", action="store_true", help="Install TRELLIS.2 dependencies")
-    parser.add_argument(
-        "--generate", metavar="IMAGE",
-        help="Generate 3D from image file"
-    )
-    parser.add_argument(
-        "--preset", default="fast", choices=list(RESOLUTION_PRESETS.keys()),
-        help="Resolution preset (default: fast)"
-    )
-    parser.add_argument("--output", metavar="DIR", help="Output directory")
-    parser.add_argument("--name", help="Output filename base")
-    parser.add_argument("--glb", action="store_true", default=True, help="Export GLB (default)")
-    parser.add_argument("--video", action="store_true", help="Render preview video")
-    parser.add_argument("--benchmark", action="store_true", help="Run generation benchmark")
-    parser.add_argument("--unload", action="store_true", help="Unload pipeline, free GPU memory")
+    print(f"\n{'=' * 60}")
+    print(f"  {RUST}{BOLD}TRELLIS.2 Asset Inventory{RESET}")
+    print(f"{'=' * 60}")
 
+    if not assets:
+        print(f"\n  {DIM}No assets generated yet.{RESET}")
+        print(f"  {DIM}Generate with: python slate/slate_trellis.py --generate IMAGE_PATH{RESET}")
+    else:
+        total_size = sum(a.file_size_bytes for a in assets)
+        print(f"\n  {WHITE}Total:{RESET} {DIM}{len(assets)} assets ({total_size / 1024:.1f}KB){RESET}")
+        print()
+        for asset in assets:
+            size_kb = asset.file_size_bytes / 1024
+            print(f"  {GREEN}*{RESET} {WHITE}{asset.asset_id}{RESET}")
+            print(f"    {DIM}File: {asset.filename} ({size_kb:.1f}KB){RESET}")
+            if asset.source_image:
+                print(f"    {DIM}Source: {asset.source_image}{RESET}")
+            if asset.vertices:
+                print(f"    {DIM}Mesh: {asset.vertices} verts, {asset.faces} faces{RESET}")
+            print(f"    {DIM}Created: {asset.created}{RESET}")
+
+    print(f"\n  {WHITE}Storage:{RESET} {DIM}{client.asset_dir}{RESET}")
+    print(f"\n{'=' * 60}")
+
+
+# ==============================================================================
+# Main
+# ==============================================================================
+
+def main() -> None:
+    """CLI entry point."""
+    parser = argparse.ArgumentParser(description="SLATE TRELLIS.2 3D Generation Client")
+    parser.add_argument("--status", action="store_true", help="Show service status")
+    parser.add_argument("--generate", type=str, metavar="IMAGE", help="Generate 3D mesh from image")
+    parser.add_argument("--assets", action="store_true", help="List local assets")
+    parser.add_argument("--json", action="store_true", help="Output as JSON")
+    parser.add_argument("--resolution", type=int, default=512, help="Voxel resolution (default: 512)")
+    parser.add_argument("--host", type=str, default=None, help="Override service host")
     args = parser.parse_args()
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(name)s] %(message)s",
-        datefmt="%H:%M:%S",
-    )
+    client = TrellisClient(host=args.host)
 
-    if args.status:
-        if args.json:
-            print_status_json()
-        else:
-            print_status()
-    elif args.install:
-        print("Installing TRELLIS.2 dependencies...")
-        results = install_dependencies()
-        success_count = sum(1 for r in results.values() if r.get("success"))
-        total = len(results)
-        print(f"\nInstalled {success_count}/{total} packages")
-        for name, res in results.items():
-            status = "OK" if res.get("success") else "FAIL"
-            print(f"  [{status}] {name}")
-            if not res.get("success") and res.get("error"):
-                print(f"        {res['error'][:100]}")
+    if args.json:
+        _print_json(client)
     elif args.generate:
-        result = generate_3d_from_image(
+        request = GenerationRequest(
             image_path=args.generate,
-            output_dir=args.output,
-            preset=args.preset,
-            export_glb=args.glb,
-            export_video=args.video,
-            name=args.name,
+            resolution=args.resolution,
         )
-        if result["success"]:
-            print(f"3D generation successful!")
-            print(f"  Resolution: {result['resolution']}³")
-            print(f"  Vertices: {result['vertices']:,}")
-            print(f"  Faces: {result['faces']:,}")
-            print(f"  Duration: {result['duration_s']}s")
-            if result["mesh_path"]:
-                print(f"  GLB: {result['mesh_path']}")
-            if result["video_path"]:
-                print(f"  Video: {result['video_path']}")
-        else:
-            print(f"Generation failed: {result['error']}")
+        valid, error = request.validate()
+        if not valid:
+            print(f"  {RED}Error:{RESET} {error}")
             sys.exit(1)
-    elif args.benchmark:
-        print("Running TRELLIS.2 benchmark...")
-        results = run_benchmark()
-        print(json.dumps(results, indent=2, default=str))
-    elif args.unload:
-        unload_pipeline()
-        print("TRELLIS.2 pipeline unloaded.")
+
+        print(f"  {AMBER}Generating 3D mesh from {args.generate}...{RESET}")
+        result = client.generate(request)
+        if result.success:
+            print(f"  {GREEN}Success!{RESET}")
+            print(f"  Asset ID: {result.asset_id}")
+            print(f"  Output:   {result.output_path}")
+            print(f"  Size:     {result.file_size_bytes / 1024:.1f}KB")
+            print(f"  Time:     {result.generation_time_ms:.0f}ms")
+        else:
+            print(f"  {RED}Failed:{RESET} {result.error}")
+            sys.exit(1)
+    elif args.assets:
+        _print_assets(client)
     else:
-        parser.print_help()
+        _print_status(client)
 
 
 if __name__ == "__main__":

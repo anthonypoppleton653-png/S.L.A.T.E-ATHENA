@@ -1,0 +1,239 @@
+# TRELLIS.2 3D Generation Service for SLATE
+# Microsoft TRELLIS.2 (4B) — Image-to-3D mesh generation
+# Port: 8086 (8085 used by instruction-controller/antigravity-bridge)
+#
+# Deploy: kubectl apply -f k8s/trellis2-generator.yaml
+# Check:  kubectl get pods -n slate -l app=trellis2
+# Logs:   kubectl logs -n slate -l app=trellis2 -f
+#
+# Hardware: Requires 1x NVIDIA GPU with 16GB+ VRAM
+# Mode:     low_vram=true targets RTX 5070 Ti (16GB)
+# Resolution: 512^3 voxels (safe for 16GB), 768+ needs 24GB+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: slate
+  labels:
+    app.kubernetes.io/part-of: slate
+---
+# PersistentVolumeClaim — HuggingFace model cache (~8GB for TRELLIS.2)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: trellis2-model-cache
+  namespace: slate
+  labels:
+    app: trellis2
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 16Gi
+  storageClassName: standard
+---
+# PersistentVolumeClaim — Generated 3D asset storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: trellis2-assets
+  namespace: slate
+  labels:
+    app: trellis2
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 8Gi
+  storageClassName: standard
+---
+# ConfigMap — TRELLIS.2 service configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trellis2-config
+  namespace: slate
+  labels:
+    app: trellis2
+    component: config
+data:
+  TRELLIS_LOW_VRAM: "true"
+  TRELLIS_RESOLUTION: "512"
+  TRELLIS_TEXTURE_RESOLUTION: "1024"
+  TRELLIS_OUTPUT_FORMAT: "glb"
+  TRELLIS_REMESH: "true"
+  TRELLIS_TARGET_FACES: "50000"
+  TRELLIS_PORT: "8086"
+  # HuggingFace cache directory (matches PVC mount)
+  HF_HOME: "/root/.cache/huggingface"
+  TRANSFORMERS_CACHE: "/root/.cache/huggingface/transformers"
+  # CUDA configuration
+  CUDA_VISIBLE_DEVICES: "0"
+  PYTORCH_CUDA_ALLOC_CONF: "expandable_segments:True"
+---
+# Deployment — TRELLIS.2 Generator Pod
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trellis2-generator
+  namespace: slate
+  labels:
+    app: trellis2
+    component: 3d-generation
+    app.kubernetes.io/part-of: slate
+    app.kubernetes.io/component: ai-service
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # GPU resource — no rolling update
+  selector:
+    matchLabels:
+      app: trellis2
+  template:
+    metadata:
+      labels:
+        app: trellis2
+        component: 3d-generation
+      annotations:
+        slate.io/gpu-required: "true"
+        slate.io/vram-minimum: "16384"
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+      - name: trellis2
+        image: ghcr.io/synchronizedlivingarchitecture/trellis2:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "2"
+            nvidia.com/gpu: 1
+          limits:
+            memory: "16Gi"
+            cpu: "4"
+            nvidia.com/gpu: 1
+        ports:
+        - containerPort: 8086
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: trellis2-config
+        env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "all"
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "compute,utility"
+        volumeMounts:
+        - name: model-cache
+          mountPath: /root/.cache/huggingface
+        - name: asset-storage
+          mountPath: /app/assets
+        - name: shm
+          mountPath: /dev/shm
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: 8086
+          initialDelaySeconds: 120  # Model loading takes time
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /status
+            port: 8086
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 5
+        startupProbe:
+          httpGet:
+            path: /status
+            port: 8086
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30  # Up to 5 min for first model download
+      volumes:
+      - name: model-cache
+        persistentVolumeClaim:
+          claimName: trellis2-model-cache
+      - name: asset-storage
+        persistentVolumeClaim:
+          claimName: trellis2-assets
+      - name: shm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 4Gi
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+---
+# Service — Expose TRELLIS.2 on port 8086
+apiVersion: v1
+kind: Service
+metadata:
+  name: trellis2-svc
+  namespace: slate
+  labels:
+    app: trellis2
+    component: 3d-generation
+    app.kubernetes.io/part-of: slate
+spec:
+  type: ClusterIP
+  selector:
+    app: trellis2
+  ports:
+  - port: 8086
+    targetPort: 8086
+    name: http
+    protocol: TCP
+---
+# NetworkPolicy — Restrict TRELLIS.2 access to SLATE namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: trellis2-network-policy
+  namespace: slate
+spec:
+  podSelector:
+    matchLabels:
+      app: trellis2
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow traffic from SLATE services only
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          app.kubernetes.io/part-of: slate
+    ports:
+    - protocol: TCP
+      port: 8086
+  egress:
+  # Allow DNS
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow HuggingFace model downloads (HTTPS)
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+  # Allow internal SLATE communication
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          app.kubernetes.io/part-of: slate

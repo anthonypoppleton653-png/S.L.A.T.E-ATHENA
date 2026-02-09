@@ -24,6 +24,9 @@ from typing import Any
 WORKSPACE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(WORKSPACE_ROOT))
 
+# Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Import instruction loader for dynamic tool definitions
+from slate.instruction_loader import get_instruction_loader
+
 # MCP Protocol imports
 try:
     from mcp.server import Server
@@ -38,8 +41,23 @@ except ImportError:
 # Initialize MCP server
 server = Server("slate-mcp")
 
-# Python executable in venv
+# Python executable detection
+import os
 PYTHON = WORKSPACE_ROOT / ".venv" / "Scripts" / "python.exe"
+
+# 1. Check env var
+if os.environ.get("SLATE_VENV"):
+    env_python = Path(os.environ["SLATE_VENV"]) / "Scripts" / "python.exe"
+    if env_python.exists():
+        PYTHON = env_python
+
+# 2. Check isolated venv (Antigravity fallback)
+if not PYTHON.exists():
+    iso_python = WORKSPACE_ROOT / ".venv_slate_ag" / "Scripts" / "python.exe"
+    if iso_python.exists():
+        PYTHON = iso_python
+
+# 3. Default fallback
 if not PYTHON.exists():
     PYTHON = WORKSPACE_ROOT / ".venv" / "bin" / "python"
 
@@ -77,9 +95,42 @@ def run_slate_command(module: str, *args: str) -> dict[str, Any]:
         }
 
 
+# Modified: 2026-02-08T18:00:00Z | Author: Claude Opus 4.5 | Change: Add dynamic tool loading from instruction loader
+def _get_dynamic_tools() -> list[Tool]:
+    """
+    Load MCP tool definitions from instruction loader.
+
+    Returns tools from K8s ConfigMap (if in cluster) or hardcoded defaults.
+    Enables hot-reloading of tool definitions via ConfigMap updates.
+    """
+    try:
+        loader = get_instruction_loader()
+        tool_defs = loader.get_mcp_tool_definitions()
+        if tool_defs:
+            return [
+                Tool(
+                    name=t["name"],
+                    description=t["description"],
+                    inputSchema=t.get("input_schema", {"type": "object", "properties": {}})
+                )
+                for t in tool_defs
+            ]
+    except Exception as e:
+        print(f"Warning: Could not load dynamic tools: {e}", file=sys.stderr)
+
+    # Return None to fall back to hardcoded tools
+    return []
+
+
 @server.list_tools()
 async def list_tools() -> list[Tool]:
-    """List available SLATE tools."""
+    """List available SLATE tools (dynamically loaded from ConfigMap or hardcoded)."""
+    # Try dynamic loading first
+    dynamic_tools = _get_dynamic_tools()
+    if dynamic_tools:
+        return dynamic_tools
+
+    # Fallback to hardcoded tools
     return [
         Tool(
             name="slate_status",
@@ -426,10 +477,12 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     return [TextContent(type="text", text=output)]
 
 
+# Modified: 2026-02-08T06:30:00Z | Author: COPILOT | Change: Fix Server.run() for MCP SDK 1.26.0 (requires initialization_options)
 async def main():
     """Run the MCP server."""
     async with stdio_server() as (read_stream, write_stream):
-        await server.run(read_stream, write_stream)
+        init_options = server.create_initialization_options()
+        await server.run(read_stream, write_stream, init_options)
 
 
 if __name__ == "__main__":

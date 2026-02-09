@@ -1,0 +1,201 @@
+# Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Create adaptive instruction management workflow
+# SLATE Adaptive Instruction Management Workflow
+# ================================================
+# Triggers:
+#   - Push to main (slate/, k8s/, .github/ changes)
+#   - Manual dispatch
+#   - Scheduled nightly at 03:00 UTC
+#
+# Actions:
+#   1. Evaluate system state
+#   2. Generate context-aware instructions
+#   3. Apply to K8s ConfigMap
+#   4. Validate instruction integrity
+#   5. Report instruction state
+name: Instruction Sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'slate/**'
+      - 'k8s/**'
+      - '.github/copilot-instructions.md'
+      - 'AGENTS.md'
+      - '.github/agents/slate.agent.md'
+      - '.github/workflows/instructions.yml'
+
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Sync mode'
+        required: false
+        default: 'sync'
+        type: choice
+        options:
+          - sync
+          - evaluate-only
+          - apply-only
+          - validate
+
+  schedule:
+    - cron: '0 3 * * *'  # Nightly at 03:00 UTC
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: powershell
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────
+  # Job 1: Evaluate System State
+  # ─────────────────────────────────────────────────────────────────────
+  evaluate:
+    name: Evaluate System State
+    runs-on: [self-hosted, slate]
+    outputs:
+      mode: ${{ steps.evaluate.outputs.mode }}
+      health: ${{ steps.evaluate.outputs.health }}
+      agent_availability: ${{ steps.evaluate.outputs.agent_availability }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        run: '"$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH'
+
+      - name: Evaluate instruction state
+        id: evaluate
+        run: |
+          $result = python slate/adaptive_instructions.py --evaluate --json 2>&1
+          Write-Output "Evaluation result:"
+          Write-Output $result
+
+          # Extract key values for downstream jobs
+          try {
+            $data = $result | ConvertFrom-Json
+            "mode=$($data.mode)" | Out-File -Append $env:GITHUB_OUTPUT
+            "agent_availability=$($data.agent_availability)" | Out-File -Append $env:GITHUB_OUTPUT
+          } catch {
+            "mode=unknown" | Out-File -Append $env:GITHUB_OUTPUT
+            "agent_availability=unknown" | Out-File -Append $env:GITHUB_OUTPUT
+          }
+
+      - name: System health check
+        id: health
+        run: |
+          python slate/slate_status.py --json 2>&1 | Out-String
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Job 2: Sync Instructions to K8s
+  # ─────────────────────────────────────────────────────────────────────
+  sync:
+    name: Sync to K8s ConfigMap
+    runs-on: [self-hosted, slate]
+    needs: evaluate
+    if: github.event.inputs.mode != 'evaluate-only'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        run: '"$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH'
+
+      - name: Sync adaptive instructions
+        run: |
+          Write-Output "Syncing adaptive instructions to K8s ConfigMap..."
+          Write-Output "System mode: ${{ needs.evaluate.outputs.mode }}"
+          Write-Output "Agent availability: ${{ needs.evaluate.outputs.agent_availability }}"
+          python slate/adaptive_instructions.py --sync --json
+
+      - name: Verify ConfigMap update
+        run: |
+          kubectl get configmap slate-instructions -n slate -o jsonpath='{.data.version}' 2>&1
+          Write-Output ""
+          kubectl get configmap slate-instructions -n slate -o jsonpath='{.data.last_updated}' 2>&1
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Job 3: Validate Instructions
+  # ─────────────────────────────────────────────────────────────────────
+  validate:
+    name: Validate Instruction Integrity
+    runs-on: [self-hosted, slate]
+    needs: sync
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        run: '"$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH'
+
+      - name: Validate instruction module
+        run: |
+          python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from slate.adaptive_instructions import AdaptiveInstructionController, InstructionMode
+          controller = AdaptiveInstructionController()
+
+          # Verify the module loads and evaluates correctly
+          state = controller.collect_system_state()
+          ctx = controller.evaluate_system_state(state)
+
+          print(f'Mode: {ctx.mode.value}')
+          print(f'Agent availability: {ctx.agent_availability.value}')
+          print(f'Active protocols: {len(ctx.active_protocols)}')
+          print(f'Active tools: {len(ctx.active_tools)}')
+          print(f'Priority directives: {len(ctx.priority_directives)}')
+          print(f'Enforcement rules: {len(ctx.enforcement_rules)}')
+
+          # Validate mode is a known value
+          assert ctx.mode in InstructionMode, f'Unknown mode: {ctx.mode}'
+          # Validate enforcement rules are always present
+          assert len(ctx.enforcement_rules) > 0, 'No enforcement rules generated'
+          # Validate security rules present
+          assert any('127.0.0.1' in d or 'network' in d.lower() for d in ctx.caution_directives), \
+              'Security directive missing'
+
+          print('Instruction validation PASSED')
+          "
+
+      - name: Validate K8s ConfigMap readability
+        run: |
+          $active = kubectl get configmap slate-instructions -n slate -o jsonpath='{.data.active-state\.yaml}' 2>&1
+          if ($active -match 'mode') {
+            Write-Output "ConfigMap active-state.yaml: OK"
+          } else {
+            Write-Output "ConfigMap active-state.yaml: Missing or malformed"
+          }
+
+          $block = kubectl get configmap slate-instructions -n slate -o jsonpath='{.data.instruction-block\.md}' 2>&1
+          if ($block -match 'Adaptive Instruction Layer') {
+            Write-Output "ConfigMap instruction-block.md: OK"
+          } else {
+            Write-Output "ConfigMap instruction-block.md: Missing or malformed"
+          }
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Job 4: Report
+  # ─────────────────────────────────────────────────────────────────────
+  report:
+    name: Report Instruction State
+    runs-on: [self-hosted, slate]
+    needs: [evaluate, validate]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        run: '"$env:GITHUB_WORKSPACE\.venv\Scripts" | Out-File -Append $env:GITHUB_PATH'
+
+      - name: Instruction sync report
+        run: |
+          Write-Output "╔══════════════════════════════════════════════════════════════╗"
+          Write-Output "║         SLATE Instruction Sync Report                        ║"
+          Write-Output "╚══════════════════════════════════════════════════════════════╝"
+          Write-Output ""
+          Write-Output "Mode: ${{ needs.evaluate.outputs.mode }}"
+          Write-Output "Agent Availability: ${{ needs.evaluate.outputs.agent_availability }}"
+          Write-Output "Evaluate: ${{ needs.evaluate.result }}"
+          Write-Output "Validate: ${{ needs.validate.result }}"
+          Write-Output ""
+          python slate/adaptive_instructions.py --status

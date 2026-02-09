@@ -1,0 +1,118 @@
+# SLATE User Permission Configuration
+# Modified: 2026-02-09T12:39:00-05:00 | Gemini (Antigravity)
+# NOTE: All AIs modifying this file must add a dated comment.
+# ──────────────────────────────────────────────────────────
+# PERMISSION TIERS:
+#   0 = OBSERVER (read-only)
+#   1 = ADVISOR (suggest-only)
+#   2 = COLLABORATOR (safe output dirs)
+#   3 = DEVELOPER (full source access)
+#   4 = ARCHITECT (full system access)
+#   5 = AUTONOMOUS (self-governing)
+# ──────────────────────────────────────────────────────────
+
+version: "1.0.0"
+
+# Global AI permission tier (0-5)
+default_tier: 3
+
+# Per-agent overrides
+agents:
+  antigravity:
+    tier: 4
+    allowed_paths:
+      - "**/*"
+    blocked_paths:
+      - ".env"
+      - "*.secret"
+      - ".slate_config/secrets/**"
+    can_commit: true
+    can_deploy: false
+    budget:
+      max_tokens_per_hour: 500000
+      max_api_calls_per_hour: 100
+
+  copilot:
+    tier: 3
+    allowed_paths:
+      - "slate/**"
+      - "plugins/**"
+      - "docs/**"
+      - "tests/**"
+    blocked_paths:
+      - ".env"
+      - "*.secret"
+    can_commit: false
+    review_required: true
+    budget:
+      max_tokens_per_hour: 300000
+      max_api_calls_per_hour: 200
+
+  claude:
+    tier: 4
+    allowed_paths:
+      - "**/*"
+    blocked_paths:
+      - ".env"
+      - "*.secret"
+    can_commit: true
+    can_deploy: false
+    budget:
+      max_tokens_per_hour: 500000
+      max_api_calls_per_hour: 150
+
+  autonomous_runner:
+    tier: 2
+    allowed_paths:
+      - "docs/**"
+      - "plans/**"
+      - "CHANGELOG.md"
+      - ".slate_analytics/**"
+    blocked_paths:
+      - "slate/**"
+      - ".github/workflows/**"
+    can_commit: true
+    can_deploy: false
+    budget:
+      max_tokens_per_hour: 200000
+      max_api_calls_per_hour: 50
+
+  workflow:
+    tier: 2
+    allowed_paths:
+      - "docs/**"
+      - ".slate_analytics/**"
+      - "specs/**"
+    can_commit: true
+    can_deploy: false
+
+# Guardrails — apply to ALL tiers
+guardrails:
+  require_audit_trail: true
+  max_files_per_commit: 50
+  banned_operations:
+    - "rm -rf /"
+    - "git push --force origin main"
+    - "DROP TABLE"
+    - "format C:"
+    - "Remove-Item -Recurse -Force C:\\"
+  protected_branches:
+    - main
+    - release/*
+  require_approval_for:
+    - workflow_modification
+    - secret_access
+    - deployment
+    - branch_deletion
+    - permission_change
+
+# Notification preferences
+notifications:
+  on_tier_escalation: true
+  on_blocked_action: true
+  on_autonomous_completion: true
+  on_budget_exceeded: true
+  channels:
+    - vscode # VSCode notification
+    - dashboard # Dashboard alert
+    - github # GitHub Issue/Discussion

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 100">
+  <defs>
+    <linearGradient id="flowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="rgba(152,193,217,0)"/>
+      <stop offset="50%" stop-color="rgba(152,193,217,0.8)"/>
+      <stop offset="100%" stop-color="rgba(152,193,217,0)"/>
+    </linearGradient>
+  </defs>
+  <path d="M 0,50.0 L 200.0,50.0 L 400.0,50.0 L 600.0,50.0 L 800.0,50.0 L 1000.0,50.0 L 1200,50.0" fill="none" stroke="rgba(152,193,217,0.3)" stroke-width="2"/>
+  <path d="M 0,50.0 L 200.0,50.0 L 400.0,50.0 L 600.0,50.0 L 800.0,50.0 L 1000.0,50.0 L 1200,50.0" fill="none" stroke="url(#flowGrad)" stroke-width="2" stroke-dasharray="20 40">
+    <animate attributeName="stroke-dashoffset" from="0" to="-60" dur="1.5s" repeatCount="indefinite"/>
+  </path>
+  <circle cx="200.0" cy="50.0" r="6" fill="rgba(152,193,217,0.8)"/>
+<circle cx="400.0" cy="50.0" r="6" fill="rgba(152,193,217,0.8)"/>
+<circle cx="600.0" cy="50.0" r="6" fill="rgba(152,193,217,0.8)"/>
+<circle cx="800.0" cy="50.0" r="6" fill="rgba(152,193,217,0.8)"/>
+<circle cx="1000.0" cy="50.0" r="6" fill="rgba(152,193,217,0.8)"/>
+</svg>

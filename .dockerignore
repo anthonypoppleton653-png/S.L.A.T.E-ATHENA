@@ -8,6 +8,9 @@
 
 # Python virtual environments
 .venv
+.venv_ag
+.venv_antigravity
+.venv_slate_ag
 venv
 env
 .env
@@ -55,17 +58,21 @@ htmlcov/
 .tox
 .nox
 
-# Documentation (not needed in runtime)
-docs/
-*.md
-!README.md
-
-# Specs (development only)
-specs/
+# Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Keep docs/ and specs/ for release image
+# docs/ — included in release image for spec-kit and wiki generation
+# specs/ — included in release image for spec processing pipeline
+CONTRIBUTING.md
+SECURITY.md
+AUTHOR.md
+LICENSE
+CLAUDE.md
 
 # Local config
 .claude/
+.claude-plugin/
+.copilot/
 .specify/
+.mypy_cache/
 
 # OS files
 .DS_Store
@@ -96,13 +103,13 @@ actions-runner-4/
 .slate_orchestrator_state.json
 .slate_docker_state.json
 
-# Plugin builds
+# Plugin builds (keep source, exclude artifacts)
 plugins/slate-copilot/out/
 plugins/slate-copilot/node_modules/
 plugins/slate-copilot/*.vsix
+plugins/slate-sdk/node_modules/
 
-# Aurora logs
-aurora_logs/
+# SLATE logs
 slate_logs/
 slate_memory/
 

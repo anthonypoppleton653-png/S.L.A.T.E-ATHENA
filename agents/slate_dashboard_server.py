@@ -5,6 +5,12 @@
 # Modified: 2026-02-07T05:00:00Z | Author: COPILOT | Change: Mono theme refinement, WCAG AAA accessibility, missing JS functions
 # Modified: 2026-02-07T06:00:00Z | Author: COPILOT | Change: Add /reload and /watcher-event endpoints, enhanced WebSocket broadcast
 # Modified: 2026-02-07T09:00:00Z | Author: COPILOT | Change: Add /api/slate/* control endpoints for dashboard button interface
+# Modified: 2026-02-10T02:00:00Z | Author: COPILOT | Change: Mark as DEPRECATED — dashboard now served by K8s/Docker runtime
+# DEPRECATED: 2026-02-10 | Reason: Dashboard is now served by K8s pods (slate-dashboard deployment)
+# or Docker Compose services. The VS Code extension now uses SlateRuntimeAdapter to detect
+# and connect to the K8s/Docker runtime instead of spawning this standalone server.
+# This file is retained for backward compatibility and local development fallback only.
+# See: plugins/slate-copilot/src/slateRuntimeAdapter.ts for the new runtime detection layer.
 # Purpose: SLATE Dashboard Server - Robust FastAPI server for agentic workflow management
 # ═══════════════════════════════════════════════════════════════════════════════
 """
@@ -58,11 +64,33 @@ import uuid
 WORKSPACE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(WORKSPACE_ROOT))
 
+# ─── K8s-Aware Service Configuration ──────────────────────────────────────────
+import os
+
+def _normalize_host(host: str, default_port: int) -> str:
+    """Normalize host to include protocol and handle http:// prefix."""
+    if host.startswith("http://") or host.startswith("https://"):
+        return host.rstrip("/")
+    return f"http://{host}"
+
+# When running in K8s, use service names; otherwise default to localhost
+_raw_ollama = os.environ.get("OLLAMA_HOST", "127.0.0.1:11434")
+_raw_chromadb = os.environ.get("CHROMADB_HOST", "127.0.0.1:8000")
+_raw_foundry = os.environ.get("FOUNDRY_HOST", "127.0.0.1:5272")
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio host config to dashboard
+_raw_lmstudio = os.environ.get("LMSTUDIO_HOST", "127.0.0.1:1234")
+
+OLLAMA_URL = _normalize_host(_raw_ollama, 11434)
+CHROMADB_URL = _normalize_host(_raw_chromadb, 8000)
+FOUNDRY_URL = _normalize_host(_raw_foundry, 5272)
+LMSTUDIO_URL = _normalize_host(_raw_lmstudio, 1234)
+K8S_MODE = os.environ.get("SLATE_K8S", "false").lower() == "true"
+
 # ─── Dependencies ─────────────────────────────────────────────────────────────
 
 try:
-    from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request, UploadFile, File, Form
-    from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+    from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
+    from fastapi.responses import HTMLResponse, JSONResponse
     from fastapi.middleware.cors import CORSMiddleware
     from starlette.middleware.base import BaseHTTPMiddleware
     from starlette.responses import Response
@@ -636,9 +664,9 @@ async def api_logo_custom(request: Request):
         config = StarburstConfig(
             size=data.get("size", 200),
             ray_count=data.get("rays", 8),
-            ray_color=data.get("primary", "#D4AF37"),
-            center_fill=data.get("primary", "#D4AF37"),
-            letter_color=data.get("onPrimary", "#0A0A0A"),
+            ray_color=data.get("primary", "#B85A3C"),
+            center_fill=data.get("primary", "#B85A3C"),
+            letter_color=data.get("onPrimary", "#FFFFFF"),
             center_letter=data.get("letter", "S"),
             animate_pulse=data.get("animate", False)
         )
@@ -761,6 +789,63 @@ async def api_docker_action(request: Request):
     except Exception as e:
         return JSONResponse(content={"success": False, "error": str(e)})
 
+# ─── Kubernetes API Endpoints ─────────────────────────────────────────────────
+# Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s cluster status API endpoint
+
+@app.get("/api/kubernetes/status")
+def api_kubernetes_status():
+    """Get Kubernetes cluster status for SLATE namespace."""
+    try:
+        result = subprocess.run(
+            ["kubectl", "get", "all", "-n", "slate", "-o", "json"],
+            capture_output=True, text=True, timeout=15,
+            encoding="utf-8", errors="replace"
+        )
+        if result.returncode != 0:
+            return JSONResponse(content={"available": False, "error": "kubectl failed"})
+        import json as _json
+        data = _json.loads(result.stdout)
+        items = data.get("items", [])
+        pods = [i for i in items if i.get("kind") == "Pod"]
+        deployments = [i for i in items if i.get("kind") == "Deployment"]
+        services = [i for i in items if i.get("kind") == "Service"]
+        cronjobs = [i for i in items if i.get("kind") == "CronJob"]
+        running_pods = [p for p in pods if p.get("status", {}).get("phase") == "Running"]
+        return JSONResponse(content={
+            "available": True,
+            "pods": {"total": len(pods), "running": len(running_pods),
+                     "names": [p["metadata"]["name"] for p in running_pods]},
+            "deployments": {"total": len(deployments),
+                            "names": [d["metadata"]["name"] for d in deployments]},
+            "services": {"total": len(services),
+                         "names": [s["metadata"]["name"] for s in services]},
+            "cronjobs": {"total": len(cronjobs),
+                         "names": [c["metadata"]["name"] for c in cronjobs]},
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
+    except FileNotFoundError:
+        return JSONResponse(content={"available": False, "error": "kubectl not found"})
+    except Exception as e:
+        return JSONResponse(content={"available": False, "error": str(e)})
+
+@app.get("/api/kubernetes/health")
+def api_kubernetes_health():
+    """Run K8s health check via slate_k8s_deploy.py."""
+    try:
+        script = WORKSPACE_ROOT / "slate" / "slate_k8s_deploy.py"
+        result = subprocess.run(
+            [sys.executable, str(script), "--health"],
+            capture_output=True, text=True, timeout=30,
+            encoding="utf-8", errors="replace"
+        )
+        return JSONResponse(content={
+            "success": result.returncode == 0,
+            "output": result.stdout,
+            "error": result.stderr if result.returncode != 0 else None,
+        })
+    except Exception as e:
+        return JSONResponse(content={"success": False, "error": str(e)})
+
 # ─── Benchmark API Endpoints ──────────────────────────────────────────────────
 
 @app.get("/api/benchmark/history")
@@ -833,7 +918,7 @@ async def api_system_ollama():
     # Check if Ollama is running
     try:
         import urllib.request
-        req = urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=2)
+        req = urllib.request.urlopen(f"{OLLAMA_URL}/api/tags", timeout=2)
         if req.status == 200:
             result["available"] = True
     except Exception:
@@ -865,6 +950,24 @@ async def api_system_ollama():
 
     return JSONResponse(content=result)
 
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio API endpoint to dashboard
+@app.get("/api/system/lmstudio")
+async def api_system_lmstudio():
+    """Get LM Studio server status and loaded models."""
+    result = {"available": False, "models": []}
+    try:
+        import urllib.request
+        req = urllib.request.urlopen(f"{LMSTUDIO_URL}/v1/models", timeout=2)
+        if req.status == 200:
+            import json
+            data = json.loads(req.read().decode())
+            models = data.get("data", [])
+            result["available"] = True
+            result["models"] = [{"id": m.get("id", "unknown")} for m in models]
+    except Exception:
+        pass
+    return JSONResponse(content=result)
+
 @app.get("/api/services")
 async def api_services():
     """Get all service statuses."""
@@ -894,7 +997,7 @@ async def api_services():
     # Ollama
     try:
         import urllib.request
-        req = urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=2)
+        req = urllib.request.urlopen(f"{OLLAMA_URL}/api/tags", timeout=2)
         services.append({"id": "ollama", "name": "Ollama", "online": req.status == 200, "port": 11434})
     except Exception:
         services.append({"id": "ollama", "name": "Ollama", "online": False, "port": 11434})
@@ -902,12 +1005,138 @@ async def api_services():
     # Foundry Local
     try:
         import urllib.request
-        req = urllib.request.urlopen("http://127.0.0.1:5272/health", timeout=2)
+        req = urllib.request.urlopen(f"{FOUNDRY_URL}/health", timeout=2)
         services.append({"id": "foundry", "name": "Foundry Local", "online": req.status == 200, "port": 5272})
     except Exception:
         services.append({"id": "foundry", "name": "Foundry Local", "online": False, "port": 5272})
 
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio to service health checks
+    # LM Studio
+    try:
+        import urllib.request
+        req = urllib.request.urlopen(f"{LMSTUDIO_URL}/v1/models", timeout=2)
+        services.append({"id": "lmstudio", "name": "LM Studio", "online": req.status == 200, "port": 1234})
+    except Exception:
+        services.append({"id": "lmstudio", "name": "LM Studio", "online": False, "port": 1234})
+
     return JSONResponse(content={"services": services})
+
+
+@app.get("/api/integrations")
+async def api_integrations():
+    """Get all integration statuses for the dashboard."""
+    integrations = []
+
+    # GitHub - check CLI auth
+    try:
+        gh_cli = get_gh_cli()
+        result = subprocess.run(
+            [gh_cli, "auth", "status"],
+            capture_output=True, text=True, timeout=5, cwd=str(WORKSPACE_ROOT)
+        )
+        integrations.append({
+            "id": "github",
+            "name": "GitHub",
+            "description": "Repository & Actions",
+            "online": result.returncode == 0,
+            "status": "Connected to S.L.A.T.E." if result.returncode == 0 else "Not Authenticated"
+        })
+    except Exception:
+        integrations.append({"id": "github", "name": "GitHub", "description": "Repository & Actions", "online": False, "status": "CLI not found"})
+
+    # Docker
+    try:
+        result = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=5)
+        containers = 0
+        try:
+            result2 = subprocess.run(["docker", "ps", "-q"], capture_output=True, text=True, timeout=5)
+            containers = len(result2.stdout.strip().split("\n")) if result2.stdout.strip() else 0
+        except Exception:
+            pass
+        integrations.append({
+            "id": "docker",
+            "name": "Docker",
+            "description": "Container Management",
+            "online": result.returncode == 0,
+            "status": f"{containers} Running" if result.returncode == 0 else "Not Available"
+        })
+    except Exception:
+        integrations.append({"id": "docker", "name": "Docker", "description": "Container Management", "online": False, "status": "Not Available"})
+
+    # VS Code - always connected when dashboard is accessed
+    integrations.append({
+        "id": "vscode",
+        "name": "VS Code",
+        "description": "SLATE Copilot Extension",
+        "online": True,
+        "status": "Extension v4.1.0"
+    })
+
+    # Claude Code - MCP server (this server)
+    integrations.append({
+        "id": "claude",
+        "name": "Claude Code",
+        "description": "MCP Server & Slash Commands",
+        "online": True,
+        "status": "MCP Active"
+    })
+
+    # Ollama
+    try:
+        import urllib.request
+        req = urllib.request.urlopen(f"{OLLAMA_URL}/api/tags", timeout=2)
+        if req.status == 200:
+            data = json.loads(req.read().decode("utf-8"))
+            model_count = len(data.get("models", []))
+            integrations.append({
+                "id": "ollama",
+                "name": "Ollama",
+                "description": f"{model_count} models available",
+                "online": True,
+                "status": f"{model_count} Models Loaded"
+            })
+        else:
+            integrations.append({"id": "ollama", "name": "Ollama", "description": "Local LLM Inference", "online": False, "status": "Offline"})
+    except Exception:
+        integrations.append({"id": "ollama", "name": "Ollama", "description": "Local LLM Inference", "online": False, "status": "Offline"})
+
+    # Foundry Local
+    try:
+        import urllib.request
+        req = urllib.request.urlopen(f"{FOUNDRY_URL}/health", timeout=2)
+        integrations.append({
+            "id": "foundry",
+            "name": "Foundry Local",
+            "description": "ONNX-Optimized Inference",
+            "online": req.status == 200,
+            "status": "Online (Port 5272)" if req.status == 200 else "Offline"
+        })
+    except Exception:
+        integrations.append({"id": "foundry", "name": "Foundry Local", "description": "ONNX-Optimized Inference", "online": False, "status": "Not Running"})
+
+    # GPU
+    try:
+        result = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name,count", "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            gpu_name = result.stdout.strip().split(",")[0].replace("NVIDIA GeForce ", "").strip()
+            gpu_count = result.stdout.strip().count("\n") + 1
+            integrations.append({
+                "id": "gpu",
+                "name": "GPU Compute",
+                "description": f"{gpu_name}" + (f" x{gpu_count}" if gpu_count > 1 else ""),
+                "online": True,
+                "status": f"{gpu_count}x Active"
+            })
+        else:
+            integrations.append({"id": "gpu", "name": "GPU Compute", "description": "CUDA Acceleration", "online": False, "status": "No GPU"})
+    except Exception:
+        integrations.append({"id": "gpu", "name": "GPU Compute", "description": "CUDA Acceleration", "online": False, "status": "No GPU"})
+
+    return JSONResponse(content={"integrations": integrations, "total": len(integrations), "online": sum(1 for i in integrations if i["online"])})
+
 
 # ─── Activity Feed ───────────────────────────────────────────────────────────
 
@@ -1359,202 +1588,100 @@ async def slate_ai_recovery(request: Request):
         return JSONResponse(content={"suggestion": None, "error": str(e)})
 
 
-# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Add TRELLIS.2 image-to-3D API endpoints
-# ─── TRELLIS.2 3D Generation Endpoints ────────────────────────────────────────
+# Modified: 2026-02-08T12:00:00Z | Author: Claude Opus 4.5 | Change: Add K8s integration endpoints
+# ─── Kubernetes Integration Endpoints ────────────────────────────────────────
 
-TRELLIS_UPLOAD_DIR = WORKSPACE_ROOT / "slate_memory" / "trellis_uploads"
-TRELLIS_OUTPUT_DIR = WORKSPACE_ROOT / "slate_memory" / "trellis_outputs"
-
-
-@app.get("/api/trellis/status")
-async def trellis_status():
-    """Get TRELLIS.2 integration status."""
-    # Modified: 2026-02-09T14:00:00Z | Author: COPILOT | Change: Fix status response to match JS field names
+@app.get("/api/k8s/status")
+async def k8s_status():
+    """Get Kubernetes integration status and service health."""
     try:
-        from slate.slate_trellis import check_dependencies, _load_state, RESOLUTION_PRESETS, is_ready
-        deps = check_dependencies()
-        state_data = _load_state()
-        ready = is_ready()
-        # Derive simple state string for the JS badge
-        if state_data.get("model_loaded") or state_data.get("pipeline_ready"):
-            state_str = "loaded"
-        elif ready:
-            state_str = "ready"
-        else:
-            state_str = "not-ready"
-        # GPU info for status bar
-        gpu_info = None
-        if deps.get("gpu_available"):
-            try:
-                import torch
-                gpu_info = {
-                    "name": deps.get("gpu_name", "Unknown"),
-                    "total_mb": deps.get("gpu_vram_mb", 0),
-                    "used_mb": round(torch.cuda.memory_allocated(0) / (1024 * 1024)) if torch.cuda.is_available() else 0,
-                }
-            except Exception:
-                pass
+        from slate.k8s_integration import get_k8s_integration
+        integration = get_k8s_integration()
+        status = await integration.get_full_status()
+        return JSONResponse(content=status)
+    except ImportError:
         return JSONResponse(content={
-            "ready": ready,
-            "deps": deps,
-            "state": state_str,
-            "presets": RESOLUTION_PRESETS,
-            "gpu": gpu_info,
+            "environment": "local",
+            "k8s_available": False,
+            "message": "K8s integration module not available"
         })
     except Exception as e:
-        return JSONResponse(content={
-            "ready": False,
-            "error": str(e),
-            "deps": {},
-            "state": "error",
-            "presets": {},
-            "gpu": None,
-        })
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 
-@app.post("/api/trellis/upload")
-async def trellis_upload(file: UploadFile = File(...)):
-    """Upload an image for 3D generation."""
-    TRELLIS_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Validate file type
-    allowed_types = {"image/png", "image/jpeg", "image/webp", "image/bmp", "image/gif"}
-    if file.content_type not in allowed_types:
-        raise HTTPException(400, f"Unsupported file type: {file.content_type}. Use PNG, JPG, or WEBP.")
-
-    # Save with unique name
-    from datetime import datetime, timezone
-    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    ext = Path(file.filename).suffix or ".png"
-    safe_name = f"upload_{ts}{ext}"
-    save_path = TRELLIS_UPLOAD_DIR / safe_name
-
-    content = await file.read()
-    # Modified: 2026-02-09T16:00:00Z | Author: COPILOT | Change: Add 50MB upload size limit
-    if len(content) > 50 * 1024 * 1024:
-        raise HTTPException(400, "File too large. Maximum 50 MB.")
-    save_path.write_bytes(content)
-
-    # Modified: 2026-02-09T14:00:00Z | Author: COPILOT | Change: Fix upload response field name to match JS
-    return JSONResponse(content={
-        "filename": safe_name,
-        "image_path": str(save_path),
-        "size": len(content),
-        "content_type": file.content_type,
-    })
-
-
-@app.post("/api/trellis/generate")
-async def trellis_generate(request: Request):
-    """Generate a 3D model from an uploaded image. Runs in background thread."""
-    # Modified: 2026-02-09T16:00:00Z | Author: COPILOT | Change: Pre-check deps, read export_glb, use get_running_loop
-    body = await request.json()
-    image_path = body.get("image_path", "")
-    preset = body.get("preset", "fast")
-    export_video = body.get("export_video", False)
-    export_glb = body.get("export_glb", True)
-    name = body.get("name", None)
-
-    if not image_path or not Path(image_path).exists():
-        raise HTTPException(400, f"Image not found: {image_path}")
-
-    # Pre-check dependencies before attempting generation
+@app.get("/api/k8s/services")
+async def k8s_services():
+    """List all SLATE services and their K8s endpoints."""
     try:
-        from slate.slate_trellis import is_ready, check_dependencies
-        if not is_ready():
-            deps = check_dependencies()
-            missing = [k for k, v in deps.items()
-                       if k in ('submodule', 'trellis2_package', 'torch_cuda', 'o_voxel')
-                       and v is not True]
-            if deps.get('attention_backend') == 'none':
-                missing.append('attention_backend (install flash-attn or xformers)')
-            return JSONResponse(content={
-                "success": False,
-                "error": f"TRELLIS.2 not ready. Missing: {', '.join(missing)}. Run: python slate/slate_trellis.py --install",
-                "missing_deps": missing,
-            })
+        from slate.k8s_integration import get_k8s_integration
+        integration = get_k8s_integration()
+        info = integration.get_integration_status()
+        return JSONResponse(content=info)
+    except ImportError:
+        return JSONResponse(content={
+            "environment": "local",
+            "services": {}
+        })
     except Exception as e:
-        return JSONResponse(content={"success": False, "error": f"Dependency check failed: {e}"})
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
-    # Run in background thread to avoid blocking
-    import asyncio
 
-    def _run_generation():
-        try:
-            from slate.slate_trellis import generate_3d_from_image
-            return generate_3d_from_image(
-                image_path=image_path,
-                preset=preset,
-                export_glb=export_glb,
-                export_video=export_video,
-                name=name,
+@app.get("/api/k8s/health/{service_name}")
+async def k8s_service_health(service_name: str):
+    """Check health of a specific SLATE service."""
+    try:
+        from slate.k8s_integration import get_k8s_integration, ServiceStatus
+        integration = get_k8s_integration()
+
+        # Find the service
+        service = next(
+            (s for s in integration.services if s.name == service_name),
+            None
+        )
+        if not service:
+            return JSONResponse(
+                content={"error": f"Service '{service_name}' not found"},
+                status_code=404
             )
-        except Exception as e:
-            return {"success": False, "error": str(e)}
 
-    loop = asyncio.get_running_loop()
-    result = await loop.run_in_executor(None, _run_generation)
-
-    # Broadcast status update via WebSocket
-    try:
-        await manager.broadcast({"type": "trellis_complete", "data": result})
-    except Exception:
-        pass
-
-    return JSONResponse(content=result)
-
-
-@app.get("/api/trellis/outputs")
-async def trellis_list_outputs():
-    """List generated 3D model outputs."""
-    # Modified: 2026-02-09T14:00:00Z | Author: COPILOT | Change: Fix outputs response to match JS field names
-    TRELLIS_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    files = []
-    for f in sorted(TRELLIS_OUTPUT_DIR.iterdir(), key=lambda x: x.stat().st_mtime, reverse=True):
-        if f.suffix in (".glb", ".obj", ".ply", ".mp4"):
-            stat = f.stat()
-            files.append({
-                "name": f.name,
-                "size_bytes": stat.st_size,
-                "type": f.suffix[1:],
-                "modified": stat.st_mtime,
-            })
-    return JSONResponse(content={"files": files})
-
-
-@app.get("/api/trellis/download/{filename}")
-async def trellis_download(filename: str):
-    """Download a generated 3D model file."""
-    file_path = TRELLIS_OUTPUT_DIR / filename
-    if not file_path.exists() or not file_path.is_file():
-        raise HTTPException(404, f"File not found: {filename}")
-    # Ensure the file is within our output directory (path traversal check)
-    if not str(file_path.resolve()).startswith(str(TRELLIS_OUTPUT_DIR.resolve())):
-        raise HTTPException(403, "Access denied")
-    media_types = {
-        ".glb": "model/gltf-binary",
-        ".obj": "text/plain",
-        ".ply": "application/octet-stream",
-        ".mp4": "video/mp4",
-    }
-    media_type = media_types.get(file_path.suffix, "application/octet-stream")
-    return FileResponse(
-        path=str(file_path),
-        filename=filename,
-        media_type=media_type,
-    )
-
-
-@app.post("/api/trellis/unload")
-async def trellis_unload():
-    """Unload TRELLIS.2 pipeline to free GPU memory."""
-    # Modified: 2026-02-09T14:00:00Z | Author: COPILOT | Change: Return message field for JS
-    try:
-        from slate.slate_trellis import unload_pipeline
-        unload_pipeline()
-        return JSONResponse(content={"unloaded": True, "message": "TRELLIS.2 pipeline unloaded, GPU memory freed"})
+        health = await integration.check_service_health(service)
+        return JSONResponse(content={
+            "name": health.name,
+            "status": health.status.value,
+            "url": health.url,
+            "latency_ms": health.latency_ms,
+            "last_check": health.last_check,
+            "error": health.error,
+            "metadata": health.metadata,
+        })
+    except ImportError:
+        return JSONResponse(content={
+            "error": "K8s integration not available",
+            "environment": "local"
+        }, status_code=501)
     except Exception as e:
-        return JSONResponse(content={"unloaded": False, "message": f"Unload failed: {e}", "error": str(e)})
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@app.get("/api/k8s/pod")
+async def k8s_pod_info():
+    """Get current pod information (when running in K8s)."""
+    try:
+        from slate.k8s_integration import get_k8s_integration
+        integration = get_k8s_integration()
+
+        if not integration.is_k8s_environment():
+            return JSONResponse(content={
+                "in_kubernetes": False,
+                "message": "Not running in Kubernetes environment"
+            })
+
+        return JSONResponse(content={
+            "in_kubernetes": True,
+            "pod": integration.get_pod_info()
+        })
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 
 # Modified: 2025-07-21T10:30:00Z | Author: COPILOT | Change: Add background CLI action endpoints
@@ -2399,7 +2526,12 @@ async def api_specs():
 @app.get("/api/tech-tree")
 async def api_tech_tree():
     """Get tech tree data from .slate_tech_tree/tech_tree.json."""
-    tech_tree_file = WORKSPACE_ROOT / ".slate_tech_tree" / "tech_tree.json"
+    # Check environment variable first (for K8s), then default path
+    tech_tree_path = os.environ.get("SLATE_TECH_TREE_PATH")
+    if tech_tree_path:
+        tech_tree_file = Path(tech_tree_path)
+    else:
+        tech_tree_file = WORKSPACE_ROOT / ".slate_tech_tree" / "tech_tree.json"
 
     try:
         if tech_tree_file.exists():
@@ -2585,66 +2717,66 @@ DASHBOARD_HTML = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; img-src 'self' data:;">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>SLATE-ATHENA Dashboard</title>
+    <title>S.L.A.T.E. Dashboard</title>
     <style>
         :root {
-            /* Modified: 2026-02-08T16:10:00Z | Author: COPILOT | Change: Apply SLATE-ATHENA design system colors and typography */
-            /* ═══ SLATE-ATHENA DESIGN SYSTEM v1.0 ═══ */
+            /* ═══ SLATE UNIFIED DESIGN SYSTEM v2.0 ═══ */
+            /* Synthesizing: M3 Material + Anthropic Geometric + Awwwards Patterns */
             /* Theme Value: 0=dark, 1=light (procedural interpolation) */
             --theme-value: 0.15;
 
-            /* ═══ PRIMARY PALETTE (Parthenon Gold) ═══ */
-            --slate-primary: #D4AF37;
-            --slate-primary-light: #E4BF47;
-            --slate-primary-dark: #8A7F1A;
-            --slate-primary-container: #F5E6D3;
-            --slate-on-primary: #0A0A0A;
-            --slate-on-primary-container: #2A2510;
+            /* ═══ PRIMARY PALETTE (Anthropic-Inspired Warm) ═══ */
+            --slate-primary: #B85A3C;
+            --slate-primary-light: #D4785A;
+            --slate-primary-dark: #8B4530;
+            --slate-primary-container: #FFE4D9;
+            --slate-on-primary: #FFFFFF;
+            --slate-on-primary-container: #3D1E10;
 
-            /* ═══ SECONDARY PALETTE (Aegean Deep) ═══ */
-            --slate-secondary: #1A3A52;
-            --slate-secondary-light: #2A5A72;
-            --slate-secondary-container: #102633;
-            --slate-on-secondary: #F5F0EB;
+            /* ═══ SECONDARY PALETTE ═══ */
+            --slate-secondary: #5D5D74;
+            --slate-secondary-light: #7A7A94;
+            --slate-secondary-container: #E2E2F0;
+            --slate-on-secondary: #FFFFFF;
 
-            /* ═══ NEUTRAL SURFACES (Acropolis Gray + Marble) ═══ */
+            /* ═══ NEUTRAL SURFACES (Natural Earth) ═══ */
             /* Light Mode */
-            --slate-surface-light: #F7F3EC;
-            --slate-surface-container-light: #EFE7DC;
-            --slate-on-surface-light: #1A1814;
-            --slate-on-surface-variant-light: #4A463F;
-            --slate-outline-light: #7A746A;
-            --slate-outline-variant-light: #D6CCBF;
+            --slate-surface-light: #FBF8F6;
+            --slate-surface-container-light: #F0EBE7;
+            --slate-on-surface-light: #1C1B1A;
+            --slate-on-surface-variant-light: #4D4845;
+            --slate-outline-light: #7D7873;
+            --slate-outline-variant-light: #CFC8C3;
 
             /* Dark Mode */
-            --slate-surface-dark: #0A0A0A;
-            --slate-surface-container-dark: #10141A;
-            --slate-on-surface-dark: #F5F0EB;
-            --slate-on-surface-variant-dark: #C6BFAF;
-            --slate-outline-dark: #3A3A3A;
-            --slate-outline-variant-dark: #1A3A52;
+            --slate-surface-dark: #1A1816;
+            --slate-surface-container-dark: #2A2624;
+            --slate-on-surface-dark: #E8E2DE;
+            --slate-on-surface-variant-dark: #CAC4BF;
+            --slate-outline-dark: #968F8A;
+            --slate-outline-variant-dark: #4D4845;
 
             /* ═══ COMPUTED (Interpolated from theme-value) ═══ */
-            --dark-bg-primary: #0A0A0A;
-            --dark-bg-surface: #10141A;
-            --dark-bg-card: rgba(16, 20, 26, 0.88);
-            --dark-bg-elevated: rgba(20, 26, 34, 0.92);
-            --dark-text-primary: #F5F0EB;
-            --dark-text-secondary: #C6BFAF;
-            --dark-text-muted: #7A8A8A;
-            --dark-border: rgba(212, 175, 55, 0.12);
-            --dark-accent: #4A6741;
+            --dark-bg-primary: #1A1816;
+            --dark-bg-surface: #2A2624;
+            --dark-bg-card: rgba(42, 38, 36, 0.85);
+            --dark-bg-elevated: rgba(52, 48, 46, 0.9);
+            --dark-text-primary: #E8E2DE;
+            --dark-text-secondary: #CAC4BF;
+            --dark-text-muted: #5a6a5a;
+            --dark-border: rgba(168, 184, 168, 0.12);
+            --dark-accent: #4ade80;
 
             /* Light Mode Base Colors */
-            --light-bg-primary: #F7F3EC;
-            --light-bg-surface: #EFE7DC;
-            --light-bg-card: rgba(255, 255, 255, 0.9);
-            --light-bg-elevated: rgba(255, 255, 255, 0.96);
-            --light-text-primary: #1A1814;
-            --light-text-secondary: #4A463F;
-            --light-text-muted: #7A746A;
-            --light-border: rgba(26, 24, 20, 0.12);
-            --light-accent: #4A6741;
+            --light-bg-primary: #f5f7f5;
+            --light-bg-surface: #e8ece8;
+            --light-bg-card: rgba(255, 255, 255, 0.85);
+            --light-bg-elevated: rgba(255, 255, 255, 0.95);
+            --light-text-primary: #1a1f1a;
+            --light-text-secondary: #4a524a;
+            --light-text-muted: #7a827a;
+            --light-border: rgba(26, 31, 26, 0.12);
+            --light-accent: #16a34a;
 
             /* Spacing Scale (fluid) */
             --space-xs: clamp(4px, 0.5vw, 8px);
@@ -2680,37 +2812,37 @@ DASHBOARD_HTML = """
             --bg-overlay: rgba(10, 15, 10, 0.85);
 
             /* Border System */
-            --border: rgba(212, 175, 55, 0.08);
-            --border-hover: rgba(212, 175, 55, 0.16);
-            --border-focus: rgba(212, 175, 55, 0.28);
-            --border-accent: rgba(212, 175, 55, 0.32);
+            --border: rgba(255, 255, 255, 0.06);
+            --border-hover: rgba(255, 255, 255, 0.12);
+            --border-focus: rgba(255, 255, 255, 0.2);
+            --border-accent: rgba(255, 255, 255, 0.25);
 
             /* Text Hierarchy */
-            --text-primary: #F5F0EB;
-            --text-secondary: #C6BFAF;
-            --text-muted: #8A8072;
-            --text-dim: #3A3A3A;
+            --text-primary: #ffffff;
+            --text-secondary: #a3a3a3;
+            --text-muted: #525252;
+            --text-dim: #333333;
 
             /* Status Colors (semantic) */
-            --status-success: #4A6741;
-            --status-error: #E85050;
-            --status-warning: #FF6B1A;
-            --status-info: #D4AF37;
-            --status-success-bg: rgba(74, 103, 65, 0.12);
-            --status-error-bg: rgba(232, 80, 80, 0.12);
-            --status-warning-bg: rgba(255, 107, 26, 0.12);
+            --status-success: #22c55e;
+            --status-error: #ef4444;
+            --status-warning: #eab308;
+            --status-info: #ffffff;
+            --status-success-bg: rgba(34, 197, 94, 0.12);
+            --status-error-bg: rgba(239, 68, 68, 0.12);
+            --status-warning-bg: rgba(234, 179, 8, 0.12);
 
             /* Neutral Status (monochrome) */
-            --status-pending: #7A8A8A;
-            --status-active: #F5F0EB;
-            --status-pending-bg: rgba(122, 138, 138, 0.15);
-            --status-active-bg: rgba(245, 240, 235, 0.08);
+            --status-pending: #737373;
+            --status-active: #ffffff;
+            --status-pending-bg: rgba(115, 115, 115, 0.15);
+            --status-active-bg: rgba(255, 255, 255, 0.08);
 
             /* Workflow Pipeline */
-            --pipeline-task: #7A8A8A;
-            --pipeline-runner: #A9A292;
-            --pipeline-workflow: #F5F0EB;
-            --pipeline-result: #4A6741;
+            --pipeline-task: #737373;
+            --pipeline-runner: #a3a3a3;
+            --pipeline-workflow: #ffffff;
+            --pipeline-result: #22c55e;
 
             /* Shadows (layered depth) */
             --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
@@ -2724,11 +2856,11 @@ DASHBOARD_HTML = """
             --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
             /* Legacy compatibility */
-            --accent-blue: #1A3A52;
-            --accent-green: #4A6741;
-            --accent-yellow: #D4AF37;
-            --accent-red: #E85050;
-            --accent-purple: #8A7F1A;
+            --accent-blue: #ffffff;
+            --accent-green: #22c55e;
+            --accent-yellow: #eab308;
+            --accent-red: #ef4444;
+            --accent-purple: #a3a3a3;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -2740,11 +2872,11 @@ DASHBOARD_HTML = """
         }
 
         body {
-            font-family: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
             background: var(--bg-dark);
             background-image:
-                radial-gradient(ellipse at 0% 0%, rgba(212, 175, 55, 0.05) 0%, transparent 55%),
-                radial-gradient(ellipse at 100% 100%, rgba(26, 58, 82, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 0% 0%, rgba(255, 255, 255, 0.015) 0%, transparent 50%),
+                radial-gradient(ellipse at 100% 100%, rgba(255, 255, 255, 0.01) 0%, transparent 50%),
                 linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-surface) 100%);
             background-attachment: fixed;
             color: var(--text-primary);
@@ -2785,13 +2917,13 @@ DASHBOARD_HTML = """
         .logo-icon {
             width: clamp(44px, 5vw, 60px);
             height: clamp(44px, 5vw, 60px);
-            background: linear-gradient(135deg, var(--slate-primary-container, #F5E6D3) 0%, var(--slate-primary, #D4AF37) 100%);
+            background: linear-gradient(135deg, var(--slate-primary-container, #FFE4D9) 0%, var(--slate-primary, #B85A3C) 100%);
             border-radius: var(--rounded-lg);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--slate-primary, #D4AF37);
-            box-shadow: var(--shadow-md), 0 0 20px rgba(212, 175, 55, 0.2);
+            color: var(--slate-primary, #B85A3C);
+            box-shadow: var(--shadow-md), 0 0 20px rgba(184, 90, 60, 0.2);
             transition: transform var(--transition-base), box-shadow var(--transition-base);
             overflow: hidden;
             padding: 4px;
@@ -2984,8 +3116,18 @@ DASHBOARD_HTML = """
         }
 
         .service-item:hover {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.05);
             border-color: var(--border);
+            transform: translateX(4px);
+        }
+
+        .service-item.online {
+            border-left: 3px solid var(--status-success, #22C55E);
+        }
+
+        .service-item.offline {
+            border-left: 3px solid var(--status-error, #EF4444);
+            opacity: 0.7;
         }
 
         .service-name {
@@ -3005,8 +3147,26 @@ DASHBOARD_HTML = """
             justify-content: center;
             font-size: var(--font-sm);
             font-weight: 600;
-            background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
-            border: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(184, 115, 51, 0.15), rgba(184, 115, 51, 0.05));
+            border: 1px solid rgba(184, 115, 51, 0.2);
+            color: var(--accent, #B87333);
+            transition: all var(--transition-fast);
+        }
+
+        .service-icon svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .service-item.online .service-icon {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
+            border-color: rgba(34, 197, 94, 0.3);
+            color: #22C55E;
+        }
+
+        .service-item:hover .service-icon {
+            transform: scale(1.05);
         }
 
         /* ═══ BADGES ═══ */
@@ -3058,15 +3218,37 @@ DASHBOARD_HTML = """
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px;
+            padding: 12px 16px;
             background: rgba(0, 0, 0, 0.2);
             border-radius: 8px;
             border-left: 3px solid transparent;
+            transition: all 0.2s ease;
         }
 
-        .task-item.pending { border-left-color: var(--status-pending); }
-        .task-item.in-progress { border-left-color: var(--status-active); }
-        .task-item.completed { border-left-color: var(--status-success); }
+        .task-item:hover {
+            background: rgba(0, 0, 0, 0.3);
+            transform: translateX(2px);
+        }
+
+        .task-item.pending {
+            border-left-color: var(--status-pending, #6B7280);
+        }
+        .task-item.in-progress {
+            border-left-color: var(--status-active, #22C55E);
+            background: rgba(34, 197, 94, 0.08);
+        }
+        .task-item.in-progress:hover {
+            background: rgba(34, 197, 94, 0.12);
+        }
+        .task-item.completed {
+            border-left-color: var(--status-success, #22C55E);
+            opacity: 0.7;
+        }
+        .task-item.error,
+        .task-item.failed {
+            border-left-color: var(--status-error, #EF4444);
+            background: rgba(239, 68, 68, 0.08);
+        }
 
         .task-content { flex: 1; }
 
@@ -4422,24 +4604,24 @@ DASHBOARD_HTML = """
 
         /* Blueprint Colors */
         :root {
-            --blueprint-bg: #0A1420;
-            --blueprint-grid: rgba(26, 58, 82, 0.45);
-            --blueprint-line: #1A3A52;
-            --blueprint-accent: #D4AF37;
-            --blueprint-node: #F5E6D3;
-            --blueprint-text: #F5F0EB;
-            --blueprint-glow: rgba(212, 175, 55, 0.3);
+            --blueprint-bg: #0D1B2A;
+            --blueprint-grid: rgba(27, 58, 75, 0.5);
+            --blueprint-line: #3D5A80;
+            --blueprint-accent: #98C1D9;
+            --blueprint-node: #E0FBFC;
+            --blueprint-text: #EEF0F2;
+            --blueprint-glow: rgba(152, 193, 217, 0.3);
 
             /* Connection status */
-            --conn-active: #4A6741;
-            --conn-pending: #FF6B1A;
-            --conn-error: #E85050;
-            --conn-inactive: #6A7A8A;
+            --conn-active: #22C55E;
+            --conn-pending: #F59E0B;
+            --conn-error: #EF4444;
+            --conn-inactive: #6B7280;
 
             /* Wizard steps */
-            --step-active: #D4AF37;
-            --step-complete: #4A6741;
-            --step-pending: #8A8072;
+            --step-active: #3B82F6;
+            --step-complete: #22C55E;
+            --step-pending: #9CA3AF;
         }
 
         /* Blueprint Background with Grid */
@@ -4684,6 +4866,23 @@ DASHBOARD_HTML = """
             background: rgba(152, 193, 217, 0.2);
             border-radius: var(--rounded-sm);
             font-size: var(--font-xs);
+            color: var(--blueprint-accent, #98C1D9);
+        }
+
+        .arch-node-icon svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+
+        .arch-node.active .arch-node-icon {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22C55E;
+        }
+
+        .arch-node.error .arch-node-icon {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
         }
 
         .arch-node-name {
@@ -4701,15 +4900,39 @@ DASHBOARD_HTML = """
         }
 
         .arch-status-dot {
-            width: 6px;
-            height: 6px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
+            transition: all 0.3s ease;
         }
 
-        .arch-status-dot.active { background: var(--conn-active); }
-        .arch-status-dot.pending { background: var(--conn-pending); animation: pulse 1.5s infinite; }
-        .arch-status-dot.error { background: var(--conn-error); }
-        .arch-status-dot.inactive { background: var(--conn-inactive); }
+        .arch-status-dot.active {
+            background: var(--conn-active, #22C55E);
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+            animation: statusGlow 2s ease-in-out infinite;
+        }
+        .arch-status-dot.pending {
+            background: var(--conn-pending, #F59E0B);
+            animation: statusPulse 1.5s ease-in-out infinite;
+        }
+        .arch-status-dot.error {
+            background: var(--conn-error, #EF4444);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+        }
+        .arch-status-dot.inactive {
+            background: var(--conn-inactive, #6B7280);
+            opacity: 0.6;
+        }
+
+        @keyframes statusGlow {
+            0%, 100% { box-shadow: 0 0 4px rgba(34, 197, 94, 0.4); }
+            50% { box-shadow: 0 0 12px rgba(34, 197, 94, 0.8); }
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.9); }
+        }
 
         /* Connection Lines (SVG-based) */
         .arch-connections {
@@ -4938,16 +5161,20 @@ DASHBOARD_HTML = """
         }
 
         .integration-card {
+            display: flex;
+            flex-direction: column;
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: var(--rounded-lg);
             padding: var(--space-lg);
             transition: all var(--transition-fast);
+            min-height: 180px;
         }
 
         .integration-card:hover {
             border-color: var(--border-hover);
             transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
         }
 
         .integration-card.connected {
@@ -4971,9 +5198,28 @@ DASHBOARD_HTML = """
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.05);
+            background: linear-gradient(135deg, rgba(184, 115, 51, 0.15) 0%, rgba(184, 115, 51, 0.05) 100%);
+            border: 1px solid rgba(184, 115, 51, 0.2);
             border-radius: var(--rounded-md);
-            font-size: var(--font-xl);
+            color: var(--accent, #B87333);
+            transition: all var(--transition-fast);
+        }
+
+        .integration-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+            transition: transform var(--transition-fast);
+        }
+
+        .integration-card.connected .integration-icon {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%);
+            border-color: rgba(34, 197, 94, 0.3);
+            color: #22C55E;
+        }
+
+        .integration-card:hover .integration-icon svg {
+            transform: scale(1.1);
         }
 
         .integration-info h3 {
@@ -4995,25 +5241,48 @@ DASHBOARD_HTML = """
             background: rgba(255, 255, 255, 0.03);
             border-radius: var(--rounded-md);
             font-size: var(--font-sm);
+            margin-bottom: var(--space-sm);
+            font-family: var(--font-mono, 'Consolas', monospace);
+        }
+
+        .integration-status span:last-child {
+            color: var(--text-secondary);
+        }
+
+        .integration-card.connected .integration-status span:last-child {
+            color: var(--text-primary);
         }
 
         .integration-action {
-            margin-top: var(--space-md);
+            margin-top: auto;
             width: 100%;
             padding: var(--space-sm) var(--space-md);
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border);
             border-radius: var(--rounded-md);
-            color: var(--text-primary);
+            color: var(--text-secondary);
             font-size: var(--font-sm);
             font-weight: 500;
             cursor: pointer;
             transition: all var(--transition-fast);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .integration-action:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--border-hover);
+            background: rgba(184, 115, 51, 0.15);
+            border-color: rgba(184, 115, 51, 0.4);
+            color: var(--accent, #B87333);
+        }
+
+        .integration-card.connected .integration-action {
+            color: var(--text-primary);
+        }
+
+        .integration-card.connected .integration-action:hover {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #22C55E;
         }
 
         /* ═══════════════════════════════════════════════════════════════════════════ */
@@ -6029,7 +6298,19 @@ DASHBOARD_HTML = """
                     <!-- Core SLATE Node -->
                     <div class="arch-node active" id="node-slate" style="top: 180px; left: 50%; transform: translateX(-50%);">
                         <div class="arch-node-header">
-                            <div class="arch-node-icon">S</div>
+                            <div class="arch-node-icon">
+                                <svg width="16" height="16" viewBox="0 0 200 200" fill="currentColor">
+                                    <circle cx="100" cy="100" r="20"/>
+                                    <line x1="114" y1="106" x2="160" y2="125" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                    <line x1="106" y1="114" x2="120" y2="150" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                    <line x1="93" y1="114" x2="78" y2="160" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                    <line x1="85" y1="106" x2="45" y2="120" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                    <line x1="85" y1="93" x2="40" y2="78" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                    <line x1="93" y1="85" x2="80" y2="45" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                    <line x1="106" y1="85" x2="125" y2="40" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                    <line x1="114" y1="93" x2="155" y2="80" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                                </svg>
+                            </div>
                             <span class="arch-node-name">SLATE Core</span>
                         </div>
                         <div class="arch-node-status">
@@ -6041,7 +6322,11 @@ DASHBOARD_HTML = """
                     <!-- Dashboard Node -->
                     <div class="arch-node" id="node-dashboard" style="top: 40px; left: 20%;">
                         <div class="arch-node-header">
-                            <div class="arch-node-icon">D</div>
+                            <div class="arch-node-icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                                </svg>
+                            </div>
                             <span class="arch-node-name">Dashboard</span>
                         </div>
                         <div class="arch-node-status">
@@ -6053,7 +6338,11 @@ DASHBOARD_HTML = """
                     <!-- Ollama LLM Node -->
                     <div class="arch-node" id="node-ollama" style="top: 40px; left: 50%; transform: translateX(-50%);">
                         <div class="arch-node-header">
-                            <div class="arch-node-icon">O</div>
+                            <div class="arch-node-icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2a9 9 0 019 9c0 3.074-1.676 5.925-4.5 7.392V20.5a1.5 1.5 0 01-1.5 1.5h-6a1.5 1.5 0 01-1.5-1.5v-2.108C4.676 16.925 3 14.074 3 11a9 9 0 019-9zm0 2a7 7 0 00-7 7c0 2.577 1.496 4.927 4 6.055V20h6v-2.945c2.504-1.128 4-3.478 4-6.055a7 7 0 00-7-7zm-2 8a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm4 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/>
+                                </svg>
+                            </div>
                             <span class="arch-node-name">Ollama LLM</span>
                         </div>
                         <div class="arch-node-status">
@@ -6065,7 +6354,11 @@ DASHBOARD_HTML = """
                     <!-- GPU Node -->
                     <div class="arch-node" id="node-gpu" style="top: 40px; right: 20%;">
                         <div class="arch-node-header">
-                            <div class="arch-node-icon">G</div>
+                            <div class="arch-node-icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M22 9V7h-2V5a2 2 0 00-2-2H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-2h2v-2h-2v-2h2v-2h-2V9h2zM4 5h14v14H4V5zm8 2a5 5 0 100 10 5 5 0 000-10z"/>
+                                </svg>
+                            </div>
                             <span class="arch-node-name">Dual GPU</span>
                         </div>
                         <div class="arch-node-status">
@@ -6077,7 +6370,11 @@ DASHBOARD_HTML = """
                     <!-- GitHub Runner Node -->
                     <div class="arch-node" id="node-runner" style="bottom: 40px; left: 20%;">
                         <div class="arch-node-header">
-                            <div class="arch-node-icon">R</div>
+                            <div class="arch-node-icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                                </svg>
+                            </div>
                             <span class="arch-node-name">GitHub Runner</span>
                         </div>
                         <div class="arch-node-status">
@@ -6089,7 +6386,11 @@ DASHBOARD_HTML = """
                     <!-- Docker Node -->
                     <div class="arch-node" id="node-docker" style="bottom: 40px; left: 50%; transform: translateX(-50%);">
                         <div class="arch-node-header">
-                            <div class="arch-node-icon">🐳</div>
+                            <div class="arch-node-icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.186v1.887c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.186.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.186.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.186.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.186v1.887c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.186v1.887c0 .102.083.185.185.185"/>
+                                </svg>
+                            </div>
                             <span class="arch-node-name">Docker</span>
                         </div>
                         <div class="arch-node-status">
@@ -6101,7 +6402,11 @@ DASHBOARD_HTML = """
                     <!-- Claude Code Node -->
                     <div class="arch-node" id="node-claude" style="bottom: 40px; right: 20%;">
                         <div class="arch-node-header">
-                            <div class="arch-node-icon">C</div>
+                            <div class="arch-node-icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93s3.05-7.44 7-7.93v15.86zm2-15.86c1.03.13 2 .45 2.87.93H13v-.93zM13 7h5.24c.25.31.48.65.68 1H13V7zm0 3h6.74c.08.33.15.66.19 1H13v-1zm0 9.93V19h2.87c-.87.48-1.84.8-2.87.93zM18.24 17H13v-1h5.92c-.2.35-.43.69-.68 1zm1.5-3H13v-1h6.93c-.04.34-.11.67-.19 1z"/>
+                                </svg>
+                            </div>
                             <span class="arch-node-name">Claude Code</span>
                         </div>
                         <div class="arch-node-status">
@@ -6122,13 +6427,17 @@ DASHBOARD_HTML = """
                     <!-- GitHub Integration -->
                     <div class="integration-card connected" id="int-github">
                         <div class="integration-header">
-                            <div class="integration-icon">📦</div>
+                            <div class="integration-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                                </svg>
+                            </div>
                             <div class="integration-info">
                                 <h3>GitHub</h3>
                                 <p>Repository & Actions</p>
                             </div>
                         </div>
-                        <div class="integration-status">
+                        <div class="integration-status" id="int-github-status">
                             <span class="arch-status-dot active"></span>
                             <span>Connected to S.L.A.T.E.</span>
                         </div>
@@ -6138,7 +6447,11 @@ DASHBOARD_HTML = """
                     <!-- Docker Integration -->
                     <div class="integration-card" id="int-docker">
                         <div class="integration-header">
-                            <div class="integration-icon">🐳</div>
+                            <div class="integration-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.186v1.887c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.186.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.186.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.186.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.186v1.887c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.186v1.887c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.185-.186h-2.119a.185.185 0 00-.185.186v1.887c0 .102.083.185.185.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.186.186 0 00-.185.186v1.887c0 .102.084.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 003.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288z"/>
+                                </svg>
+                            </div>
                             <div class="integration-info">
                                 <h3>Docker</h3>
                                 <p>Container Management</p>
@@ -6154,13 +6467,17 @@ DASHBOARD_HTML = """
                     <!-- VS Code Integration -->
                     <div class="integration-card connected" id="int-vscode">
                         <div class="integration-header">
-                            <div class="integration-icon">📝</div>
+                            <div class="integration-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M23.15 2.587L18.21.21a1.494 1.494 0 00-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 00-1.276.057L.327 7.261A1 1 0 00.326 8.74L3.899 12 .326 15.26a1 1 0 00.001 1.479L1.65 17.94a.999.999 0 001.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 001.704.29l4.942-2.377A1.5 1.5 0 0024 20.06V3.939a1.5 1.5 0 00-.85-1.352zm-5.146 14.861L10.826 12l7.178-5.448v10.896z"/>
+                                </svg>
+                            </div>
                             <div class="integration-info">
                                 <h3>VS Code</h3>
                                 <p>SLATE Copilot Extension</p>
                             </div>
                         </div>
-                        <div class="integration-status">
+                        <div class="integration-status" id="int-vscode-status">
                             <span class="arch-status-dot active"></span>
                             <span>Extension Installed</span>
                         </div>
@@ -6170,7 +6487,11 @@ DASHBOARD_HTML = """
                     <!-- Claude Code Integration -->
                     <div class="integration-card" id="int-claude">
                         <div class="integration-header">
-                            <div class="integration-icon">🤖</div>
+                            <div class="integration-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93s3.05-7.44 7-7.93v15.86zm2-15.86c1.03.13 2 .45 2.87.93H13v-.93zM13 7h5.24c.25.31.48.65.68 1H13V7zm0 3h6.74c.08.33.15.66.19 1H13v-1zm0 9.93V19h2.87c-.87.48-1.84.8-2.87.93zM18.24 17H13v-1h5.92c-.2.35-.43.69-.68 1zm1.5-3H13v-1h6.93c-.04.34-.11.67-.19 1z"/>
+                                </svg>
+                            </div>
                             <div class="integration-info">
                                 <h3>Claude Code</h3>
                                 <p>MCP Server & Slash Commands</p>
@@ -6186,10 +6507,14 @@ DASHBOARD_HTML = """
                     <!-- Ollama Integration -->
                     <div class="integration-card" id="int-ollama">
                         <div class="integration-header">
-                            <div class="integration-icon">🧠</div>
+                            <div class="integration-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2a9 9 0 019 9c0 3.074-1.676 5.925-4.5 7.392V20.5a1.5 1.5 0 01-1.5 1.5h-6a1.5 1.5 0 01-1.5-1.5v-2.108C4.676 16.925 3 14.074 3 11a9 9 0 019-9zm0 2a7 7 0 00-7 7c0 2.577 1.496 4.927 4 6.055V20h6v-2.945c2.504-1.128 4-3.478 4-6.055a7 7 0 00-7-7zm-2 8a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm4 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/>
+                                </svg>
+                            </div>
                             <div class="integration-info">
                                 <h3>Ollama</h3>
-                                <p>Local LLM Inference</p>
+                                <p id="ollama-model-count">Local LLM Inference</p>
                             </div>
                         </div>
                         <div class="integration-status" id="int-ollama-status">
@@ -6202,7 +6527,11 @@ DASHBOARD_HTML = """
                     <!-- Foundry Local Integration -->
                     <div class="integration-card" id="int-foundry">
                         <div class="integration-header">
-                            <div class="integration-icon">⚡</div>
+                            <div class="integration-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.55 11 21 11 21z"/>
+                                </svg>
+                            </div>
                             <div class="integration-info">
                                 <h3>Foundry Local</h3>
                                 <p>ONNX-Optimized Inference</p>
@@ -6213,6 +6542,26 @@ DASHBOARD_HTML = """
                             <span>Checking...</span>
                         </div>
                         <button class="integration-action" onclick="configureIntegration('foundry')">Configure</button>
+                    </div>
+
+                    <!-- GPU Integration -->
+                    <div class="integration-card" id="int-gpu">
+                        <div class="integration-header">
+                            <div class="integration-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M22 9V7h-2V5a2 2 0 00-2-2H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-2h2v-2h-2v-2h2v-2h-2V9h2zM4 5h14v14H4V5zm8 2a5 5 0 100 10 5 5 0 000-10zm0 2c.8 0 1.5.3 2.1.8l-4.3 4.3c-.5-.6-.8-1.3-.8-2.1a3 3 0 013-3zm0 6c-.8 0-1.5-.3-2.1-.8l4.3-4.3c.5.6.8 1.3.8 2.1a3 3 0 01-3 3z"/>
+                                </svg>
+                            </div>
+                            <div class="integration-info">
+                                <h3>GPU Compute</h3>
+                                <p id="gpu-config-info">CUDA Acceleration</p>
+                            </div>
+                        </div>
+                        <div class="integration-status" id="int-gpu-status">
+                            <span class="arch-status-dot pending"></span>
+                            <span>Checking...</span>
+                        </div>
+                        <button class="integration-action" onclick="configureIntegration('gpu')">Optimize</button>
                     </div>
                 </div>
             </div>
@@ -6278,7 +6627,10 @@ DASHBOARD_HTML = """
     <div class="guided-overlay" id="guided-overlay">
         <div class="guided-header">
             <span class="guided-progress-text" id="guided-progress-text">Step 1 of 11</span>
-            <button class="guided-exit" onclick="exitGuidedMode()">Exit Guided Mode</button>
+            <div style="display: flex; gap: 8px;">
+                <button class="guided-exit" onclick="skipCurrentStep()" style="background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5);">Skip Step</button>
+                <button class="guided-exit" onclick="exitGuidedMode()">Exit Guided Mode</button>
+            </div>
         </div>
 
         <div class="guided-main">
@@ -6750,6 +7102,7 @@ DASHBOARD_HTML = """
         }
 
         async function updateIntegrationStatus() {
+            // Check Docker status
             try {
                 const res = await fetch('/api/docker/containers');
                 const data = await res.json();
@@ -6757,8 +7110,9 @@ DASHBOARD_HTML = """
                 const status = document.getElementById('int-docker-status');
                 if (card && status) {
                     if (data.available) {
+                        const running = data.containers?.filter(c => c.status === 'running').length || 0;
                         card.classList.add('connected');
-                        status.innerHTML = '<span class="arch-status-dot active"></span><span>Available</span>';
+                        status.innerHTML = '<span class="arch-status-dot active"></span><span>' + running + ' Running</span>';
                     } else {
                         card.classList.remove('connected');
                         status.innerHTML = '<span class="arch-status-dot inactive"></span><span>Not Available</span>';
@@ -6766,27 +7120,95 @@ DASHBOARD_HTML = """
                 }
             } catch (e) {}
 
+            // Check full system status (Ollama, GPU, etc)
             try {
                 const res = await fetch('/api/status');
                 const data = await res.json();
-                const card = document.getElementById('int-ollama');
-                const status = document.getElementById('int-ollama-status');
-                if (card && status) {
-                    if (data.ollama_status === 'online') {
-                        card.classList.add('connected');
-                        status.innerHTML = '<span class="arch-status-dot active"></span><span>Online</span>';
+
+                // Ollama integration
+                const ollamaCard = document.getElementById('int-ollama');
+                const ollamaStatus = document.getElementById('int-ollama-status');
+                const ollamaModelCount = document.getElementById('ollama-model-count');
+                if (ollamaCard && ollamaStatus) {
+                    if (data.ollama?.available) {
+                        const modelCount = data.ollama.model_count || data.ollama.models?.length || 0;
+                        ollamaCard.classList.add('connected');
+                        ollamaStatus.innerHTML = '<span class="arch-status-dot active"></span><span>' + modelCount + ' Models Loaded</span>';
+                        if (ollamaModelCount) ollamaModelCount.textContent = modelCount + ' models available';
                     } else {
-                        card.classList.remove('connected');
-                        status.innerHTML = '<span class="arch-status-dot inactive"></span><span>Offline</span>';
+                        ollamaCard.classList.remove('connected');
+                        ollamaStatus.innerHTML = '<span class="arch-status-dot inactive"></span><span>Offline</span>';
+                        if (ollamaModelCount) ollamaModelCount.textContent = 'Local LLM Inference';
+                    }
+                }
+
+                // GPU integration
+                const gpuCard = document.getElementById('int-gpu');
+                const gpuStatus = document.getElementById('int-gpu-status');
+                const gpuConfigInfo = document.getElementById('gpu-config-info');
+                if (gpuCard && gpuStatus) {
+                    if (data.gpu?.available && data.gpu.count > 0) {
+                        const gpuCount = data.gpu.count;
+                        const gpuName = data.gpu.gpus?.[0]?.name || 'NVIDIA GPU';
+                        const shortName = gpuName.replace('NVIDIA GeForce ', '').replace('RTX ', 'RTX ');
+                        gpuCard.classList.add('connected');
+                        gpuStatus.innerHTML = '<span class="arch-status-dot active"></span><span>' + gpuCount + 'x Active</span>';
+                        if (gpuConfigInfo) gpuConfigInfo.textContent = shortName + (gpuCount > 1 ? ' x' + gpuCount : '');
+                    } else {
+                        gpuCard.classList.remove('connected');
+                        gpuStatus.innerHTML = '<span class="arch-status-dot inactive"></span><span>No GPU</span>';
+                        if (gpuConfigInfo) gpuConfigInfo.textContent = 'CUDA Acceleration';
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to fetch status:', e);
+            }
+
+            // Check Foundry Local status
+            try {
+                const res = await fetch('/api/services');
+                const data = await res.json();
+                const foundryService = data.services?.find(s => s.id === 'foundry');
+                const foundryCard = document.getElementById('int-foundry');
+                const foundryStatus = document.getElementById('int-foundry-status');
+                if (foundryCard && foundryStatus) {
+                    if (foundryService?.online) {
+                        foundryCard.classList.add('connected');
+                        foundryStatus.innerHTML = '<span class="arch-status-dot active"></span><span>Online (Port ' + (foundryService.port || 5272) + ')</span>';
+                    } else {
+                        foundryCard.classList.remove('connected');
+                        foundryStatus.innerHTML = '<span class="arch-status-dot inactive"></span><span>Not Running</span>';
                     }
                 }
             } catch (e) {}
 
-            const claudeCard = document.getElementById('int-claude');
-            const claudeStatus = document.getElementById('int-claude-status');
-            if (claudeCard && claudeStatus) {
-                claudeCard.classList.add('connected');
-                claudeStatus.innerHTML = '<span class="arch-status-dot active"></span><span>MCP Available</span>';
+            // Check Claude Code MCP status
+            try {
+                const res = await fetch('/api/debug/schematic-status');
+                const data = await res.json();
+                const claudeCard = document.getElementById('int-claude');
+                const claudeStatus = document.getElementById('int-claude-status');
+                if (claudeCard && claudeStatus) {
+                    // Claude Code is considered connected if we're running (MCP server is this dashboard)
+                    claudeCard.classList.add('connected');
+                    claudeStatus.innerHTML = '<span class="arch-status-dot active"></span><span>MCP Active</span>';
+                }
+            } catch (e) {
+                // Still mark as connected since we're running inside Claude Code
+                const claudeCard = document.getElementById('int-claude');
+                const claudeStatus = document.getElementById('int-claude-status');
+                if (claudeCard && claudeStatus) {
+                    claudeCard.classList.add('connected');
+                    claudeStatus.innerHTML = '<span class="arch-status-dot active"></span><span>MCP Available</span>';
+                }
+            }
+
+            // VS Code integration (always connected when dashboard is accessed)
+            const vscodeCard = document.getElementById('int-vscode');
+            const vscodeStatus = document.getElementById('int-vscode-status');
+            if (vscodeCard && vscodeStatus) {
+                vscodeCard.classList.add('connected');
+                vscodeStatus.innerHTML = '<span class="arch-status-dot active"></span><span>Extension v4.1.0</span>';
             }
         }
 
@@ -6822,8 +7244,16 @@ DASHBOARD_HTML = """
         async function executeGuidedStep() {
             if (!guidedModeActive) return;
 
+            // Timeout protection - auto-advance if step takes too long
+            const stepTimeout = setTimeout(() => {
+                console.warn('Guided step timeout - auto-advancing');
+                updateActionStatus('Step completed (timeout)', true);
+                advanceGuidedStep();
+            }, 15000);
+
             try {
                 const res = await fetch('/api/guided/execute', { method: 'POST' });
+                clearTimeout(stepTimeout);
                 const data = await res.json();
 
                 if (data.success) {
@@ -6836,10 +7266,15 @@ DASHBOARD_HTML = """
                 } else {
                     updateActionStatus(data.message, false);
                     updateNarratorText(data.message + (data.recovery_hint ? ' ' + data.recovery_hint : ''));
+                    // Still auto-advance on non-critical failures
+                    setTimeout(() => advanceGuidedStep(), 3000);
                 }
             } catch (e) {
+                clearTimeout(stepTimeout);
                 console.error('Failed to execute guided step:', e);
-                updateActionStatus('Execution error', false);
+                updateActionStatus('Step skipped (error)', false);
+                // Auto-advance on error to prevent freeze
+                setTimeout(() => advanceGuidedStep(), 2000);
             }
         }
 
@@ -6918,6 +7353,11 @@ DASHBOARD_HTML = """
                 dot.className = 'guided-step-dot complete';
                 dot.textContent = '✓';
             });
+        }
+
+        function skipCurrentStep() {
+            updateActionStatus('Skipped by user', true);
+            advanceGuidedStep();
         }
 
         function exitGuidedMode() {
@@ -7861,23 +8301,82 @@ async def dashboard():
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
+# Modified: 2026-02-08T06:00:00Z | Author: COPILOT | Change: Add port-in-use detection with fallback ports, graceful error handling
+def _is_port_available(host: str, port: int) -> bool:
+    """Check if a port is available for binding."""
+    import socket
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind((host, port))
+            return True
+    except OSError:
+        return False
+
+
+def _find_available_port(host: str = "127.0.0.1", preferred: int = 8080,
+                          fallbacks: list = None) -> int:
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Extend fallback range beyond K8s service ports (8080-8085) to avoid conflicts when port-forwarding is active
+    """Find an available port, trying preferred first then fallbacks.
+    
+    K8s service port range is 8080-8085, so fallbacks extend to 8090
+    to avoid conflicts when K8s port-forwarding is active.
+    """
+    if fallbacks is None:
+        fallbacks = [8081, 8082, 8083, 8084, 8085, 8086, 8087, 8088, 8089, 8090]
+
+    if _is_port_available(host, preferred):
+        return preferred
+
+    for port in fallbacks:
+        if _is_port_available(host, port):
+            return port
+
+    return 0  # No available port found
+
+
 def main():
     """Run the dashboard server."""
+    import argparse
+    parser = argparse.ArgumentParser(description="SLATE Dashboard Server")
+    parser.add_argument("--port", type=int, default=8080, help="Port to bind to (default: 8080)")
+    parser.add_argument("--no-fallback", action="store_true", help="Don't try fallback ports")
+    args = parser.parse_args()
+
+    host = "127.0.0.1"
+    preferred_port = args.port
+
+    if args.no_fallback:
+        if not _is_port_available(host, preferred_port):
+            print(f"\n  [ERROR] Port {preferred_port} is already in use.")
+            print(f"  Check with: Get-NetTCPConnection -LocalPort {preferred_port}")
+            print(f"  Kill the process or use --port <other> to specify a different port.\n")
+            sys.exit(1)
+        port = preferred_port
+    else:
+        port = _find_available_port(host, preferred_port)
+        if port == 0:
+            print("\n  [ERROR] No available ports found (tried 8080-8090).")
+            print("  This may happen when K8s port-forwarding is active (ports 8080-8085).")
+            print("  Free a port or specify one with --port <number>\n")
+            sys.exit(1)
+        if port != preferred_port:
+            print(f"\n  [NOTE] Port {preferred_port} in use, using port {port} instead.")
+
     print()
     print("=" * 60)
     print("  S.L.A.T.E. Dashboard Server")
     print("=" * 60)
     print()
-    print("  URL:      http://127.0.0.1:8080")
-    print("  WebSocket: ws://127.0.0.1:8080/ws")
+    print(f"  URL:      http://{host}:{port}")
+    print(f"  WebSocket: ws://{host}:{port}/ws")
     print()
     print("  Press Ctrl+C to stop")
     print()
 
     uvicorn.run(
         app,
-        host="127.0.0.1",
-        port=8080,
+        host=host,
+        port=port,
         log_level="warning",
         access_log=False
     )

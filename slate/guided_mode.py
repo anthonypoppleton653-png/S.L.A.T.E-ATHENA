@@ -30,6 +30,19 @@ import logging
 WORKSPACE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(WORKSPACE_ROOT))
 
+import os
+
+# K8s-aware service configuration
+def _normalize_url(host: str) -> str:
+    """Normalize host to include protocol."""
+    if host.startswith("http://") or host.startswith("https://"):
+        return host.rstrip("/")
+    return f"http://{host}"
+
+OLLAMA_URL = _normalize_url(os.environ.get("OLLAMA_HOST", "127.0.0.1:11434"))
+DASHBOARD_URL = _normalize_url(os.environ.get("DASHBOARD_HOST", "127.0.0.1:8080"))
+K8S_MODE = os.environ.get("SLATE_K8S", "false").lower() == "true"
+
 logger = logging.getLogger(__name__)
 
 
@@ -214,7 +227,7 @@ class AIGuidanceNarrator:
         """Check if Ollama is available for dynamic narration."""
         try:
             import httpx
-            response = httpx.get("http://localhost:11434/api/tags", timeout=2)
+            response = httpx.get(f"{OLLAMA_URL}/api/tags", timeout=2)
             self.ollama_available = response.status_code == 200
         except Exception:
             self.ollama_available = False
@@ -253,7 +266,7 @@ Be encouraging and specific about what's happening."""
 
             async with httpx.AsyncClient() as client:
                 response = await client.post(
-                    "http://localhost:11434/api/generate",
+                    f"{OLLAMA_URL}/api/generate",
                     json={
                         "model": "mistral-nemo",
                         "prompt": prompt,
@@ -289,7 +302,7 @@ Be reassuring and actionable."""
 
                 async with httpx.AsyncClient() as client:
                     response = await client.post(
-                        "http://localhost:11434/api/generate",
+                        f"{OLLAMA_URL}/api/generate",
                         json={
                             "model": "mistral-nemo",
                             "prompt": prompt,
@@ -481,7 +494,7 @@ class GuidedExecutor:
         # Check Ollama
         try:
             import httpx
-            response = httpx.get("http://localhost:11434/api/tags", timeout=2)
+            response = httpx.get(f"{OLLAMA_URL}/api/tags", timeout=2)
             if response.status_code == 200:
                 detected.append("Ollama")
         except Exception:
@@ -540,7 +553,7 @@ class GuidedExecutor:
         """Setup Ollama connection."""
         try:
             import httpx
-            response = httpx.get("http://localhost:11434/api/tags", timeout=5)
+            response = httpx.get(f"{OLLAMA_URL}/api/tags", timeout=5)
             if response.status_code == 200:
                 data = response.json()
                 models = [m["name"] for m in data.get("models", [])]
@@ -554,7 +567,7 @@ class GuidedExecutor:
 
         return StepResult(
             success=False,
-            message="Ollama not responding on port 11434",
+            message=f"Ollama not responding at {OLLAMA_URL}",
             recovery_hint="Start Ollama with 'ollama serve'"
         )
 
@@ -562,16 +575,16 @@ class GuidedExecutor:
         """Check/start dashboard server."""
         try:
             import httpx
-            response = httpx.get("http://127.0.0.1:8080/health", timeout=2)
+            response = httpx.get(f"{DASHBOARD_URL}/health", timeout=2)
             if response.status_code == 200:
-                return StepResult(success=True, message="Dashboard already running on port 8080")
+                return StepResult(success=True, message=f"Dashboard already running at {DASHBOARD_URL}")
         except Exception:
             pass
 
         return StepResult(
             success=True,
             message="Dashboard server is being started...",
-            details={"port": 8080}
+            details={"url": DASHBOARD_URL}
         )
 
     async def _action_connect_github(self, step: GuidedStep) -> StepResult:
@@ -633,7 +646,7 @@ class GuidedExecutor:
             import httpx
             # Dashboard
             try:
-                r = httpx.get("http://127.0.0.1:8080/health", timeout=2)
+                r = httpx.get(f"{DASHBOARD_URL}/health", timeout=2)
                 if r.status_code == 200:
                     checks_passed += 1
                     checks.append("Dashboard: OK")
@@ -642,7 +655,7 @@ class GuidedExecutor:
 
             # Ollama
             try:
-                r = httpx.get("http://localhost:11434/api/tags", timeout=2)
+                r = httpx.get(f"{OLLAMA_URL}/api/tags", timeout=2)
                 if r.status_code == 200:
                     checks_passed += 1
                     checks.append("Ollama: OK")

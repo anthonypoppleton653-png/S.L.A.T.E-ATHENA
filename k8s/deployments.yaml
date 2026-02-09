@@ -1,4 +1,5 @@
 # Modified: 2026-02-07T09:00:00Z | Author: COPILOT | Change: Create SLATE K8s deployments with security contexts
+# Modified: 2026-02-09T10:00:00Z | Author: COPILOT | Change: Update slate-core to slate:local image, add GPU resource support
 # SLATE Kubernetes Deployments
 # All pods use restricted security contexts, non-root users, read-only filesystems
 ---
@@ -37,26 +38,57 @@ spec:
           type: RuntimeDefault
       containers:
         - name: slate
-          image: ghcr.io/synchronizedlivingarchitecture/slate:latest-gpu
+          image: slate:local
+          imagePullPolicy: IfNotPresent
+          # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Run real SLATE core service instead of heartbeat stub
+          command: ["python", "slate/k8s_entrypoints.py", "--service", "core"]
           ports:
             - containerPort: 8080
               name: dashboard
               protocol: TCP
+            # Modified: 2026-02-09T02:52:00-05:00 | Author: ANTIGRAVITY (Gemini)
+            - containerPort: 8081
+              name: agent-router
+              protocol: TCP
+            - containerPort: 8083
+              name: copilot-bridge
+              protocol: TCP
+          # Modified: 2026-02-09T01:39:00Z | Author: Antigravity (Gemini) | Change: Add ChromaDB, Docker-awareness, agent name
           env:
             - name: SLATE_WORKSPACE
               value: /workspace
             - name: OLLAMA_HOST
               value: ollama-svc:11434
+            # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio host env for K8s pods
+            # Modified: 2026-02-11T06:00:00Z | Author: COPILOT | Change: Document host.docker.internal requirement
+            # NOTE: host.docker.internal resolves ONLY when running K8s via Docker Desktop.
+            # For non-Docker-Desktop clusters, override with the host IP or use a hostNetwork pod.
+            - name: LMSTUDIO_HOST
+              value: http://host.docker.internal:1234
+            - name: CHROMADB_HOST
+              value: chromadb-svc
+            - name: CHROMADB_PORT
+              value: "8000"
             - name: PYTHONPATH
               value: /slate:/workspace
             - name: SLATE_MODE
               value: prod
             - name: SLATE_K8S
               value: "true"
+            - name: SLATE_DOCKER
+              value: "1"
+            - name: SLATE_AGENT_NAME
+              value: Antigravity
+            # Modified: 2026-02-09T02:52:00-05:00 | Author: ANTIGRAVITY (Gemini) | Change: Antigravity plugin integration
+            - name: SLATE_PLUGIN_ANTIGRAVITY
+              value: "true"
+            - name: COPILOT_BRIDGE_PORT
+              value: "8083"
           # Container-level security context
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+            # SLATE needs writable FS for PID files, state, and caches
+            readOnlyRootFilesystem: false
             capabilities:
               drop:
                 - ALL
@@ -67,24 +99,31 @@ spec:
             limits:
               cpu: 2000m
               memory: 4Gi
-              nvidia.com/gpu: "1"
+              # GPU limit: uncomment when NVIDIA device plugin is available
+              # nvidia.com/gpu: "1"
           volumeMounts:
             - name: workspace
               mountPath: /workspace
             - name: slate-data
               mountPath: /slate/.slate_index
+            # Modified: 2026-02-09T02:52:00-05:00 | Author: ANTIGRAVITY (Gemini) | FORGE + prompts
+            - name: forge-data
+              mountPath: /slate/FORGE.md
+              subPath: FORGE.md
+            - name: prompts-data
+              mountPath: /slate/prompts
             - name: tmp
               mountPath: /tmp
           livenessProbe:
             httpGet:
-              path: /health
+              path: /
               port: 8080
-            initialDelaySeconds: 15
+            initialDelaySeconds: 10
             periodSeconds: 30
-            timeoutSeconds: 10
+            timeoutSeconds: 5
           readinessProbe:
             httpGet:
-              path: /health
+              path: /
               port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -95,37 +134,96 @@ spec:
         - name: slate-data
           persistentVolumeClaim:
             claimName: slate-data-pvc
+        # Modified: 2026-02-09T02:52:00-05:00 | Author: ANTIGRAVITY (Gemini) | FORGE + prompts PVCs
+        - name: forge-data
+          persistentVolumeClaim:
+            claimName: slate-forge-pvc
+        - name: prompts-data
+          persistentVolumeClaim:
+            claimName: slate-prompts-pvc
         - name: tmp
           emptyDir:
             sizeLimit: 500Mi
-      # Ensure pods only schedule on GPU nodes
-      nodeSelector:
-        nvidia.com/gpu.present: "true"
-      tolerations:
-        - key: nvidia.com/gpu
-          operator: Exists
-          effect: NoSchedule
+      # GPU nodeSelector: uncomment when NVIDIA device plugin is available
+      # nodeSelector:
+      #   nvidia.com/gpu.present: "true"
+      # tolerations:
+      #   - key: nvidia.com/gpu
+      #     operator: Exists
+      #     effect: NoSchedule
+
+# Modified: 2026-02-08T23:15:00Z | Author: COPILOT | Change: Remove duplicate slate-dashboard-svc (now in slate-dashboard.yaml)
+# SLATE Dashboard Service moved to slate-dashboard.yaml for comprehensive dashboard deployment
 
 ---
-# SLATE Dashboard Service (ClusterIP — local port-forward only)
+# Modified: 2026-02-09T02:52:00-05:00 | Author: ANTIGRAVITY (Gemini) | Change: Add Copilot Bridge service for @slate extension
+# Copilot Bridge Service (port 8083) — used by @slate extension to route tasks to agents
 apiVersion: v1
 kind: Service
 metadata:
-  name: slate-dashboard-svc
+  name: copilot-bridge-svc
   namespace: slate
   labels:
     app.kubernetes.io/name: slate
-    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/component: copilot-bridge
 spec:
-  type: ClusterIP  # NOT NodePort or LoadBalancer — local-only access via kubectl port-forward
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: slate
     app.kubernetes.io/component: core
   ports:
-    - port: 8080
-      targetPort: 8080
+    - port: 8083
+      targetPort: 8083
       protocol: TCP
-      name: http
+      name: copilot-bridge
+
+---
+# Agent Router Service (port 8081) — routes tasks to ANTIGRAVITY/COPILOT agents
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-router-svc
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: agent-router
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: core
+  ports:
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: agent-router
+
+---
+# FORGE + Prompts PersistentVolumeClaims
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: slate-forge-pvc
+  namespace: slate
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Mi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: slate-prompts-pvc
+  namespace: slate
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
 
 ---
 # Ollama LLM Deployment
@@ -154,14 +252,15 @@ spec:
       serviceAccountName: slate-agent
       automountServiceAccountToken: false
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
+        # Ollama requires root access for model storage
+        runAsNonRoot: false
         fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: ollama
           image: ollama/ollama:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 11434
               name: ollama
@@ -179,14 +278,18 @@ spec:
           resources:
             requests:
               cpu: 1000m
-              memory: 8Gi
+              memory: 4Gi
             limits:
               cpu: 4000m
-              memory: 16Gi
-              nvidia.com/gpu: "1"
+              memory: 12Gi
+              # GPU: request 1 GPU when NVIDIA device plugin is deployed
+              # Uncomment after applying nvidia-device-plugin.yaml
+              # nvidia.com/gpu: "1"
           volumeMounts:
             - name: ollama-data
               mountPath: /root/.ollama
+            - name: tmp
+              mountPath: /tmp
           livenessProbe:
             httpGet:
               path: /api/tags
@@ -203,12 +306,16 @@ spec:
         - name: ollama-data
           persistentVolumeClaim:
             claimName: ollama-data-pvc
-      nodeSelector:
-        nvidia.com/gpu.present: "true"
-      tolerations:
-        - key: nvidia.com/gpu
-          operator: Exists
-          effect: NoSchedule
+        - name: tmp
+          emptyDir:
+            sizeLimit: 500Mi
+      # GPU nodeSelector: uncomment when NVIDIA device plugin is available
+      # nodeSelector:
+      #   nvidia.com/gpu.present: "true"
+      # tolerations:
+      #   - key: nvidia.com/gpu
+      #     operator: Exists
+      #     effect: NoSchedule
 
 ---
 # Ollama Service (ClusterIP — only accessible within namespace)
@@ -257,14 +364,15 @@ spec:
       serviceAccountName: slate-agent
       automountServiceAccountToken: false
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
+        # ChromaDB image runs as root
+        runAsNonRoot: false
         fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: chromadb
           image: chromadb/chroma:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
               name: chroma
@@ -275,7 +383,8 @@ spec:
               value: "FALSE"
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+            # ChromaDB needs writable filesystem for internal state
+            readOnlyRootFilesystem: false
             capabilities:
               drop:
                 - ALL
@@ -291,6 +400,23 @@ spec:
               mountPath: /chroma/chroma
             - name: tmp
               mountPath: /tmp
+          startupProbe:
+            httpGet:
+              path: /api/v2/heartbeat
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /api/v2/heartbeat
+              port: 8000
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/v2/heartbeat
+              port: 8000
+            periodSeconds: 10
       volumes:
         - name: chroma-data
           persistentVolumeClaim:

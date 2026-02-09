@@ -266,7 +266,7 @@ class SlateModelTrainer:
                 "model": actual_name,
                 "prompt": config["test_prompt"],
                 "stream": False,
-                "options": {"temperature": 0.3, "num_predict": 256},
+                "options": {"temperature": 0.3, "num_predict": 256, "num_gpu": 999},
             }
             result = self._ollama_request("/api/generate", data, timeout=120)
             elapsed = time.time() - start
@@ -356,7 +356,7 @@ class SlateModelTrainer:
                         "model": actual,
                         "prompt": prompt,
                         "stream": False,
-                        "options": {"temperature": 0.3, "num_predict": 256},
+                        "options": {"temperature": 0.3, "num_predict": 256, "num_gpu": 999},
                     }
                     r = self._ollama_request("/api/generate", data, timeout=120)
                     elapsed = time.time() - start
@@ -502,6 +502,23 @@ class SlateModelTrainer:
             for h in status["build_history"]:
                 icon = "+" if h.get("success") else "x"
                 print(f"    [{icon}] {h['model']:20s} {h.get('elapsed_s', '?')}s  {h.get('time', '')[:19]}")
+
+        # Modified: 2026-02-09T05:30:00Z | Author: COPILOT | Change: Add K8s model-trainer CronJob awareness
+        try:
+            import subprocess as _sp
+            import json as _json
+            r = _sp.run(["kubectl", "get", "cronjob", "slate-model-trainer", "-n", "slate", "-o", "json"],
+                        capture_output=True, text=True, timeout=10)
+            if r.returncode == 0:
+                cj = _json.loads(r.stdout)
+                schedule = cj.get("spec", {}).get("schedule", "?")
+                suspended = cj.get("spec", {}).get("suspend", False)
+                last = cj.get("status", {}).get("lastScheduleTime", "never")
+                status_str = "suspended" if suspended else "active"
+                print(f"\n  K8s CronJob:")
+                print(f"    slate-model-trainer: {schedule} ({status_str}, last: {last})")
+        except Exception:
+            pass  # K8s not available
 
         print("\n" + "=" * 65)
 

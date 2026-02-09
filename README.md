@@ -24,6 +24,7 @@
   <a href="https://pytorch.org/"><img src="https://img.shields.io/badge/PyTorch-2.7+-ee4c2c.svg" alt="PyTorch 2.7+"></a>
   <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/actions"><img src="https://img.shields.io/badge/build-passing-B87333.svg" alt="Build Status"></a>
   <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/wiki"><img src="https://img.shields.io/badge/docs-wiki-blue.svg" alt="Documentation"></a>
+  <a href="https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/"><img src="https://img.shields.io/badge/🌐_Live_Site-GitHub_Pages-B85A3C.svg" alt="GitHub Pages"></a>
 </p>
 
 <p align="center">
@@ -32,6 +33,12 @@
 
 <p align="center">
   Works with GitHub Copilot, VS Code, Claude Code, AI Toolkit, and PyTorch
+</p>
+
+<p align="center">
+  <a href="https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/">
+    <img src="https://img.shields.io/badge/▶_Explore_SLATE-Feature_Page-B85A3C?style=for-the-badge&logo=github&logoColor=white" alt="Explore SLATE Feature Page">
+  </a>
 </p>
 
 ---
@@ -108,7 +115,7 @@ Your local hardware runs the AI. Your cloud stays in sync. SLATE monitors GitHub
 - [Copilot Integration](#copilot-integration)
 - [GitHub Project Boards](#github-project-boards)
 - [Multi-Runner System](#multi-runner-system)
-- [Docker Deployment](#docker-deployment)
+- [Docker & Kubernetes Deployment](#docker--kubernetes-deployment)
 - [Local AI Providers](#local-ai-providers)
 - [CLI Reference](#cli-reference)
 - [Security](#security)
@@ -309,7 +316,7 @@ The orchestrator uses local Ollama models. It learns your codebase over time. It
 │  │   └── runner_fallback.py         # Cost-aware runner selection         │
 │  │                                                                        │
 │  ├── AI Backends                                                          │
-│  │   ├── unified_ai_backend.py      # Central routing (FREE local first)  │
+│  │   ├── unified_ai_backend.py      # Central routing: Ollama + Claude Code + Foundry (FREE)  │
 │  │   ├── foundry_local.py           # Ollama + Foundry client             │
 │  │   └── ollama_client.py           # Direct Ollama integration           │
 │  │                                                                        │
@@ -704,6 +711,21 @@ python slate/slate_hardware_optimizer.py --optimize   # Apply optimizations
 python slate/slate_benchmark.py                       # Run benchmarks
 ```
 
+### Kubernetes & Containers
+
+<!-- Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s CLI commands to README -->
+
+```bash
+python slate/slate_k8s_deploy.py --status             # K8s cluster status
+python slate/slate_k8s_deploy.py --deploy              # Deploy all manifests
+python slate/slate_k8s_deploy.py --deploy-kustomize local  # Deploy with Kustomize overlay
+python slate/slate_k8s_deploy.py --health              # Health check all pods
+python slate/slate_k8s_deploy.py --logs <component>    # Component logs
+python slate/slate_k8s_deploy.py --port-forward        # Port-forward services
+python slate/slate_k8s_deploy.py --teardown            # Remove from cluster
+docker build -t slate:local .                          # Build release image
+```
+
 ## Security
 
 ### Local-Only Architecture
@@ -794,12 +816,15 @@ SLATE won't run your GPU into the ground:
 | **Ollama** | AI Backend | Verified | `:11434` |
 | **Foundry Local** | AI Backend | Verified | `:5272` |
 | **VS Code** | IDE Extension | Active | @slate |
-| **Claude Code** | MCP Server | Active | 26 Tools |
+| **Claude Code** | MCP Server + Unified Backend | Active | 41 Tools, 12 MCP |
+| **Unified AI Backend** | Inference Router | Active | 3 Providers |
 | **GitHub Copilot** | Participant | Active | @slate |
 | **GitHub Actions** | Runner | Self-hosted | GPU Labels |
-| **Docker** | Container | Compose | GPU/CPU |
+| **Docker** | Container | Release Image | GPU/CPU |
+| **Kubernetes** | Orchestration | Local Cloud | 7 Deployments, 9 Pods |
+| **Helm** | Package Manager | v3.17+ | Chart v1.0.0 |
 | **ChromaDB** | Vector Store | Local | RAG Memory |
-| **PyTorch** | ML Framework | 2.7+ | CUDA 12.4 |
+| **PyTorch** | ML Framework | 2.10+ | CUDA 12.8 |
 | **NVIDIA GPU** | Hardware | Auto-Detected | RTX 20xx+ Recommended |
 
 ---
@@ -822,14 +847,27 @@ SLATE development follows a specification-driven approach. Each major feature st
 
 | # | Specification | Status | Description |
 |:--|:--------------|:------:|:------------|
-| 005 | Dashboard Monochrome Theme | `Completed` | Black/white base theme with minimal status colors |
-| 006 | Natural Theme System | `Completed` | Procedural dark/light slider with natural color palette |
-| 007 | Unified Design System | `Completed` | M3 Material Design + Anthropic Geometric Art |
-| 008 | Guided Experience | `Completed` | AI-driven onboarding wizard with zero-config setup |
-| 009 | Copilot Roadmap Awareness | `Completed` | @slate participant with dev cycle integration |
-| 010 | Generative Onboarding | `Completed` | AI-generated installation and setup flows |
-| 011 | Schematic Diagram SDK | `Completed` | Circuit-board style architecture visualization |
-| 012 | Schematic GUI Layout | `Implementing` | Dashboard-integrated schematic widgets |
+| 005 | Dashboard Monochrome Theme | Completed | Black/white base theme with minimal status colors |
+| 006 | Natural Theme System | Completed | Procedural dark/light slider with natural color palette |
+| 007 | Unified Design System | Completed | M3 Material Design + Anthropic Geometric Art |
+| 008 | Guided Experience | Completed | AI-driven onboarding wizard with zero-config setup |
+| 009 | Copilot Roadmap Awareness | Completed | @slate participant with dev cycle integration |
+| 010 | Generative Onboarding | Completed | AI-generated installation and setup flows |
+| 011 | Schematic Diagram SDK | Completed | Circuit-board style architecture visualization |
+| 012 | Watchmaker Dashboard | Completed | 3D dashboard with watchmaker aesthetic |
+| 013 | Engineering Drawing Theme | Completed | ISO 128/IEC 60617 technical drawing system |
+| 014 | Golden Ratio UI | Completed | Fibonacci-based layout system |
+| 015 | Vendor SDK Integration | Completed | OpenAI, AutoGen, SK, Copilot SDK bridges |
+| 016 | Multi-Runner System | Completed | 19 parallel runners across 2 GPUs |
+| 017 | Claude Agent SDK | Completed | Claude Code plugin and MCP integration |
+| 018 | Kubernetes Infrastructure | Completed | K8s local cloud deployment |
+| 019 | Dual-GPU Manager | Completed | Load-balanced GPU management |
+| 020 | Custom SLATE Models | Completed | slate-coder, slate-fast, slate-planner |
+| 021 | Autonomous Task Loop | Completed | Self-healing autonomous operation |
+| — | Unified AI Backend | Completed | 3-provider inference routing: Ollama, Claude Code, Foundry Local |
+| 022 | Brand Identity System | Specified | Unified visual identity across all SLATE surfaces |
+| 023 | Avatar System | Specified | Living orrery avatar with state-reactive D3.js + TRELLIS.2 3D |
+| 024 | TRELLIS.2 3D Integration | Specified | Microsoft 4B image-to-3D model as K8s microservice |
 
 ### Spec Lifecycle
 
@@ -846,14 +884,97 @@ DRAFT → SPECIFIED → PLANNED → IMPLEMENTING → COMPLETED
 <tr>
 <td align="center"><strong>M3 Material Design</strong><br><sub>Design tokens, elevation, state layers</sub></td>
 <td align="center"><strong>Anthropic Geometric Art</strong><br><sub>Starburst patterns, warm palette</sub></td>
-<td align="center"><strong>Awwwards Patterns</strong><br><sub>Card architecture, interactions</sub></td>
+<td align="center"><strong>Watchmaker Aesthetic</strong><br><sub>3D dashboard, precision mechanics</sub></td>
 <td align="center"><strong>Blueprint Engineering</strong><br><sub>Technical precision, grid systems</sub></td>
+</tr>
+<tr>
+<td align="center"><strong>Golden Ratio UI</strong><br><sub>Fibonacci layouts, natural proportions</sub></td>
+<td align="center"><strong>Engineering Drawings</strong><br><sub>ISO 128/IEC 60617 standards</sub></td>
+<td align="center"><strong>Schematic SDK</strong><br><sub>Circuit-board visualizations</sub></td>
+<td align="center"><strong>Evolving Background</strong><br><sub>Tech tree progress reflection</sub></td>
 </tr>
 </table>
 
 **Primary Color**: `#B85A3C` (Anthropic-inspired warm rust)
 
 See the [Specifications Wiki](https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/wiki/Specifications) for detailed documentation.
+
+### Vendor SDK Integration
+
+SLATE provides bridges to major AI SDK ecosystems:
+
+| SDK | Integration | Purpose |
+|-----|-------------|---------|
+| **OpenAI Agents** | `vendor/openai-agents-python` | Agent orchestration patterns |
+| **AutoGen** | `vendor/autogen` | Multi-agent conversations |
+| **Semantic Kernel** | `vendor/semantic-kernel` | Plugin architecture |
+| **GitHub Copilot** | VS Code extension | @slate chat participant |
+| **Claude Code** | MCP server + Unified Backend | 41 tools, 12 MCP tools, 3 inference providers |
+
+```bash
+# Check vendor integration status
+python slate/vendor_integration.py --status
+
+# Test SDK bridges
+python slate/vendor_integration.py --test-all
+```
+
+### Multi-Runner System
+
+SLATE deploys up to 19 parallel runners across dual GPUs for maximum throughput:
+
+| Runner Type | Count | GPU | Purpose |
+|-------------|-------|-----|---------|
+| GPU Light | 6 per GPU | RTX 5070 Ti | Inference, code generation |
+| GPU Heavy | 1 per GPU | RTX 5070 Ti | Fine-tuning, batch processing |
+| CPU | 5 | N/A | Linting, testing, git ops |
+
+```bash
+# Check multi-runner status
+python slate/slate_multi_runner.py --status
+
+# View runner distribution
+python slate/slate_multi_runner.py --distribution
+
+# Benchmark runner capacity
+python slate/slate_runner_benchmark.py
+```
+
+### Kubernetes Deployment
+
+SLATE runs as a complete containerized local cloud in Kubernetes:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Ingress (slate.local)                        │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │
+    ┌──────────────────────────┼──────────────────────────────────────┐
+    │                          │                                      │
+    ▼                          ▼                                      ▼
+┌─────────────┐     ┌─────────────────┐     ┌──────────────────────┐
+│  Dashboard  │     │  Agent Router   │     │  Autonomous Loop     │
+│  (HPA 2-6)  │     │    (2 pods)     │     │   (1 pod + GPU)      │
+└─────────────┘     └─────────────────┘     └──────────────────────┘
+```
+
+| Service | K8s Service | Port | Purpose |
+|---------|-------------|------|---------|
+| Dashboard | `slate-dashboard-svc` | 8080 | Full UI + WebSocket + K8s API |
+| Ollama | `ollama-svc` | 11434 | Local LLM inference |
+| ChromaDB | `chromadb-svc` | 8000 | Vector store for RAG |
+| Agent Router | `slate-agent-router-svc` | 8081 | Task routing |
+
+```bash
+# Deploy to Kubernetes
+.\k8s\deploy.ps1 -Environment local
+
+# Check K8s status
+python slate/slate_k8s_deploy.py --status
+
+# Port-forward dashboard
+kubectl port-forward -n slate svc/slate-dashboard-svc 8080:8080
+```
 
 ## Contributing
 
@@ -885,6 +1006,13 @@ python slate/slate_fork_manager.py --validate
 
 **Daniel Perry** - Canadian Forces Veteran | Afghanistan Veteran | PPCLI Battlegroup | Task Force 3-09
 
+After a decade of honorable military service, Daniel brings the same discipline, attention to detail, and mission-focused mindset to software development. S.L.A.T.E. represents a vision for AI that prioritizes local control, privacy, and transparency — built by one person with the help of AI tools through vibe coding.
+
+- **Email**: [slate.git@proton.me](mailto:slate.git@proton.me)
+- **GitHub**: [S.L.A.T.E. Repository](https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E)
+- **Issues**: [Issue Tracker](https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/discussions)
+
 S.L.A.T.E. is the sole intellectual property of Daniel Perry. See [AUTHOR.md](AUTHOR.md) for more information.
 
 ### Development System
@@ -907,9 +1035,31 @@ S.L.A.T.E. is **experimental software** — an AI hobbyist project entirely crea
 
 See the [LICENSE](LICENSE) file for complete terms and conditions.
 
+## SLATE Feature Page
+
+<p align="center">
+  <a href="https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/">
+    <img src="https://img.shields.io/badge/🌐_SLATE_Feature_Page-Live_on_GitHub_Pages-B85A3C?style=for-the-badge&logo=github&logoColor=white" alt="SLATE Feature Page">
+  </a>
+</p>
+
+<p align="center">
+  <em>Explore SLATE's full feature showcase, architecture diagrams, and interactive demos at:</em><br>
+  <a href="https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/"><strong>https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/</strong></a>
+</p>
+
+The SLATE feature page includes:
+- **System Architecture** — Interactive diagrams of the local AI operations center
+- **Feature Showcase** — All 24+ specifications with live status
+- **AI Provider Matrix** — 3 FREE local inference providers (Ollama, Claude Code, Foundry Local)
+- **Watchmaker Dashboard** — Preview of the D3.js-powered 3D dashboard
+- **Technology Stack** — Full vendor integration map across 24 forked dependencies
+
+> **Source**: [`docs/pages/`](docs/pages/) — Auto-deployed via GitHub Actions on push to `main`
+
 ## Links
 
-- [Website](https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/)
+- [Feature Page](https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/)
 - [GitHub Repository](https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E)
 - [Wiki Documentation](https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/wiki)
 - [Issue Tracker](https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/issues)
@@ -922,7 +1072,8 @@ See the [LICENSE](LICENSE) file for complete terms and conditions.
 </p>
 
 <p align="center">
-  Created by Daniel Perry | Canadian Forces Veteran | Afghanistan Veteran
+  Created by Daniel Perry | Canadian Forces Veteran | Afghanistan Veteran<br>
+  Contact: <a href="mailto:slate.git@proton.me">slate.git@proton.me</a>
 </p>
 
 <p align="center">

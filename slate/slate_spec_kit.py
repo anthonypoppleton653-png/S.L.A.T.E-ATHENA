@@ -420,7 +420,7 @@ Respond ONLY with valid JSON, no markdown formatting or code blocks."""
                     "prompt": prompt,
                     "stream": stream,
                     "keep_alive": keep_alive,
-                    "options": {"temperature": temperature, "num_predict": max_tokens},
+                    "options": {"temperature": temperature, "num_predict": max_tokens, "num_gpu": 999},
                 }
                 if system:
                     data["system"] = system
@@ -649,6 +649,17 @@ class SpecKitOrchestrator:
             status = spec.metadata.get("status", "unknown")
             title = spec.title[:40]
             print(f"    [{status:>12}] {spec.spec_id}: {title}")
+
+        # Modified: 2026-02-09T05:30:00Z | Author: COPILOT | Change: Add K8s spec-related manifest summary
+        try:
+            import subprocess as _sp
+            r = _sp.run(["kubectl", "get", "deployments,cronjobs", "-n", "slate", "--no-headers"],
+                        capture_output=True, text=True, timeout=10)
+            if r.returncode == 0 and r.stdout.strip():
+                lines = [l for l in r.stdout.strip().splitlines() if l.strip()]
+                print(f"\n  K8s Resources: {len(lines)} objects in slate namespace")
+        except Exception:
+            pass  # K8s not available
 
         print()
         print("=" * 70)
