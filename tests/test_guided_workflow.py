@@ -1,5 +1,6 @@
 # tests/test_guided_workflow.py
 
+import os
 import pytest
 from slate.guided_workflow import (
     JobTemplate,

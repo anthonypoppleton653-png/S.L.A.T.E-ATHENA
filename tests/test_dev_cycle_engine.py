@@ -89,6 +89,7 @@ class TestStageActivity:
 
     def test_create_activity(self):
         activity = StageActivity(
+            id="act_1",
             title="Write tests",
             description="Add pytest coverage",
             stage=DevCycleStage.TEST
@@ -98,6 +99,7 @@ class TestStageActivity:
 
     def test_activity_to_dict(self):
         activity = StageActivity(
+            id="act_2",
             title="Deploy",
             description="Push to K8s",
             stage=DevCycleStage.DEPLOY
@@ -111,17 +113,17 @@ class TestDevCycleEngine:
     """Test DevCycleEngine class."""
 
     def test_init(self, tmp_path):
-        engine = DevCycleEngine(state_dir=tmp_path)
+        engine = DevCycleEngine(workspace=tmp_path)
         assert engine is not None
 
     @pytest.mark.asyncio
     async def test_get_current_state(self, tmp_path):
-        engine = DevCycleEngine(state_dir=tmp_path)
+        engine = DevCycleEngine(workspace=tmp_path)
         state = await engine.get_current_state()
         assert isinstance(state, DevCycleState)
 
     @pytest.mark.asyncio
     async def test_get_current_stage(self, tmp_path):
-        engine = DevCycleEngine(state_dir=tmp_path)
+        engine = DevCycleEngine(workspace=tmp_path)
         stage = await engine.get_current_stage()
         assert isinstance(stage, DevCycleStage)

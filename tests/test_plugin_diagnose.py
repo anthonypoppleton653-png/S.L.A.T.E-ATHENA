@@ -14,7 +14,7 @@ def test_find_plugin_root():
     (None, "FAIL")
 ])
 def test_check_python(env_var, expected_status):
-    with pytest.Monkeypatch.context() as m:
+    with pytest.MonkeyPatch.context() as m:
         if env_var is not None:
             m.setenv("SLATE_PLUGIN_ROOT", "/path/to/plugin")
         result = check_python()
@@ -22,14 +22,14 @@ def test_check_python(env_var, expected_status):
 
 def test_check_plugin_structure():
     root = Path(__file__).resolve().parent / "test_data" / "plugin_with_files"
-    with pytest.Monkeypatch.context() as m:
+    with pytest.MonkeyPatch.context() as m:
         m.setenv("SLATE_PLUGIN_ROOT", str(root))
         result = check_plugin_structure()
         assert result["status"] == "OK"
 
 def test_check_commands():
     root = Path(__file__).resolve().parent / "test_data" / "plugin_with_files"
-    with pytest.Monkeypatch.context() as m:
+    with pytest.MonkeyPatch.context() as m:
         m.setenv("SLATE_PLUGIN_ROOT", str(root))
         result = check_commands()
         assert result["status"] == "OK"
@@ -37,7 +37,7 @@ def test_check_commands():
 
 def test_check_skills():
     root = Path(__file__).resolve().parent / "test_data" / "plugin_with_files"
-    with pytest.Monkeypatch.context() as m:
+    with pytest.MonkeyPatch.context() as m:
         m.setenv("SLATE_PLUGIN_ROOT", str(root))
         result = check_skills()
         assert result["status"] == "OK"

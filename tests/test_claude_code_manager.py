@@ -1,5 +1,6 @@
 # tests/test_claude_code_manager.py
 
+import os
 import pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock

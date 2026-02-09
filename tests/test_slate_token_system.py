@@ -27,7 +27,17 @@ def test_agent_and_service_identifiers():
     ]
 
 def test_token_initialization():
-    token = Token("test_id", TokenType.SERVICE, "Test Service")
+    token = Token(
+        id="test_id",
+        token_type=TokenType.SERVICE.value,
+        name="Test Service",
+        description="Test service token",
+        token_hash="abcdef1234567890",
+        prefix="slsvc_te",
+        scopes=["read", "write"],
+        issued_at="2026-01-01T00:00:00+00:00",
+        expires_at="2026-02-01T00:00:00+00:00",
+    )
     assert token.id == "test_id"
     assert token.token_type == TokenType.SERVICE.value
     assert token.name == "Test Service"

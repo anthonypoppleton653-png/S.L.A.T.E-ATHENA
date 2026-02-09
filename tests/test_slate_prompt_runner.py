@@ -1,7 +1,9 @@
 # test_slate_prompt_runner.py
 
+import json
 import pytest
-from slate.slate_prompt_runner import load_index, list_prompts, get_prompt, run_prompt
+from pathlib import Path
+from slate.slate_prompt_runner import load_index, list_prompts, get_prompt, run_prompt, INDEX_PATH
 
 @pytest.fixture
 def mock_index():

@@ -41,34 +41,34 @@ class TestAITask:
 
     def test_create_task(self):
         task = AITask(
-            id="test_1",
-            task_type="code_generation",
-            prompt="Write a function",
             priority=5,
+            task_id="test_1",
+            task_type="code_generation",
+            description="Write a function",
         )
-        assert task.id == "test_1"
+        assert task.task_id == "test_1"
         assert task.task_type == "code_generation"
 
     def test_task_to_dict(self):
         task = AITask(
-            id="test_1",
-            task_type="analysis",
-            prompt="Analyze code",
             priority=3,
+            task_id="test_1",
+            task_type="analysis",
+            description="Analyze code",
         )
         d = task.to_dict()
         assert isinstance(d, dict)
-        assert d["id"] == "test_1"
+        assert d["task_id"] == "test_1"
 
     def test_task_from_dict(self):
         data = {
-            "id": "test_2",
+            "task_id": "test_2",
             "task_type": "summarization",
-            "prompt": "Summarize",
+            "description": "Summarize",
             "priority": 7,
         }
         task = AITask.from_dict(data)
-        assert task.id == "test_2"
+        assert task.task_id == "test_2"
         assert task.priority == 7
 
 

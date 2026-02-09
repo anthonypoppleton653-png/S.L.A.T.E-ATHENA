@@ -1,6 +1,7 @@
 # tests/test_k8s_integration.py
 
 import asyncio
+import urllib.error
 import pytest
 from unittest.mock import patch, MagicMock
 from slate.k8s_integration import (
@@ -38,7 +39,7 @@ def test_service_health_init():
 
 # Test SlateService initialization and properties
 def test_slate_service_init():
-    service = SlateService(name="test", service_name="test-svc", port=80, health_endpoint="/health")
+    service = SlateService(name="test", service_name="test-svc", port=80, health_endpoint="/health", description="Test service")
     assert service.name == "test"
     assert service.service_name == "test-svc"
     assert service.port == 80

@@ -187,7 +187,7 @@ Based on comprehensive analysis, these high-priority Microsoft repos should be f
 
 - TRELLIS.2 fork created and synced
 - Container builds successfully with all CUDA extensions
-- K8s service responds on port 8085
+- K8s service responds on port 8086
 - Can generate 512^3 GLB mesh from input image
 - Integrated into unified_ai_backend.py as 3d_generation provider
 - Generated avatar viewable via model-viewer
