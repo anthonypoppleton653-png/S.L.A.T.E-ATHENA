@@ -1,16 +1,21 @@
 {
-  "name": "slate",
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "slate-marketplace",
+  "description": "Official SLATE plugins for Claude Code",
   "owner": {
     "name": "Synchronized Living Architecture"
   },
   "plugins": [
     {
       "name": "slate",
-      "source": {
-        "source": "github",
-        "repo": "SynchronizedLivingArchitecture/S.L.A.T.E"
+      "description": "S.L.A.T.E. — Unified AI agent orchestration with GPU support, K8s deployment, ActionGuard security, and 12 MCP tools",
+      "version": "5.3.0",
+      "author": {
+        "name": "Synchronized Living Architecture"
       },
-      "description": "S.L.A.T.E. — Unified AI agent orchestration with GPU support, K8s deployment, ActionGuard security, and 12 MCP tools"
+      "source": "./",
+      "category": "development",
+      "strict": false
     }
   ]
 }
