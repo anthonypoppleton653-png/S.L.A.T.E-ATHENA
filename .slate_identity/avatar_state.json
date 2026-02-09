@@ -1,0 +1,424 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-02-09T11:32:47.723547+00:00",
+  "level": 3,
+  "level_name": "Full Orrery",
+  "expression": "idle",
+  "orbit_speed": 0.3,
+  "tech_tree": {
+    "total_nodes": 44,
+    "complete": 36,
+    "in_progress": 3,
+    "available": 5,
+    "completion_pct": 81.8,
+    "total_edges": 60,
+    "version": "3.0.0"
+  },
+  "nodes": [
+    {
+      "id": "core",
+      "label": "SLATE Core",
+      "ring": 0,
+      "angle": 0,
+      "type": "core",
+      "color": "#B85A3C",
+      "service": null,
+      "level_req": 1,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "ollama",
+      "label": "Ollama",
+      "ring": 1,
+      "angle": 0,
+      "type": "ai",
+      "color": "#4FC3F7",
+      "service": "ollama",
+      "port": 11434,
+      "level_req": 1,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "dashboard",
+      "label": "Dashboard",
+      "ring": 1,
+      "angle": 72,
+      "type": "ui",
+      "color": "#4CAF50",
+      "service": "dashboard",
+      "port": 8080,
+      "level_req": 1,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "runner",
+      "label": "Runner",
+      "ring": 1,
+      "angle": 144,
+      "type": "infra",
+      "color": "#FF9800",
+      "service": "runner",
+      "port": null,
+      "level_req": 1,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "chromadb",
+      "label": "ChromaDB",
+      "ring": 1,
+      "angle": 216,
+      "type": "data",
+      "color": "#9C27B0",
+      "service": "chromadb",
+      "port": 8000,
+      "level_req": 1,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "mcp",
+      "label": "MCP Server",
+      "ring": 1,
+      "angle": 288,
+      "type": "bridge",
+      "color": "#2196F3",
+      "service": "mcp",
+      "port": null,
+      "level_req": 1,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "foundry",
+      "label": "Foundry",
+      "ring": 2,
+      "angle": 30,
+      "type": "ai",
+      "color": "#00BCD4",
+      "service": "foundry",
+      "port": 5272,
+      "level_req": 2,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "k8s",
+      "label": "Kubernetes",
+      "ring": 2,
+      "angle": 90,
+      "type": "infra",
+      "color": "#326CE5",
+      "service": "k8s",
+      "port": null,
+      "level_req": 2,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "agent-router",
+      "label": "Agent Router",
+      "ring": 2,
+      "angle": 150,
+      "type": "ai",
+      "color": "#E91E63",
+      "service": "agent-router",
+      "port": 8081,
+      "level_req": 2,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "autonomous",
+      "label": "Auto Loop",
+      "ring": 2,
+      "angle": 210,
+      "type": "ai",
+      "color": "#FF5722",
+      "service": "autonomous",
+      "port": 8082,
+      "level_req": 2,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "workflow",
+      "label": "Workflow",
+      "ring": 2,
+      "angle": 270,
+      "type": "infra",
+      "color": "#795548",
+      "service": "workflow",
+      "port": 8084,
+      "level_req": 2,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "gpu-mgr",
+      "label": "GPU Manager",
+      "ring": 2,
+      "angle": 330,
+      "type": "hardware",
+      "color": "#76B900",
+      "service": "gpu",
+      "port": null,
+      "level_req": 2,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "tokens",
+      "label": "Token System",
+      "ring": 2,
+      "angle": 0,
+      "type": "security",
+      "color": "#FFC107",
+      "service": "tokens",
+      "port": null,
+      "level_req": 2,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "trellis",
+      "label": "TRELLIS.2",
+      "ring": 3,
+      "angle": 45,
+      "type": "ai",
+      "color": "#00E676",
+      "service": "trellis",
+      "port": 8085,
+      "level_req": 3,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "graphrag",
+      "label": "GraphRAG",
+      "ring": 3,
+      "angle": 135,
+      "type": "data",
+      "color": "#7C4DFF",
+      "service": "graphrag",
+      "port": null,
+      "level_req": 3,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "llmlingua",
+      "label": "LLMLingua",
+      "ring": 3,
+      "angle": 225,
+      "type": "ai",
+      "color": "#FF6D00",
+      "service": "llmlingua",
+      "port": null,
+      "level_req": 3,
+      "health": "unknown",
+      "visible": true
+    },
+    {
+      "id": "brand",
+      "label": "Brand System",
+      "ring": 3,
+      "angle": 315,
+      "type": "identity",
+      "color": "#D4785A",
+      "service": null,
+      "level_req": 3,
+      "health": "unknown",
+      "visible": true
+    }
+  ],
+  "connections": [
+    {
+      "from": "core",
+      "to": "ollama",
+      "type": "data",
+      "level_req": 1,
+      "active": true
+    },
+    {
+      "from": "core",
+      "to": "dashboard",
+      "type": "data",
+      "level_req": 1,
+      "active": true
+    },
+    {
+      "from": "core",
+      "to": "runner",
+      "type": "control",
+      "level_req": 1,
+      "active": true
+    },
+    {
+      "from": "core",
+      "to": "chromadb",
+      "type": "data",
+      "level_req": 1,
+      "active": true
+    },
+    {
+      "from": "core",
+      "to": "mcp",
+      "type": "control",
+      "level_req": 1,
+      "active": true
+    },
+    {
+      "from": "ollama",
+      "to": "dashboard",
+      "type": "status",
+      "level_req": 1,
+      "active": true
+    },
+    {
+      "from": "runner",
+      "to": "dashboard",
+      "type": "status",
+      "level_req": 1,
+      "active": true
+    },
+    {
+      "from": "chromadb",
+      "to": "ollama",
+      "type": "data",
+      "level_req": 1,
+      "active": true
+    },
+    {
+      "from": "ollama",
+      "to": "foundry",
+      "type": "fallback",
+      "level_req": 2,
+      "active": true
+    },
+    {
+      "from": "runner",
+      "to": "k8s",
+      "type": "deploy",
+      "level_req": 2,
+      "active": true
+    },
+    {
+      "from": "core",
+      "to": "agent-router",
+      "type": "control",
+      "level_req": 2,
+      "active": true
+    },
+    {
+      "from": "agent-router",
+      "to": "autonomous",
+      "type": "task",
+      "level_req": 2,
+      "active": true
+    },
+    {
+      "from": "runner",
+      "to": "workflow",
+      "type": "control",
+      "level_req": 2,
+      "active": true
+    },
+    {
+      "from": "runner",
+      "to": "gpu-mgr",
+      "type": "hardware",
+      "level_req": 2,
+      "active": true
+    },
+    {
+      "from": "core",
+      "to": "tokens",
+      "type": "auth",
+      "level_req": 2,
+      "active": true
+    },
+    {
+      "from": "autonomous",
+      "to": "workflow",
+      "type": "task",
+      "level_req": 2,
+      "active": true
+    },
+    {
+      "from": "gpu-mgr",
+      "to": "ollama",
+      "type": "hardware",
+      "level_req": 2,
+      "active": true
+    },
+    {
+      "from": "tokens",
+      "to": "mcp",
+      "type": "auth",
+      "level_req": 2,
+      "active": true
+    },
+    {
+      "from": "k8s",
+      "to": "trellis",
+      "type": "deploy",
+      "level_req": 3,
+      "active": true
+    },
+    {
+      "from": "chromadb",
+      "to": "graphrag",
+      "type": "data",
+      "level_req": 3,
+      "active": true
+    },
+    {
+      "from": "ollama",
+      "to": "llmlingua",
+      "type": "optimize",
+      "level_req": 3,
+      "active": true
+    },
+    {
+      "from": "core",
+      "to": "brand",
+      "type": "identity",
+      "level_req": 3,
+      "active": true
+    }
+  ],
+  "rings": {
+    "core": {
+      "radius": 0,
+      "visible": true
+    },
+    "inner": {
+      "radius": 120,
+      "visible": true,
+      "node_count": 5
+    },
+    "middle": {
+      "radius": 220,
+      "visible": true,
+      "node_count": 7
+    },
+    "outer": {
+      "radius": 320,
+      "visible": true,
+      "node_count": 4
+    }
+  },
+  "design": {
+    "primary": "#B85A3C",
+    "blueprint_bg": "#0D1B2A",
+    "blueprint_grid": "#1B3A4B",
+    "jewel_active": "#4CAF50",
+    "jewel_pending": "#FF9800",
+    "jewel_error": "#F44336",
+    "jewel_locked": "#424242"
+  }
+}
