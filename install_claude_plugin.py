@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
+# Modified: 2026-02-09T03:00:00Z | Author: Claude Opus 4.5 | Change: Simplify for local development (no install needed)
 """
-SLATE Claude Code Plugin Installer
+SLATE Claude Code Plugin Manager
 
-This script registers the SLATE plugin marketplace with Claude Code.
-Plugins are loaded dynamically without restart.
+For LOCAL DEVELOPMENT: No installation needed! The plugin auto-loads when
+you're in the SLATE workspace because .claude-plugin/plugin.json exists.
+
+For EXTERNAL USERS installing from GitHub:
+    /plugin marketplace add SynchronizedLivingArchitecture/S.L.A.T.E
+    /plugin install slate@slate-marketplace
 
 Usage:
-    python install_claude_plugin.py              # Install/update
-    python install_claude_plugin.py --uninstall  # Remove
-    python install_claude_plugin.py --validate   # Validate structure
-    python install_claude_plugin.py --dev        # Load for development (no install)
+    python install_claude_plugin.py              # Show local dev instructions
+    python install_claude_plugin.py --validate   # Validate plugin structure
+    python install_claude_plugin.py --global     # Install to global settings (optional)
+    python install_claude_plugin.py --uninstall  # Remove from global settings
 """
 
 import argparse
@@ -85,16 +90,23 @@ def validate_plugin_structure(workspace: Path) -> bool:
 
 
 def install_marketplace(workspace: Path, claude_dir: Path) -> bool:
-    """Register SLATE marketplace in Claude Code settings."""
+    """Register SLATE marketplace in Claude Code settings (merges, doesn't overwrite)."""
     settings_file = claude_dir / "settings.json"
     settings = {}
 
+    # Read existing settings - preserve all other configuration
     if settings_file.exists():
         try:
-            with open(settings_file) as f:
-                settings = json.load(f)
-        except json.JSONDecodeError:
-            pass
+            with open(settings_file, encoding="utf-8") as f:
+                content = f.read()
+                if content.strip():
+                    settings = json.loads(content)
+                    print(f"Loaded existing settings ({len(settings)} keys)")
+        except json.JSONDecodeError as e:
+            print(f"Warning: Could not parse existing settings.json: {e}")
+            print("Creating new settings file...")
+        except Exception as e:
+            print(f"Warning: Error reading settings.json: {e}")
 
     # Add marketplace to extraKnownMarketplaces
     if "extraKnownMarketplaces" not in settings:
@@ -102,31 +114,26 @@ def install_marketplace(workspace: Path, claude_dir: Path) -> bool:
 
     workspace_str = str(workspace).replace("\\", "/")
 
-    # Local marketplace for development
-    settings["extraKnownMarketplaces"]["slate-local"] = {
-        "source": workspace_str
-    }
-
-    # GitHub marketplace for distribution
-    settings["extraKnownMarketplaces"]["slate"] = {
+    # GitHub marketplace for distribution (matches VS Code plugin manager)
+    settings["extraKnownMarketplaces"]["slate-marketplace"] = {
         "source": {
             "source": "github",
             "repo": "SynchronizedLivingArchitecture/S.L.A.T.E"
         }
     }
 
-    # Enable the local plugin
+    # Enable the plugin
     if "enabledPlugins" not in settings:
         settings["enabledPlugins"] = {}
 
-    settings["enabledPlugins"]["slate@slate-local"] = True
+    settings["enabledPlugins"]["slate@slate-marketplace"] = True
 
     # Write updated settings
     with open(settings_file, "w") as f:
         json.dump(settings, f, indent=2)
 
-    print(f"\nMarketplace 'slate-local' registered at: {workspace_str}")
-    print("Plugin 'slate@slate-local' enabled")
+    print(f"\nMarketplace 'slate-marketplace' registered")
+    print("Plugin 'slate@slate-marketplace' enabled")
 
     return True
 
@@ -148,8 +155,7 @@ def uninstall_marketplace(workspace: Path, claude_dir: Path) -> bool:
 
     # Remove from extraKnownMarketplaces
     if "extraKnownMarketplaces" in settings:
-        settings["extraKnownMarketplaces"].pop("slate-local", None)
-        settings["extraKnownMarketplaces"].pop("slate", None)
+        settings["extraKnownMarketplaces"].pop("slate-marketplace", None)
 
     # Remove from enabledPlugins
     if "enabledPlugins" in settings:
@@ -174,22 +180,23 @@ def dev_load(workspace: Path) -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Install SLATE plugin for Claude Code"
-    )
-    parser.add_argument(
-        "--uninstall",
-        action="store_true",
-        help="Uninstall the plugin marketplace"
+        description="SLATE Claude Code Plugin Manager"
     )
     parser.add_argument(
         "--validate",
         action="store_true",
-        help="Only validate the plugin structure"
+        help="Validate the plugin structure"
     )
     parser.add_argument(
-        "--dev",
+        "--global",
+        dest="install_global",
         action="store_true",
-        help="Show development loading command (no install)"
+        help="Install to global Claude settings (optional, for external access)"
+    )
+    parser.add_argument(
+        "--uninstall",
+        action="store_true",
+        help="Remove from global Claude settings"
     )
     args = parser.parse_args()
 
@@ -212,27 +219,36 @@ def main():
     if args.validate:
         sys.exit(0)
 
-    if args.dev:
-        dev_load(workspace)
-        sys.exit(0)
-
     if args.uninstall:
         if not uninstall_marketplace(workspace, claude_dir):
             sys.exit(1)
-    else:
+        print("\nGlobal marketplace registration removed.")
+        sys.exit(0)
+
+    if args.install_global:
         if not install_marketplace(workspace, claude_dir):
             sys.exit(1)
+        print("\n" + "=" * 40)
+        print("Global Installation Complete!")
+        print("=" * 40)
+        sys.exit(0)
 
+    # Default: Show local development info
     print("\n" + "=" * 40)
-    print("Plugin Installation Complete!")
+    print("LOCAL DEVELOPMENT MODE")
     print("=" * 40)
-    print("\nUsage:")
+    print("\nNo installation needed for local development!")
+    print("The plugin auto-loads because .claude-plugin/plugin.json exists.")
+    print("\nJust run Claude Code in this workspace:")
+    print(f"  cd {workspace}")
+    print("  claude")
+    print("\nAvailable commands:")
     print("  /slate:status     - Check system status")
-    print("  /slate:start      - Start SLATE services")
     print("  /slate:help       - Show all commands")
-    print("\nNote: Plugin loads automatically in this workspace.")
-    print("For other directories, add the marketplace:")
+    print("  /slate-workflow   - Manage task queue")
+    print("\nFor external users (installing from GitHub):")
     print("  /plugin marketplace add SynchronizedLivingArchitecture/S.L.A.T.E")
+    print("  /plugin install slate@slate-marketplace")
 
 
 if __name__ == "__main__":

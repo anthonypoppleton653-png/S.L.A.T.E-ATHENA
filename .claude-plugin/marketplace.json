@@ -17,6 +17,7 @@
         "source": "github",
         "repo": "SynchronizedLivingArchitecture/S.L.A.T.E"
       },
+      "scope": "user",
       "category": "development",
       "strict": false
     }

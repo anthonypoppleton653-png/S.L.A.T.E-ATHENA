@@ -2,14 +2,12 @@
   "$schema": "https://claude.ai/schemas/settings.json",
   "description": "SLATE Claude Code Configuration — Unified Plugin with S.L.A.T.E Mode",
   "version": "5.3.0",
-
   "behavior": {
     "profile": "slate-operator",
     "description": "SLATE System Operator with permission bypass and ActionGuard security",
     "protocolsFile": ".claude/behaviors/slate-protocols.md",
     "behaviorFile": ".claude/behaviors/slate-operator.md"
   },
-
   "permissions": {
     "mode": "bypassWithActionGuard",
     "actionGuardEnabled": true,
@@ -29,30 +27,33 @@
       "mcp__slate__*(*)"
     ]
   },
-
-  "plugin": {
-    "source": "https://raw.githubusercontent.com/SynchronizedLivingArchitecture/S.L.A.T.E/main/.claude-plugin/marketplace.json",
-    "name": "slate",
-    "version": "5.3.0"
+  "plugins": {
+    "local": {
+      "description": "Local plugin auto-loads from .claude-plugin/ directory at project scope",
+      "autoDetect": true
+    },
+    "marketplace": {
+      "description": "For external installs via /plugin install slate@slate-marketplace",
+      "source": {
+        "type": "github",
+        "repo": "SynchronizedLivingArchitecture/S.L.A.T.E"
+      }
+    }
   },
-
-  "enabledPlugins": {
-    "slate": true
-  },
-
   "mcpServers": {
     "slate": {
-      "command": ".venv/Scripts/python.exe",
-      "args": ["slate/mcp_server.py"],
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": [
+        "${workspaceFolder}/slate/mcp_server.py"
+      ],
       "env": {
-        "SLATE_WORKSPACE": "e:/11132025",
-        "PYTHONPATH": "e:/11132025",
+        "SLATE_WORKSPACE": "${workspaceFolder}",
+        "PYTHONPATH": "${workspaceFolder}",
         "SLATE_BEHAVIOR": "operator",
         "SLATE_ACTIONGUARD": "enabled"
       }
     }
   },
-
   "tools": {
     "preferMcp": true,
     "mcpToolPrefix": "slate_",
@@ -71,14 +72,12 @@
       "slate_schematic"
     ]
   },
-
   "runtime": {
     "backend": "auto",
     "k8sEndpoint": "http://127.0.0.1:8083",
     "dockerContainer": "slate",
     "healthCheckInterval": 30000
   },
-
   "protocols": {
     "init": "P001-INIT",
     "execute": "P002-EXECUTE",
@@ -91,12 +90,10 @@
     "k8s": "P009-K8S",
     "autonomous": "P010-AUTONOMOUS"
   },
-
   "hooks": {
     "file": ".claude/hooks.json",
     "enabled": true
   },
-
   "ui": {
     "showRuntimeBadge": true,
     "statusBarEnabled": true,
