@@ -2,8 +2,10 @@
   "mcpServers": {
     "slate": {
       "command": "python",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/slate/mcp_launcher.py"],
+      "args": ["slate/mcp_launcher.py"],
+      "cwd": "${CLAUDE_PLUGIN_ROOT}",
       "env": {
+        "SLATE_PLUGIN_ROOT": "${CLAUDE_PLUGIN_ROOT}",
         "SLATE_BEHAVIOR": "operator",
         "SLATE_ACTIONGUARD": "enabled"
       },

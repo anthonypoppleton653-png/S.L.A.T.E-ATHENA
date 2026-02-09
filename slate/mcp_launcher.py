@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
+# Modified: 2026-02-09T03:10:00Z | Author: Claude Opus 4.5 | Change: Add SLATE_PLUGIN_ROOT env var support
 """
 SLATE MCP Server Launcher
 
 This launcher detects its own location and starts the MCP server with correct paths.
 Works for both local development and marketplace installations.
+
+Path resolution priority:
+1. SLATE_PLUGIN_ROOT environment variable (set by Claude Code plugin system)
+2. __file__ detection (fallback for direct invocation)
 """
 
 import os
@@ -12,10 +17,17 @@ import subprocess
 from pathlib import Path
 
 def main():
-    # Detect workspace root from this file's location
-    launcher_path = Path(__file__).resolve()
-    slate_dir = launcher_path.parent  # slate/
-    workspace_root = slate_dir.parent  # project root
+    # Detect workspace root - prefer env var if set by Claude Code
+    plugin_root = os.environ.get("SLATE_PLUGIN_ROOT")
+
+    if plugin_root:
+        workspace_root = Path(plugin_root)
+        slate_dir = workspace_root / "slate"
+    else:
+        # Fallback: detect from this file's location
+        launcher_path = Path(__file__).resolve()
+        slate_dir = launcher_path.parent  # slate/
+        workspace_root = slate_dir.parent  # project root
 
     # Find the MCP server
     mcp_server = slate_dir / "mcp_server.py"
