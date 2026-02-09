@@ -14,8 +14,8 @@
         "name": "Synchronized Living Architecture"
       },
       "source": {
-        "source": "url",
-        "url": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E"
+        "source": "github",
+        "repo": "SynchronizedLivingArchitecture/S.L.A.T.E"
       },
       "category": "development",
       "strict": false
