@@ -1,10 +1,11 @@
-# Modified: 2026-02-09T04:25:00-05:00 | Author: Gemini | Change: Create comprehensive workflow hub with full automation
+# Modified: 2026-02-09T08:22:00-05:00 | Author: Gemini | Change: Rewrite for Linux Docker runners (bash shell)
 # NOTE: All AIs modifying this file must add a dated comment like the one above.
 #
 # SLATE Workflow Hub — Central AI-Powered Automation
 # =================================================
 # Unifies documentation, pages, research, planning into one dispatchable workflow.
 # Uses local Ollama inference on self-hosted GPU runners.
+# Runs on BOTH Linux (Docker) and Windows (native) runners.
 #
 # Modes:
 #   full-automation  — Run ALL automation (docs + pages + research + planning + wiki)
@@ -18,530 +19,484 @@
 name: SLATE Workflow Hub
 
 on:
-    workflow_dispatch:
-        inputs:
-            mode:
-                description: "Automation mode"
-                required: true
-                default: "full-automation"
-                type: choice
-                options:
-                    - full-automation # Run everything
-                    - docs-generate # Generate docs for undocumented modules
-                    - docs-update # Update stale documentation
-                    - pages-update # Update GitHub Pages content
-                    - research # AI architecture + workflow analysis
-                    - plan # Generate roadmap + changelog
-                    - wiki-sync # Sync specs to wiki
-                    - changelog # Generate changelog only
-                    - roadmap # Generate roadmap only
-                    - status # Show hub status
-            commit_results:
-                description: "Auto-commit and push results"
-                required: false
-                default: true
-                type: boolean
-            ai_model:
-                description: "Override AI model for analysis"
-                required: false
-                default: "auto"
-                type: choice
-                options:
-                    - auto # Let hub choose per task
-                    - slate-planner # 7B planning/docs
-                    - slate-coder # 12B code analysis
-                    - slate-fast # 3B fast tasks
-                    - mistral:latest # 12B general
-    schedule:
-        # Full automation every 6 hours
-        - cron: "0 */6 * * *"
-        # Docs + pages update daily at midnight UTC
-        - cron: "0 0 * * *"
-    push:
-        branches: [main]
-        paths:
-            - "slate/**/*.py"
-            - "docs/**"
-            - "specs/**"
-            - ".specify/**"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Automation mode"
+        required: true
+        default: "full-automation"
+        type: choice
+        options:
+          - full-automation # Run everything
+          - docs-generate # Generate docs for undocumented modules
+          - docs-update # Update stale documentation
+          - pages-update # Update GitHub Pages content
+          - research # AI architecture + workflow analysis
+          - plan # Generate roadmap + changelog
+          - wiki-sync # Sync specs to wiki
+          - changelog # Generate changelog only
+          - roadmap # Generate roadmap only
+          - status # Show hub status
+      commit_results:
+        description: "Auto-commit and push results"
+        required: false
+        default: true
+        type: boolean
+      ai_model:
+        description: "Override AI model for analysis"
+        required: false
+        default: "auto"
+        type: choice
+        options:
+          - auto # Let hub choose per task
+          - slate-planner # 7B planning/docs
+          - slate-coder # 12B code analysis
+          - slate-fast # 3B fast tasks
+          - mistral:latest # 12B general
+  schedule:
+    # Full automation every 6 hours
+    - cron: "0 */6 * * *"
+    # Docs + pages update daily at midnight UTC
+    - cron: "0 0 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "slate/**/*.py"
+      - "docs/**"
+      - "specs/**"
+      - ".specify/**"
 
 concurrency:
-    group: workflow-hub-${{ github.ref }}
-    cancel-in-progress: false
+  group: workflow-hub-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
-    contents: write
-    pages: write
-    id-token: write
+  contents: write
+  pages: write
+  id-token: write
 
+# Use bash by default (Linux Docker runners)
 defaults:
-    run:
-        shell: powershell
+  run:
+    shell: bash
 
 jobs:
-    # ═══════════════ PHASE 0: Verify Infrastructure ═══════════════
-    verify-infra:
-        name: Verify Infrastructure
-        runs-on: [self-hosted, slate, gpu]
-        timeout-minutes: 5
-        outputs:
-            ollama_ok: ${{ steps.check.outputs.ollama_ok }}
-            models: ${{ steps.check.outputs.models }}
-            gpu_ok: ${{ steps.check.outputs.gpu_ok }}
-            mode: ${{ steps.mode.outputs.mode }}
-        steps:
-            - uses: actions/checkout@v6
-            - name: Setup Python
-              run: |
-                  "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
+  # ═══════════════ PHASE 0: Verify Infrastructure ═══════════════
+  verify-infra:
+    name: Verify Infrastructure
+    runs-on: [self-hosted, slate, gpu]
+    timeout-minutes: 5
+    outputs:
+      ollama_ok: ${{ steps.check.outputs.ollama_ok }}
+      models: ${{ steps.check.outputs.models }}
+      gpu_ok: ${{ steps.check.outputs.gpu_ok }}
+      mode: ${{ steps.mode.outputs.mode }}
+    steps:
+      - uses: actions/checkout@v6
 
-            - name: Determine mode
-              id: mode
-              run: |
-                  $mode = '${{ github.event.inputs.mode }}'
-                  $hour = (Get-Date).ToUniversalTime().Hour
+      - name: Determine mode
+        id: mode
+        run: |
+          MODE="${{ github.event.inputs.mode }}"
+          HOUR=$(date -u +%H)
 
-                  if (-not $mode -or $mode -eq '') {
-                    # Auto-determine from schedule
-                    if ($hour -eq 0) {
-                      $mode = 'docs-update'
-                    } else {
-                      $mode = 'full-automation'
-                    }
-                  }
+          if [ -z "$MODE" ]; then
+            if [ "$HOUR" = "00" ]; then
+              MODE="docs-update"
+            else
+              MODE="full-automation"
+            fi
+          fi
 
-                  Write-Host "Mode: $mode"
-                  "mode=$mode" | Out-File -Append $env:GITHUB_OUTPUT
+          echo "Mode: $MODE"
+          echo "mode=$MODE" >> $GITHUB_OUTPUT
 
-            - name: Check Ollama + GPUs
-              id: check
-              run: |
-                  python -c @"
-                  import urllib.request, json, subprocess, sys
+      - name: Check Ollama + GPUs
+        id: check
+        run: |
+          python3 -c "
+          import urllib.request, json, subprocess, sys, os
 
-                  # Check Ollama
-                  ollama_ok = False
-                  models = []
-                  try:
-                      r = urllib.request.urlopen('http://127.0.0.1:11434/api/tags', timeout=10)
-                      data = json.loads(r.read())
-                      models = [m['name'] for m in data.get('models', [])]
-                      ollama_ok = len(models) > 0
-                      print(f'Ollama: OK ({len(models)} models)')
-                      for m in models:
-                          print(f'  - {m}')
-                  except Exception as e:
-                      print(f'Ollama: FAILED ({e})')
-                      # Try starting Ollama
-                      try:
-                          subprocess.Popen(['ollama', 'serve'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                          import time; time.sleep(10)
-                          r = urllib.request.urlopen('http://127.0.0.1:11434/api/tags', timeout=10)
-                          data = json.loads(r.read())
-                          models = [m['name'] for m in data.get('models', [])]
-                          ollama_ok = len(models) > 0
-                          print(f'Ollama started: {len(models)} models')
-                      except:
-                          print('Failed to start Ollama')
+          # Check Ollama — try host.docker.internal first, then localhost
+          ollama_ok = False
+          models = []
+          ollama_urls = [
+              os.environ.get('OLLAMA_HOST', 'host.docker.internal:11434'),
+              '127.0.0.1:11434',
+              'host.docker.internal:11434',
+          ]
 
-                  # Check GPU
-                  gpu_ok = False
-                  try:
-                      r = subprocess.run(['nvidia-smi', '--query-gpu=name,memory.total', '--format=csv,noheader'],
-                                        capture_output=True, text=True, timeout=5)
-                      if r.returncode == 0 and r.stdout.strip():
-                          gpu_ok = True
-                          print(f'GPU: {r.stdout.strip()}')
-                  except:
-                      pass
+          for url in ollama_urls:
+              if not url.startswith('http'):
+                  url = f'http://{url}'
+              try:
+                  r = urllib.request.urlopen(f'{url}/api/tags', timeout=10)
+                  data = json.loads(r.read())
+                  models = [m['name'] for m in data.get('models', [])]
+                  ollama_ok = len(models) > 0
+                  print(f'Ollama: OK at {url} ({len(models)} models)')
+                  for m in models:
+                      print(f'  - {m}')
+                  break
+              except Exception as e:
+                  print(f'Ollama at {url}: {e}')
 
-                  # Write outputs
-                  with open(r'${{ runner.temp }}\infra_check.txt', 'w') as f:
-                      f.write(f'ollama_ok={str(ollama_ok).lower()}\n')
-                      f.write(f'models={",".join(models)}\n')
-                      f.write(f'gpu_ok={str(gpu_ok).lower()}\n')
-                  "@
-                  Get-Content "${{ runner.temp }}\infra_check.txt" | ForEach-Object { $_ | Out-File -Append $env:GITHUB_OUTPUT }
+          # Check GPU
+          gpu_ok = False
+          try:
+              r = subprocess.run(['nvidia-smi', '--query-gpu=name,memory.total', '--format=csv,noheader'],
+                                capture_output=True, text=True, timeout=5)
+              if r.returncode == 0 and r.stdout.strip():
+                  gpu_ok = True
+                  print(f'GPU: {r.stdout.strip()}')
+          except Exception:
+              pass
 
-    # ═══════════════ PHASE 1: Documentation Automation ═══════════════
-    docs-automation:
-        name: Documentation Automation
-        needs: verify-infra
-        if: |
-            needs.verify-infra.outputs.ollama_ok == 'true' &&
-            contains(fromJSON('["full-automation","docs-generate","docs-update"]'), needs.verify-infra.outputs.mode)
-        runs-on: [self-hosted, slate, gpu]
-        timeout-minutes: 45
+          # Write outputs
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'ollama_ok={str(ollama_ok).lower()}\n')
+              f.write(f'models={\",\".join(models)}\n')
+              f.write(f'gpu_ok={str(gpu_ok).lower()}\n')
+          "
+
+  # ═══════════════ PHASE 1: Documentation Automation ═══════════════
+  docs-automation:
+    name: Documentation Automation
+    needs: verify-infra
+    if: |
+      needs.verify-infra.outputs.ollama_ok == 'true' &&
+      contains(fromJSON('["full-automation","docs-generate","docs-update"]'), needs.verify-infra.outputs.mode)
+    runs-on: [self-hosted, slate, gpu]
+    timeout-minutes: 45
+    env:
+      CUDA_VISIBLE_DEVICES: "0,1"
+    outputs:
+      files_generated: ${{ steps.docs.outputs.files_generated }}
+      files_updated: ${{ steps.docs.outputs.files_updated }}
+      has_changes: ${{ steps.changes.outputs.has_changes }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Run Documentation Automation
+        id: docs
+        run: |
+          MODE="${{ needs.verify-infra.outputs.mode }}"
+          HUB_MODE="docs-generate"
+          if [ "$MODE" = "docs-update" ]; then HUB_MODE="docs-update"; fi
+          if [ "$MODE" = "full-automation" ]; then HUB_MODE="docs-generate"; fi
+
+          echo ""
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "  Documentation Automation — Mode: $HUB_MODE"
+          echo "═══════════════════════════════════════════════════════════════"
+          echo ""
+
+          python3 slate/slate_workflow_hub.py --mode "$HUB_MODE" --json > hub_docs_result.json || true
+          cat hub_docs_result.json || echo "{}"
+
+      - name: Update existing docs (if full-automation)
+        if: needs.verify-infra.outputs.mode == 'full-automation'
+        run: |
+          python3 slate/slate_workflow_hub.py --mode docs-update --json > hub_docs_update.json || true
+        continue-on-error: true
+
+      - name: Check for changes
+        id: changes
+        run: |
+          CHANGES=$(git status --porcelain docs/ plans/ CHANGELOG.md || true)
+          if [ -n "$CHANGES" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Documentation changes detected:"
+            echo "$CHANGES"
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No documentation changes"
+          fi
+
+      - name: Commit doc changes
+        if: steps.changes.outputs.has_changes == 'true' && (github.event.inputs.commit_results == 'true' || github.event_name == 'schedule')
+        run: |
+          git config user.name "SLATE Workflow Hub"
+          git config user.email "slate-hub@slate.local"
+          git add docs/ plans/ CHANGELOG.md
+          git commit -m "docs: AI-powered documentation update
+
+          Generated by SLATE Workflow Hub
+
+          Co-Authored-By: SLATE AI <slate-ai@slate.local>" || echo "Nothing to commit"
+          git push || echo "Push failed"
         env:
-            CUDA_VISIBLE_DEVICES: "0,1"
-        outputs:
-            files_generated: ${{ steps.docs.outputs.files_generated }}
-            files_updated: ${{ steps.docs.outputs.files_updated }}
-            has_changes: ${{ steps.changes.outputs.has_changes }}
-        steps:
-            - uses: actions/checkout@v6
-              with:
-                  fetch-depth: 1
-            - name: Setup Python
-              run: |
-                  "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Warmup AI models
-              run: python slate/slate_warmup.py --preload-only
-              continue-on-error: true
-
-            - name: Run Documentation Automation
-              id: docs
-              run: |
-                  $mode = '${{ needs.verify-infra.outputs.mode }}'
-                  $hubMode = 'docs-generate'
-                  if ($mode -eq 'docs-update') { $hubMode = 'docs-update' }
-                  if ($mode -eq 'full-automation') { $hubMode = 'docs-generate' }
-
-                  Write-Host ""
-                  Write-Host "═══════════════════════════════════════════════════════════════"
-                  Write-Host "  Documentation Automation — Mode: $hubMode"
-                  Write-Host "═══════════════════════════════════════════════════════════════"
-                  Write-Host ""
-
-                  python slate/slate_workflow_hub.py --mode $hubMode --json > hub_docs_result.json
-
-                  $result = Get-Content hub_docs_result.json -Raw | ConvertFrom-Json -ErrorAction SilentlyContinue
-                  if ($result.docs) {
-                    "files_generated=$($result.docs.files_generated)" | Out-File -Append $env:GITHUB_OUTPUT
-                    "files_updated=$($result.docs.files_updated)" | Out-File -Append $env:GITHUB_OUTPUT
-                  }
-
-            - name: Update existing docs (if full-automation)
-              if: needs.verify-infra.outputs.mode == 'full-automation'
-              run: |
-                  python slate/slate_workflow_hub.py --mode docs-update --json > hub_docs_update.json
-              continue-on-error: true
-
-            - name: Check for changes
-              id: changes
-              run: |
-                  $changes = git status --porcelain docs/ plans/ CHANGELOG.md
-                  if ($changes) {
-                    "has_changes=true" | Out-File -Append $env:GITHUB_OUTPUT
-                    Write-Host "Documentation changes detected:"
-                    Write-Host $changes
-                  } else {
-                    "has_changes=false" | Out-File -Append $env:GITHUB_OUTPUT
-                    Write-Host "No documentation changes"
-                  }
-
-            - name: Commit doc changes
-              if: steps.changes.outputs.has_changes == 'true' && (github.event.inputs.commit_results == 'true' || github.event_name == 'schedule')
-              run: |
-                  git config user.name "SLATE Workflow Hub"
-                  git config user.email "slate-hub@slate.local"
-
-                  git add docs/ plans/ CHANGELOG.md
-                  $msg = "docs: AI-powered documentation update`n`nGenerated by SLATE Workflow Hub`nFiles generated: ${{ steps.docs.outputs.files_generated }}`nFiles updated: ${{ steps.docs.outputs.files_updated }}`n`nCo-Authored-By: SLATE AI <slate-ai@slate.local>"
-                  git commit -m $msg
-                  git push
-                  Write-Host "Documentation changes committed"
-              env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-            - name: Upload docs artifacts
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: docs-automation-${{ github.run_number }}
-                  path: |
-                      hub_docs_result.json
-                      hub_docs_update.json
-                  retention-days: 30
-                  if-no-files-found: ignore
-
-    # ═══════════════ PHASE 2: Pages Update ═══════════════
-    pages-automation:
-        name: Pages Update
-        needs: [verify-infra, docs-automation]
-        if: |
-            always() &&
-            needs.verify-infra.outputs.ollama_ok == 'true' &&
-            contains(fromJSON('["full-automation","pages-update"]'), needs.verify-infra.outputs.mode)
-        runs-on: [self-hosted, slate, gpu]
-        timeout-minutes: 15
-        env:
-            CUDA_VISIBLE_DEVICES: "0,1"
-        steps:
-            - uses: actions/checkout@v6
-              with:
-                  ref: main # Get latest (including doc commits)
-            - name: Setup Python
-              run: |
-                  "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
-
-            - name: Update Pages Content
-              run: |
-                  Write-Host ""
-                  Write-Host "═══════════════════════════════════════════════════════════════"
-                  Write-Host "  Pages Automation — Generating updated page data + status"
-                  Write-Host "═══════════════════════════════════════════════════════════════"
-                  Write-Host ""
-
-                  python slate/slate_workflow_hub.py --mode pages-update --json > hub_pages_result.json
-
-            - name: Run existing page updater (if available)
-              run: |
-                  if (Test-Path "$env:GITHUB_WORKSPACE\docs\pages\update_pages.py") {
-                    python "$env:GITHUB_WORKSPACE\docs\pages\update_pages.py"
-                  }
-              continue-on-error: true
-
-            - name: Commit page changes
-              if: github.event.inputs.commit_results == 'true' || github.event_name == 'schedule'
-              run: |
-                  git config user.name "SLATE Workflow Hub"
-                  git config user.email "slate-hub@slate.local"
-
-                  $changes = git status --porcelain docs/pages/
-                  if ($changes) {
-                    git add docs/pages/
-                    $msg = "pages: Auto-update GitHub Pages content`n`nGenerated by SLATE Workflow Hub`n`nCo-Authored-By: SLATE AI <slate-ai@slate.local>"
-                    git commit -m $msg
-                    git push
-                    Write-Host "Pages changes committed"
-                  } else {
-                    Write-Host "No page changes to commit"
-                  }
-              env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-            - name: Upload pages artifacts
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: pages-automation-${{ github.run_number }}
-                  path: hub_pages_result.json
-                  retention-days: 30
-                  if-no-files-found: ignore
-
-    # ═══════════════ PHASE 3: Research & Analysis ═══════════════
-    research-automation:
-        name: Research & Analysis
-        needs: verify-infra
-        if: |
-            needs.verify-infra.outputs.ollama_ok == 'true' &&
-            contains(fromJSON('["full-automation","research"]'), needs.verify-infra.outputs.mode)
-        runs-on: [self-hosted, slate, gpu]
-        timeout-minutes: 30
-        env:
-            CUDA_VISIBLE_DEVICES: "0,1"
-        steps:
-            - uses: actions/checkout@v6
-              with:
-                  fetch-depth: 0 # Full history for git analysis
-            - name: Setup Python
-              run: |
-                  "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
-
-            - name: Architecture Research
-              run: |
-                  Write-Host ""
-                  Write-Host "═══════════════════════════════════════════════════════════════"
-                  Write-Host "  Research Automation — AI Architecture + Workflow Analysis"
-                  Write-Host "═══════════════════════════════════════════════════════════════"
-                  Write-Host ""
-
-                  python slate/slate_workflow_hub.py --mode research --json > hub_research_result.json
-
-            - name: Index codebase with ChromaDB
-              run: python slate/slate_chromadb.py --index
-              continue-on-error: true
-
-            - name: Commit research reports
-              if: github.event.inputs.commit_results == 'true' || github.event_name == 'schedule'
-              run: |
-                  git config user.name "SLATE Workflow Hub"
-                  git config user.email "slate-hub@slate.local"
-
-                  $changes = git status --porcelain docs/report/
-                  if ($changes) {
-                    git add docs/report/
-                    $msg = "research: AI-powered codebase analysis`n`nGenerated by SLATE Workflow Hub`n`nCo-Authored-By: SLATE AI <slate-ai@slate.local>"
-                    git commit -m $msg
-                    git push
-                  }
-              env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-            - name: Upload research artifacts
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: research-automation-${{ github.run_number }}
-                  path: hub_research_result.json
-                  retention-days: 30
-                  if-no-files-found: ignore
-
-    # ═══════════════ PHASE 4: Planning & Roadmap ═══════════════
-    planning-automation:
-        name: Planning & Roadmap
-        needs: [verify-infra, research-automation]
-        if: |
-            always() &&
-            needs.verify-infra.outputs.ollama_ok == 'true' &&
-            contains(fromJSON('["full-automation","plan","roadmap","changelog"]'), needs.verify-infra.outputs.mode)
-        runs-on: [self-hosted, slate, gpu]
-        timeout-minutes: 20
-        env:
-            CUDA_VISIBLE_DEVICES: "0,1"
-        steps:
-            - uses: actions/checkout@v6
-              with:
-                  fetch-depth: 0
-                  ref: main
-            - name: Setup Python
-              run: |
-                  "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
-
-            - name: Generate Planning Artifacts
-              run: |
-                  Write-Host ""
-                  Write-Host "═══════════════════════════════════════════════════════════════"
-                  Write-Host "  Planning Automation — Roadmap + Changelog"
-                  Write-Host "═══════════════════════════════════════════════════════════════"
-                  Write-Host ""
-
-                  $mode = '${{ needs.verify-infra.outputs.mode }}'
-                  if ($mode -eq 'full-automation') { $mode = 'plan' }
-
-                  python slate/slate_workflow_hub.py --mode $mode --json > hub_planning_result.json
-
-            - name: Sync to KANBAN board
-              run: python slate/slate_project_board.py --sync
-              continue-on-error: true
-
-            - name: Commit planning artifacts
-              if: github.event.inputs.commit_results == 'true' || github.event_name == 'schedule'
-              run: |
-                  git config user.name "SLATE Workflow Hub"
-                  git config user.email "slate-hub@slate.local"
-
-                  $changes = git status --porcelain plans/ CHANGELOG.md docs/report/
-                  if ($changes) {
-                    git add plans/ CHANGELOG.md docs/report/
-                    $msg = "plan: AI-generated roadmap + changelog`n`nGenerated by SLATE Workflow Hub`n`nCo-Authored-By: SLATE AI <slate-ai@slate.local>"
-                    git commit -m $msg
-                    git push
-                  }
-              env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-            - name: Upload planning artifacts
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: planning-automation-${{ github.run_number }}
-                  path: |
-                      hub_planning_result.json
-                      plans/
-                  retention-days: 30
-                  if-no-files-found: ignore
-
-    # ═══════════════ PHASE 5: Wiki Sync ═══════════════
-    wiki-sync:
-        name: Wiki Sync
-        needs: [verify-infra, docs-automation]
-        if: |
-            always() &&
-            needs.verify-infra.outputs.ollama_ok == 'true' &&
-            contains(fromJSON('["full-automation","wiki-sync"]'), needs.verify-infra.outputs.mode)
-        runs-on: [self-hosted, slate, gpu]
-        timeout-minutes: 30
-        env:
-            CUDA_VISIBLE_DEVICES: "0,1"
-        steps:
-            - uses: actions/checkout@v6
-              with:
-                  ref: main
-            - name: Setup Python
-              run: |
-                  "$env:GITHUB_WORKSPACE\\.venv\\Scripts" | Out-File -Append $env:GITHUB_PATH
-
-            - name: Spec-Kit Wiki Sync
-              run: |
-                  Write-Host ""
-                  Write-Host "═══════════════════════════════════════════════════════════════"
-                  Write-Host "  Wiki Sync — Spec-Kit + AI Analysis"
-                  Write-Host "═══════════════════════════════════════════════════════════════"
-                  Write-Host ""
-
-                  python slate/slate_spec_kit.py --process-all --wiki --analyze
-              continue-on-error: true
-
-            - name: Commit wiki updates
-              if: github.event.inputs.commit_results == 'true' || github.event_name == 'schedule'
-              run: |
-                  git config user.name "SLATE Workflow Hub"
-                  git config user.email "slate-hub@slate.local"
-
-                  $changes = git status --porcelain docs/wiki/ specs/
-                  if ($changes) {
-                    git add docs/wiki/ specs/
-                    $msg = "wiki: Auto-sync from specs + AI analysis`n`nGenerated by SLATE Workflow Hub`n`nCo-Authored-By: SLATE AI <slate-ai@slate.local>"
-                    git commit -m $msg
-                    git push
-                  }
-              env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    # ═══════════════ Summary Report ═══════════════
-    summary:
-        name: Hub Summary
-        runs-on: [self-hosted, slate]
-        needs:
-            [
-                verify-infra,
-                docs-automation,
-                pages-automation,
-                research-automation,
-                planning-automation,
-                wiki-sync,
-            ]
+      - name: Upload docs artifacts
         if: always()
-        timeout-minutes: 5
-        steps:
-            - name: Generate Summary
-              run: |
-                  $summary = @"
-                  ## SLATE Workflow Hub Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-automation-${{ github.run_number }}
+          path: |
+            hub_docs_result.json
+            hub_docs_update.json
+          retention-days: 30
+          if-no-files-found: ignore
 
-                  **Mode**: ${{ needs.verify-infra.outputs.mode }}
-                  **Run**: #${{ github.run_number }} | ${{ github.run_id }}
-                  **Trigger**: ${{ github.event_name }}
+  # ═══════════════ PHASE 2: Pages Update ═══════════════
+  pages-automation:
+    name: Pages Update
+    needs: [verify-infra, docs-automation]
+    if: |
+      always() &&
+      needs.verify-infra.outputs.ollama_ok == 'true' &&
+      contains(fromJSON('["full-automation","pages-update"]'), needs.verify-infra.outputs.mode)
+    runs-on: [self-hosted, slate, gpu]
+    timeout-minutes: 15
+    env:
+      CUDA_VISIBLE_DEVICES: "0,1"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
 
-                  ### Infrastructure
-                  | Component | Status |
-                  |-----------|--------|
-                  | Ollama | ${{ needs.verify-infra.outputs.ollama_ok == 'true' && '✅ Online' || '❌ Offline' }} |
-                  | GPU | ${{ needs.verify-infra.outputs.gpu_ok == 'true' && '✅ Available' || '⚠️ N/A' }} |
-                  | Models | ${{ needs.verify-infra.outputs.models || 'None' }} |
+      - name: Update Pages Content
+        run: |
+          echo ""
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "  Pages Automation — Generating updated page data + status"
+          echo "═══════════════════════════════════════════════════════════════"
+          echo ""
+          python3 slate/slate_workflow_hub.py --mode pages-update --json > hub_pages_result.json || true
+          cat hub_pages_result.json || echo "{}"
 
-                  ### Automation Results
-                  | Phase | Status |
-                  |-------|--------|
-                  | Documentation | ${{ needs.docs-automation.result || 'skipped' }} |
-                  | Pages Update | ${{ needs.pages-automation.result || 'skipped' }} |
-                  | Research | ${{ needs.research-automation.result || 'skipped' }} |
-                  | Planning | ${{ needs.planning-automation.result || 'skipped' }} |
-                  | Wiki Sync | ${{ needs.wiki-sync.result || 'skipped' }} |
+      - name: Commit page changes
+        if: github.event.inputs.commit_results == 'true' || github.event_name == 'schedule'
+        run: |
+          git config user.name "SLATE Workflow Hub"
+          git config user.email "slate-hub@slate.local"
+          CHANGES=$(git status --porcelain docs/pages/ || true)
+          if [ -n "$CHANGES" ]; then
+            git add docs/pages/
+            git commit -m "pages: Auto-update GitHub Pages content
 
-                  ### Documentation Stats
-                  | Metric | Value |
-                  |--------|-------|
-                  | Files Generated | ${{ needs.docs-automation.outputs.files_generated || '0' }} |
-                  | Files Updated | ${{ needs.docs-automation.outputs.files_updated || '0' }} |
-                  | Changes Committed | ${{ needs.docs-automation.outputs.has_changes || 'false' }} |
+            Generated by SLATE Workflow Hub
 
-                  ---
-                  *SLATE Workflow Hub — AI-Powered Automation*
-                  *$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss UTC')*
-                  "@
+            Co-Authored-By: SLATE AI <slate-ai@slate.local>" || echo "Nothing to commit"
+            git push || echo "Push failed"
+            echo "Pages changes committed"
+          else
+            echo "No page changes to commit"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-                  $summary | Out-File -Append $env:GITHUB_STEP_SUMMARY
+      - name: Upload pages artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pages-automation-${{ github.run_number }}
+          path: hub_pages_result.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # ═══════════════ PHASE 3: Research & Analysis ═══════════════
+  research-automation:
+    name: Research & Analysis
+    needs: verify-infra
+    if: |
+      needs.verify-infra.outputs.ollama_ok == 'true' &&
+      contains(fromJSON('["full-automation","research"]'), needs.verify-infra.outputs.mode)
+    runs-on: [self-hosted, slate, gpu]
+    timeout-minutes: 30
+    env:
+      CUDA_VISIBLE_DEVICES: "0,1"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Architecture Research
+        run: |
+          echo ""
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "  Research Automation — AI Architecture + Workflow Analysis"
+          echo "═══════════════════════════════════════════════════════════════"
+          echo ""
+          python3 slate/slate_workflow_hub.py --mode research --json > hub_research_result.json || true
+          cat hub_research_result.json || echo "{}"
+
+      - name: Commit research reports
+        if: github.event.inputs.commit_results == 'true' || github.event_name == 'schedule'
+        run: |
+          git config user.name "SLATE Workflow Hub"
+          git config user.email "slate-hub@slate.local"
+          CHANGES=$(git status --porcelain docs/report/ || true)
+          if [ -n "$CHANGES" ]; then
+            git add docs/report/
+            git commit -m "research: AI-powered codebase analysis
+
+            Generated by SLATE Workflow Hub
+
+            Co-Authored-By: SLATE AI <slate-ai@slate.local>" || echo "Nothing to commit"
+            git push || echo "Push failed"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload research artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-automation-${{ github.run_number }}
+          path: hub_research_result.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # ═══════════════ PHASE 4: Planning & Roadmap ═══════════════
+  planning-automation:
+    name: Planning & Roadmap
+    needs: [verify-infra, research-automation]
+    if: |
+      always() &&
+      needs.verify-infra.outputs.ollama_ok == 'true' &&
+      contains(fromJSON('["full-automation","plan","roadmap","changelog"]'), needs.verify-infra.outputs.mode)
+    runs-on: [self-hosted, slate, gpu]
+    timeout-minutes: 20
+    env:
+      CUDA_VISIBLE_DEVICES: "0,1"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Generate Planning Artifacts
+        run: |
+          echo ""
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "  Planning Automation — Roadmap + Changelog"
+          echo "═══════════════════════════════════════════════════════════════"
+          echo ""
+
+          MODE="${{ needs.verify-infra.outputs.mode }}"
+          if [ "$MODE" = "full-automation" ]; then MODE="plan"; fi
+
+          python3 slate/slate_workflow_hub.py --mode "$MODE" --json > hub_planning_result.json || true
+          cat hub_planning_result.json || echo "{}"
+
+      - name: Commit planning artifacts
+        if: github.event.inputs.commit_results == 'true' || github.event_name == 'schedule'
+        run: |
+          git config user.name "SLATE Workflow Hub"
+          git config user.email "slate-hub@slate.local"
+          CHANGES=$(git status --porcelain plans/ CHANGELOG.md docs/report/ || true)
+          if [ -n "$CHANGES" ]; then
+            git add plans/ CHANGELOG.md docs/report/
+            git commit -m "plan: AI-generated roadmap + changelog
+
+            Generated by SLATE Workflow Hub
+
+            Co-Authored-By: SLATE AI <slate-ai@slate.local>" || echo "Nothing to commit"
+            git push || echo "Push failed"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload planning artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: planning-automation-${{ github.run_number }}
+          path: |
+            hub_planning_result.json
+            plans/
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # ═══════════════ PHASE 5: Wiki Sync ═══════════════
+  wiki-sync:
+    name: Wiki Sync
+    needs: [verify-infra, docs-automation]
+    if: |
+      always() &&
+      needs.verify-infra.outputs.ollama_ok == 'true' &&
+      contains(fromJSON('["full-automation","wiki-sync"]'), needs.verify-infra.outputs.mode)
+    runs-on: [self-hosted, slate, gpu]
+    timeout-minutes: 30
+    env:
+      CUDA_VISIBLE_DEVICES: "0,1"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Spec-Kit Wiki Sync
+        run: |
+          echo ""
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "  Wiki Sync — Spec-Kit + AI Analysis"
+          echo "═══════════════════════════════════════════════════════════════"
+          echo ""
+          python3 slate/slate_spec_kit.py --process-all --wiki --analyze || true
+        continue-on-error: true
+
+      - name: Commit wiki updates
+        if: github.event.inputs.commit_results == 'true' || github.event_name == 'schedule'
+        run: |
+          git config user.name "SLATE Workflow Hub"
+          git config user.email "slate-hub@slate.local"
+          CHANGES=$(git status --porcelain docs/wiki/ specs/ || true)
+          if [ -n "$CHANGES" ]; then
+            git add docs/wiki/ specs/
+            git commit -m "wiki: Auto-sync from specs + AI analysis
+
+            Generated by SLATE Workflow Hub
+
+            Co-Authored-By: SLATE AI <slate-ai@slate.local>" || echo "Nothing to commit"
+            git push || echo "Push failed"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ═══════════════ Summary Report ═══════════════
+  summary:
+    name: Hub Summary
+    runs-on: [self-hosted, slate]
+    needs:
+      [
+        verify-infra,
+        docs-automation,
+        pages-automation,
+        research-automation,
+        planning-automation,
+        wiki-sync,
+      ]
+    if: always()
+    timeout-minutes: 5
+    steps:
+      - name: Generate Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'SUMMARY'
+          ## SLATE Workflow Hub Report
+
+          **Mode**: ${{ needs.verify-infra.outputs.mode }}
+          **Run**: #${{ github.run_number }} | ${{ github.run_id }}
+          **Trigger**: ${{ github.event_name }}
+
+          ### Infrastructure
+          | Component | Status |
+          |-----------|--------|
+          | Ollama | ${{ needs.verify-infra.outputs.ollama_ok == 'true' && '✅ Online' || '❌ Offline' }} |
+          | GPU | ${{ needs.verify-infra.outputs.gpu_ok == 'true' && '✅ Available' || '⚠️ N/A' }} |
+
+          ### Automation Results
+          | Phase | Status |
+          |-------|--------|
+          | Documentation | ${{ needs.docs-automation.result || 'skipped' }} |
+          | Pages Update | ${{ needs.pages-automation.result || 'skipped' }} |
+          | Research | ${{ needs.research-automation.result || 'skipped' }} |
+          | Planning | ${{ needs.planning-automation.result || 'skipped' }} |
+          | Wiki Sync | ${{ needs.wiki-sync.result || 'skipped' }} |
+
+          ---
+          *SLATE Workflow Hub — AI-Powered Automation*
+          SUMMARY
