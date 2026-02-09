@@ -1,5 +1,5 @@
 # tests/test_unified_ai_backend.py
-# Modified: 2026-02-10T12:15:00Z | Author: COPILOT | Change: Fix incorrect class names to match actual module exports
+# Modified: 2026-02-09T22:45:00Z | Author: COPILOT | Change: Add LMStudioProvider to import and existence tests (6 providers)
 
 import pytest
 from unittest.mock import patch, MagicMock
@@ -14,21 +14,24 @@ def test_module_importable():
         GeminiCliProvider,
         CopilotCliProvider,
         FoundryProvider,
+        LMStudioProvider,
         InferenceResult,
         ProviderStatus,
     )
     assert UnifiedAIBackend is not None
     assert OllamaProvider is not None
+    assert LMStudioProvider is not None
 
 
 def test_provider_classes_exist():
-    """Verify all 5 provider classes exist."""
+    """Verify all 6 provider classes exist."""
     from slate.unified_ai_backend import (
         OllamaProvider,
         ClaudeCodeProvider,
         GeminiCliProvider,
         CopilotCliProvider,
         FoundryProvider,
+        LMStudioProvider,
     )
     # All should be classes
     assert callable(OllamaProvider)
@@ -36,6 +39,7 @@ def test_provider_classes_exist():
     assert callable(GeminiCliProvider)
     assert callable(CopilotCliProvider)
     assert callable(FoundryProvider)
+    assert callable(LMStudioProvider)
 
 
 def test_inference_result_dataclass():

@@ -52,6 +52,8 @@ services:
       - SLATE_MODE=prod
       - SLATE_DOCKER=1
       - OLLAMA_HOST=ollama:11434
+      # Modified: 2026-02-09T22:00:00Z | Author: COPILOT | Change: Add LMSTUDIO_HOST env var for LM Studio provider
+      - LMSTUDIO_HOST=http://host.docker.internal:1234
       - CHROMADB_HOST=chromadb
       - CHROMADB_PORT=8000
       - PYTHONPATH=/slate:/workspace
