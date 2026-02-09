@@ -37,5 +37,12 @@ def test_smart_order(sci):
     response = sci._ollama_generate(prompt)
     assert response is not None
     assert len(response) > 0
-    assert response.startswith("[")
-    assert response.endswith("]")
+    # Strip markdown code fences if present (LLMs often wrap JSON in ```)
+    cleaned = response.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("\n", 1)[-1]  # Remove first ``` line
+    if cleaned.endswith("```"):
+        cleaned = cleaned.rsplit("```", 1)[0]
+    cleaned = cleaned.strip()
+    assert cleaned.startswith("[")
+    assert cleaned.endswith("]")

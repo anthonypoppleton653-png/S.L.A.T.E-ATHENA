@@ -269,9 +269,16 @@ class TestDependencyScanner:
         # Arrange
         scanner = DependencyScanner(verbose=False)
         mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="ModuleNotFoundError")
+        # Mock filesystem paths so no existing data dirs are found
+        scanner.CHROMADB_PATHS = []
+        original_workspace = scanner.workspace
+        scanner.workspace = Path("/nonexistent_workspace_for_test")
 
         # Act
         result = scanner.scan_chromadb()
+
+        # Restore
+        scanner.workspace = original_workspace
 
         # Assert
         assert result.name == "chromadb"

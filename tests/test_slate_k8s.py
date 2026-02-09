@@ -41,9 +41,16 @@ def test_detect_provider_kubectl_available():
     mock_helm = subprocess.CompletedProcess(
         ["helm", "version"], returncode=0, stdout="v3.12.0", stderr=""
     )
+    # Modified: 2026-02-10T14:00:00Z | Author: COPILOT | Change: Add docker/nvidia mock values for detect_provider
+    mock_docker = subprocess.CompletedProcess(
+        ["docker", "version"], returncode=0, stdout="24.0.7", stderr=""
+    )
+    mock_nvidia = subprocess.CompletedProcess(
+        ["nvidia-smi"], returncode=0, stdout="NVIDIA GeForce RTX 5070 Ti", stderr=""
+    )
 
     with patch("slate.slate_k8s.run") as mock_run:
-        mock_run.side_effect = [mock_kubectl_version, mock_cluster_info, mock_context, mock_helm]
+        mock_run.side_effect = [mock_kubectl_version, mock_cluster_info, mock_context, mock_helm, mock_docker, mock_nvidia]
         providers = detect_provider()
 
     assert providers["kubectl"] == "v1.23.6"
@@ -62,9 +69,16 @@ def test_detect_provider_cluster_not_connected():
     mock_helm = subprocess.CompletedProcess(
         ["helm", "version"], returncode=1, stdout="", stderr="not found"
     )
+    # Modified: 2026-02-10T14:00:00Z | Author: COPILOT | Change: Add docker/nvidia mock values for detect_provider (cluster disconnected)
+    mock_docker = subprocess.CompletedProcess(
+        ["docker", "version"], returncode=0, stdout="24.0.7", stderr=""
+    )
+    mock_nvidia = subprocess.CompletedProcess(
+        ["nvidia-smi"], returncode=1, stdout="", stderr="not found"
+    )
 
     with patch("slate.slate_k8s.run") as mock_run:
-        mock_run.side_effect = [mock_kubectl_version, mock_cluster_info, mock_helm]
+        mock_run.side_effect = [mock_kubectl_version, mock_cluster_info, mock_helm, mock_docker, mock_nvidia]
         providers = detect_provider()
 
     assert providers["cluster_connected"] is False

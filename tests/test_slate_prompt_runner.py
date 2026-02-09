@@ -15,9 +15,11 @@ def mock_index():
         ]
     }
 
-def test_load_index(mock_index, monkeypatch):
-    monkeypatch.setattr(INDEX_PATH, 'exists', lambda: True)
-    monkeypatch.setattr(INDEX_PATH, 'read_text', lambda encoding='utf-8': json.dumps(mock_index))
+def test_load_index(mock_index, monkeypatch, tmp_path):
+    # Modified: 2026-02-10T14:00:00Z | Author: COPILOT | Change: Use tmp_path file instead of monkeypatching read-only WindowsPath attributes
+    idx_file = tmp_path / "index.json"
+    idx_file.write_text(json.dumps(mock_index), encoding="utf-8")
+    monkeypatch.setattr("slate.slate_prompt_runner.INDEX_PATH", idx_file)
 
     assert load_index() == mock_index
 

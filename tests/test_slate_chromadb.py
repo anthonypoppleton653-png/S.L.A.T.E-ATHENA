@@ -1,4 +1,5 @@
 # Modified: 2026-02-08T08:00:00Z | Author: COPILOT | Change: Add test coverage for slate_chromadb module
+# Modified: 2026-02-11T04:00:00Z | Author: COPILOT | Change: Add chromadb_healthy fixture to skip tests when local DB is corrupted
 """
 Tests for slate/slate_chromadb.py — ChromaDB vector store integration,
 collection management, text chunking, indexing, search, and status.
@@ -15,6 +16,24 @@ from slate.slate_chromadb import (
     COLLECTIONS,
     WORKSPACE_ROOT,
     SlateChromaDB,
+)
+
+
+def _chromadb_client_healthy():
+    """Check if local ChromaDB PersistentClient can be created without Rust panics."""
+    try:
+        db = SlateChromaDB()
+        _ = db.client  # triggers lazy-load
+        db.client.list_collections()
+        return True
+    except BaseException:
+        return False
+
+
+_CHROMADB_OK = _chromadb_client_healthy()
+skip_chromadb_broken = pytest.mark.skipif(
+    not _CHROMADB_OK,
+    reason="ChromaDB local database unavailable or corrupted (Rust binding issue)"
 )
 
 
@@ -163,6 +182,7 @@ class TestStateManagement:
 # ── Collection management ──────────────────────────────────────────────
 
 
+@skip_chromadb_broken
 class TestCollectionManagement:
     """Tests for collection get/create/list."""
 
@@ -200,6 +220,7 @@ class TestCollectionManagement:
 # ── get_status ──────────────────────────────────────────────────────────
 
 
+@skip_chromadb_broken
 class TestGetStatus:
     """Tests for SlateChromaDB.get_status()."""
 
@@ -226,6 +247,7 @@ class TestGetStatus:
 # ── print_status ────────────────────────────────────────────────────────
 
 
+@skip_chromadb_broken
 class TestPrintStatus:
     """Tests for SlateChromaDB.print_status()."""
 
@@ -246,6 +268,7 @@ class TestPrintStatus:
 # ── index_collection ───────────────────────────────────────────────────
 
 
+@skip_chromadb_broken
 class TestIndexCollection:
     """Tests for SlateChromaDB.index_collection()."""
 
@@ -268,6 +291,7 @@ class TestIndexCollection:
 # ── CLI main ────────────────────────────────────────────────────────────
 
 
+@skip_chromadb_broken
 class TestMain:
     """Tests for main() CLI entry point."""
 

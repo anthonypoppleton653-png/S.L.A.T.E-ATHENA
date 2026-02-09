@@ -64,4 +64,5 @@ def test_is_k8s_environment(k8s_integration):
 def test_get_integration_status(k8s_integration):
     result = k8s_integration.get_integration_status()
     assert isinstance(result, dict)
-    assert "is_k8s" in result
+    assert "environment" in result
+    assert "services" in result

@@ -279,6 +279,8 @@ class TestSlateAITracer:
 
     def test_get_metrics(self):
         tracer = SlateAITracer(enable_otel=False)
+        # Clear any loaded production metrics so only test data is counted
+        tracer.model_metrics.clear()
         tracer.model_metrics["test-model"] = ModelMetrics(model="test-model")
         tracer.model_metrics["test-model"].total_calls = 10
         tracer.model_metrics["test-model"].total_tokens = 500
