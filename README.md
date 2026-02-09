@@ -864,7 +864,10 @@ SLATE development follows a specification-driven approach. Each major feature st
 | 019 | Dual-GPU Manager | Completed | Load-balanced GPU management |
 | 020 | Custom SLATE Models | Completed | slate-coder, slate-fast, slate-planner |
 | 021 | Autonomous Task Loop | Completed | Self-healing autonomous operation |
-| 022 | Unified AI Backend | Completed | 3-provider inference routing: Ollama, Claude Code, Foundry Local |
+| — | Unified AI Backend | Completed | 3-provider inference routing: Ollama, Claude Code, Foundry Local |
+| 022 | Brand Identity System | Specified | Unified visual identity across all SLATE surfaces |
+| 023 | Avatar System | Specified | Living orrery avatar with state-reactive D3.js + TRELLIS.2 3D |
+| 024 | TRELLIS.2 3D Integration | Specified | Microsoft 4B image-to-3D model as K8s microservice |
 
 ### Spec Lifecycle
 

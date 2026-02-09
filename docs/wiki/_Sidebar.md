@@ -57,6 +57,10 @@
 - [o] [Dual-GPU Manager](Spec-019-Dual-Gpu-Manager)
 - [o] [Custom SLATE Models](Spec-020-Custom-Slate-Models)
 - [o] [Autonomous Task Loop](Spec-021-Autonomous-Task-Loop)
+- [ ] [SLATE Brand Identity System](Spec-022-Slate-Brand-Identity)
+- [ ] [SLATE Avatar System](Spec-023-Slate-Avatar-System)
+- [ ] [TRELLIS.2 3D Generation Integration](Spec-024-Trellis-3d-Integration)
+
 ## Advanced
 - [Development](Development)
 - [Extending SLATE](Development#extending-slate)
