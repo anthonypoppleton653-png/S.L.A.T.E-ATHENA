@@ -37,6 +37,7 @@ Agents are routed by task pattern from `slate.config.yaml`:
 | diagnose, investigate, troubleshoot, interactive, explain | COPILOT_CHAT | Chat Participant | No |
 | complex, multi-step | COPILOT | Full Orchestration | Yes |
 | architect, refactor, master | ANTIGRAVITY | Primary Developer (Google AI Ultra) | Yes |
+| inference, prompt, reasoning, bridge | CLAUDECODE | Inference + Collaboration | No |
 
 ### @slate Agent (COPILOT_CHAT)
 The `@slate` agent is the primary copilot chat participant for the SLATE system.
@@ -64,6 +65,28 @@ Autonomous Loop ──▶ copilot_agent_bridge.py ──▶ .slate_copilot_bridg
 - **slate-benchmark**: Performance benchmarks (`python slate/slate_benchmark.py`)
 - **slate-chromadb**: Vector store operations (`python slate/slate_chromadb.py --status`)
 - **slate-ci**: CI/CD workflow dispatch and monitoring via GitHub API
+
+### ClaudeCode Agent (CLAUDECODE)
+The `CLAUDECODE` agent (Opus 4.6) is the inference and collaboration provider for SLATE.
+It is registered in the instruction loader alongside the other 6 agents.
+
+#### Capabilities
+- Complex reasoning and multi-step code generation via MCP bridge
+- Prompt engineering for Ollama super prompts
+- Cross-agent task coordination via FORGE.md
+- Unified AI backend routing (preferred for bug_fix, refactoring, analysis, research, prompt_engineering)
+
+#### Integration Points
+- `slate/unified_ai_backend.py` — Central routing with Claude Code as provider
+- `slate/copilot_agent_bridge.py` — Bidirectional file-based IPC
+- `slate/instruction_loader.py` — CLAUDECODE agent prompt definition
+- `prompts/claude-code-inference.prompt.md` — Super prompt for inference routing
+
+#### FORGE.md Protocol
+ClaudeCode communicates with teammates via append-only FORGE.md:
+```
+[CLAUDECODE] TIMESTAMP | ACTION: description
+```
 
 ## Format Rules
 All code edits MUST include a timestamp + author comment:

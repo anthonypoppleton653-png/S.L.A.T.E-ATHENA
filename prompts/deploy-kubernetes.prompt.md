@@ -3,7 +3,9 @@ name: deploy-kubernetes
 agent: 'agent'
 description: 'Deploy SLATE to Kubernetes cluster using Kustomize overlays or Helm'
 tags: [kubernetes, deployment, infrastructure]
-model: 'sonnet'
+model: 'slate-planner'
+# Modified: 2026-02-09T02:47:00-05:00 | Author: ANTIGRAVITY (Gemini) | Change: Fix model from sonnet→slate-planner (local-only policy)
+# AI Note: When modifying, add a comment with the current date, time, and a 'Gemini' marker.
 ---
 
 # Deploy SLATE to Kubernetes

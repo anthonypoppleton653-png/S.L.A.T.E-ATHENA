@@ -1,0 +1,1528 @@
+{
+	"name": "slate-antigravity",
+	"publisher": "antigravity",
+	"displayName": "SLATE Antigravity Agent",
+	"description": "The @antigravity chat participant for SLATE — architect, refactor, design, security, FORGE collaboration.",
+	"license": "EOSL-1.0",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git"
+	},
+	"slateMetadata": {
+		"modified": "2026-02-09T02:55:00-05:00",
+		"author": "ANTIGRAVITY (Gemini)",
+		"change": "v5.2.0 — Fork of slate-copilot for Antigravity workspace with full dashboard and tools."
+	},
+	"version": "5.2.0",
+	"icon": "media/icon.png",
+	"engines": {
+		"vscode": "^1.95.0"
+	},
+	"categories": [
+		"AI",
+		"Chat",
+		"Themes"
+	],
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"themes": [
+			{
+				"label": "SLATE Dark",
+				"uiTheme": "vs-dark",
+				"path": "./themes/slate-dark-color-theme.json"
+			}
+		],
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "antigravity-explorer",
+					"title": "ANTIGRAVITY",
+					"icon": "media/slate-activity-icon.svg"
+				}
+			]
+		},
+		"views": {
+			"antigravity-explorer": [
+				{
+					"type": "webview",
+					"id": "antigravity.unifiedDashboard",
+					"name": "SLATE Dashboard",
+					"icon": "media/slate-activity-icon.svg",
+					"visibility": "visible",
+					"contextualTitle": "ANTIGRAVITY — SLATE Dashboard"
+				}
+			]
+		},
+		"chatParticipants": [
+			{
+				"id": "slate-antigravity.antigravity",
+				"fullName": "ANTIGRAVITY",
+				"name": "antigravity",
+				"description": "SLATE Antigravity agent — architect, refactor, design, security, FORGE",
+				"isSticky": true,
+				"commands": [
+					{
+						"name": "run",
+						"description": "Guided SLATE protocol — health, runtime, workflow, enforce"
+					},
+					{
+						"name": "status",
+						"description": "Full system health check — GPU, Python, runner, services"
+					},
+					{
+						"name": "update",
+						"description": "Update from git and check all contributor forks"
+					},
+					{
+						"name": "debug",
+						"description": "Run diagnostics — errors, services, GPU, stale tasks"
+					},
+					{
+						"name": "deploy",
+						"description": "Manage services, runner, and CI/CD dispatch"
+					},
+					{
+						"name": "security",
+						"description": "Security audit — ActionGuard, PII, SDK source scan"
+					},
+					{
+						"name": "agents",
+						"description": "Agent registry, autonomous loops, task discovery"
+					},
+					{
+						"name": "forks",
+						"description": "Check contributor forks for updates and pending integrations"
+					},
+					{
+						"name": "runner",
+						"description": "GitHub Actions self-hosted runner status and management"
+					},
+					{
+						"name": "ci",
+						"description": "Dispatch, monitor, or cancel CI/CD workflow runs"
+					},
+					{
+						"name": "hardware",
+						"description": "GPU detection, optimization, and PyTorch configuration"
+					},
+					{
+						"name": "benchmark",
+						"description": "Run performance benchmarks"
+					},
+					{
+						"name": "orchestrator",
+						"description": "Service lifecycle — start, stop, status of all services"
+					},
+					{
+						"name": "install",
+						"description": "Full SLATE ecosystem setup"
+					},
+					{
+						"name": "help",
+						"description": "List available SLATE commands and tools"
+					},
+					{
+						"name": "roadmap",
+						"description": "Roadmap alignment — dev cycle, specs, tasks, and plan status"
+					},
+					{
+						"name": "stage",
+						"description": "View or change the current development stage (plan/code/test/deploy/feedback)"
+					},
+					{
+						"name": "guidance",
+						"description": "Get roadmap-aligned code guidance for the current stage"
+					},
+					{
+						"name": "learn",
+						"description": "Interactive learning — track progress, achievements, and XP"
+					},
+					{
+						"name": "specs",
+						"description": "Specification management — process, analyze, and generate docs"
+					},
+					{
+						"name": "context",
+						"description": "Get compressed SLATE state context (token-optimized)"
+					},
+					{
+						"name": "pr",
+						"description": "Pull request management — list, create, check status with CI"
+					},
+					{
+						"name": "issues",
+						"description": "GitHub issue tracking — list, create, close, comment"
+					},
+					{
+						"name": "git",
+						"description": "Git operations — status, branches, log, diff, stash"
+					},
+					{
+						"name": "tests",
+						"description": "Test Explorer — run tests, refresh suites, view results"
+					},
+					{
+						"name": "scan",
+						"description": "Security scan — run diagnostics and show in Problems panel"
+					},
+					{
+						"name": "forge",
+						"description": "FORGE.md — read/append to the collaborative AI operations log, check teammate updates"
+					},
+					{
+						"name": "prompts",
+						"description": "Prompt Index — list, view, run, validate SLATE super prompts via Ollama"
+					}
+				],
+				"disambiguation": [
+					{
+						"category": "slate_ops",
+						"description": "The user wants to manage SLATE infrastructure — runner, CI, GPU, services.",
+						"examples": [
+							"Check if the runner is online",
+							"What GPUs are available?",
+							"Dispatch the CI workflow",
+							"Show system status",
+							"Start the dashboard"
+						]
+					},
+					{
+						"category": "slate_github",
+						"description": "The user wants to interact with GitHub — PRs, issues, CI runs, git operations.",
+						"examples": [
+							"List open pull requests",
+							"Create an issue for this bug",
+							"Show recent CI runs",
+							"What branch am I on?",
+							"Check the git diff"
+						]
+					},
+					{
+						"category": "slate_quality",
+						"description": "The user wants to run tests, security scans, or code quality checks.",
+						"examples": [
+							"Run the test suite",
+							"Scan for security issues",
+							"Check code coverage",
+							"Run the security audit"
+						]
+					}
+				]
+			}
+		],
+		"chatCommandVariables": [],
+		"languageModelTools": [
+			{
+				"name": "slate_systemStatus",
+				"tags": [
+					"slate",
+					"status",
+					"health"
+				],
+				"toolReferenceName": "slateStatus",
+				"displayName": "SLATE System Status",
+				"modelDescription": "Get full SLATE system health: Python, GPU, PyTorch, Ollama, services. Returns JSON.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"quick": {
+							"type": "boolean",
+							"description": "Quick check (true) or full JSON output (false)",
+							"default": false
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_runtimeCheck",
+				"tags": [
+					"slate",
+					"runtime",
+					"dependencies"
+				],
+				"toolReferenceName": "slateRuntime",
+				"displayName": "SLATE Runtime Check",
+				"modelDescription": "Check SLATE runtime integrations: Python, venv, GPU, PyTorch, Transformers, Ollama.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {}
+				}
+			},
+			{
+				"name": "slate_runnerStatus",
+				"tags": [
+					"slate",
+					"runner",
+					"ci"
+				],
+				"toolReferenceName": "slateRunner",
+				"displayName": "SLATE Runner Status",
+				"modelDescription": "Get GitHub Actions self-hosted runner status, active runs, and configuration.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Action: 'status' (default), 'detect', or 'dispatch'",
+							"enum": [
+								"status",
+								"detect",
+								"dispatch"
+							],
+							"default": "status"
+						},
+						"workflow": {
+							"type": "string",
+							"description": "Workflow file to dispatch (only with action='dispatch')"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_hardwareInfo",
+				"tags": [
+					"slate",
+					"hardware",
+					"gpu",
+					"cuda"
+				],
+				"toolReferenceName": "slateHardware",
+				"displayName": "SLATE Hardware Info",
+				"modelDescription": "Detect GPUs, CUDA configuration, and PyTorch compatibility. Can optimize settings.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"optimize": {
+							"type": "boolean",
+							"description": "Apply GPU optimizations (true) or just detect (false)",
+							"default": false
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_orchestrator",
+				"tags": [
+					"slate",
+					"services",
+					"orchestrator"
+				],
+				"toolReferenceName": "slateOrchestrator",
+				"displayName": "SLATE Orchestrator",
+				"modelDescription": "Manage SLATE services: start, stop, or check status of dashboard, runner, and health services.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Action to perform: 'status', 'start', or 'stop'",
+							"enum": [
+								"status",
+								"start",
+								"stop"
+							],
+							"default": "status"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_workflow",
+				"tags": [
+					"slate",
+					"workflow",
+					"tasks"
+				],
+				"toolReferenceName": "slateWorkflow",
+				"displayName": "SLATE Workflow Manager",
+				"modelDescription": "Manage task lifecycle, PR workflows, and stale task cleanup.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Action: 'status', 'cleanup', or 'enforce'",
+							"enum": [
+								"status",
+								"cleanup",
+								"enforce"
+							],
+							"default": "status"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_benchmark",
+				"tags": [
+					"slate",
+					"benchmark",
+					"performance"
+				],
+				"toolReferenceName": "slateBenchmark",
+				"displayName": "SLATE Benchmark",
+				"modelDescription": "Run SLATE performance benchmarks.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {}
+				}
+			},
+			{
+				"name": "slate_install",
+				"tags": [
+					"slate",
+					"install",
+					"setup"
+				],
+				"toolReferenceName": "slateInstall",
+				"displayName": "SLATE Install",
+				"modelDescription": "Install the full SLATE ecosystem: git repo, venv, pip deps, PyTorch (GPU-aware), Ollama, Docker, VS Code extension, SLATE models, and workspace config.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"target": {
+							"type": "string",
+							"description": "Target directory for fresh install (defaults to current workspace)"
+						},
+						"beta": {
+							"type": "boolean",
+							"description": "Use BETA fork instead of main repo",
+							"default": false
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_update",
+				"tags": [
+					"slate",
+					"update",
+					"sync"
+				],
+				"toolReferenceName": "slateUpdate",
+				"displayName": "SLATE Update",
+				"modelDescription": "Update SLATE from git, refresh pip dependencies, rebuild VS Code extension, re-validate ecosystem.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {}
+				}
+			},
+			{
+				"name": "slate_checkDeps",
+				"tags": [
+					"slate",
+					"dependencies",
+					"check"
+				],
+				"toolReferenceName": "slateCheckDeps",
+				"displayName": "SLATE Dependency Check",
+				"modelDescription": "Check all SLATE ecosystem dependencies: Python, Git, GPU, PyTorch, Ollama, Docker, VS Code extension.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {}
+				}
+			},
+			{
+				"name": "slate_runCommand",
+				"tags": [
+					"slate",
+					"terminal",
+					"command"
+				],
+				"displayName": "SLATE Run Command",
+				"modelDescription": "Run an arbitrary SLATE Python command and return the output. Use for custom operations.",
+				"canBeReferencedInPrompt": false,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"command": {
+							"type": "string",
+							"description": "The Python command to run (e.g., 'slate/slate_status.py --quick')"
+						}
+					},
+					"required": [
+						"command"
+					]
+				}
+			},
+			{
+				"name": "slate_forkCheck",
+				"tags": [
+					"slate",
+					"forks",
+					"git",
+					"contributions"
+				],
+				"toolReferenceName": "slateForkCheck",
+				"displayName": "SLATE Fork Check",
+				"modelDescription": "Check contributor forks for updates, pending integrations, and sync status. Actions: status, sync, check, list.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Action: 'status' (default), 'sync' (sync all), 'check' (check for updates), 'list' (list forks)",
+							"enum": [
+								"status",
+								"sync",
+								"check",
+								"list"
+							],
+							"default": "status"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_securityAudit",
+				"tags": [
+					"slate",
+					"security",
+					"audit",
+					"scan"
+				],
+				"toolReferenceName": "slateSecurityAudit",
+				"displayName": "SLATE Security Audit",
+				"modelDescription": "Run security scans: ActionGuard (dangerous patterns), PII Scanner (credential leaks), SDK Source Guard (trusted publishers). Scan: full, actionguard, pii, sdk.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"scan": {
+							"type": "string",
+							"description": "Scan type: 'full' (all), 'actionguard', 'pii', 'sdk'",
+							"enum": [
+								"full",
+								"actionguard",
+								"pii",
+								"sdk"
+							],
+							"default": "full"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_agentStatus",
+				"tags": [
+					"slate",
+					"agents",
+					"autonomous",
+					"registry"
+				],
+				"toolReferenceName": "slateAgentStatus",
+				"displayName": "SLATE Agent Status",
+				"modelDescription": "Check agent registry, autonomous loop status, copilot runner bridge, and integrated loop. Actions: status, discover, integrated.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Action: 'status' (default), 'discover' (find tasks), 'integrated' (integrated loop status)",
+							"enum": [
+								"status",
+								"discover",
+								"integrated"
+							],
+							"default": "status"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_gpuManager",
+				"tags": [
+					"slate",
+					"gpu",
+					"cuda",
+					"dual-gpu"
+				],
+				"toolReferenceName": "slateGpuManager",
+				"displayName": "SLATE GPU Manager",
+				"modelDescription": "Manage dual-GPU configuration: load balancing, model preloading, VRAM status. Actions: status, configure, preload.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Action: 'status' (default), 'configure', 'preload'",
+							"enum": [
+								"status",
+								"configure",
+								"preload"
+							],
+							"default": "status"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_autonomous",
+				"tags": [
+					"slate",
+					"autonomous",
+					"loop",
+					"tasks"
+				],
+				"toolReferenceName": "slateAutonomous",
+				"displayName": "SLATE Autonomous Loop",
+				"modelDescription": "Control the autonomous task loop: check status, discover tasks, execute a single task, or run multiple tasks. Actions: status, discover, single, run (with max parameter).",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Action: 'status' (default), 'discover', 'single' (execute one task), 'run' (execute multiple tasks)",
+							"enum": [
+								"status",
+								"discover",
+								"single",
+								"run"
+							],
+							"default": "status"
+						},
+						"max": {
+							"type": "number",
+							"description": "Maximum tasks to execute (only with action='run', default 5)",
+							"default": 5
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_runProtocol",
+				"tags": [
+					"slate",
+					"protocol",
+					"run",
+					"lockin"
+				],
+				"toolReferenceName": "slateRunProtocol",
+				"displayName": "SLATE Run Protocol",
+				"modelDescription": "Run the full guided SLATE protocol sequence: (1) system health, (2) runtime integrations, (3) workflow status, (4) enforce completion. Ensures all systems are 'locked in' for development.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {}
+				}
+			},
+			{
+				"name": "slate_handoff",
+				"tags": [
+					"slate",
+					"handoff",
+					"task",
+					"autonomous"
+				],
+				"toolReferenceName": "slateHandoff",
+				"displayName": "SLATE Task Handoff",
+				"modelDescription": "Hand off a task to the SLATE autonomous agent for background execution. The chat participant identifies the work, then queues it for the autonomous loop to complete.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"task": {
+							"type": "string",
+							"description": "Description of the task to hand off to the autonomous agent"
+						},
+						"priority": {
+							"type": "string",
+							"description": "Task priority: 'high', 'medium', or 'low'",
+							"enum": [
+								"high",
+								"medium",
+								"low"
+							],
+							"default": "medium"
+						}
+					},
+					"required": [
+						"task"
+					]
+				}
+			},
+			{
+				"name": "slate_startServices",
+				"tags": [
+					"slate",
+					"services",
+					"start",
+					"deploy"
+				],
+				"toolReferenceName": "slateStartServices",
+				"displayName": "SLATE Start Services",
+				"modelDescription": "Start all SLATE services in one action: orchestrator (dashboard, runner, monitor) and copilot runner bridge for autonomous task processing.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"services": {
+							"type": "string",
+							"description": "Which services to start: 'all' (default), 'orchestrator', 'copilot-runner'",
+							"enum": [
+								"all",
+								"orchestrator",
+								"copilot-runner"
+							],
+							"default": "all"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_executeWork",
+				"tags": [
+					"slate",
+					"execute",
+					"work",
+					"autonomous",
+					"pipeline"
+				],
+				"toolReferenceName": "slateExecuteWork",
+				"displayName": "SLATE Execute Work Pipeline",
+				"modelDescription": "Aggressive work execution pipeline: (1) cleanup stale tasks, (2) discover available work, (3) execute up to N tasks via autonomous agent, (4) verify final state. Use this to DO work, not just report on it.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"scope": {
+							"type": "string",
+							"description": "Pipeline scope: 'full' (all phases), 'cleanup', 'discover', 'execute', 'verify'",
+							"enum": [
+								"full",
+								"cleanup",
+								"discover",
+								"execute",
+								"verify"
+							],
+							"default": "full"
+						},
+						"max": {
+							"type": "number",
+							"description": "Maximum number of tasks to execute (default 3)",
+							"default": 3
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_agentBridge",
+				"tags": [
+					"slate",
+					"agent",
+					"bridge",
+					"copilot_chat",
+					"subagent",
+					"autonomous"
+				],
+				"toolReferenceName": "slateAgentBridge",
+				"displayName": "SLATE Agent Bridge",
+				"modelDescription": "Bidirectional bridge between the @slate chat participant and the SLATE autonomous loop. Poll for tasks dispatched by the autonomous system (COPILOT_CHAT agent), complete them, check bridge status, or cleanup stale entries. This makes @slate a first-class subagent in the SLATE agent registry.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"required": [
+						"action"
+					],
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Bridge action: 'poll' (get pending tasks), 'status' (bridge health), 'complete' (mark task done), 'cleanup' (remove stale)",
+							"enum": [
+								"poll",
+								"status",
+								"complete",
+								"cleanup"
+							]
+						},
+						"taskId": {
+							"type": "string",
+							"description": "Task ID to complete (required for 'complete' action)"
+						},
+						"result": {
+							"type": "string",
+							"description": "Result text for completed task"
+						},
+						"success": {
+							"type": "boolean",
+							"description": "Whether the task succeeded (default true)",
+							"default": true
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_devCycle",
+				"tags": [
+					"slate",
+					"devcycle",
+					"roadmap",
+					"stage"
+				],
+				"toolReferenceName": "slateDevCycle",
+				"displayName": "SLATE Dev Cycle",
+				"modelDescription": "View or manage the SLATE development cycle: current stage (plan/code/test/deploy/feedback), recent activities, and stage transitions. Actions: status, transition, activities, guidance.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Action: 'status' (current stage), 'transition' (change stage), 'activities' (recent work), 'guidance' (stage-specific advice)",
+							"enum": [
+								"status",
+								"transition",
+								"activities",
+								"guidance"
+							],
+							"default": "status"
+						},
+						"stage": {
+							"type": "string",
+							"description": "Target stage for transition (only with action='transition')",
+							"enum": [
+								"plan",
+								"code",
+								"test",
+								"deploy",
+								"feedback"
+							]
+						},
+						"reason": {
+							"type": "string",
+							"description": "Reason for stage transition"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_specKit",
+				"tags": [
+					"slate",
+					"specs",
+					"specifications",
+					"wiki"
+				],
+				"toolReferenceName": "slateSpecKit",
+				"displayName": "SLATE Spec Kit",
+				"modelDescription": "Manage SLATE specifications: list, process, AI-analyze, generate wiki docs, and extract development roadmap. Actions: status, list, process, analyze, wiki, roadmap.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Action: 'status', 'list', 'process', 'analyze', 'wiki', 'roadmap'",
+							"enum": [
+								"status",
+								"list",
+								"process",
+								"analyze",
+								"wiki",
+								"roadmap"
+							],
+							"default": "status"
+						},
+						"specId": {
+							"type": "string",
+							"description": "Specific spec ID to process or analyze (optional)"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_learningProgress",
+				"tags": [
+					"slate",
+					"learning",
+					"progress",
+					"achievements"
+				],
+				"toolReferenceName": "slateLearningProgress",
+				"displayName": "SLATE Learning Progress",
+				"modelDescription": "Track learning progress, XP, achievements, and guided learning paths. Actions: status, paths, achievements, next, complete.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Action: 'status', 'paths', 'achievements', 'next', 'complete'",
+							"enum": [
+								"status",
+								"paths",
+								"achievements",
+								"next",
+								"complete"
+							],
+							"default": "status"
+						},
+						"stepId": {
+							"type": "string",
+							"description": "Step ID to mark complete (required for 'complete' action)"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_planContext",
+				"tags": [
+					"slate",
+					"plan",
+					"context",
+					"summary"
+				],
+				"toolReferenceName": "slatePlanContext",
+				"displayName": "SLATE Plan Context",
+				"modelDescription": "Get compressed SLATE plan context for efficient LLM usage: current dev stage, task counts, spec summaries, and code directives. Token-optimized. Scopes: full, cycle, tasks, specs, guidance.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"scope": {
+							"type": "string",
+							"description": "Context scope: 'full' (all), 'cycle' (dev stage only), 'tasks' (task counts), 'specs' (spec list), 'guidance' (code directives)",
+							"enum": [
+								"full",
+								"cycle",
+								"tasks",
+								"specs",
+								"guidance"
+							],
+							"default": "full"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_codeGuidance",
+				"tags": [
+					"slate",
+					"code",
+					"guidance",
+					"patterns"
+				],
+				"toolReferenceName": "slateCodeGuidance",
+				"displayName": "SLATE Code Guidance",
+				"modelDescription": "Get stage-aware code guidance for a specific file or context. Returns file-type-specific best practices aligned with the current development stage.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"file": {
+							"type": "string",
+							"description": "File path to get guidance for (uses extension to determine language)"
+						},
+						"context": {
+							"type": "string",
+							"description": "Additional context about what you're working on"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_ciMonitor",
+				"tags": [
+					"slate",
+					"ci",
+					"github",
+					"actions",
+					"workflow"
+				],
+				"toolReferenceName": "slateCiMonitor",
+				"displayName": "SLATE CI Monitor",
+				"modelDescription": "Monitor GitHub Actions CI/CD: list recent runs, check active runs, dispatch workflows, get job logs, cancel or re-run failed jobs. Deep integration with the self-hosted slate-runner.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"required": [
+						"action"
+					],
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "CI action: 'runs' (list recent), 'status' (active runs), 'dispatch' (trigger workflow), 'logs' (job details), 'cancel', 'rerun'",
+							"enum": [
+								"runs",
+								"status",
+								"dispatch",
+								"logs",
+								"cancel",
+								"rerun"
+							]
+						},
+						"workflow": {
+							"type": "string",
+							"description": "Workflow file name for dispatch (e.g., 'ci.yml', 'agentic.yml')"
+						},
+						"runId": {
+							"type": "string",
+							"description": "Workflow run ID for logs/cancel/rerun actions"
+						},
+						"count": {
+							"type": "number",
+							"description": "Number of runs to list (default 10)",
+							"default": 10
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_prManager",
+				"tags": [
+					"slate",
+					"github",
+					"pr",
+					"pull-request"
+				],
+				"toolReferenceName": "slatePrManager",
+				"displayName": "SLATE PR Manager",
+				"modelDescription": "Manage GitHub pull requests: list open PRs, create new PRs, check PR status with check runs. Integrates with SLATE workflow for task-to-PR lifecycle.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"required": [
+						"action"
+					],
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "PR action: 'list' (open PRs), 'create' (new PR), 'status' (check PR with CI status)",
+							"enum": [
+								"list",
+								"create",
+								"status"
+							]
+						},
+						"branch": {
+							"type": "string",
+							"description": "Source branch for creating a PR"
+						},
+						"title": {
+							"type": "string",
+							"description": "PR title"
+						},
+						"body": {
+							"type": "string",
+							"description": "PR description body"
+						},
+						"prNumber": {
+							"type": "number",
+							"description": "PR number for status check"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_issueTracker",
+				"tags": [
+					"slate",
+					"github",
+					"issues",
+					"bugs"
+				],
+				"toolReferenceName": "slateIssueTracker",
+				"displayName": "SLATE Issue Tracker",
+				"modelDescription": "Manage GitHub issues: list open issues, create new issues with labels, close issues, add comments. Bridges SLATE task management with GitHub issue tracking.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"required": [
+						"action"
+					],
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Issue action: 'list' (open issues), 'create' (new issue), 'close', 'comment'",
+							"enum": [
+								"list",
+								"create",
+								"close",
+								"comment"
+							]
+						},
+						"title": {
+							"type": "string",
+							"description": "Issue title (for create)"
+						},
+						"body": {
+							"type": "string",
+							"description": "Issue body or comment text"
+						},
+						"labels": {
+							"type": "array",
+							"items": {
+								"type": "string"
+							},
+							"description": "Labels to apply (for create)"
+						},
+						"issueNumber": {
+							"type": "number",
+							"description": "Issue number (for close/comment)"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_semanticKernel",
+				"tags": [
+					"slate",
+					"semantic-kernel",
+					"ai",
+					"microsoft",
+					"plugins",
+					"planner"
+				],
+				"toolReferenceName": "slateSemanticKernel",
+				"displayName": "SLATE Semantic Kernel",
+				"modelDescription": "Microsoft Semantic Kernel integration: check status, list plugins, run inference via local Ollama models with SK function calling, or benchmark SK pipeline performance. Uses SLATE custom models (slate-coder, slate-fast, slate-planner) with ChromaDB RAG memory.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "SK action: 'status' (integration health), 'plugins' (list SK plugins), 'invoke' (run prompt through SK), 'benchmark' (SK inference perf)",
+							"enum": [
+								"status",
+								"plugins",
+								"invoke",
+								"benchmark"
+							],
+							"default": "status"
+						},
+						"prompt": {
+							"type": "string",
+							"description": "Prompt text for 'invoke' action"
+						},
+						"model": {
+							"type": "string",
+							"description": "Model role: code, fast, planner, general",
+							"enum": [
+								"code",
+								"fast",
+								"planner",
+								"general"
+							],
+							"default": "general"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_gitOps",
+				"tags": [
+					"slate",
+					"git",
+					"source-control",
+					"branch"
+				],
+				"toolReferenceName": "slateGitOps",
+				"displayName": "SLATE Git Operations",
+				"modelDescription": "Git source control operations: check status, list branches, view commit log, show diff stats, list stashes. Provides repository awareness for the @slate agent.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"required": [
+						"action"
+					],
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Git action: 'status', 'branch', 'log', 'diff', 'stash'",
+							"enum": [
+								"status",
+								"branch",
+								"log",
+								"diff",
+								"stash"
+							]
+						},
+						"branch": {
+							"type": "string",
+							"description": "Branch name (for branch operations)"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_githubModels",
+				"tags": [
+					"slate",
+					"github-models",
+					"ai",
+					"cloud",
+					"inference",
+					"free-tier"
+				],
+				"toolReferenceName": "slateGitHubModels",
+				"displayName": "SLATE GitHub Models",
+				"modelDescription": "GitHub Models free-tier cloud AI inference: check status and rate limits, list available models (GPT-4o, GPT-4o-mini, Mistral, DeepSeek-R1, Phi-4, Llama, etc.), send chat prompts, run with Ollama fallback chain, or benchmark API performance. 11 models, 15 RPM / 150 RPD rate limits, no cost.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "GitHub Models action: 'status' (auth + rate limits), 'list' (available models), 'chat' (send prompt), 'fallback' (GitHub→Ollama chain), 'benchmark' (API perf)",
+							"enum": [
+								"status",
+								"list",
+								"chat",
+								"fallback",
+								"benchmark"
+							],
+							"default": "status"
+						},
+						"prompt": {
+							"type": "string",
+							"description": "Prompt text for 'chat' or 'fallback' actions"
+						},
+						"model": {
+							"type": "string",
+							"description": "Model name for 'chat' action (e.g., gpt-4o, gpt-4o-mini, DeepSeek-R1)",
+							"default": "gpt-4o-mini"
+						},
+						"role": {
+							"type": "string",
+							"description": "SLATE role mapping for 'fallback' action: code, fast, planner, analysis, reasoning, summary, general",
+							"enum": [
+								"code",
+								"fast",
+								"planner",
+								"analysis",
+								"reasoning",
+								"summary",
+								"general"
+							],
+							"default": "general"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_kubernetes",
+				"tags": [
+					"slate",
+					"kubernetes",
+					"k8s",
+					"cluster",
+					"pods",
+					"deployment"
+				],
+				"toolReferenceName": "slateKubernetes",
+				"displayName": "SLATE Kubernetes",
+				"modelDescription": "Kubernetes deployment management for SLATE: check cluster status (pods, deployments, services), run health checks, deploy manifests (raw kubectl or Kustomize overlays), teardown, view component logs, set up port forwarding, or preload ML models. Manages the slate namespace with 7 deployments, 5 CronJobs, HPAs, PDBs, and Ingress.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "K8s action: 'status' (cluster overview), 'health' (deep health check), 'deploy' (apply manifests), 'deploy-kustomize' (apply with overlay), 'teardown' (remove all), 'logs' (component logs), 'port-forward' (local access), 'preload-models' (ML model init)",
+							"enum": [
+								"status",
+								"health",
+								"deploy",
+								"deploy-kustomize",
+								"teardown",
+								"logs",
+								"port-forward",
+								"preload-models"
+							],
+							"default": "status"
+						},
+						"component": {
+							"type": "string",
+							"description": "Component name for 'logs' action (e.g., core, ollama, vectorstore, agent-router, autonomous-loop, copilot-bridge, workflow-manager)"
+						},
+						"overlay": {
+							"type": "string",
+							"description": "Kustomize overlay for 'deploy-kustomize' action (e.g., local, dev, staging, prod)",
+							"enum": [
+								"local",
+								"dev",
+								"staging",
+								"prod"
+							]
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_adaptiveInstructions",
+				"tags": [
+					"slate",
+					"instructions",
+					"adaptive",
+					"k8s",
+					"configmap",
+					"agent",
+					"copilot"
+				],
+				"toolReferenceName": "slateAdaptiveInstructions",
+				"displayName": "SLATE Adaptive Instructions",
+				"modelDescription": "Adaptive Instruction Layer — K8s-driven dynamic instruction controller. Evaluates system state (K8s pods, GPUs, services, workflows) and generates context-aware instruction overrides stored in the slate-instructions ConfigMap. Controls operating mode (normal/degraded/maintenance/emergency/autonomous), agent availability (full/gpu-only/cpu-only/minimal), tool routing, and behavioral directives. The source of truth for all SLATE agent and Copilot instruction behaviors.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Instruction action: 'status' (current state), 'evaluate' (analyze system), 'sync' (evaluate+apply to K8s), 'get-context' (instruction block for sessions), 'get-active' (active set from K8s), 'apply' (push to ConfigMap)",
+							"enum": [
+								"status",
+								"evaluate",
+								"sync",
+								"get-context",
+								"get-active",
+								"apply"
+							],
+							"default": "status"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_forge",
+				"tags": [
+					"slate",
+					"forge",
+					"collaboration",
+					"log",
+					"agents",
+					"copilot",
+					"antigravity"
+				],
+				"toolReferenceName": "slateForge",
+				"displayName": "SLATE FORGE.md",
+				"modelDescription": "FORGE.md collaborative AI operations log — the shared append-only log for AI team members (Copilot, Antigravity, autonomous agents). FORGE = Framework for Orchestrated Research, Generation & Evolution. Use to read teammate updates, append new entries, check collaboration status, and sync the FORGE log across Docker volumes and MCP. Entries are timestamped with format: [AgentName] YYYY-MM-DDTHH:MM:SSZ | Action: description. Sections: STATUS, PLAN, OUTPUT, HANDOFF, MAGIC (super prompts).",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"required": [
+						"action"
+					],
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "FORGE action: 'read' (view log, optionally filtered), 'append' (add new entry), 'status' (collaboration summary), 'sync' (sync with Docker/MCP)",
+							"enum": [
+								"read",
+								"append",
+								"status",
+								"sync"
+							]
+						},
+						"entry": {
+							"type": "string",
+							"description": "For 'append': the log entry text to add (auto-timestamped)"
+						},
+						"section": {
+							"type": "string",
+							"description": "For 'read': filter by section (STATUS, PLAN, OUTPUT, HANDOFF, MAGIC)"
+						},
+						"filter": {
+							"type": "string",
+							"description": "For 'read': text search filter across entries"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_promptIndex",
+				"tags": [
+					"slate",
+					"prompts",
+					"ollama",
+					"automation",
+					"inference",
+					"index"
+				],
+				"toolReferenceName": "slatePromptIndex",
+				"displayName": "SLATE Prompt Index",
+				"modelDescription": "SLATE Prompt Index — manage and execute the 9 super prompts in prompts/index.json. Prompts are Ollama-routed automation workflows: system-health, deploy-kubernetes, run-benchmarks, workflow-cleanup, issue-to-task, pr-review, task-router, dashboard-sync, forge-collab. Each prompt targets a specific SLATE model (slate-coder 12B, slate-fast 3B, or slate-planner 7B) for local GPU inference. Use to list available prompts, get prompt contents, run a prompt through Ollama, validate prompt format, or rebuild the index.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"required": [
+						"action"
+					],
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Prompt action: 'list' (all prompts), 'get' (view one), 'run' (execute via Ollama), 'validate' (check format), 'index' (rebuild index.json)",
+							"enum": [
+								"list",
+								"get",
+								"run",
+								"validate",
+								"index"
+							]
+						},
+						"name": {
+							"type": "string",
+							"description": "Prompt name for 'get'/'run' (e.g. 'system-health', 'pr-review', 'task-router')"
+						},
+						"prompt": {
+							"type": "string",
+							"description": "For 'run': additional context to inject into the prompt"
+						},
+						"model": {
+							"type": "string",
+							"description": "For 'run': override the default model (slate-coder, slate-fast, slate-planner)"
+						}
+					}
+				}
+			}
+		],
+		"commands": [
+			{
+				"command": "antigravity.showStatus",
+				"title": "ANTIGRAVITY: Show System Status"
+			},
+			{
+				"command": "antigravity.openDashboard",
+				"title": "ANTIGRAVITY: Open Dashboard"
+			},
+			{
+				"command": "antigravity.refreshDashboard",
+				"title": "ANTIGRAVITY: Refresh Dashboard"
+			},
+			{
+				"command": "antigravity.skipOnboarding",
+				"title": "ANTIGRAVITY: Skip Onboarding (Fix Stuck)"
+			},
+			{
+				"command": "antigravity.resetOnboarding",
+				"title": "ANTIGRAVITY: Reset Onboarding"
+			},
+			{
+				"command": "antigravity.applyTheme",
+				"title": "ANTIGRAVITY: Apply SLATE Dark Theme"
+			},
+			{
+				"command": "slate.refreshBackground",
+				"title": "SLATE: Refresh Schematic Background"
+			},
+			{
+				"command": "slate.toggleBackground",
+				"title": "SLATE: Toggle Schematic Background"
+			},
+			{
+				"command": "slate.scanDiagnostics",
+				"title": "SLATE: Run Security Scan (Diagnostics)"
+			},
+			{
+				"command": "slate.clearDiagnostics",
+				"title": "SLATE: Clear Security Diagnostics"
+			},
+			{
+				"command": "slate.refreshTests",
+				"title": "SLATE: Refresh Test Explorer"
+			},
+			{
+				"command": "slate.codeLens.runTest",
+				"title": "SLATE: Run Test at Cursor"
+			},
+			{
+				"command": "slate.codeLens.runModule",
+				"title": "SLATE: Check Module Status"
+			},
+			{
+				"command": "slate.codeLens.scanFile",
+				"title": "SLATE: Scan File for Security Issues"
+			},
+			{
+				"command": "slate.codeLens.dispatchWorkflow",
+				"title": "SLATE: Dispatch Workflow"
+			}
+		],
+		"taskDefinitions": [
+			{
+				"type": "slate",
+				"required": [
+					"operation"
+				],
+				"properties": {
+					"operation": {
+						"type": "string",
+						"description": "The SLATE operation to run (e.g., 'status', 'workflow-status', 'gpu-status')"
+					},
+					"args": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"description": "Additional arguments for the operation"
+					}
+				}
+			}
+		],
+		"configuration": {
+			"title": "ANTIGRAVITY",
+			"properties": {
+				"antigravity.runtime.backend": {
+					"type": "string",
+					"default": "auto",
+					"enum": [
+						"auto",
+						"kubernetes",
+						"docker"
+					],
+					"enumDescriptions": [
+						"Auto-detect best available backend (K8s > Docker)",
+						"Route all commands to K8s copilot-bridge-svc",
+						"Execute inside Docker SLATE container"
+					],
+					"description": "SLATE runtime backend — controls where commands are executed. Auto-detect tries K8s first, then Docker. K8s or Docker deployment is required."
+				},
+				"antigravity.runtime.k8sEndpoint": {
+					"type": "string",
+					"default": "http://127.0.0.1:8083",
+					"description": "K8s copilot bridge service endpoint. Use kubectl port-forward or the SLATE K8s Port Forward task to expose this."
+				},
+				"antigravity.runtime.dockerContainer": {
+					"type": "string",
+					"default": "slate",
+					"description": "Docker container name for the SLATE runtime. Must match the container_name in docker-compose.yml."
+				},
+				"antigravity.background.enabled": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enable the evolving SLATE schematic background. The background reflects system progress and updates as your SLATE installation evolves."
+				},
+				"antigravity.background.opacity": {
+					"type": "number",
+					"default": 0.1,
+					"minimum": 0.01,
+					"maximum": 0.3,
+					"description": "Opacity of the schematic background (0.01-0.3). Lower values are more subtle."
+				}
+			}
+		}
+	},
+	"scripts": {},
+	"devDependencies": {
+		"@types/node": "^25",
+		"@types/vscode": "^1.95.0",
+		"typescript": "^5.9.2"
+	}
+}

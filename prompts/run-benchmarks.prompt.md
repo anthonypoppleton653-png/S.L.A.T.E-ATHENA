@@ -3,7 +3,9 @@ name: run-benchmarks
 agent: 'agent'
 description: 'Execute comprehensive GPU and inference benchmarks for SLATE'
 tags: [benchmark, gpu, performance, inference]
-model: 'sonnet'
+model: 'slate-coder'
+# Modified: 2026-02-09T02:47:00-05:00 | Author: ANTIGRAVITY (Gemini) | Change: Fix model from sonnet→slate-coder (local-only policy)
+# AI Note: When modifying, add a comment with the current date, time, and a 'Gemini' marker.
 ---
 
 # Run SLATE Benchmarks

@@ -50,7 +50,178 @@ The background is generated from real system state:
 - D3.js v7 (bundled locally, tech tree visualization)
 - **Ollama** (local LLM inference, mistral-nemo on dual RTX 5070 Ti) - localhost:11434
 - **Foundry Local** (ONNX-optimized local inference) - localhost:5272
+- **Claude Code** (Opus 4.6, local MCP bridge inference provider) - copilot agent bridge
 - ChromaDB (local vector store for RAG memory)
+- **TRELLIS.2** (Microsoft 4B image-to-3D generation) - K8s service port 8085
+
+## Token System
+
+SLATE has a complete local token management system for service auth, agent identity, and plugin verification.
+
+```powershell
+# Bootstrap token system (generates all service/agent/plugin tokens)
+.\.venv\Scripts\python.exe slate/slate_token_system.py --bootstrap
+
+# Check token system status
+.\.venv\Scripts\python.exe slate/slate_token_system.py --status
+
+# Generate a new token
+.\.venv\Scripts\python.exe slate/slate_token_system.py --generate service --name my-service
+
+# Rotate expiring tokens
+.\.venv\Scripts\python.exe slate/slate_token_system.py --rotate
+
+# Validate a token
+.\.venv\Scripts\python.exe slate/slate_token_system.py --validate TOKEN_VALUE
+
+# Audit log
+.\.venv\Scripts\python.exe slate/slate_token_system.py --audit
+
+# Export config (no secrets)
+.\.venv\Scripts\python.exe slate/slate_token_system.py --export-config
+```
+
+### Token Types
+
+| Type | Prefix | TTL | Purpose |
+|------|--------|-----|---------|
+| `service` | `slsvc_` | 30 days | Internal service-to-service auth |
+| `agent` | `slagt_` | 7 days | Agent identity tokens |
+| `github` | `slghp_` | 90 days | GitHub PAT tracking |
+| `wiki` | `slwik_` | 30 days | Wiki API access |
+| `plugin` | `slplg_` | 30 days | Plugin authentication |
+| `session` | `slsess_` | 4 hours | Ephemeral session tokens |
+| `api` | `slapi_` | 24 hours | External API tokens |
+
+**Security**: Tokens stored in `.slate_tokens/` (git-ignored), hashed with SHA-256, never stored as plaintext after generation.
+
+## GitHub Interface Layer
+
+SLATE uses GitHub as a complete interface layer. All systems are managed through GitHub surfaces:
+
+### Wiki Management
+
+```powershell
+# Generate wiki from specs
+.\.venv\Scripts\python.exe slate/slate_spec_kit.py --wiki
+
+# Process specs with AI analysis
+.\.venv\Scripts\python.exe slate/slate_spec_kit.py --analyze-spec specs/022-slate-brand-identity/spec.md
+```
+
+Wiki pages auto-generated from 26+ specifications to `docs/wiki/`.
+
+### Project Board Management
+
+```powershell
+# Sync all project boards
+.\.venv\Scripts\python.exe slate/slate_project_board.py --status
+
+# Push tasks to KANBAN
+.\.venv\Scripts\python.exe slate/slate_project_board.py --push
+
+# Bidirectional sync
+.\.venv\Scripts\python.exe slate/slate_project_board.py --sync
+```
+
+8 project boards: KANBAN (#5), BUG TRACKING (#7), ITERATIVE DEV (#8), ROADMAP (#10), PLANNING (#4), FUTURE RELEASE (#6), LAUNCH (#9), INTROSPECTION (#11).
+
+### Discussion Management
+
+```powershell
+# Check discussions
+.\.venv\Scripts\python.exe slate/slate_discussion_manager.py --status
+
+# Sync actionable discussions to tasks
+.\.venv\Scripts\python.exe slate/slate_discussion_manager.py --sync-tasks
+```
+
+### Fork Management (24 Dependencies)
+
+```powershell
+# Check all fork status
+.\.venv\Scripts\python.exe slate/slate_fork_sync.py --status
+
+# Sync all forks with upstream
+.\.venv\Scripts\python.exe slate/slate_fork_sync.py --sync-all
+
+# AI-powered fork analysis
+.\.venv\Scripts\python.exe slate/slate_fork_sync.py --analyze
+```
+
+24 forked dependencies across Microsoft, NVIDIA, OpenAI, Anthropic, HuggingFace, and more.
+
+## Brand Identity
+
+SLATE brand follows the **Watchmaker Design Philosophy** with locked design tokens.
+
+### Brand Specs
+
+| Spec | Title | Status |
+|------|-------|--------|
+| 007 | Design System | Complete |
+| 012 | Watchmaker 3D Dashboard | Complete |
+| 013 | Engineering Drawing Theme | Complete |
+| 014 | Watchmaker Golden Ratio UI | Complete |
+| 022 | Brand Identity System | Specified |
+| 023 | Avatar System | Specified |
+| 024 | TRELLIS.2 3D Integration | Specified |
+
+### Design Tokens
+
+Source of truth: `.slate_identity/design-tokens.json`
+
+Distributed to: CSS (`design-tokens.css`), Python (`design_tokens.py`), VS Code theme, GitHub Pages, wiki templates.
+
+### SLATE Avatar
+
+The SLATE avatar is a **living orrery** — a watchmaker mechanism reflecting system state:
+- 2D: D3.js force-directed graph (dashboard, GitHub Pages)
+- 3D: TRELLIS.2-generated GLB mesh with PBR materials
+- State-reactive: Responds to service health, GPU load, task execution
+
+## Unified AI Backend
+
+SLATE routes ALL AI tasks through `slate/unified_ai_backend.py` which manages 3 FREE local providers:
+
+| Provider | Endpoint | Role | Cost |
+|----------|----------|------|------|
+| **Ollama** | localhost:11434 | Primary for classification, docs, planning | FREE |
+| **Claude Code** | local MCP bridge | Complex reasoning, code gen, refactoring | FREE |
+| **Foundry Local** | localhost:5272 | ONNX-optimized fallback | FREE |
+
+### Task Routing
+
+```
+Task Type          -> Primary          -> Fallback       (Cost)
+─────────────────────────────────────────────────────────────────
+code_generation    -> ollama (coder)   -> claude_code    (FREE)
+code_review        -> ollama (coder)   -> claude_code    (FREE)
+bug_fix            -> claude_code      -> ollama         (FREE)
+refactoring        -> claude_code      -> ollama         (FREE)
+analysis           -> claude_code      -> ollama         (FREE)
+research           -> claude_code      -> ollama         (FREE)
+planning           -> ollama (planner) -> claude_code    (FREE)
+classification     -> ollama (fast)    -> ---            (FREE)
+prompt_engineering -> claude_code      -> ollama         (FREE)
+documentation      -> ollama (fast)    -> claude_code    (FREE)
+```
+
+### Commands
+
+```powershell
+# Check all provider status
+.\.venv\Scripts\python.exe slate/unified_ai_backend.py --status
+
+# Execute task with auto-routing
+.\.venv\Scripts\python.exe slate/unified_ai_backend.py --task "your task"
+
+# Force specific provider
+.\.venv\Scripts\python.exe slate/unified_ai_backend.py --task "your task" --provider claude_code
+
+# Show routing for a task type
+.\.venv\Scripts\python.exe slate/unified_ai_backend.py --route "code_generation"
+```
 
 ## Claude Code Plugin
 

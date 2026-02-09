@@ -163,6 +163,9 @@ plugins/**/dist/
 # Temp developer scripts (contains tokens + scratch files)
 _temp/
 
+# Node modules (plugin build dependencies)
+node_modules/
+
 # OS
 .DS_Store
 Thumbs.db
@@ -174,3 +177,6 @@ tools/helm.exe
 dashboard_err.txt
 dashboard_out.txt
 temp_spec.json
+
+# SLATE Token Store (NEVER commit)
+.slate_tokens/

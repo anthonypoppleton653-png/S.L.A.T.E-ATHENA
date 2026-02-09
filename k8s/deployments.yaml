@@ -46,6 +46,13 @@ spec:
             - containerPort: 8080
               name: dashboard
               protocol: TCP
+            # Modified: 2026-02-09T02:52:00-05:00 | Author: ANTIGRAVITY (Gemini)
+            - containerPort: 8081
+              name: agent-router
+              protocol: TCP
+            - containerPort: 8083
+              name: copilot-bridge
+              protocol: TCP
           # Modified: 2026-02-09T01:39:00Z | Author: Antigravity (Gemini) | Change: Add ChromaDB, Docker-awareness, agent name
           env:
             - name: SLATE_WORKSPACE
@@ -66,6 +73,11 @@ spec:
               value: "1"
             - name: SLATE_AGENT_NAME
               value: Antigravity
+            # Modified: 2026-02-09T02:52:00-05:00 | Author: ANTIGRAVITY (Gemini) | Change: Antigravity plugin integration
+            - name: SLATE_PLUGIN_ANTIGRAVITY
+              value: "true"
+            - name: COPILOT_BRIDGE_PORT
+              value: "8083"
           # Container-level security context
           securityContext:
             allowPrivilegeEscalation: false
@@ -88,6 +100,12 @@ spec:
               mountPath: /workspace
             - name: slate-data
               mountPath: /slate/.slate_index
+            # Modified: 2026-02-09T02:52:00-05:00 | Author: ANTIGRAVITY (Gemini) | FORGE + prompts
+            - name: forge-data
+              mountPath: /slate/FORGE.md
+              subPath: FORGE.md
+            - name: prompts-data
+              mountPath: /slate/prompts
             - name: tmp
               mountPath: /tmp
           livenessProbe:
@@ -110,6 +128,13 @@ spec:
         - name: slate-data
           persistentVolumeClaim:
             claimName: slate-data-pvc
+        # Modified: 2026-02-09T02:52:00-05:00 | Author: ANTIGRAVITY (Gemini) | FORGE + prompts PVCs
+        - name: forge-data
+          persistentVolumeClaim:
+            claimName: slate-forge-pvc
+        - name: prompts-data
+          persistentVolumeClaim:
+            claimName: slate-prompts-pvc
         - name: tmp
           emptyDir:
             sizeLimit: 500Mi
@@ -123,6 +148,76 @@ spec:
 
 # Modified: 2026-02-08T23:15:00Z | Author: COPILOT | Change: Remove duplicate slate-dashboard-svc (now in slate-dashboard.yaml)
 # SLATE Dashboard Service moved to slate-dashboard.yaml for comprehensive dashboard deployment
+
+---
+# Modified: 2026-02-09T02:52:00-05:00 | Author: ANTIGRAVITY (Gemini) | Change: Add Copilot Bridge service for @slate extension
+# Copilot Bridge Service (port 8083) — used by @slate extension to route tasks to agents
+apiVersion: v1
+kind: Service
+metadata:
+  name: copilot-bridge-svc
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: copilot-bridge
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: core
+  ports:
+    - port: 8083
+      targetPort: 8083
+      protocol: TCP
+      name: copilot-bridge
+
+---
+# Agent Router Service (port 8081) — routes tasks to ANTIGRAVITY/COPILOT agents
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-router-svc
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: agent-router
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: slate
+    app.kubernetes.io/component: core
+  ports:
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: agent-router
+
+---
+# FORGE + Prompts PersistentVolumeClaims
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: slate-forge-pvc
+  namespace: slate
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Mi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: slate-prompts-pvc
+  namespace: slate
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
 
 ---
 # Ollama LLM Deployment

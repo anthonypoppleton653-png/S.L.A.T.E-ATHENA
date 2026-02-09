@@ -184,6 +184,47 @@ def get_github_models_info():
         return {"available": False, "reason": "not installed"}
 
 
+# Modified: 2026-02-09T02:52:00-05:00 | Author: ANTIGRAVITY (Gemini) | Change: Add Antigravity plugin status
+# AI Note: When modifying, add a comment with the current date, time, and a 'Gemini' marker.
+def get_antigravity_info():
+    """Check Antigravity plugin status."""
+    try:
+        # Find plugin relative to workspace
+        workspace = Path(os.environ.get("SLATE_WORKSPACE", str(Path(__file__).parent.parent)))
+        plugin_json = workspace / "plugins" / "slate-antigravity" / "plugin.json"
+        forge_path = workspace / "FORGE.md"
+        prompts_dir = workspace / "prompts"
+
+        if not plugin_json.exists():
+            return {"installed": False, "reason": "plugin.json not found"}
+
+        plugin_data = json.loads(plugin_json.read_text(encoding="utf-8"))
+        version = plugin_data.get("version", "unknown")
+        web_host = plugin_data.get("web_host", {})
+
+        # FORGE.md status
+        forge_entries = 0
+        if forge_path.exists():
+            content = forge_path.read_text(encoding="utf-8")
+            forge_entries = content.count("### [")
+
+        # Prompt count
+        prompt_count = len(list(prompts_dir.glob("*.prompt.md"))) if prompts_dir.exists() else 0
+
+        return {
+            "installed": True,
+            "version": version,
+            "agent": plugin_data.get("agent", {}).get("name", "ANTIGRAVITY"),
+            "web_host_enabled": web_host.get("enabled", False),
+            "copilot_bridge_port": web_host.get("copilot_bridge_port", 8083),
+            "forge_entries": forge_entries,
+            "prompt_count": prompt_count,
+            "models": plugin_data.get("models", {}),
+        }
+    except Exception as e:
+        return {"installed": False, "reason": str(e)}
+
+
 # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add Kubernetes cluster info to system status
 def get_kubernetes_info():
     """Check Kubernetes cluster status."""
@@ -236,6 +277,8 @@ def get_status():
         "semantic_kernel": get_sk_info(),
         "github_models": get_github_models_info(),
         "kubernetes": get_kubernetes_info(),
+        # Modified: 2026-02-09T02:52:00-05:00 | Author: ANTIGRAVITY (Gemini)
+        "antigravity": get_antigravity_info(),
     }
 
 
@@ -311,6 +354,15 @@ def print_quick_status(status: dict):
         print(f"  K8s:      {OK} {k8s.get('deployments_ready', 0)}/{k8s.get('deployments_total', 0)} deploys ({k8s.get('pods_running', 0)} pods)")
     else:
         print(f"  K8s:      {NONE} Not available")
+
+    # Modified: 2026-02-09T02:52:00-05:00 | Author: ANTIGRAVITY (Gemini) | Change: Display Antigravity plugin status
+    # Antigravity Plugin
+    ag = status.get("antigravity", {})
+    if ag.get("installed"):
+        web = "web" if ag.get("web_host_enabled") else "cli"
+        print(f"  Antigrav: {OK} v{ag.get('version', '?')} ({web}, {ag.get('prompt_count', 0)} prompts, {ag.get('forge_entries', 0)} forge)")
+    else:
+        print(f"  Antigrav: {NONE} Not installed")
 
     print()
     print("=" * 50)

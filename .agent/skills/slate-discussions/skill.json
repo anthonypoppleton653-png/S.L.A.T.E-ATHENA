@@ -1,0 +1,9 @@
+{
+  "name": "slate-discussions",
+  "displayName": "SLATE Discussions",
+  "description": "Manage GitHub Discussions for community engagement and feature ideation",
+  "version": "1.0.0",
+  "publisher": "slate",
+  "prompts": ["SKILL.md"],
+  "tools": []
+}

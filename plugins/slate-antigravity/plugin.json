@@ -1,24 +1,97 @@
 {
     "name": "slate-antigravity",
-    "version": "1.0.0",
-    "description": "Google AI Ultra (Antigravity) integration for SLATE. Provides advanced architectural capabilities and orchestration.",
+    "version": "1.2.0",
+    "description": "Google AI Ultra (Antigravity) integration for SLATE. Provides advanced architectural capabilities, FORGE collaboration, dashboard API access, and super-prompt execution via @slate extension web host.",
     "author": "Antigravity",
     "main": "index.py",
+    "modified": "2026-02-09T03:32:00-05:00",
+    "modified_by": "ANTIGRAVITY (Gemini)",
     "dependencies": {
         "slate": ">=2.4.0"
     },
     "permissions": [
         "slate.orchestrator.*",
         "slate.workflow.*",
-        "slate.code.*"
+        "slate.code.*",
+        "slate.forge.*",
+        "slate.prompts.*",
+        "slate.ollama.*"
     ],
     "agent": {
         "name": "ANTIGRAVITY",
         "type": "architect",
+        "patterns": [
+            "architect",
+            "refactor",
+            "master",
+            "design",
+            "security"
+        ],
         "capabilities": [
             "refactor",
             "design",
-            "security"
+            "security",
+            "architecture",
+            "code_review",
+            "prompt_engineering",
+            "forge_collaboration"
         ]
+    },
+    "web_host": {
+        "enabled": true,
+        "copilot_bridge_port": 8083,
+        "antigravity_bridge_port": 8085,
+        "antigravity_bridge_nodeport": 30085,
+        "dashboard_port": 8080,
+        "agent_router_port": 8081,
+        "bind_address": "127.0.0.1",
+        "endpoints": {
+            "health": "/api/agents/antigravity/health",
+            "task": "/api/agents/antigravity/task",
+            "forge": "/api/agents/antigravity/forge",
+            "prompts": "/api/agents/antigravity/prompts",
+            "exec_prompt": "/api/agents/antigravity/exec-prompt",
+            "dashboard": "/api/agents/antigravity/dashboard"
+        }
+    },
+    "dashboard": {
+        "url": "http://127.0.0.1:8080",
+        "client": "dashboard_client.py",
+        "api_endpoints": [
+            "/api/status",
+            "/api/tasks",
+            "/api/agents",
+            "/api/runner",
+            "/api/gpu",
+            "/api/services",
+            "/api/orchestrator",
+            "/api/github",
+            "/api/workflows",
+            "/api/forks",
+            "/api/kubernetes/status",
+            "/api/docker",
+            "/api/activity",
+            "/api/heatmap",
+            "/api/specs",
+            "/api/tech",
+            "/api/multirunner",
+            "/api/schematic/system"
+        ]
+    },
+    "models": {
+        "architect": "slate-coder",
+        "planner": "slate-planner",
+        "classifier": "slate-fast"
+    },
+    "docker": {
+        "volumes": [
+            "FORGE.md:/slate/FORGE.md:rw",
+            "prompts:/slate/prompts:rw",
+            "current_tasks.json:/slate/current_tasks.json:rw"
+        ],
+        "environment": {
+            "SLATE_AGENT_NAME": "Antigravity",
+            "SLATE_PLUGIN_ANTIGRAVITY": "true"
+        }
     }
 }

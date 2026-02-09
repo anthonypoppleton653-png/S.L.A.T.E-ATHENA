@@ -1,6 +1,6 @@
 # Specification: Dashboard Monochrome Theme
 <!-- Auto-generated from specs/005-monochrome-theme/spec.md -->
-<!-- Generated: 2026-02-07T09:49:48.441336+00:00 -->
+<!-- Generated: 2026-02-09T09:07:02.737556+00:00 -->
 
 | Property | Value |
 |----------|-------|

@@ -119,6 +119,10 @@ interface ICodeGuidanceParams { file?: string; context?: string }
 interface IKubernetesParams { action?: string; component?: string; overlay?: string }
 // Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Add Adaptive Instructions tool interface
 interface IAdaptiveInstructionsParams { action?: string }
+// Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add FORGE.md and Prompt Index tool interfaces
+interface IForgeParams { action: string; entry?: string; section?: string; filter?: string }
+interface IPromptIndexParams { action: string; name?: string; prompt?: string; model?: string }
+interface IAdaptiveInstructionsParams { action?: string }
 
 class SystemStatusTool implements vscode.LanguageModelTool<IStatusParams> {
 	async invoke(options: vscode.LanguageModelToolInvocationOptions<IStatusParams>, token: vscode.CancellationToken) {
@@ -1277,6 +1281,71 @@ class KubernetesTool implements vscode.LanguageModelTool<IKubernetesParams> {
 	}
 }
 
+// ─── FORGE.md Collaborative Log ─────────────────────────────────────────
+// Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add FORGE.md collaborative log tool
+
+class ForgeTool implements vscode.LanguageModelTool<IForgeParams> {
+	async invoke(options: vscode.LanguageModelToolInvocationOptions<IForgeParams>, token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'read';
+		let cmd: string;
+		if (action === 'read') {
+			// Read FORGE.md contents — optionally filter by section
+			const section = options.input.section ? ` --section ${options.input.section}` : '';
+			const filter = options.input.filter ? ` --filter "${options.input.filter}"` : '';
+			cmd = `slate/slate_forge.py --read${section}${filter}`;
+		} else if (action === 'append' && options.input.entry) {
+			// Append a new entry to FORGE.md
+			cmd = `slate/slate_forge.py --append "${options.input.entry}"`;
+		} else if (action === 'status') {
+			cmd = 'slate/slate_forge.py --status';
+		} else if (action === 'sync') {
+			cmd = 'slate/slate_forge.py --sync';
+		} else {
+			cmd = 'slate/slate_forge.py --status';
+		}
+		const output = await execSlateCommand(cmd, token);
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(output)]);
+	}
+
+	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<IForgeParams>, _token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'read';
+		return { invocationMessage: `FORGE.md: ${action}...` };
+	}
+}
+
+// ─── Prompt Index — Query, list, run prompts ────────────────────────────
+// Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add Prompt Index tool for querying/running SLATE prompts
+
+class PromptIndexTool implements vscode.LanguageModelTool<IPromptIndexParams> {
+	async invoke(options: vscode.LanguageModelToolInvocationOptions<IPromptIndexParams>, token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'list';
+		let cmd: string;
+		if (action === 'list') {
+			cmd = 'slate/slate_prompt_runner.py --list';
+		} else if (action === 'get' && options.input.name) {
+			cmd = `slate/slate_prompt_runner.py --get "${options.input.name}"`;
+		} else if (action === 'run' && options.input.name) {
+			const model = options.input.model ? ` --model ${options.input.model}` : '';
+			const prompt = options.input.prompt ? ` --prompt "${options.input.prompt}"` : '';
+			cmd = `slate/slate_prompt_runner.py --run "${options.input.name}"${model}${prompt}`;
+		} else if (action === 'validate') {
+			cmd = 'slate/slate_prompt_runner.py --validate';
+		} else if (action === 'index') {
+			cmd = 'slate/slate_prompt_runner.py --index';
+		} else {
+			cmd = 'slate/slate_prompt_runner.py --list';
+		}
+		const output = await execSlateCommandLong(cmd, token);
+		return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(output)]);
+	}
+
+	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<IPromptIndexParams>, _token: vscode.CancellationToken) {
+		const action = options.input.action ?? 'list';
+		const name = options.input.name ? ` (${options.input.name})` : '';
+		return { invocationMessage: `Prompt Index: ${action}${name}...` };
+	}
+}
+
 export function registerSlateTools(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.lm.registerTool('slate_systemStatus', new SystemStatusTool()));
 	context.subscriptions.push(vscode.lm.registerTool('slate_runtimeCheck', new RuntimeCheckTool()));
@@ -1315,4 +1384,8 @@ export function registerSlateTools(context: vscode.ExtensionContext) {
 	// Adaptive Instruction Layer — K8s-driven dynamic instructions
 	// Modified: 2026-02-09T06:00:00Z | Author: COPILOT | Change: Register adaptive instructions tool
 	context.subscriptions.push(vscode.lm.registerTool('slate_adaptiveInstructions', new AdaptiveInstructionsTool()));
+	// FORGE.md collaborative log + Prompt index
+	// Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Register FORGE.md and Prompt Index tools
+	context.subscriptions.push(vscode.lm.registerTool('slate_forge', new ForgeTool()));
+	context.subscriptions.push(vscode.lm.registerTool('slate_promptIndex', new PromptIndexTool()));
 }

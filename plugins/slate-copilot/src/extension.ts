@@ -1,6 +1,9 @@
+// Modified: 2026-02-10T08:00:00Z | Author: COPILOT | Change: v5.3.0 — Add auto-start SLATE systems on VS Code open, Copilot SDK dashboard integration
 // Modified: 2026-02-10T02:00:00Z | Author: COPILOT | Change: Replace static DASHBOARD_URL with K8s/Docker runtime adapter — dashboard served by K8s or Docker, not hardcoded local
 // Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Add K8s/Docker runtime backend — hybrid execution engine, deprecate local-only execution
 import * as vscode from 'vscode';
+import * as http from 'http';
+import { exec as cpExec, spawn } from 'child_process';
 import { registerSlateParticipant } from './slateParticipant';
 import { registerSlateTools } from './tools';
 import { SlateUnifiedDashboardViewProvider } from './slateUnifiedDashboardView';
@@ -50,11 +53,14 @@ export function activate(context: vscode.ExtensionContext) {
 	registerAgentSdkHooks(context);
 
 	// ─── K8s/Docker Runtime Backend (v5.1.0) ────────────────────────────────
-	// Modified: 2026-02-10T06:00:00Z | Author: COPILOT | Change: Update comment to reflect v5.1.0 container-only architecture
+	// Modified: 2026-02-10T08:00:00Z | Author: COPILOT | Change: Add auto-start SLATE systems after runtime detection
 	// Container-first execution: auto-detects K8s → Docker backends (no local)
-	activateSlateRuntime(context).then((runtime) => {
+	activateSlateRuntime(context).then(async (runtime) => {
 		const status = runtime.status;
 		console.log(`SLATE Runtime: ${status.backend} (healthy: ${status.healthy})`);
+
+		// Auto-start SLATE systems if not running
+		await autoStartSlateSystems(context, runtime);
 
 		// Log runtime changes
 		runtime.onStatusChange((newStatus) => {
@@ -181,6 +187,152 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() { }
+
+// ─── Auto-Start SLATE Systems ──────────────────────────────────────────────
+// Modified: 2026-02-10T08:00:00Z | Author: COPILOT | Change: Auto-start Ollama + SLATE services on VS Code open
+
+/** Check if Ollama is running by hitting its health endpoint */
+async function checkOllamaRunning(): Promise<boolean> {
+	return new Promise<boolean>((resolve) => {
+		const req = http.get(
+			{ hostname: '127.0.0.1', port: 11434, path: '/api/version', timeout: 3000 },
+			(res) => {
+				let body = '';
+				res.on('data', (chunk: Buffer) => { body += chunk.toString(); });
+				res.on('end', () => resolve(res.statusCode === 200));
+			}
+		);
+		req.on('error', () => resolve(false));
+		req.on('timeout', () => { req.destroy(); resolve(false); });
+	});
+}
+
+/** Check if a local service is reachable */
+async function checkServiceRunning(port: number, path: string = '/'): Promise<boolean> {
+	return new Promise<boolean>((resolve) => {
+		const req = http.get(
+			{ hostname: '127.0.0.1', port, path, timeout: 3000 },
+			(res) => { resolve(res.statusCode !== undefined && res.statusCode < 500); }
+		);
+		req.on('error', () => resolve(false));
+		req.on('timeout', () => { req.destroy(); resolve(false); });
+	});
+}
+
+/** Auto-start SLATE systems when VS Code opens */
+async function autoStartSlateSystems(
+	context: vscode.ExtensionContext,
+	runtime: Awaited<ReturnType<typeof activateSlateRuntime>>
+): Promise<void> {
+	const autoStartEnabled = vscode.workspace.getConfiguration('slate').get<boolean>('autoStart', true);
+	if (!autoStartEnabled) {
+		console.log('[SLATE] Auto-start disabled by setting');
+		return;
+	}
+
+	const status = runtime.status;
+	const startedServices: string[] = [];
+	const failedServices: string[] = [];
+
+	vscode.window.setStatusBarMessage('$(sync~spin) SLATE: Checking systems...', 10000);
+	console.log('[SLATE] Auto-start: checking SLATE systems...');
+
+	// 1. Check and start Ollama
+	const ollamaOk = await checkOllamaRunning();
+	if (!ollamaOk) {
+		console.log('[SLATE] Auto-start: Ollama not running, attempting to start...');
+		try {
+			const ollamaProc = spawn('ollama', ['serve'], {
+				detached: true,
+				stdio: 'ignore',
+				windowsHide: true,
+			});
+			ollamaProc.unref();
+			// Wait a moment for Ollama to start
+			await new Promise(r => setTimeout(r, 2000));
+			const ollamaCheck = await checkOllamaRunning();
+			if (ollamaCheck) {
+				startedServices.push('Ollama');
+				console.log('[SLATE] Auto-start: Ollama started successfully');
+			} else {
+				failedServices.push('Ollama');
+				console.warn('[SLATE] Auto-start: Ollama failed to start');
+			}
+		} catch (err) {
+			failedServices.push('Ollama');
+			console.warn('[SLATE] Auto-start: Ollama spawn error:', err);
+		}
+	} else {
+		console.log('[SLATE] Auto-start: Ollama already running');
+	}
+
+	// 2. If runtime backend is not healthy, try to start services
+	if (!status.healthy || status.backend === 'none') {
+		console.log('[SLATE] Auto-start: Runtime not healthy, attempting to start services...');
+
+		// Check if Dashboard is running (local FastAPI)
+		const dashboardOk = await checkServiceRunning(8080, '/docs');
+		if (!dashboardOk) {
+			// Try to start the dashboard via the SLATE Auto-Start task
+			try {
+				await vscode.commands.executeCommand('workbench.action.tasks.runTask', 'SLATE: Auto-Start');
+				startedServices.push('SLATE Services');
+				console.log('[SLATE] Auto-start: Dispatched SLATE: Auto-Start task');
+			} catch (err) {
+				// Fallback: try direct Python start
+				const config = getSlateConfig();
+				try {
+					const proc = spawn(
+						config.pythonPath,
+						['slate/slate_orchestrator.py', 'start'],
+						{
+							cwd: config.workspacePath,
+							detached: true,
+							stdio: 'ignore',
+							windowsHide: true,
+						}
+					);
+					proc.unref();
+					startedServices.push('Orchestrator');
+					console.log('[SLATE] Auto-start: Started orchestrator directly');
+				} catch (e2) {
+					failedServices.push('SLATE Services');
+					console.warn('[SLATE] Auto-start: Failed to start services:', e2);
+				}
+			}
+		} else {
+			console.log('[SLATE] Auto-start: Dashboard already running on :8080');
+		}
+
+		// Re-detect backend after starting services
+		await new Promise(r => setTimeout(r, 3000));
+		await runtime.detectBackend();
+	}
+
+	// 3. Report results
+	if (startedServices.length > 0) {
+		vscode.window.setStatusBarMessage(
+			`$(check) SLATE: Started ${startedServices.join(', ')}`,
+			8000
+		);
+		vscode.window.showInformationMessage(
+			`SLATE auto-started: ${startedServices.join(', ')}. ` +
+			`Runtime: ${runtime.status.backend}`
+		);
+	} else if (failedServices.length > 0) {
+		vscode.window.setStatusBarMessage(
+			`$(warning) SLATE: Failed to start ${failedServices.join(', ')}`,
+			8000
+		);
+	} else {
+		vscode.window.setStatusBarMessage(
+			`$(check) SLATE: All systems online (${runtime.status.backend})`,
+			5000
+		);
+	}
+
+	console.log(`[SLATE] Auto-start complete: started=[${startedServices}], failed=[${failedServices}], backend=${runtime.status.backend}`);
+}
 
 // ─── SLATE Environment Initialization ──────────────────────────────────────
 // This implements the SLATE ethos: the system evolves with progress

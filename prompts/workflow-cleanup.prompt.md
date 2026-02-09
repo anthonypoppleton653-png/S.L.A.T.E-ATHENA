@@ -3,7 +3,9 @@ name: workflow-cleanup
 agent: 'agent'
 description: 'Clean up stale tasks, enforce completion rules, and maintain workflow health'
 tags: [workflow, maintenance, tasks]
-model: 'haiku'
+model: 'slate-fast'
+# Modified: 2026-02-09T02:47:00-05:00 | Author: ANTIGRAVITY (Gemini) | Change: Fix model from haiku→slate-fast (local-only policy)
+# AI Note: When modifying, add a comment with the current date, time, and a 'Gemini' marker.
 ---
 
 # Workflow Cleanup

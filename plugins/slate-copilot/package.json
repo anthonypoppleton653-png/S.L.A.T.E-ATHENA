@@ -9,11 +9,11 @@
 		"url": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git"
 	},
 	"slateMetadata": {
-		"modified": "2026-02-08T22:00:00Z",
+		"modified": "2026-02-10T12:00:00Z",
 		"author": "COPILOT",
-		"change": "v5.1.0 — Remove all local execution fallback, K8s/Docker-only architecture per SLATE container-first requirements"
+		"change": "v5.3.0 — Auto-start SLATE systems on VS Code open, split dashboard (upper command center + lower control board), AI command interface (Ollama + Copilot SDK), system vitals bar, quick command chips"
 	},
-	"version": "5.1.0",
+	"version": "5.3.0",
 	"icon": "media/icon.png",
 	"engines": {
 		"vscode": "^1.95.0"
@@ -167,6 +167,14 @@
 					{
 						"name": "scan",
 						"description": "Security scan — run diagnostics and show in Problems panel"
+					},
+					{
+						"name": "forge",
+						"description": "FORGE.md — read/append to the collaborative AI operations log, check teammate updates"
+					},
+					{
+						"name": "prompts",
+						"description": "Prompt Index — list, view, run, validate SLATE super prompts via Ollama"
 					}
 				],
 				"disambiguation": [
@@ -948,6 +956,68 @@
 							"description": "Instruction action: 'status' (current state), 'evaluate' (analyze system), 'sync' (evaluate+apply to K8s), 'get-context' (instruction block for sessions), 'get-active' (active set from K8s), 'apply' (push to ConfigMap)",
 							"enum": ["status", "evaluate", "sync", "get-context", "get-active", "apply"],
 							"default": "status"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_forge",
+				"tags": ["slate", "forge", "collaboration", "log", "agents", "copilot", "antigravity"],
+				"toolReferenceName": "slateForge",
+				"displayName": "SLATE FORGE.md",
+				"modelDescription": "FORGE.md collaborative AI operations log — the shared append-only log for AI team members (Copilot, Antigravity, autonomous agents). FORGE = Framework for Orchestrated Research, Generation & Evolution. Use to read teammate updates, append new entries, check collaboration status, and sync the FORGE log across Docker volumes and MCP. Entries are timestamped with format: [AgentName] YYYY-MM-DDTHH:MM:SSZ | Action: description. Sections: STATUS, PLAN, OUTPUT, HANDOFF, MAGIC (super prompts).",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"required": ["action"],
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "FORGE action: 'read' (view log, optionally filtered), 'append' (add new entry), 'status' (collaboration summary), 'sync' (sync with Docker/MCP)",
+							"enum": ["read", "append", "status", "sync"]
+						},
+						"entry": {
+							"type": "string",
+							"description": "For 'append': the log entry text to add (auto-timestamped)"
+						},
+						"section": {
+							"type": "string",
+							"description": "For 'read': filter by section (STATUS, PLAN, OUTPUT, HANDOFF, MAGIC)"
+						},
+						"filter": {
+							"type": "string",
+							"description": "For 'read': text search filter across entries"
+						}
+					}
+				}
+			},
+			{
+				"name": "slate_promptIndex",
+				"tags": ["slate", "prompts", "ollama", "automation", "inference", "index"],
+				"toolReferenceName": "slatePromptIndex",
+				"displayName": "SLATE Prompt Index",
+				"modelDescription": "SLATE Prompt Index — manage and execute the 9 super prompts in prompts/index.json. Prompts are Ollama-routed automation workflows: system-health, deploy-kubernetes, run-benchmarks, workflow-cleanup, issue-to-task, pr-review, task-router, dashboard-sync, forge-collab. Each prompt targets a specific SLATE model (slate-coder 12B, slate-fast 3B, or slate-planner 7B) for local GPU inference. Use to list available prompts, get prompt contents, run a prompt through Ollama, validate prompt format, or rebuild the index.",
+				"canBeReferencedInPrompt": true,
+				"inputSchema": {
+					"type": "object",
+					"required": ["action"],
+					"properties": {
+						"action": {
+							"type": "string",
+							"description": "Prompt action: 'list' (all prompts), 'get' (view one), 'run' (execute via Ollama), 'validate' (check format), 'index' (rebuild index.json)",
+							"enum": ["list", "get", "run", "validate", "index"]
+						},
+						"name": {
+							"type": "string",
+							"description": "Prompt name for 'get'/'run' (e.g. 'system-health', 'pr-review', 'task-router')"
+						},
+						"prompt": {
+							"type": "string",
+							"description": "For 'run': additional context to inject into the prompt"
+						},
+						"model": {
+							"type": "string",
+							"description": "For 'run': override the default model (slate-coder, slate-fast, slate-planner)"
 						}
 					}
 				}

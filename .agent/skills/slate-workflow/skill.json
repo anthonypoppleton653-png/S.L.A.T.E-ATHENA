@@ -1,0 +1,9 @@
+{
+  "name": "slate-workflow",
+  "displayName": "SLATE Workflow",
+  "description": "Manage the SLATE task workflow queue — view task status, cleanup stale tasks, and enforce completion rules",
+  "version": "2.4.0",
+  "publisher": "slate",
+  "prompts": ["SKILL.md"],
+  "tools": ["slate_workflow"]
+}

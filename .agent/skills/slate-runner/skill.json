@@ -1,0 +1,9 @@
+{
+  "name": "slate-runner",
+  "displayName": "SLATE Runner",
+  "description": "Manage the GitHub Actions self-hosted runner with dual-GPU access — check status, dispatch CI/CD workflows, and monitor runs",
+  "version": "2.4.0",
+  "publisher": "slate",
+  "prompts": ["SKILL.md"],
+  "tools": ["slate_runner"]
+}

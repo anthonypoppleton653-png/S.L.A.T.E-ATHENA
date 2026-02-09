@@ -152,7 +152,8 @@ class OllamaClient:
         }
         if system:
             data["system"] = system
-        return self._request("/api/generate", data, timeout=300)
+        # Modified: 2026-02-09T09:15:00Z | Author: COPILOT | Change: Increase timeout from 300s to 600s for large spec analysis
+        return self._request("/api/generate", data, timeout=600)
 
     def embed(self, model: str, text: str) -> list[float]:
         """Generate embeddings for text."""
@@ -170,7 +171,8 @@ class OllamaClient:
             "stream": False,
             "options": {"temperature": temperature},
         }
-        return self._request("/api/chat", data, timeout=300)
+        # Modified: 2026-02-09T09:15:00Z | Author: COPILOT | Change: Increase chat timeout from 300s to 600s
+        return self._request("/api/chat", data, timeout=600)
 
 
 class MLOrchestrator:

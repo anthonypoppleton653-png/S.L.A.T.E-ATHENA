@@ -1,0 +1,9 @@
+{
+  "name": "slate",
+  "displayName": "SLATE Orchestrator",
+  "description": "Main SLATE orchestrator — start, stop, and manage all SLATE services",
+  "version": "5.3.0",
+  "publisher": "slate",
+  "prompts": ["SKILL.md"],
+  "tools": ["slate_orchestrator", "slate_status"]
+}

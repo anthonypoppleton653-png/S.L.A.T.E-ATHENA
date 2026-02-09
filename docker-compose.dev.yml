@@ -61,11 +61,18 @@ services:
       # Persistent data
       - slate_data:/slate/.slate_index
       - slate_prompts:/slate/.slate_prompts
+      # Modified: 2026-02-09T02:48:00-05:00 | Author: ANTIGRAVITY (Gemini) | Collaboration volumes
+      # FORGE.md and prompts/ must be accessible inside containers for
+      # @slate extension web host and Antigravity plugin integration
+      - ./FORGE.md:/slate/FORGE.md:rw
+      - ./prompts:/slate/prompts:rw
+      - ./AGENTS.md:/slate/AGENTS.md:ro
     environment:
       - SLATE_MODE=dev
       - SLATE_WORKSPACE=/slate
       - SLATE_DOCKER=1
       - SLATE_AGENT_NAME=Antigravity
+      - SLATE_PLUGIN_ANTIGRAVITY=true
       - OLLAMA_HOST=ollama:11434
       - CHROMADB_HOST=chromadb
       - CHROMADB_PORT=8000

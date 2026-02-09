@@ -1,6 +1,6 @@
 # Specification: Natural Theme System with Procedural Gradient
 <!-- Auto-generated from specs/006-natural-theme-system/spec.md -->
-<!-- Generated: 2026-02-07T09:49:48.444057+00:00 -->
+<!-- Generated: 2026-02-09T09:07:02.761399+00:00 -->
 
 | Property | Value |
 |----------|-------|

@@ -3,7 +3,9 @@ name: system-health
 agent: 'agent'
 description: 'Check SLATE system health including GPU, services, Kubernetes, and workflow status'
 tags: [health, diagnostics, status]
-model: 'sonnet'
+model: 'slate-fast'
+# Modified: 2026-02-09T02:47:00-05:00 | Author: ANTIGRAVITY (Gemini) | Change: Fix model from sonnet→slate-fast (local-only policy)
+# AI Note: When modifying, add a comment with the current date, time, and a 'Gemini' marker.
 ---
 
 # System Health Check

@@ -122,7 +122,8 @@ spec:
           image: slate:local
           imagePullPolicy: IfNotPresent
           # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Run real agent router service with task classification
-          command: ["python", "slate/k8s_entrypoints.py", "--service", "agent-router"]
+          command:
+            ["python", "slate/k8s_entrypoints.py", "--service", "agent-router"]
           ports:
             - containerPort: 8081
               name: router-api
@@ -130,6 +131,7 @@ spec:
             - containerPort: 9090
               name: metrics
               protocol: TCP
+          # Modified: 2026-02-09T01:52:00Z | Author: Antigravity (Gemini) | Change: Add SLATE_DOCKER for container-aware checks
           env:
             - name: SLATE_WORKSPACE
               value: /workspace
@@ -137,6 +139,8 @@ spec:
               value: "true"
             - name: SLATE_MODE
               value: prod
+            - name: SLATE_DOCKER
+              value: "1"
             - name: OLLAMA_HOST
               value: ollama-svc:11434
             - name: CHROMADB_HOST
@@ -243,7 +247,7 @@ metadata:
     app.kubernetes.io/component: autonomous-loop
     app.kubernetes.io/part-of: slate-system
 spec:
-  replicas: 1  # Single instance — leader election prevents conflicts
+  replicas: 1 # Single instance — leader election prevents conflicts
   selector:
     matchLabels:
       app.kubernetes.io/name: slate
@@ -337,7 +341,8 @@ spec:
           image: slate:local
           imagePullPolicy: IfNotPresent
           # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Run real autonomous loop with task discovery
-          command: ["python", "slate/k8s_entrypoints.py", "--service", "autonomous"]
+          command:
+            ["python", "slate/k8s_entrypoints.py", "--service", "autonomous"]
           ports:
             - containerPort: 8082
               name: loop-api
@@ -345,6 +350,7 @@ spec:
             - containerPort: 9090
               name: metrics
               protocol: TCP
+          # Modified: 2026-02-09T01:52:00Z | Author: Antigravity (Gemini) | Change: Add SLATE_DOCKER for container-aware checks
           env:
             - name: SLATE_WORKSPACE
               value: /workspace
@@ -352,6 +358,8 @@ spec:
               value: "true"
             - name: SLATE_MODE
               value: prod
+            - name: SLATE_DOCKER
+              value: "1"
             - name: OLLAMA_HOST
               value: ollama-svc:11434
             - name: CHROMADB_HOST
@@ -677,13 +685,18 @@ spec:
             - containerPort: 8083
               name: bridge-api
               protocol: TCP
+          # Modified: 2026-02-09T01:52:00Z | Author: Antigravity (Gemini) | Change: Add SLATE_DOCKER for container-aware checks
           env:
             - name: SLATE_WORKSPACE
               value: /workspace
             - name: SLATE_K8S
               value: "true"
+            - name: SLATE_DOCKER
+              value: "1"
             - name: OLLAMA_HOST
               value: ollama-svc:11434
+            - name: CHROMADB_HOST
+              value: chromadb-svc:8000
             - name: PYTHONPATH
               value: /slate:/workspace
           securityContext:
@@ -794,16 +807,20 @@ spec:
           image: slate:local
           imagePullPolicy: IfNotPresent
           # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Run real workflow manager service
-          command: ["python", "slate/k8s_entrypoints.py", "--service", "workflow"]
+          command:
+            ["python", "slate/k8s_entrypoints.py", "--service", "workflow"]
           ports:
             - containerPort: 8084
               name: workflow-api
               protocol: TCP
+          # Modified: 2026-02-09T01:52:00Z | Author: Antigravity (Gemini) | Change: Add SLATE_DOCKER for container-aware checks
           env:
             - name: SLATE_WORKSPACE
               value: /workspace
             - name: SLATE_K8S
               value: "true"
+            - name: SLATE_DOCKER
+              value: "1"
             - name: OLLAMA_HOST
               value: ollama-svc:11434
             - name: CHROMADB_HOST

@@ -1,0 +1,143 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-02-09T07:48:18.599286Z",
+  "count": 10,
+  "prompts": [
+    {
+      "file": "claude-code-inference.prompt.md",
+      "name": "claude-code-inference",
+      "agent": "agent",
+      "description": "Route complex AI tasks to Claude Code via the unified backend — agentic code generation, refactoring, prompt engineering, and multi-step reasoning",
+      "tags": [
+        "claude-code",
+        "inference",
+        "agentic",
+        "code-generation",
+        "refactoring",
+        "reasoning",
+        "mcp"
+      ],
+      "model": "slate-planner"
+    },
+    {
+      "file": "dashboard-sync.prompt.md",
+      "name": "dashboard-sync",
+      "agent": "agent",
+      "description": "Refresh SLATE dashboard data, broadcast system status, and sync project board state",
+      "tags": [
+        "dashboard",
+        "sync",
+        "status",
+        "project-board",
+        "monitoring"
+      ],
+      "model": "slate-fast"
+    },
+    {
+      "file": "deploy-kubernetes.prompt.md",
+      "name": "deploy-kubernetes",
+      "agent": "agent",
+      "description": "Deploy SLATE to Kubernetes cluster using Kustomize overlays or Helm",
+      "tags": [
+        "kubernetes",
+        "deployment",
+        "infrastructure"
+      ],
+      "model": "slate-planner"
+    },
+    {
+      "file": "forge-collab.prompt.md",
+      "name": "forge-collab",
+      "agent": "agent",
+      "description": "Meta-prompt for AI-to-AI collaboration — coordinate Copilot and Antigravity via FORGE.md, Docker volumes, and MCP",
+      "tags": [
+        "collaboration",
+        "forge",
+        "meta-prompt",
+        "agents",
+        "mcp",
+        "docker"
+      ],
+      "model": "slate-planner"
+    },
+    {
+      "file": "issue-to-task.prompt.md",
+      "name": "issue-to-task",
+      "agent": "agent",
+      "description": "Transform a GitHub issue into a local Ollama-routed task that produces an automated PR with code changes",
+      "tags": [
+        "automation",
+        "github",
+        "ollama",
+        "pr",
+        "issue-triage"
+      ],
+      "model": "slate-planner"
+    },
+    {
+      "file": "pr-review.prompt.md",
+      "name": "pr-review",
+      "agent": "agent",
+      "description": "Automated local code review of PR diffs using slate-coder and slate-planner via Ollama",
+      "tags": [
+        "code-review",
+        "pr",
+        "ollama",
+        "security",
+        "quality"
+      ],
+      "model": "slate-coder"
+    },
+    {
+      "file": "run-benchmarks.prompt.md",
+      "name": "run-benchmarks",
+      "agent": "agent",
+      "description": "Execute comprehensive GPU and inference benchmarks for SLATE",
+      "tags": [
+        "benchmark",
+        "gpu",
+        "performance",
+        "inference"
+      ],
+      "model": "slate-coder"
+    },
+    {
+      "file": "system-health.prompt.md",
+      "name": "system-health",
+      "agent": "agent",
+      "description": "Check SLATE system health including GPU, services, Kubernetes, and workflow status",
+      "tags": [
+        "health",
+        "diagnostics",
+        "status"
+      ],
+      "model": "slate-fast"
+    },
+    {
+      "file": "task-router.prompt.md",
+      "name": "task-router",
+      "agent": "agent",
+      "description": "Classify and route incoming tasks to the correct SLATE agent using Ollama for intent detection",
+      "tags": [
+        "routing",
+        "agents",
+        "classification",
+        "ollama",
+        "automation"
+      ],
+      "model": "slate-fast"
+    },
+    {
+      "file": "workflow-cleanup.prompt.md",
+      "name": "workflow-cleanup",
+      "agent": "agent",
+      "description": "Clean up stale tasks, enforce completion rules, and maintain workflow health",
+      "tags": [
+        "workflow",
+        "maintenance",
+        "tasks"
+      ],
+      "model": "slate-fast"
+    }
+  ]
+}

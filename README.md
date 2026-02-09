@@ -309,7 +309,7 @@ The orchestrator uses local Ollama models. It learns your codebase over time. It
 │  │   └── runner_fallback.py         # Cost-aware runner selection         │
 │  │                                                                        │
 │  ├── AI Backends                                                          │
-│  │   ├── unified_ai_backend.py      # Central routing (FREE local first)  │
+│  │   ├── unified_ai_backend.py      # Central routing: Ollama + Claude Code + Foundry (FREE)  │
 │  │   ├── foundry_local.py           # Ollama + Foundry client             │
 │  │   └── ollama_client.py           # Direct Ollama integration           │
 │  │                                                                        │
@@ -809,7 +809,8 @@ SLATE won't run your GPU into the ground:
 | **Ollama** | AI Backend | Verified | `:11434` |
 | **Foundry Local** | AI Backend | Verified | `:5272` |
 | **VS Code** | IDE Extension | Active | @slate |
-| **Claude Code** | MCP Server | Active | 26 Tools |
+| **Claude Code** | MCP Server + Unified Backend | Active | 41 Tools, 12 MCP |
+| **Unified AI Backend** | Inference Router | Active | 3 Providers |
 | **GitHub Copilot** | Participant | Active | @slate |
 | **GitHub Actions** | Runner | Self-hosted | GPU Labels |
 | **Docker** | Container | Release Image | GPU/CPU |
@@ -856,6 +857,7 @@ SLATE development follows a specification-driven approach. Each major feature st
 | 019 | Dual-GPU Manager | Completed | Load-balanced GPU management |
 | 020 | Custom SLATE Models | Completed | slate-coder, slate-fast, slate-planner |
 | 021 | Autonomous Task Loop | Completed | Self-healing autonomous operation |
+| 022 | Unified AI Backend | Completed | 3-provider inference routing: Ollama, Claude Code, Foundry Local |
 
 ### Spec Lifecycle
 
@@ -897,7 +899,7 @@ SLATE provides bridges to major AI SDK ecosystems:
 | **AutoGen** | `vendor/autogen` | Multi-agent conversations |
 | **Semantic Kernel** | `vendor/semantic-kernel` | Plugin architecture |
 | **GitHub Copilot** | VS Code extension | @slate chat participant |
-| **Claude Code** | MCP server | 26 tools, slash commands |
+| **Claude Code** | MCP server + Unified Backend | 41 tools, 12 MCP tools, 3 inference providers |
 
 ```bash
 # Check vendor integration status

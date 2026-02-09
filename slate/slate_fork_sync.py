@@ -180,6 +180,63 @@ FORK_REGISTRY: List[ForkInfo] = [
         submodule_path="vendor/spec-kit",
         integration_files=["slate/slate_spec_kit.py", "specs/"]
     ),
+    # === Microsoft 3D / AI Infrastructure (Phase 3) ===
+    ForkInfo(
+        name="TRELLIS.2",
+        upstream="microsoft/TRELLIS.2",
+        fork="SynchronizedLivingArchitecture/TRELLIS.2",
+        purpose="Image-to-3D asset generation for SLATE avatar system",
+        integration_files=["slate/slate_trellis.py", "k8s/trellis2-generator.yaml", "specs/024-trellis-3d-integration/"]
+    ),
+    ForkInfo(
+        name="graphrag",
+        upstream="microsoft/graphrag",
+        fork="SynchronizedLivingArchitecture/graphrag",
+        purpose="Knowledge graph RAG to augment ChromaDB vector search",
+        integration_files=["slate/slate_chromadb.py", "slate/slate_graphrag.py"]
+    ),
+    ForkInfo(
+        name="Olive",
+        upstream="microsoft/Olive",
+        fork="SynchronizedLivingArchitecture/Olive",
+        purpose="Hardware-aware model quantization/optimization for dual RTX 5070 Ti",
+        integration_files=["slate/slate_model_trainer.py", "models/"]
+    ),
+    ForkInfo(
+        name="agent-framework",
+        upstream="microsoft/agent-framework",
+        fork="SynchronizedLivingArchitecture/agent-framework",
+        purpose="Unified successor to semantic-kernel + autogen for multi-agent orchestration",
+        integration_files=["slate/slate_unified_autonomous.py", "slate/vendor_autogen_sdk.py"]
+    ),
+    ForkInfo(
+        name="presidio",
+        upstream="microsoft/presidio",
+        fork="SynchronizedLivingArchitecture/presidio",
+        purpose="NLP-powered PII detection upgrade for SLATE scanner",
+        integration_files=["slate/pii_scanner.py"]
+    ),
+    ForkInfo(
+        name="playwright-mcp",
+        upstream="microsoft/playwright-mcp",
+        fork="SynchronizedLivingArchitecture/playwright-mcp",
+        purpose="Browser automation via MCP for testing/validation",
+        integration_files=["slate/mcp_server.py", ".mcp.json"]
+    ),
+    ForkInfo(
+        name="LLMLingua",
+        upstream="microsoft/LLMLingua",
+        fork="SynchronizedLivingArchitecture/LLMLingua",
+        purpose="20x prompt compression for 16GB VRAM constraint",
+        integration_files=["slate/unified_ai_backend.py", "slate/foundry_local.py"]
+    ),
+    ForkInfo(
+        name="markitdown",
+        upstream="microsoft/markitdown",
+        fork="SynchronizedLivingArchitecture/markitdown",
+        purpose="Document-to-Markdown for RAG ingestion pipeline",
+        integration_files=["slate/slate_chromadb.py", "slate/slate_spec_kit.py"]
+    ),
 ]
 
 
