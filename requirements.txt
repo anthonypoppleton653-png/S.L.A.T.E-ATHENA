@@ -31,8 +31,8 @@ accelerate>=0.30.0,<2
 # torch — installed separately with CUDA support (see Dockerfile)
 # For local CPU-only dev: pip install torch --index-url https://download.pytorch.org/whl/cpu
 # For CUDA: pip install torch --index-url https://download.pytorch.org/whl/cu128
-# Modified: 2026-02-09T22:00:00Z | Author: COPILOT | Change: Pin torch to prevent transitive upgrade via sentence-transformers/semantic-kernel
-torch==2.6.0+cu124
+# Modified: 2026-02-09T22:15:00Z | Author: COPILOT | Change: Remove torch pin from requirements.txt (breaks Docker cu128); use constraints file instead
+# torch pinned locally via .venv constraints, NOT here (Docker installs torch separately)
 
 # ─── Semantic Kernel (Microsoft AI Orchestration) ────────────────────────
 semantic-kernel[ollama,hugging_face,chroma]>=1.39.0,<2

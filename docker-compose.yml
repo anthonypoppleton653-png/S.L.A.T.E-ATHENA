@@ -137,8 +137,9 @@ services:
               capabilities: [ gpu ]
         limits:
           memory: 16G
+    # Modified: 2026-02-09T22:45:00Z | Author: COPILOT | Change: Fix Ollama healthcheck (wget not available, use ollama list)
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:11434/api/tags || exit 1" ]
+      test: [ "CMD", "ollama", "list" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -163,21 +164,23 @@ services:
         limits:
           memory: 2G
           cpus: "1.0"
+    # Modified: 2026-02-09T22:45:00Z | Author: COPILOT | Change: Fix ChromaDB healthcheck (no wget/curl/python in container, use /bin/sh TCP check)
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8000/api/v1/heartbeat || exit 1" ]
+      test: [ "CMD-SHELL", "echo > /dev/tcp/localhost/8000 || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
 
   # ─── Grafana Monitoring ────────────────────────────────────────────────
+  # Modified: 2026-02-09T22:30:00Z | Author: COPILOT | Change: Remap Grafana to port 3001 (3000 used by Docker K8s)
   grafana:
     <<: *slate-common
     image: grafana/grafana:latest
     container_name: aurora-grafana
     hostname: grafana
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3001:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana_provisioning:/etc/grafana/provisioning:ro

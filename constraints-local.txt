@@ -1,0 +1,10 @@
+# Modified: 2026-02-09T22:15:00Z | Author: COPILOT | Change: Local constraints file to pin torch for local .venv
+# This file pins torch for local development (CUDA 12.4 / RTX 4060)
+# Docker uses CUDA 12.8 and installs torch separately — do NOT put torch pins in requirements.txt
+#
+# Usage: pip install -r requirements.txt -c constraints-local.txt
+# Or: PIP_CONSTRAINT=constraints-local.txt pip install -r requirements.txt
+
+torch==2.6.0+cu124
+torchvision==0.21.0+cu124
+torchaudio==2.6.0+cu124

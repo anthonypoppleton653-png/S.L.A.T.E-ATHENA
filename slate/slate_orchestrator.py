@@ -100,8 +100,12 @@ class SlateOrchestrator:
         self._restart_counts: Dict[str, int] = {}
         self._last_restart: Dict[str, float] = {}
 
+    # Modified: 2026-02-09T22:30:00Z | Author: COPILOT | Change: Add Docker-aware Python path detection
     def _get_python(self) -> str:
-        """Get venv Python path."""
+        """Get Python path — uses sys.executable in Docker, venv path locally."""
+        if os.environ.get("SLATE_DOCKER"):
+            import sys
+            return sys.executable
         if os.name == "nt":
             return str(self.workspace / ".venv" / "Scripts" / "python.exe")
         return str(self.workspace / ".venv" / "bin" / "python")
