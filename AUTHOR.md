@@ -22,7 +22,18 @@ This project represents personal work developed independently. Any use, modifica
 
 ---
 
-**Contact**: Through GitHub Issues at [S.L.A.T.E. Repository](https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E)
+### About
+
+After a decade of honorable military service, Daniel brings the same discipline, attention to detail, and mission-focused mindset to software development. S.L.A.T.E. represents a vision for AI that prioritizes local control, privacy, and transparency — built by one person with the help of AI tools through vibe coding.
+
+The project demonstrates that powerful AI infrastructure doesn't require cloud subscriptions or corporate backing. With the right hardware and determination, an individual can build a complete AI operations center that rivals enterprise solutions.
+
+### Contact
+
+- **Email**: [slate.git@proton.me](mailto:slate.git@proton.me)
+- **GitHub**: [S.L.A.T.E. Repository](https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E)
+- **Issues**: [Issue Tracker](https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/discussions)
 
 ---
 
