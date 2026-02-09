@@ -910,6 +910,208 @@ async def api_benchmark_run():
     except Exception as e:
         return JSONResponse(content={"success": False, "error": str(e)})
 
+
+# ── Energy Scheduling API ──────────────────────────────────
+# Modified: 2025-07-15T12:30:00Z | Author: COPILOT | Change: Add energy scheduling API endpoints for T-025-031
+
+
+@app.get("/api/energy/status")
+async def api_energy_status():
+    """Get energy scheduler status — current tier, config, cost estimates."""
+    try:
+        from slate.energy_scheduler import EnergyScheduler
+        scheduler = EnergyScheduler()
+        if not scheduler.enabled:
+            return JSONResponse(content={
+                "enabled": False,
+                "message": "Energy scheduling not configured. Run: python install_slate.py --resume",
+            })
+        tier_name, tier_cost = scheduler.current_rate_tier
+        from dataclasses import asdict
+        estimate = asdict(scheduler.estimate_monthly_cost())
+        return JSONResponse(content={
+            "enabled": True,
+            "provider": scheduler.config.get("provider", "Unknown"),
+            "plan": scheduler.config.get("plan", ""),
+            "zip_code": scheduler.config.get("zip_code", ""),
+            "current_tier": tier_name,
+            "current_cost_kwh": tier_cost,
+            "monthly_estimate": estimate,
+            "queue_size": len(scheduler._queue),
+        })
+    except ImportError:
+        return JSONResponse(content={"enabled": False, "error": "energy_scheduler not available"})
+    except Exception as e:
+        return JSONResponse(content={"enabled": False, "error": str(e)})
+
+
+@app.get("/api/energy/providers")
+async def api_energy_providers(zip: str = None):
+    """List energy providers, optionally filtered by ZIP code."""
+    try:
+        from slate.energy_scheduler import EnergyProviderDatabase
+        if zip:
+            providers = EnergyProviderDatabase.lookup_by_zip(zip)
+        else:
+            providers = EnergyProviderDatabase.list_all_providers()
+        return JSONResponse(content={"providers": providers, "count": len(providers)})
+    except ImportError:
+        return JSONResponse(content={"providers": [], "error": "energy_scheduler not available"})
+    except Exception as e:
+        return JSONResponse(content={"providers": [], "error": str(e)})
+
+
+@app.get("/api/energy/schedule")
+async def api_energy_schedule(provider: str, plan: str = None):
+    """Get rate schedule for a provider and optional plan."""
+    try:
+        from slate.energy_scheduler import EnergyProviderDatabase
+        schedule = EnergyProviderDatabase.get_rate_schedule(provider, plan)
+        if not schedule:
+            return JSONResponse(content={"found": False, "message": f"No schedule for {provider}"})
+        return JSONResponse(content={
+            "found": True,
+            "provider": schedule.provider_name,
+            "plan": schedule.plan_name,
+            "rates": schedule.rates,
+        })
+    except ImportError:
+        return JSONResponse(content={"found": False, "error": "energy_scheduler not available"})
+    except Exception as e:
+        return JSONResponse(content={"found": False, "error": str(e)})
+
+
+@app.post("/api/energy/config")
+async def api_energy_config(request: Request):
+    """Save or update energy configuration."""
+    try:
+        body = await request.json()
+        provider = body.get("provider")
+        plan = body.get("plan")
+        zip_code = body.get("zip_code", "")
+        enabled = body.get("enabled", True)
+        budget_limit = body.get("budget_limit_usd", 50)
+
+        energy_yaml = WORKSPACE_ROOT / ".slate_config" / "energy.yaml"
+        energy_yaml.parent.mkdir(parents=True, exist_ok=True)
+
+        lines = [
+            "# SLATE Energy Configuration",
+            f"# Updated: {datetime.now(timezone.utc).isoformat()}",
+            f"# Source: Dashboard API",
+            "",
+            f"enabled: {'true' if enabled else 'false'}",
+            f"provider: {provider or 'generic'}",
+            f"plan: {plan or 'flat_rate'}",
+            f"zip_code: '{zip_code}'",
+            "",
+            "# Budget controls",
+            f"budget_limit_usd: {budget_limit}",
+            "budget_warn_pct: 80",
+            "",
+            "# Scheduling behavior",
+            "heavy_ops: defer_to_offpeak",
+            "normal_ops: always_run",
+            "light_ops: always_run",
+        ]
+        energy_yaml.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return JSONResponse(content={"success": True, "message": "Energy config saved"})
+    except Exception as e:
+        return JSONResponse(content={"success": False, "error": str(e)})
+
+
+@app.get("/api/energy/decide")
+async def api_energy_decide(operation: str = "inference"):
+    """Check if an operation should execute now or be deferred."""
+    try:
+        from slate.energy_scheduler import EnergyScheduler
+        from dataclasses import asdict
+        scheduler = EnergyScheduler()
+        decision = scheduler.should_execute(operation)
+        return JSONResponse(content={"available": True, "decision": asdict(decision)})
+    except ImportError:
+        return JSONResponse(content={"available": False, "decision": {"execute_now": True, "reason": "Scheduler unavailable"}})
+    except Exception as e:
+        return JSONResponse(content={"available": False, "error": str(e)})
+
+
+# ── Token Counter API ──────────────────────────────────────
+# Modified: 2025-07-15T12:45:00Z | Author: COPILOT | Change: Add token counter API endpoints for T-025-032
+
+
+@app.get("/api/tokens/throughput")
+async def api_tokens_throughput(window: str = "1h"):
+    """Get token throughput metrics over a time window (1h, 24h, 7d)."""
+    try:
+        from slate.token_counter import TokenCounter
+        from dataclasses import asdict
+        counter = TokenCounter()
+        report = counter.get_throughput(window)
+        return JSONResponse(content={"available": True, "throughput": asdict(report)})
+    except ImportError:
+        return JSONResponse(content={"available": False, "error": "token_counter not available"})
+    except Exception as e:
+        return JSONResponse(content={"available": False, "error": str(e)})
+
+
+@app.get("/api/tokens/lifetime")
+async def api_tokens_lifetime():
+    """Get lifetime cumulative token statistics."""
+    try:
+        from slate.token_counter import TokenCounter
+        from dataclasses import asdict
+        counter = TokenCounter()
+        stats = counter.get_lifetime_stats()
+        return JSONResponse(content={"available": True, "stats": asdict(stats)})
+    except ImportError:
+        return JSONResponse(content={"available": False, "error": "token_counter not available"})
+    except Exception as e:
+        return JSONResponse(content={"available": False, "error": str(e)})
+
+
+@app.get("/api/tokens/session")
+async def api_tokens_session():
+    """Get current session token stats."""
+    try:
+        from slate.token_counter import TokenCounter
+        counter = TokenCounter()
+        return JSONResponse(content={"available": True, "session": counter.get_session_stats()})
+    except ImportError:
+        return JSONResponse(content={"available": False, "error": "token_counter not available"})
+    except Exception as e:
+        return JSONResponse(content={"available": False, "error": str(e)})
+
+
+@app.get("/api/tokens/daily")
+async def api_tokens_daily(date: str = None):
+    """Get daily token stats (optional date YYYY-MM-DD, defaults to today)."""
+    try:
+        from slate.token_counter import TokenCounter
+        from datetime import date as date_cls
+        counter = TokenCounter()
+        target = date_cls.fromisoformat(date) if date else None
+        daily = counter.get_daily_stats(target)
+        return JSONResponse(content={"available": True, "daily": daily})
+    except ImportError:
+        return JSONResponse(content={"available": False, "error": "token_counter not available"})
+    except Exception as e:
+        return JSONResponse(content={"available": False, "error": str(e)})
+
+
+@app.get("/api/tokens/tps")
+async def api_tokens_tps():
+    """Get current real-time tokens per second."""
+    try:
+        from slate.token_counter import TokenCounter
+        counter = TokenCounter()
+        tps = counter.get_current_tps()
+        return JSONResponse(content={"available": True, "tps": round(tps, 1)})
+    except ImportError:
+        return JSONResponse(content={"available": False, "tps": 0})
+    except Exception as e:
+        return JSONResponse(content={"available": False, "error": str(e)})
+
+
 @app.get("/api/system/ollama")
 async def api_system_ollama():
     """Get Ollama service and loaded models."""
@@ -5975,6 +6177,95 @@ DASHBOARD_HTML = """
                 </div>
             </div>
 
+            <!-- Token Throughput Widget (T-025-032) -->
+            <!-- Modified: 2025-07-15T13:00:00Z | Author: COPILOT | Change: Add token throughput and energy dashboard widgets -->
+            <div class="card col-6">
+                <div class="card-header">
+                    <span class="card-title">Token Throughput</span>
+                    <button class="card-action" onclick="refreshTokens()">Refresh</button>
+                </div>
+                <div class="hw-grid">
+                    <div class="hw-card">
+                        <div class="hw-card-title">Current Session</div>
+                        <div class="benchmark-result">
+                            <div class="benchmark-stat">
+                                <div class="benchmark-stat-value" id="token-tps">--</div>
+                                <div class="benchmark-stat-label">tok/s (live)</div>
+                            </div>
+                            <div class="benchmark-stat">
+                                <div class="benchmark-stat-value" id="token-total">--</div>
+                                <div class="benchmark-stat-label">Total Tokens</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hw-card">
+                        <div class="hw-card-title">Inference Activity</div>
+                        <div class="benchmark-result">
+                            <div class="benchmark-stat">
+                                <div class="benchmark-stat-value" id="token-calls">--</div>
+                                <div class="benchmark-stat-label">API Calls</div>
+                            </div>
+                            <div class="benchmark-stat">
+                                <div class="benchmark-stat-value" id="token-models">--</div>
+                                <div class="benchmark-stat-label">Models Used</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 8px; font-size: 0.7rem; color: var(--text-muted);">
+                    <span id="token-window-label">1h window</span> &bull;
+                    <span id="token-energy-cost">Energy: $0.00</span>
+                </div>
+            </div>
+
+            <!-- Energy Scheduling Widget (T-025-032) -->
+            <div class="card col-6">
+                <div class="card-header">
+                    <span class="card-title">Energy Scheduling</span>
+                    <button class="card-action" onclick="refreshEnergy()">Refresh</button>
+                </div>
+                <div id="energy-widget-content">
+                    <div class="hw-grid">
+                        <div class="hw-card">
+                            <div class="hw-card-title">Current Rate</div>
+                            <div class="benchmark-result">
+                                <div class="benchmark-stat">
+                                    <div class="benchmark-stat-value" id="energy-tier">--</div>
+                                    <div class="benchmark-stat-label" id="energy-tier-label">Loading...</div>
+                                </div>
+                                <div class="benchmark-stat">
+                                    <div class="benchmark-stat-value" id="energy-cost-kwh">--</div>
+                                    <div class="benchmark-stat-label">$/kWh</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hw-card">
+                            <div class="hw-card-title">Monthly Budget</div>
+                            <div class="benchmark-result">
+                                <div class="benchmark-stat">
+                                    <div class="benchmark-stat-value" id="energy-spent">$0</div>
+                                    <div class="benchmark-stat-label">Spent</div>
+                                </div>
+                                <div class="benchmark-stat">
+                                    <div class="benchmark-stat-value" id="energy-savings">$0</div>
+                                    <div class="benchmark-stat-label">Saved</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px; font-size: 0.7rem; color: var(--text-muted);">
+                        <span id="energy-provider-label">Provider: Not configured</span> &bull;
+                        <span id="energy-budget-pct">0% of budget</span>
+                    </div>
+                </div>
+                <div id="energy-not-configured" style="display: none;">
+                    <div class="empty-state" style="padding: 16px;">
+                        Energy scheduling not configured.<br>
+                        <button class="btn btn-ghost" onclick="window.open('/api/energy/providers','_blank')" style="margin-top: 8px; font-size: 0.75rem;">Configure Energy</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Task Queue -->
             <div class="card col-8">
                 <div class="card-header">
@@ -6945,6 +7236,81 @@ DASHBOARD_HTML = """
                 }
             } catch (e) {
                 console.log('No benchmark history');
+            }
+        }
+
+        // ═══ Token Throughput Widget (T-025-032) ═══
+        // Modified: 2025-07-15T13:00:00Z | Author: COPILOT | Change: Add token throughput and energy refresh functions
+
+        async function refreshTokens() {
+            try {
+                const [thrRes, tpsRes] = await Promise.all([
+                    fetch('/api/tokens/throughput?window=1h'),
+                    fetch('/api/tokens/tps')
+                ]);
+                const thrData = await thrRes.json();
+                const tpsData = await tpsRes.json();
+
+                if (tpsData.available) {
+                    document.getElementById('token-tps').textContent = tpsData.tps || '0';
+                }
+
+                if (thrData.available && thrData.throughput) {
+                    const t = thrData.throughput;
+                    document.getElementById('token-total').textContent = t.total_tokens ? t.total_tokens.toLocaleString() : '0';
+                    document.getElementById('token-calls').textContent = t.calls_count || '0';
+                    const modelCount = t.models_used ? Object.keys(t.models_used).length : 0;
+                    document.getElementById('token-models').textContent = modelCount;
+                    document.getElementById('token-energy-cost').textContent = 'Energy: $' + (t.energy_cost_usd || 0).toFixed(4);
+                }
+            } catch (e) {
+                console.log('Token data unavailable:', e.message);
+            }
+        }
+
+        async function refreshEnergy() {
+            try {
+                const res = await fetch('/api/energy/status');
+                const data = await res.json();
+
+                if (!data.enabled) {
+                    document.getElementById('energy-widget-content').style.display = 'none';
+                    document.getElementById('energy-not-configured').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('energy-widget-content').style.display = 'block';
+                document.getElementById('energy-not-configured').style.display = 'none';
+
+                // Rate tier display
+                const tierEmoji = {
+                    'super_off_peak': '🟢',
+                    'off_peak': '🟡',
+                    'peak': '🔴'
+                };
+                const tierLabel = {
+                    'super_off_peak': 'Super Off-Peak',
+                    'off_peak': 'Off-Peak',
+                    'peak': 'Peak'
+                };
+                const tier = data.current_tier || 'off_peak';
+                document.getElementById('energy-tier').textContent = tierEmoji[tier] || '⚪';
+                document.getElementById('energy-tier-label').textContent = tierLabel[tier] || tier;
+                document.getElementById('energy-cost-kwh').textContent = '$' + (data.current_cost_kwh || 0).toFixed(3);
+
+                // Monthly estimates
+                if (data.monthly_estimate) {
+                    const est = data.monthly_estimate;
+                    document.getElementById('energy-spent').textContent = '$' + (est.actual_cost_usd || 0).toFixed(2);
+                    document.getElementById('energy-savings').textContent = '$' + (est.savings_usd || 0).toFixed(2);
+                    document.getElementById('energy-budget-pct').textContent = (est.budget_used_percent || 0).toFixed(0) + '% of budget';
+                }
+
+                document.getElementById('energy-provider-label').textContent = 'Provider: ' + (data.provider || 'Unknown');
+            } catch (e) {
+                console.log('Energy data unavailable:', e.message);
+                document.getElementById('energy-widget-content').style.display = 'none';
+                document.getElementById('energy-not-configured').style.display = 'block';
             }
         }
 
@@ -8248,6 +8614,8 @@ DASHBOARD_HTML = """
             refreshForks();
             refreshDocker();
             refreshHardwareControl();
+            refreshTokens();
+            refreshEnergy();
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ type: 'refresh' }));
             }
@@ -8269,6 +8637,8 @@ DASHBOARD_HTML = """
         refreshAll();
         loadTheme();
         loadBenchmarkHistory();
+        refreshTokens();
+        refreshEnergy();
         refreshArchitecture();  // Load architecture diagram status
 
         // Try WebSocket, but polling will keep working regardless

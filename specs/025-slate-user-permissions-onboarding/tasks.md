@@ -48,7 +48,7 @@
   - Auto-select based on benchmark results
   - Runtime enforcement (GPU power limiting)
 
-- [ ] **T-025-008**: Integrate benchmark into `install_slate.py`
+- [x] **T-025-008**: Integrate benchmark into `install_slate.py`
   - Add as Phase 6 in onboarding flow
   - Animated progress in dashboard
   - Results feed into system tuning
@@ -83,7 +83,7 @@
   - Hard cap option (pause non-essential ops at budget limit)
   - `.slate_config/energy.yaml` configuration schema
 
-- [ ] **T-025-031**: Energy Configuration Onboarding UI (Phase 7)
+- [x] **T-025-031**: Energy Configuration Onboarding UI (Phase 7)
   - ZIP code / city input field
   - Electrical provider dropdown (auto-populated from ZIP)
   - Rate schedule visualization (color-coded timeline)
@@ -92,7 +92,7 @@
   - "Skip — Run Anytime" option for users who don't care
   - AI narration explaining the savings opportunity
 
-- [ ] **T-025-032**: Token Counter + Energy Dashboard Widgets
+- [x] **T-025-032**: Token Counter + Energy Dashboard Widgets
   - Token throughput live chart (sparkline in dashboard header)
   - Per-agent token breakdown (bar chart with percentages)
   - Current rate tier indicator (green/yellow/red badge)

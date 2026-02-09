@@ -601,8 +601,15 @@ def benchmark_network_latency() -> BenchmarkResult:
 
 # ─── Benchmark Runner ──────────────────────────────────────────────────
 
-def run_full_suite(quick: bool = False) -> List[BenchmarkResult]:
-    """Run the full benchmark suite."""
+# Modified: 2026-02-09T20:30:00Z | Author: COPILOT | Change: Add quiet parameter to suppress stdout progress when --json is used
+def run_full_suite(quick: bool = False, quiet: bool = False) -> List[BenchmarkResult]:
+    """Run the full benchmark suite.
+
+    Args:
+        quick: Skip thermal and inference benchmarks for faster results.
+        quiet: Suppress progress output to stdout (for --json piping).
+    """
+    _out = (lambda *a, **kw: print(*a, file=sys.stderr, **kw)) if quiet else print
     benchmarks = [
         ("GPU Inference", benchmark_gpu_inference),
         ("GPU VRAM", benchmark_gpu_vram),
@@ -623,14 +630,14 @@ def run_full_suite(quick: bool = False) -> List[BenchmarkResult]:
     results = []
     total = len(benchmarks)
     for i, (label, func) in enumerate(benchmarks, 1):
-        print(f"  [{i}/{total}] {label}...", end=" ", flush=True)
+        _out(f"  [{i}/{total}] {label}...", end=" ", flush=True)
         try:
             r = func()
             status = f"✓ {r.value} {r.unit}" if r.available else f"✗ {r.error or 'N/A'}"
-            print(status)
+            _out(status)
             results.append(r)
         except Exception as e:
-            print(f"✗ Error: {e}")
+            _out(f"✗ Error: {e}")
             results.append(BenchmarkResult(
                 category=label.lower().replace(" ", "_"),
                 name=label, available=False, error=str(e)
@@ -981,11 +988,13 @@ def main():
             print("No previous benchmark results found.")
         return 0
 
-    print()
-    print("  ⚙ SLATE Benchmark Suite")
-    print("  " + "─" * 50)
+    # When --json is requested, redirect progress to stderr so stdout is clean JSON
+    _out = (lambda *a, **kw: print(*a, file=sys.stderr, **kw)) if args.json else print
+    _out()
+    _out("  ⚙ SLATE Benchmark Suite")
+    _out("  " + "─" * 50)
 
-    results = run_full_suite(quick=args.quick)
+    results = run_full_suite(quick=args.quick, quiet=args.json)
     card = generate_profile_card(results)
 
     if args.json:

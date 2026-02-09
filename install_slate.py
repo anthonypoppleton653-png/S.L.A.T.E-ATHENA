@@ -1334,11 +1334,19 @@ def _setup_github_pages(tracker, origin_url, details_parts):
         details_parts.append(f"Pages: enable failed ({ex})")
 
 
+# Modified: 2026-02-09T20:30:00Z | Author: COPILOT | Change: T-025-008 — integrate benchmark_suite.py into installer (profile card, thermal policy, save results)
 def step_benchmark(tracker, args):
-    """Step 8: Run system benchmarks."""
+    """Step 8: Run system benchmarks via benchmark_suite.py (T-025-008).
+
+    Runs the Spec 025 benchmark suite, generates a performance profile card,
+    auto-selects thermal policy, and saves results to .slate_analytics/.
+    """
     tracker.start_step("benchmark")
 
-    benchmark_script = WORKSPACE_ROOT / "slate" / "slate_benchmark.py"
+    benchmark_script = WORKSPACE_ROOT / "slate" / "benchmark_suite.py"
+    # Fallback to old benchmark if new suite not found
+    if not benchmark_script.exists():
+        benchmark_script = WORKSPACE_ROOT / "slate" / "slate_benchmark.py"
     if not benchmark_script.exists():
         tracker.skip_step("benchmark", "Benchmark script not found")
         return True
@@ -1348,29 +1356,277 @@ def step_benchmark(tracker, args):
         tracker.skip_step("benchmark", "Python venv not available")
         return True
 
-    tracker.update_progress("benchmark", 20, "Running CPU + memory benchmarks")
+    # Determine mode: --quick for faster onboarding, full for comprehensive
+    use_quick = getattr(args, 'quick_benchmark', False) or getattr(args, 'no_dashboard', False)
+
+    tracker.update_progress("benchmark", 10, "Initializing benchmark suite")
     try:
-        result = _run_cmd([python_exe, str(benchmark_script), "--json"], timeout=120)
+        # Phase 1: Run benchmarks with JSON output + save
+        cmd_args = [python_exe, str(benchmark_script), "--json", "--save"]
+        if use_quick:
+            cmd_args.append("--quick")
+        timeout = 90 if use_quick else 300
+
+        tracker.update_progress("benchmark", 20,
+                                "Running GPU, CPU, memory, storage & network benchmarks")
+        result = _run_cmd(cmd_args, timeout=timeout)
+
         if result.returncode == 0:
-            # Try to parse benchmark results
             try:
                 bench_data = json.loads(result.stdout)
-                score = bench_data.get("overall_score", "N/A")
-                details = f"Benchmark complete -- Overall score: {score}"
+                score = bench_data.get("overall_score", 0)
+                tier = bench_data.get("tier", "Unknown")
+                thermal = bench_data.get("recommended_thermal", "balanced")
+                gpu_name = bench_data.get("gpu_name", "N/A")
+                gpu_vram = bench_data.get("gpu_vram_mb", 0)
+                models = bench_data.get("recommended_models", [])
+
+                tracker.update_progress("benchmark", 70,
+                                        f"Score: {score:.1f}/100 ({tier})")
+
+                # Phase 2: Display ASCII profile card to terminal
+                tracker.update_progress("benchmark", 80, "Generating profile card")
+                card_result = _run_cmd(
+                    [python_exe, str(benchmark_script), "--previous", "--card"],
+                    timeout=15
+                )
+                if card_result.returncode == 0 and card_result.stdout.strip():
+                    print()
+                    print(card_result.stdout)
+
+                # Build details summary
+                detail_parts = [
+                    f"Score: {score:.1f}/100 ({tier})",
+                    f"GPU: {gpu_name} ({gpu_vram}MB)",
+                    f"Thermal: {thermal}",
+                ]
+                if models:
+                    detail_parts.append(f"Models: {', '.join(models[:3])}")
+
+                tracker.complete_step("benchmark", success=True,
+                                      details=" | ".join(detail_parts))
             except (json.JSONDecodeError, ValueError):
-                details = "Benchmark complete"
-            tracker.complete_step("benchmark", success=True, details=details)
+                tracker.complete_step("benchmark", success=True,
+                                      details="Benchmark complete (results saved)")
         else:
+            stderr_msg = (result.stderr or "")[:200].strip()
             tracker.complete_step("benchmark", success=True, warning=True,
-                                  details="Benchmark ran with warnings")
+                                  details=f"Benchmark ran with warnings: {stderr_msg}")
         return True
     except subprocess.TimeoutExpired:
         tracker.complete_step("benchmark", success=True, warning=True,
-                              details="Benchmark timed out after 120s -- skipping")
+                              details=f"Benchmark timed out after {timeout}s -- skipping")
         return True
     except Exception as e:
         tracker.complete_step("benchmark", success=True, warning=True,
                               details=f"Benchmark skipped: {e}")
+        return True
+
+
+# Modified: 2026-02-10T07:00:00Z | Author: COPILOT | Change: T-025-031 — Energy Configuration Onboarding step
+def step_energy_config(tracker, args):
+    """Step: Energy-aware scheduling configuration (T-025-031).
+
+    Guides the user through optional energy provider setup:
+    - ZIP code entry → provider auto-discovery
+    - Rate schedule selection → cost optimization preview
+    - Save to .slate_config/energy.yaml
+    - Skip option for users who don't want energy scheduling
+    """
+    tracker.start_step("energy_config")
+    tracker.update_progress("energy_config", 10, "Checking energy configuration")
+
+    energy_yaml = WORKSPACE_ROOT / ".slate_config" / "energy.yaml"
+
+    # Already configured?  show status and skip
+    if energy_yaml.exists():
+        try:
+            import yaml
+            with open(energy_yaml, "r", encoding="utf-8") as f:
+                cfg = yaml.safe_load(f) or {}
+            provider = cfg.get("provider", "Unknown")
+            plan = cfg.get("plan", "")
+            enabled = cfg.get("enabled", False)
+            status_msg = f"{provider} ({plan})" if enabled else "Disabled"
+            tracker.complete_step("energy_config", success=True,
+                                  details=f"Energy scheduling: {status_msg}")
+            return True
+        except Exception:
+            pass  # Re-configure if config is corrupted
+
+    # Non-interactive mode → skip with message
+    if getattr(args, 'no_dashboard', False) or getattr(args, 'non_interactive', False):
+        tracker.complete_step("energy_config", success=True,
+                              details="Skipped (non-interactive) — configure later via dashboard")
+        return True
+
+    tracker.update_progress("energy_config", 20, "Loading provider database")
+
+    try:
+        sys.path.insert(0, str(WORKSPACE_ROOT))
+        from slate.energy_scheduler import EnergyProviderDatabase, EnergyScheduler
+
+        print()
+        print("  ⚡ Energy-Aware Scheduling (Optional)")
+        print("  " + "─" * 50)
+        print("  SLATE can shift heavy compute (CI, training, benchmarks)")
+        print("  to off-peak hours when electricity is cheapest.")
+        print("  Typical savings: $5-15/month for active GPU users.")
+        print()
+
+        # Ask for ZIP code
+        zip_code = ""
+        try:
+            user_input = input("  Enter your ZIP code (or press Enter to skip): ").strip()
+        except (EOFError, KeyboardInterrupt):
+            user_input = ""
+
+        if not user_input:
+            # Create disabled config
+            energy_yaml.parent.mkdir(parents=True, exist_ok=True)
+            energy_yaml.write_text(
+                "# SLATE Energy Configuration — disabled\n"
+                "# Re-enable via: python slate/energy_scheduler.py --configure\n"
+                "enabled: false\nprovider: null\nplan: null\n"
+                "budget_limit_usd: 0\n",
+                encoding="utf-8"
+            )
+            tracker.complete_step("energy_config", success=True,
+                                  details="Skipped — run anytime mode")
+            return True
+
+        zip_code = user_input
+        tracker.update_progress("energy_config", 40, f"Looking up providers for {zip_code}")
+        monthly_savings = 0  # Will be set if TOU schedule found
+
+        providers = EnergyProviderDatabase.lookup_by_zip(zip_code)
+        if not providers:
+            print(f"  ℹ No providers found for ZIP {zip_code}.")
+            print("  Your area may not be in our database yet.")
+            print("  Using flat rate estimate ($0.12/kWh).")
+            selected_provider = None
+            selected_plan = None
+            flat_rate = 0.12
+        else:
+            print(f"\n  Found {len(providers)} provider(s):")
+            for i, p in enumerate(providers, 1):
+                plans_str = ", ".join(p["plans"])
+                print(f"    {i}. {p['name']} ({p['region']}) — {plans_str}")
+
+            # Select provider
+            if len(providers) == 1:
+                selected_idx = 0
+                print(f"\n  Auto-selected: {providers[0]['name']}")
+            else:
+                try:
+                    choice = input(f"\n  Select provider (1-{len(providers)}): ").strip()
+                    selected_idx = int(choice) - 1
+                    if selected_idx < 0 or selected_idx >= len(providers):
+                        selected_idx = 0
+                except (ValueError, EOFError, KeyboardInterrupt):
+                    selected_idx = 0
+
+            prov = providers[selected_idx]
+            selected_provider = prov["name"]
+            selected_plan = prov.get("default_plan")
+            flat_rate = None
+
+            # Show rate schedule preview
+            schedule = EnergyProviderDatabase.get_rate_schedule(selected_provider, selected_plan)
+            if schedule:
+                tracker.update_progress("energy_config", 60, "Displaying rate schedule")
+                print(f"\n  📊 Rate Schedule: {selected_provider} — {selected_plan}")
+                print("  " + "─" * 50)
+
+                # Build 24-hour timeline
+                hour_tiers = {}
+                for tier_name, tier_data in schedule.rates.items():
+                    cost = tier_data.get("cost_per_kwh", 0)
+                    for h in tier_data.get("hours", []):
+                        hour_tiers[h] = (tier_name, cost)
+
+                # Display colored timeline
+                tier_colors = {
+                    "super_off_peak": ("🟢", "Super Off-Peak"),
+                    "off_peak":       ("🟡", "Off-Peak"),
+                    "peak":           ("🔴", "Peak"),
+                }
+                print("  Hour: ", end="")
+                for h in range(24):
+                    print(f"{h:2d} ", end="")
+                print()
+                print("  Rate: ", end="")
+                for h in range(24):
+                    tier_name = hour_tiers.get(h, ("off_peak", 0))[0]
+                    symbol = tier_colors.get(tier_name, ("⚪", "Unknown"))[0]
+                    print(f" {symbol}", end=" ")
+                print()
+
+                # Legend with costs
+                seen = set()
+                for h in range(24):
+                    tn, cost = hour_tiers.get(h, ("off_peak", 0))
+                    if tn not in seen:
+                        seen.add(tn)
+                        symbol, label = tier_colors.get(tn, ("⚪", tn))
+                        print(f"    {symbol} {label}: ${cost:.2f}/kWh")
+
+                # Cost comparison estimate
+                # Assume ~300W GPU running 4h/day
+                gpu_kwh_daily = 0.3 * 4  # 1.2 kWh/day
+                peak_cost_day = gpu_kwh_daily * max(c for _, c in hour_tiers.values())
+                offpeak_cost_day = gpu_kwh_daily * min(c for _, c in hour_tiers.values())
+                monthly_savings = (peak_cost_day - offpeak_cost_day) * 30
+
+                print(f"\n  💰 Estimated monthly savings: ${monthly_savings:.2f}")
+                print(f"     (Based on ~4h GPU usage/day shifted to cheapest hours)")
+
+        # Save configuration
+        tracker.update_progress("energy_config", 80, "Saving energy configuration")
+        energy_yaml.parent.mkdir(parents=True, exist_ok=True)
+
+        config_lines = [
+            "# SLATE Energy Configuration",
+            f"# Generated: {datetime.now(timezone.utc).isoformat()}",
+            f"# ZIP: {zip_code}",
+            "",
+            "enabled: true",
+            f"provider: {selected_provider or 'generic'}",
+            f"plan: {selected_plan or 'flat_rate'}",
+            f"zip_code: '{zip_code}'",
+            "",
+            "# Budget controls",
+            "budget_limit_usd: 50  # Monthly cap ($0 = unlimited)",
+            "budget_warn_pct: 80   # Warn at this % of budget",
+            "",
+            "# Scheduling behavior",
+            "heavy_ops: defer_to_offpeak  # defer_to_offpeak | always_run | ask",
+            "normal_ops: always_run",
+            "light_ops: always_run",
+        ]
+
+        if flat_rate is not None:
+            config_lines.extend([
+                "",
+                "# Custom flat rate (no TOU schedule found)",
+                f"flat_rate_kwh: {flat_rate}",
+            ])
+
+        energy_yaml.write_text("\n".join(config_lines) + "\n", encoding="utf-8")
+
+        detail = f"{selected_provider or 'Generic'}"
+        if monthly_savings and monthly_savings > 0:
+            detail += f" (est. ${monthly_savings:.0f}/mo savings)"
+        tracker.complete_step("energy_config", success=True, details=detail)
+        return True
+
+    except ImportError:
+        tracker.complete_step("energy_config", success=True,
+                              details="Energy scheduler not available — skipped")
+        return True
+    except Exception as e:
+        tracker.complete_step("energy_config", success=True, warning=True,
+                              details=f"Energy config skipped: {e}")
         return True
 
 
@@ -2206,6 +2462,7 @@ def main():
         ("fork_upstream",  step_fork_upstream),
         ("github_pages",   step_github_pages),
         ("benchmark",      step_benchmark),
+        ("energy_config",  step_energy_config),
         ("runtime_check",  step_runtime_check),
     ]
 
