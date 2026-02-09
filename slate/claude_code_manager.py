@@ -359,7 +359,21 @@ class ClaudeCodeManager:
             try:
                 with open(plugin_json) as f:
                     data = json.load(f)
-                    return data.get("mcpServers", {})
+                    mcp_servers_ref = data.get("mcpServers", {})
+
+                    # Handle mcpServers as path reference or inline dict
+                    if isinstance(mcp_servers_ref, str):
+                        # It's a path to an MCP config file (e.g., "./.mcp.json")
+                        clean_path = mcp_servers_ref
+                        if clean_path.startswith("./"):
+                            clean_path = clean_path[2:]
+                        mcp_path = self.workspace / clean_path
+                        if mcp_path.exists():
+                            with open(mcp_path) as mcp_f:
+                                mcp_data = json.load(mcp_f)
+                                return mcp_data.get("mcpServers", {})
+                        return {}
+                    return mcp_servers_ref
             except json.JSONDecodeError:
                 return {}
         return {}

@@ -55,16 +55,14 @@ htmlcov/
 .tox
 .nox
 
-# Documentation (not needed in runtime — except AGENTS.md for agent routing)
-docs/
+# Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Keep docs/ and specs/ for release image
+# docs/ — included in release image for spec-kit and wiki generation
+# specs/ — included in release image for spec processing pipeline
 CONTRIBUTING.md
 SECURITY.md
 AUTHOR.md
 LICENSE
 CLAUDE.md
-
-# Specs (development only)
-specs/
 
 # Local config
 .claude/

@@ -23,8 +23,8 @@ data:
   SLATE_LOG_LEVEL: "INFO"
 
   # SLATE integrations (K8s service DNS)
-  OLLAMA_HOST: "http://ollama-svc:11434"
-  CHROMADB_HOST: "http://chromadb-svc:8000"
+  OLLAMA_HOST: "ollama-svc:11434"
+  CHROMADB_HOST: "chromadb-svc:8000"
 
   # Feature flags
   SLATE_ENABLE_WEBSOCKET: "true"

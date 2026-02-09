@@ -216,6 +216,10 @@ class UnifiedAutonomousLoop:
                 seen_titles.add(key)
                 unique.append(task)
 
+        # Modified: 2026-02-08T21:45:00Z | Author: COPILOT | Change: Sort discovered tasks by priority so critical/high always surface first
+        priority_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+        unique.sort(key=lambda t: priority_order.get(t.get("priority", "medium"), 2))
+
         self.state["tasks_discovered"] += len(unique)
         self._save_state()
 

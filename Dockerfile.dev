@@ -1,12 +1,22 @@
-# S.L.A.T.E. Docker Image (Dev Variant - GPU with Hot-Reload)
-# Modified: 2026-02-08T19:00:00Z | Author: COPILOT | Change: Upgrade to CUDA 12.8, add full runtime with watchfiles
+# S.L.A.T.E. Docker Image — DEV (GPU with Hot-Reload)
+# Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Full runtime parity with release, PyTorch CUDA, watchfiles hot-reload
 # Base: NVIDIA CUDA 12.8 Runtime on Ubuntu 22.04
+#
+# Dev variant of the release image. Identical dependencies and codebase, but:
+#   - Adds watchfiles for hot-reload (file changes trigger restart)
+#   - Runs in dev mode (SLATE_MODE=dev)
+#   - Codebase is typically bind-mounted over COPY'd files
+#
+# Build:  docker build -f Dockerfile.dev -t slate:dev .
+# Run:    docker-compose -f docker-compose.dev.yml up
 
 FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
 
 LABEL org.opencontainers.image.source="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E"
 LABEL org.opencontainers.image.description="SLATE - Dev Mode with Hot-Reload (GPU)"
 LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.version="2.4.0"
+LABEL slate.image.type="dev"
 
 # Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -30,32 +40,62 @@ WORKDIR /slate
 # Copy requirements first for layer caching
 COPY requirements.txt .
 
-# Install Python dependencies + watchfiles for dev hot-reload
+# Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: PyTorch CUDA + full deps + watchfiles for dev hot-reload
+# Install Python dependencies (full runtime + dev tools)
 RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cu128 \
     && pip install --no-cache-dir -r requirements.txt \
     && pip install --no-cache-dir watchfiles>=1.0.0
 
-# Copy SLATE codebase (will be overridden by bind mounts in dev)
+# Copy complete SLATE codebase (will be overridden by bind mounts in dev)
 COPY slate/ ./slate/
 COPY agents/ ./agents/
 COPY slate_core/ ./slate_core/
+COPY slate_web/ ./slate_web/
+COPY models/ ./models/
 COPY skills/ ./skills/
+COPY plugins/ ./plugins/
+COPY vendor/ ./vendor/
+COPY docs/ ./docs/
+COPY specs/ ./specs/
 COPY pyproject.toml .
 COPY current_tasks.json .
+COPY AGENTS.md .
+COPY .github/copilot-instructions.md ./.github/copilot-instructions.md
+
+# Copy K8s & Helm configs
+COPY k8s/ ./k8s/
+COPY helm/ ./helm/
 
 # Set Python path
-ENV PYTHONPATH="/slate:${PYTHONPATH}"
-
-# Dev mode environment
+ENV PYTHONPATH="/slate"
 ENV SLATE_MODE=dev
 ENV SLATE_DOCKER=1
+ENV SLATE_K8S=true
+ENV SLATE_VERSION=2.4.0
 
-# Expose dashboard port
+# Create non-root user for security
+RUN useradd -m -s /bin/bash slate \
+    && chown -R slate:slate /slate
+USER slate
+
+# Expose service ports
 EXPOSE 8080
+# 8080 = Dashboard/Core API
+EXPOSE 8081
+# 8081 = Agent Router API
+EXPOSE 8082
+# 8082 = Autonomous Loop API
+EXPOSE 8083
+# 8083 = Copilot Bridge API (extension v5.1.0 runtime backend)
+EXPOSE 8084
+# 8084 = Workflow Manager API
+EXPOSE 9090
+# 9090 = Prometheus Metrics
 
 # Health check
-HEALTHCHECK --interval=15s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)" || exit 1
+HEALTHCHECK --interval=15s --timeout=10s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health', timeout=5)" || exit 1
 
 # Default entrypoint: start SLATE orchestrator in dev mode
 ENTRYPOINT ["python", "slate/slate_orchestrator.py"]

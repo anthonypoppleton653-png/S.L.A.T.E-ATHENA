@@ -54,8 +54,11 @@ WORKDIR /slate
 # Copy requirements first for layer caching
 COPY requirements.txt .
 
+# Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Add PyTorch CUDA install, fix dependency chain for full runtime
 # Install Python dependencies (full runtime — all SLATE integrations)
+# PyTorch CUDA must be installed first (before requirements.txt) with the correct index URL
 RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cu128 \
     && pip install --no-cache-dir -r requirements.txt
 
 # Copy complete SLATE codebase — every runtime module
@@ -66,6 +69,10 @@ COPY slate_web/ ./slate_web/
 COPY models/ ./models/
 COPY skills/ ./skills/
 COPY plugins/ ./plugins/
+# Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Add vendor, docs, specs for complete runtime
+COPY vendor/ ./vendor/
+COPY docs/ ./docs/
+COPY specs/ ./specs/
 COPY pyproject.toml .
 COPY current_tasks.json .
 COPY AGENTS.md .
@@ -75,8 +82,8 @@ COPY .github/copilot-instructions.md ./.github/copilot-instructions.md
 COPY k8s/ ./k8s/
 COPY helm/ ./helm/
 
-# Set Python path — includes workspace mount point for live code
-ENV PYTHONPATH="/slate:${PYTHONPATH}"
+# Set Python path
+ENV PYTHONPATH="/slate"
 ENV SLATE_MODE=prod
 ENV SLATE_DOCKER=1
 ENV SLATE_K8S=true

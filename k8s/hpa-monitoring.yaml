@@ -79,6 +79,7 @@ spec:
           averageUtilization: 80
 
 ---
+# Modified: 2026-02-11T00:30:00Z | Author: COPILOT | Change: Fix metrics service selector to point to agent-router (which hosts metrics on :9090)
 # Metrics Service (expose metrics port for monitoring)
 apiVersion: v1
 kind: Service
@@ -92,7 +93,7 @@ spec:
   type: ClusterIP
   selector:
     app.kubernetes.io/name: slate
-    app.kubernetes.io/component: core
+    app.kubernetes.io/component: agent-router
   ports:
     - port: 9090
       targetPort: 9090

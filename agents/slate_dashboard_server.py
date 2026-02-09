@@ -64,6 +64,25 @@ import uuid
 WORKSPACE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(WORKSPACE_ROOT))
 
+# ─── K8s-Aware Service Configuration ──────────────────────────────────────────
+import os
+
+def _normalize_host(host: str, default_port: int) -> str:
+    """Normalize host to include protocol and handle http:// prefix."""
+    if host.startswith("http://") or host.startswith("https://"):
+        return host.rstrip("/")
+    return f"http://{host}"
+
+# When running in K8s, use service names; otherwise default to localhost
+_raw_ollama = os.environ.get("OLLAMA_HOST", "127.0.0.1:11434")
+_raw_chromadb = os.environ.get("CHROMADB_HOST", "127.0.0.1:8000")
+_raw_foundry = os.environ.get("FOUNDRY_HOST", "127.0.0.1:5272")
+
+OLLAMA_URL = _normalize_host(_raw_ollama, 11434)
+CHROMADB_URL = _normalize_host(_raw_chromadb, 8000)
+FOUNDRY_URL = _normalize_host(_raw_foundry, 5272)
+K8S_MODE = os.environ.get("SLATE_K8S", "false").lower() == "true"
+
 # ─── Dependencies ─────────────────────────────────────────────────────────────
 
 try:
@@ -896,7 +915,7 @@ async def api_system_ollama():
     # Check if Ollama is running
     try:
         import urllib.request
-        req = urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=2)
+        req = urllib.request.urlopen(f"{OLLAMA_URL}/api/tags", timeout=2)
         if req.status == 200:
             result["available"] = True
     except Exception:
@@ -957,7 +976,7 @@ async def api_services():
     # Ollama
     try:
         import urllib.request
-        req = urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=2)
+        req = urllib.request.urlopen(f"{OLLAMA_URL}/api/tags", timeout=2)
         services.append({"id": "ollama", "name": "Ollama", "online": req.status == 200, "port": 11434})
     except Exception:
         services.append({"id": "ollama", "name": "Ollama", "online": False, "port": 11434})
@@ -965,7 +984,7 @@ async def api_services():
     # Foundry Local
     try:
         import urllib.request
-        req = urllib.request.urlopen("http://127.0.0.1:5272/health", timeout=2)
+        req = urllib.request.urlopen(f"{FOUNDRY_URL}/health", timeout=2)
         services.append({"id": "foundry", "name": "Foundry Local", "online": req.status == 200, "port": 5272})
     except Exception:
         services.append({"id": "foundry", "name": "Foundry Local", "online": False, "port": 5272})
@@ -1035,7 +1054,7 @@ async def api_integrations():
     # Ollama
     try:
         import urllib.request
-        req = urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=2)
+        req = urllib.request.urlopen(f"{OLLAMA_URL}/api/tags", timeout=2)
         if req.status == 200:
             data = json.loads(req.read().decode("utf-8"))
             model_count = len(data.get("models", []))
@@ -1054,7 +1073,7 @@ async def api_integrations():
     # Foundry Local
     try:
         import urllib.request
-        req = urllib.request.urlopen("http://127.0.0.1:5272/health", timeout=2)
+        req = urllib.request.urlopen(f"{FOUNDRY_URL}/health", timeout=2)
         integrations.append({
             "id": "foundry",
             "name": "Foundry Local",

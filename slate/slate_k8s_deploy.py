@@ -44,12 +44,14 @@ COMPONENTS = [
     'slate-workflow-manager',
 ]
 
+# Modified: 2026-02-09T03:30:00Z | Author: COPILOT | Change: Add instruction-controller to PORT_FORWARDS
 PORT_FORWARDS = {
     'dashboard': ('slate-dashboard-svc', 8080, 8080),
     'agent-router': ('slate-agent-router-svc', 8081, 8081),
     'autonomous': ('slate-autonomous-svc', 8082, 8082),
     'bridge': ('slate-copilot-bridge-svc', 8083, 8083),
     'workflow': ('slate-workflow-svc', 8084, 8084),
+    'instructions': ('slate-instruction-controller-svc', 8085, 8085),
     'ollama': ('ollama-svc', 11434, 11434),
     'chromadb': ('chromadb-svc', 8000, 8000),
     'metrics': ('slate-metrics-svc', 9090, 9090),
@@ -368,34 +370,153 @@ def cmd_teardown():
     print("\nTeardown complete.")
 
 
-def cmd_port_forward():
-    """Set up port forwarding for all SLATE services."""
-    print_banner("Setting Up Port Forwarding")
-    
-    print("Available services:")
-    for name, (svc, local_port, remote_port) in PORT_FORWARDS.items():
-        print(f"  {name}: 127.0.0.1:{local_port} → {svc}:{remote_port}")
-    
-    print("\nStarting port forwards (press Ctrl+C to stop)...")
-    processes = []
+# Modified: 2026-02-09T03:30:00Z | Author: COPILOT | Change: Improve port-forward with conflict detection, stale cleanup, background mode, health verification
+def _check_port_available(port: int) -> tuple[bool, int | None]:
+    """Check if a port is available. Returns (available, pid_if_occupied)."""
+    import socket
     try:
-        for name, (svc, local_port, remote_port) in PORT_FORWARDS.items():
-            proc = subprocess.Popen(
-                ['kubectl', '-n', NAMESPACE, 'port-forward', f'svc/{svc}', f'127.0.0.1:{local_port}:{remote_port}'],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(1)
+            s.bind(('127.0.0.1', port))
+            return True, None
+    except OSError:
+        # Port in use — try to find the PID (Windows)
+        try:
+            r = subprocess.run(
+                ['netstat', '-ano'], capture_output=True, text=True, timeout=10
             )
-            processes.append((name, proc))
-            print(f"  ✓ {name}: 127.0.0.1:{local_port}")
-        
-        print("\nAll port forwards active. Press Ctrl+C to stop.")
+            for line in r.stdout.splitlines():
+                if f':{port}' in line and 'LISTENING' in line:
+                    parts = line.split()
+                    pid = int(parts[-1])
+                    return False, pid
+        except Exception:
+            pass
+        return False, None
+
+
+def _kill_stale_kubectl_forwards():
+    """Kill any existing kubectl port-forward processes."""
+    try:
+        r = subprocess.run(
+            ['tasklist', '/FI', 'IMAGENAME eq kubectl.exe', '/FO', 'CSV', '/NH'],
+            capture_output=True, text=True, timeout=10
+        )
+        for line in r.stdout.strip().splitlines():
+            if 'kubectl' in line.lower():
+                # Check if it's a port-forward process via command line
+                parts = line.strip('"').split('","')
+                if len(parts) >= 2:
+                    pid = parts[1].strip('"')
+                    try:
+                        cr = subprocess.run(
+                            ['wmic', 'process', 'where', f'ProcessId={pid}', 'get', 'CommandLine', '/VALUE'],
+                            capture_output=True, text=True, timeout=10
+                        )
+                        if 'port-forward' in cr.stdout:
+                            subprocess.run(['taskkill', '/PID', pid, '/F'],
+                                           capture_output=True, timeout=5)
+                    except Exception:
+                        pass
+    except Exception:
+        pass
+
+
+def cmd_port_forward(background: bool = False):
+    """Set up port forwarding for all SLATE services.
+
+    Args:
+        background: If True, start forwards in background and return immediately.
+                    If False (default), block until Ctrl+C.
+    """
+    print_banner("Setting Up Port Forwarding")
+
+    # Kill stale kubectl port-forwards
+    _kill_stale_kubectl_forwards()
+    time.sleep(1)
+
+    # Check for port conflicts
+    conflicts = []
+    for name, (svc, local_port, remote_port) in PORT_FORWARDS.items():
+        available, pid = _check_port_available(local_port)
+        if not available:
+            conflicts.append((name, local_port, pid))
+
+    if conflicts:
+        print("Port conflicts detected:")
+        for name, port, pid in conflicts:
+            pid_info = f" (PID {pid})" if pid else ""
+            print(f"  ⚠ {name}: 127.0.0.1:{port} already in use{pid_info}")
+        print("  Skipping conflicting ports.\n")
+    conflict_ports = {c[1] for c in conflicts}
+
+    print("Starting port forwards...")
+    processes = []
+    for name, (svc, local_port, remote_port) in PORT_FORWARDS.items():
+        if local_port in conflict_ports:
+            print(f"  ⊘ {name}: 127.0.0.1:{local_port} (skipped — conflict)")
+            continue
+        proc = subprocess.Popen(
+            ['kubectl', '-n', NAMESPACE, 'port-forward', '--address', '127.0.0.1',
+             f'svc/{svc}', f'{local_port}:{remote_port}'],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        processes.append((name, proc, local_port))
+        print(f"  ✓ {name}: 127.0.0.1:{local_port} → {svc}:{remote_port}")
+
+    if background:
+        print(f"\n{len(processes)} port forwards started in background.")
+        # Verify health after short delay
+        time.sleep(3)
+        _verify_port_forward_health(processes)
+        return
+
+    try:
+        print(f"\n{len(processes)} port forwards active. Press Ctrl+C to stop.")
         while True:
-            time.sleep(1)
+            time.sleep(5)
+            # Check for dead processes and restart
+            for i, (name, proc, lport) in enumerate(processes):
+                if proc.poll() is not None:
+                    svc_info = PORT_FORWARDS[name]
+                    new_proc = subprocess.Popen(
+                        ['kubectl', '-n', NAMESPACE, 'port-forward', '--address', '127.0.0.1',
+                         f'svc/{svc_info[0]}', f'{lport}:{svc_info[2]}'],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
+                    processes[i] = (name, new_proc, lport)
+                    print(f"  ↻ Restarted: {name}: 127.0.0.1:{lport}")
     except KeyboardInterrupt:
         print("\nStopping port forwards...")
-        for name, proc in processes:
+        for name, proc, _ in processes:
             proc.terminate()
         print("  Done.")
+
+
+def _verify_port_forward_health(processes: list):
+    """Quick health check on port-forwarded services."""
+    import urllib.request
+    ok_count = 0
+    for name, proc, lport in processes:
+        if proc.poll() is not None:
+            print(f"  ✗ {name}: process died")
+            continue
+        # Try health endpoint
+        for path in ['/api/health', '/health', '/']:
+            try:
+                req = urllib.request.Request(f'http://127.0.0.1:{lport}{path}', method='GET')
+                with urllib.request.urlopen(req, timeout=3) as resp:
+                    if resp.status == 200:
+                        ok_count += 1
+                        print(f"  ✓ {name}: healthy")
+                        break
+            except Exception:
+                continue
+        else:
+            print(f"  ? {name}: no health endpoint responded")
+    print(f"\n  Health: {ok_count}/{len(processes)} services verified")
 
 
 def cmd_preload_models():
@@ -508,6 +629,7 @@ def main():
     parser.add_argument('--deploy-helm', action='store_true', help='Deploy via Helm')
     parser.add_argument('--teardown', action='store_true', help='Remove all SLATE K8s resources')
     parser.add_argument('--port-forward', action='store_true', help='Set up port forwarding')
+    parser.add_argument('--background', action='store_true', help='Run port-forward in background (non-blocking)')
     parser.add_argument('--preload-models', action='store_true', help='Trigger model preload job')
     parser.add_argument('--logs', nargs='?', const=None, default=False, help='View component logs')
     parser.add_argument('--health', action='store_true', help='Run K8s health check')
@@ -526,7 +648,7 @@ def main():
     elif args.teardown:
         cmd_teardown()
     elif args.port_forward:
-        cmd_port_forward()
+        cmd_port_forward(background=args.background)
     elif args.preload_models:
         cmd_preload_models()
     elif args.logs is not False:

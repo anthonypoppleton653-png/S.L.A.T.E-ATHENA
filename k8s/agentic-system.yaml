@@ -121,17 +121,8 @@ spec:
         - name: agent-router
           image: slate:local
           imagePullPolicy: IfNotPresent
-          command:
-            - python
-            - -c
-            - |
-              import time, json, os
-              print('SLATE Agent Router starting...')
-              config_path = os.environ.get('SLATE_AGENT_CONFIG', '/config/agent-routing.yaml')
-              print(f'Config: {config_path}')
-              while True:
-                  print('Agent Router: heartbeat', flush=True)
-                  time.sleep(60)
+          # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Run real agent router service with task classification
+          command: ["python", "slate/k8s_entrypoints.py", "--service", "agent-router"]
           ports:
             - containerPort: 8081
               name: router-api
@@ -181,14 +172,17 @@ spec:
               mountPath: /tmp
             - name: slate-data
               mountPath: /slate/.slate_index
+          # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Use HTTP probes for real agent router
           livenessProbe:
-            exec:
-              command: ["python", "-c", "print('ok')"]
+            httpGet:
+              path: /api/health
+              port: 8081
             initialDelaySeconds: 10
             periodSeconds: 30
           readinessProbe:
-            exec:
-              command: ["python", "-c", "print('ok')"]
+            httpGet:
+              path: /api/health
+              port: 8081
             initialDelaySeconds: 5
             periodSeconds: 10
       volumes:
@@ -342,15 +336,8 @@ spec:
         - name: autonomous-loop
           image: slate:local
           imagePullPolicy: IfNotPresent
-          command:
-            - python
-            - -c
-            - |
-              import time
-              print('SLATE Autonomous Loop starting...')
-              while True:
-                  print('Autonomous Loop: heartbeat', flush=True)
-                  time.sleep(60)
+          # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Run real autonomous loop with task discovery
+          command: ["python", "slate/k8s_entrypoints.py", "--service", "autonomous"]
           ports:
             - containerPort: 8082
               name: loop-api
@@ -408,16 +395,19 @@ spec:
               mountPath: /slate/.slate_index
             - name: slate-memory
               mountPath: /slate/slate_memory
+          # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Use HTTP probes for real autonomous loop
           livenessProbe:
-            exec:
-              command: ["python", "-c", "print('ok')"]
+            httpGet:
+              path: /api/health
+              port: 8082
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 15
             failureThreshold: 5
           readinessProbe:
-            exec:
-              command: ["python", "-c", "print('ok')"]
+            httpGet:
+              path: /api/health
+              port: 8082
             initialDelaySeconds: 30
             periodSeconds: 15
       volumes:
@@ -803,15 +793,8 @@ spec:
         - name: workflow-manager
           image: slate:local
           imagePullPolicy: IfNotPresent
-          command:
-            - python
-            - -c
-            - |
-              import time
-              print('SLATE Workflow Manager starting...')
-              while True:
-                  print('Workflow Manager: heartbeat', flush=True)
-                  time.sleep(60)
+          # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Run real workflow manager service
+          command: ["python", "slate/k8s_entrypoints.py", "--service", "workflow"]
           ports:
             - containerPort: 8084
               name: workflow-api
@@ -857,14 +840,17 @@ spec:
               mountPath: /tmp
             - name: slate-data
               mountPath: /slate/.slate_index
+          # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Use HTTP probes for real workflow service
           livenessProbe:
-            exec:
-              command: ["python", "-c", "print('ok')"]
+            httpGet:
+              path: /api/health
+              port: 8084
             initialDelaySeconds: 10
             periodSeconds: 30
           readinessProbe:
-            exec:
-              command: ["python", "-c", "print('ok')"]
+            httpGet:
+              path: /api/health
+              port: 8084
             initialDelaySeconds: 5
             periodSeconds: 10
       volumes:

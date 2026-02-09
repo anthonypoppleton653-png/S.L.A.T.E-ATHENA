@@ -25,6 +25,7 @@ import argparse
 import asyncio
 import json
 import logging
+import os
 import sys
 import time
 from datetime import datetime, timezone
@@ -463,24 +464,37 @@ def get_sk_status() -> dict[str, Any]:
                 slate_models[role] = {"model": model, "status": "missing"}
 
     # Check ChromaDB
+    # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Catch BaseException to handle pyo3 Rust panics from ChromaDB PersistentClient
     chromadb_status = {"available": False, "collections": 0, "documents": 0}
     try:
         import chromadb
         from chromadb.config import Settings as ChromaSettings
-        chroma_path = WORKSPACE_ROOT / "slate_memory" / "chromadb"
-        if chroma_path.exists():
+        
+        # Try HTTP client first (works in K8s and when chromadb server is running)
+        chromadb_host = os.environ.get("CHROMADB_HOST", "")
+        if chromadb_host:
+            client = chromadb.HttpClient(
+                host=chromadb_host,
+                port=int(os.environ.get("CHROMADB_PORT", "8000")),
+                settings=ChromaSettings(anonymized_telemetry=False),
+            )
+        else:
+            # Fall back to PersistentClient for local use
+            chroma_path = WORKSPACE_ROOT / "slate_memory" / "chromadb"
+            if not chroma_path.exists():
+                raise FileNotFoundError(f"ChromaDB path not found: {chroma_path}")
             client = chromadb.PersistentClient(
                 path=str(chroma_path),
                 settings=ChromaSettings(anonymized_telemetry=False),
             )
-            collections = client.list_collections()
-            total_docs = sum(c.count() for c in collections)
-            chromadb_status = {
-                "available": True,
-                "collections": len(collections),
-                "documents": total_docs,
-            }
-    except Exception:
+        collections = client.list_collections()
+        total_docs = sum(c.count() for c in collections)
+        chromadb_status = {
+            "available": True,
+            "collections": len(collections),
+            "documents": total_docs,
+        }
+    except BaseException:
         pass
 
     return {

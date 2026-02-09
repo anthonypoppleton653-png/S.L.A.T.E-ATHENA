@@ -25,10 +25,14 @@ services:
     container_name: slate
     hostname: slate
     restart: unless-stopped
+    # Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Expose all SLATE service ports, add ChromaDB HTTP env
     ports:
-      - "127.0.0.1:8080:8080"  # Dashboard (local only)
-      # Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Expose copilot bridge port for extension v5.0.0
-      - "127.0.0.1:8083:8083"  # Copilot Bridge API (extension runtime backend)
+      - "127.0.0.1:8080:8080"  # Dashboard/Core API
+      - "127.0.0.1:8081:8081"  # Agent Router API
+      - "127.0.0.1:8082:8082"  # Autonomous Loop API
+      - "127.0.0.1:8083:8083"  # Copilot Bridge API (extension v5.1.0)
+      - "127.0.0.1:8084:8084"  # Workflow Manager API
+      - "127.0.0.1:9090:9090"  # Prometheus Metrics
     volumes:
       # Only persistent data — NO source bind mounts
       - slate_data:/slate/.slate_index
@@ -39,6 +43,8 @@ services:
       - SLATE_WORKSPACE=/slate
       - SLATE_DOCKER=1
       - OLLAMA_HOST=ollama:11434
+      - CHROMADB_HOST=chromadb
+      - CHROMADB_PORT=8000
       - PYTHONPATH=/slate
       - PYTHONUNBUFFERED=1
     depends_on:

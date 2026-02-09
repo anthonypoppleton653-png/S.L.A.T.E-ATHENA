@@ -25,12 +25,13 @@ if sys.platform == "win32":
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 
+# Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Catch BaseException to handle Rust/pyo3 panics from ChromaDB
 def check_integration(name, check_fn, details_fn=None):
     try:
         status = check_fn()
         details = details_fn() if details_fn and status else None
         return {"name": name, "status": "active" if status else "inactive", "details": details}
-    except Exception as e:
+    except BaseException as e:
         return {"name": name, "status": "error", "error": str(e)}
 
 def check_python():
@@ -51,9 +52,13 @@ def check_pytorch():
 
 
 def pytorch_details():
+    # Modified: 2026-02-08T21:45:00Z | Author: COPILOT | Change: Note CPU-only is expected locally, CUDA runs in Docker/K8s
     import torch
-    cuda = f", CUDA {torch.version.cuda}" if torch.cuda.is_available() else ", CPU"
-    return f"{torch.__version__}{cuda}"
+    import os
+    cuda_str = f", CUDA {torch.version.cuda}" if torch.cuda.is_available() else ", CPU"
+    if not torch.cuda.is_available() and not os.environ.get("SLATE_DOCKER"):
+        cuda_str += " (GPU via Docker/K8s)"
+    return f"{torch.__version__}{cuda_str}"
 
 
 def check_ollama():
@@ -137,6 +142,7 @@ def check_semantic_kernel():
 
 def semantic_kernel_details():
     """Get Semantic Kernel version and Ollama connectivity."""
+    # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Catch BaseException for Rust panics
     import semantic_kernel
     version = semantic_kernel.__version__
     # Quick check if Ollama is reachable for SK
@@ -145,7 +151,7 @@ def semantic_kernel_details():
         status = get_sk_status()
         if status.get("ollama", {}).get("available"):
             return f"{version} (Ollama connected)"
-    except Exception:
+    except BaseException:
         pass
     return version
 

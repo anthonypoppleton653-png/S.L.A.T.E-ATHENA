@@ -298,6 +298,56 @@ class SlateDockerDaemon:
             return result.stdout + result.stderr
         return f"Error getting logs: {result.stderr}"
 
+    # ── K8s Conflict Detection ──────────────────────────────────────────────
+
+    # Modified: 2026-02-11T00:30:00Z | Author: COPILOT | Change: Add K8s port conflict detection to prevent compose/K8s collisions
+    def _check_k8s_port_conflicts(self) -> List[tuple]:
+        """Check if K8s is using ports that Docker Compose would bind.
+
+        Returns a list of (service_name, port) tuples for any conflicts.
+        """
+        # Ports used by SLATE compose files (union of all profiles)
+        compose_ports = [8080, 8081, 8082, 8083, 8084, 9090, 11434, 8000]
+        conflicts = []
+
+        # Check if kubectl is available and K8s namespace exists
+        try:
+            result = _run(["kubectl", "get", "namespace", "slate", "-o", "name"], timeout=5)
+            if result.returncode != 0:
+                return []  # No slate namespace — no conflicts
+
+            # Get services and their port-forwards / nodeports
+            result = _run(
+                ["kubectl", "-n", "slate", "get", "svc", "-o", "json"],
+                timeout=10,
+            )
+            if result.returncode != 0:
+                return []
+
+            import json as _json
+            svcs = _json.loads(result.stdout).get("items", [])
+            k8s_ports = set()
+            for svc in svcs:
+                for port_spec in svc.get("spec", {}).get("ports", []):
+                    k8s_ports.add(port_spec.get("port"))
+
+            # Check which compose ports are served by K8s
+            for port in compose_ports:
+                if port in k8s_ports:
+                    # Verify the port is actually listening (port-forwarded or NodePort)
+                    import socket
+                    try:
+                        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                            s.settimeout(1)
+                            s.connect(("127.0.0.1", port))
+                            conflicts.append(("k8s-service", port))
+                    except (ConnectionRefusedError, OSError):
+                        pass  # Port defined in K8s but not forwarded — no conflict
+        except Exception:
+            pass  # kubectl not available — no conflict detection
+
+        return conflicts
+
     # ── Compose Operations ────────────────────────────────────────────────
 
     def _compose_cmd_for_profile(self, profile: str = "default") -> List[str]:
@@ -326,6 +376,20 @@ class SlateDockerDaemon:
             cmd = self._compose_cmd_for_profile(profile)
         except (RuntimeError, FileNotFoundError) as e:
             return {"success": False, "error": str(e)}
+
+        # Modified: 2026-02-11T00:30:00Z | Author: COPILOT | Change: Add K8s port conflict detection before compose up
+        k8s_conflicts = self._check_k8s_port_conflicts()
+        if k8s_conflicts:
+            conflict_list = ", ".join(f"{p[0]}:{p[1]}" for p in k8s_conflicts)
+            print(f"  ⚠ K8s port conflicts detected: {conflict_list}")
+            print("  K8s is already using these ports. Either:")
+            print("    1. Run 'kubectl delete namespace slate' to free ports, OR")
+            print("    2. Run 'python slate/slate_k8s_deploy.py --teardown' first")
+            return {
+                "success": False,
+                "error": f"K8s port conflicts: {conflict_list}",
+                "k8s_conflicts": k8s_conflicts,
+            }
 
         cmd.append("up")
         if detach:

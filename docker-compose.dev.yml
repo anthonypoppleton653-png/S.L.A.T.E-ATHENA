@@ -25,10 +25,14 @@ services:
     container_name: slate-dev
     hostname: slate
     restart: unless-stopped
+    # Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Expose all SLATE service ports
     ports:
-      - "127.0.0.1:8080:8080"  # Dashboard (local only)
-      # Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Expose copilot bridge port for extension v5.0.0
-      - "127.0.0.1:8083:8083"  # Copilot Bridge API (extension runtime backend)
+      - "127.0.0.1:8080:8080"  # Dashboard/Core API
+      - "127.0.0.1:8081:8081"  # Agent Router API
+      - "127.0.0.1:8082:8082"  # Autonomous Loop API
+      - "127.0.0.1:8083:8083"  # Copilot Bridge API (extension v5.1.0)
+      - "127.0.0.1:8084:8084"  # Workflow Manager API
+      - "127.0.0.1:9090:9090"  # Prometheus Metrics
     volumes:
       # Bind-mount source for hot-reload — changes on host reflect instantly
       - ./slate:/slate/slate:rw
@@ -45,6 +49,8 @@ services:
       - SLATE_WORKSPACE=/slate
       - SLATE_DOCKER=1
       - OLLAMA_HOST=ollama:11434
+      - CHROMADB_HOST=chromadb
+      - CHROMADB_PORT=8000
       - PYTHONPATH=/slate
       - PYTHONUNBUFFERED=1
     depends_on:
@@ -97,6 +103,23 @@ services:
       retries: 5
       start_period: 30s
 
+  # ChromaDB Vector Store (Dev)
+  # Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Add ChromaDB to dev compose
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: chromadb-dev
+    hostname: chromadb
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+    networks:
+      - slate_network
+
 volumes:
   slate_data:
     name: slate_dev_data
@@ -104,6 +127,8 @@ volumes:
     name: slate_dev_prompts
   ollama_data:
     name: ollama_dev_data
+  chroma_data:
+    name: chroma_dev_data
 
 networks:
   slate_network:

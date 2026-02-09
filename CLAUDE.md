@@ -58,25 +58,60 @@ SLATE is distributed as a **Claude Code plugin** with commands, skills, and MCP 
 
 ### Installation
 
-**Option 1: From GitHub (Recommended)**
+**Option 1: Local Workspace (Recommended)**
 ```bash
-# Add SLATE marketplace
+# Plugin auto-loads when working in SLATE workspace
+# The .claude-plugin/ directory is detected automatically
+cd /path/to/S.L.A.T.E
+claude  # Plugin loads at project scope
+```
+
+**Option 2: From GitHub Marketplace**
+```bash
+# Add SLATE marketplace (one-time setup)
 /plugin marketplace add SynchronizedLivingArchitecture/S.L.A.T.E
 
 # Install SLATE plugin
-/plugin install slate@slate
-```
-
-**Option 2: Local Workspace (Auto-loads)**
-```bash
-# Plugin auto-loads when working in SLATE workspace
-# Or run installer to register marketplace:
-python install_claude_plugin.py
+/plugin install slate@slate-marketplace
 ```
 
 **Option 3: Development Mode**
 ```bash
 claude --plugin-dir /path/to/S.L.A.T.E
+```
+
+### Plugin Scope Rules
+
+**IMPORTANT**: Local and marketplace plugins have different scopes:
+
+| Plugin Type | Scope | How It Loads |
+|-------------|-------|--------------|
+| Local (`.claude-plugin/` exists) | Project | Auto-loads when `cd` into workspace |
+| Marketplace (`/plugin install`) | User | Must explicitly enable |
+
+**Do NOT mix scopes.** If you have a local `.claude-plugin/` directory, don't also try to enable it as a marketplace plugin - this causes the scope mismatch error.
+
+### For Local Development (This Repo)
+
+```bash
+# Just cd into the workspace - plugin auto-loads
+cd /path/to/S.L.A.T.E
+claude  # Plugin loads automatically at project scope
+```
+
+No configuration needed - the `.claude-plugin/plugin.json` is detected automatically.
+
+### For External Users (Installing from GitHub)
+
+```bash
+# Add marketplace and install
+/plugin marketplace add SynchronizedLivingArchitecture/S.L.A.T.E
+/plugin install slate@slate-marketplace
+
+# Manage at user scope
+/plugin list
+/plugin enable slate@slate-marketplace --scope user
+/plugin disable slate@slate-marketplace --scope user
 ```
 
 ### Plugin Structure

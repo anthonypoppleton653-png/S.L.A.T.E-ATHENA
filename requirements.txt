@@ -1,7 +1,8 @@
 # S.L.A.T.E. Requirements
-# Author: COPILOT | Modified: 2026-02-08T18:00:00Z
+# Author: COPILOT | Modified: 2026-02-08T21:30:00Z
 # Install: pip install -r requirements.txt
 # Lock:    See requirements.lock for exact pinned versions
+# Note:    PyTorch CUDA is installed separately in Dockerfile (not via requirements.txt)
 
 # ─── Core ────────────────────────────────────────────────────────────────────
 python-dotenv>=1.0.0,<2
@@ -22,12 +23,13 @@ watchfiles>=1.0.0,<2
 # ─── Vector Store (RAG Memory) ───────────────────────────────────────────────
 chromadb>=0.4.22,<2
 
-# ─── AI Toolkit (optional - for local inference) ─────────────────────────────
-# Uncomment if using local AI features:
-# transformers>=4.40.0,<6
-# accelerate>=0.30.0,<2
-# peft>=0.10.0,<1
-# torch>=2.2.0  # Install separately with CUDA support
+# ─── AI Toolkit (REQUIRED for SLATE inference pipeline) ──────────────────────
+# Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Uncomment AI deps - required for Docker runtime
+transformers>=4.40.0,<6
+accelerate>=0.30.0,<2
+# torch — installed separately with CUDA support (see Dockerfile)
+# For local CPU-only dev: pip install torch --index-url https://download.pytorch.org/whl/cpu
+# For CUDA: pip install torch --index-url https://download.pytorch.org/whl/cu128
 
 # ─── Semantic Kernel (Microsoft AI Orchestration) ────────────────────────
 semantic-kernel[ollama,hugging_face,chroma]>=1.39.0,<2

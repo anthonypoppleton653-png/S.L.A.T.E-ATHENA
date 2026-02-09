@@ -166,7 +166,26 @@ class ClaudeCodeValidator:
             try:
                 with open(plugin_json) as f:
                     plugin_data = json.load(f)
-                    self.config.mcp_servers = plugin_data.get("mcpServers", {})
+                    mcp_servers_ref = plugin_data.get("mcpServers", {})
+
+                    # Handle mcpServers as path reference or inline dict
+                    if isinstance(mcp_servers_ref, str):
+                        # It's a path to an MCP config file (e.g., "./.mcp.json")
+                        # Remove leading "./" but keep the filename intact
+                        clean_path = mcp_servers_ref
+                        if clean_path.startswith("./"):
+                            clean_path = clean_path[2:]
+                        mcp_path = self.workspace / clean_path
+                        if mcp_path.exists():
+                            with open(mcp_path) as mcp_f:
+                                mcp_data = json.load(mcp_f)
+                                self.config.mcp_servers = mcp_data.get("mcpServers", {})
+                        else:
+                            logger.warning(f"MCP config file not found: {mcp_path}")
+                            self.config.mcp_servers = {}
+                    else:
+                        self.config.mcp_servers = mcp_servers_ref
+
                     self.config.plugins = plugin_data.get("commands", [])
             except json.JSONDecodeError as e:
                 logger.error(f"Invalid JSON in plugin.json: {e}")
@@ -315,8 +334,9 @@ class ClaudeCodeValidator:
         # Check allow list
         allow_list = permissions.get("allow", [])
         for rule in allow_list:
-            # Validate rule format
-            if not re.match(r"^\w+\([^)]*\)$", rule):
+            # Validate rule format - supports standard tools and MCP patterns
+            # Examples: Bash(*), Read(*), mcp__slate__*(*), mcp__plugin_slate-sdk_slate__*(*)
+            if not re.match(r"^[\w_*-]+\([^)]*\)$", rule):
                 results.append(ValidationResult(
                     valid=False,
                     component="permissions:allow",
