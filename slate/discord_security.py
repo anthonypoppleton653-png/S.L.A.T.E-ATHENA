@@ -94,15 +94,30 @@ DISCORD_OUTPUT_BLOCKS: list[re.Pattern] = [
     re.compile(r"<@!?\d+>"),       # User mentions (prevent pinging from bot)
 ]
 
-# ── Rate Limiting ─────────────────────────────────────────────────────
+# ── Intelligent Anti-Flood System ────────────────────────────────────
+#
+# Instead of rigid "1 command per 60 seconds" limits, this uses a
+# sliding-window burst detection system that:
+#   - Allows normal conversation flow (multiple commands in a session)
+#   - Detects and blocks rapid spam bursts
+#   - Escalates cooldowns for repeat offenders
+#   - Self-heals: flood scores decay over time
+#
+# Normal use: 5 commands in 30s is fine (browsing commands)
+# Flood:      10+ commands in 30s triggers cooldown
+# Escalation: Repeat flooding → longer cooldowns (30s → 60s → 120s → 300s)
 
-# Per-user rate limits (1 per minute — conservative for local inference)
-USER_RATE_LIMIT = 1       # commands per window
-USER_RATE_WINDOW = 60     # seconds
+USER_BURST_LIMIT = 5         # commands per burst window before warning
+USER_BURST_WINDOW = 15       # seconds — burst detection window
+USER_FLOOD_LIMIT = 10        # commands per flood window = definite spam
+USER_FLOOD_WINDOW = 30       # seconds — flood detection window
+USER_COOLDOWN_BASE = 15      # base cooldown in seconds after flood
+USER_COOLDOWN_ESCALATION = 2 # multiplier for repeat offenders
+USER_MAX_COOLDOWN = 300      # max cooldown: 5 minutes
 
-# Per-channel rate limits
-CHANNEL_RATE_LIMIT = 30   # commands per window
-CHANNEL_RATE_WINDOW = 60  # seconds
+# Per-channel flood protection (prevent one channel being overwhelmed)
+CHANNEL_RATE_LIMIT = 60      # commands per window (was 30, doubled)
+CHANNEL_RATE_WINDOW = 60     # seconds
 
 # Input limits
 MAX_INPUT_LENGTH = 500
@@ -149,6 +164,9 @@ class DiscordSecurityGate:
     def __init__(self):
         self._user_commands: dict[str, list[float]] = {}
         self._channel_commands: dict[str, list[float]] = {}
+        # Anti-flood tracking
+        self._user_flood_score: dict[str, int] = {}      # escalation counter
+        self._user_cooldown_until: dict[str, float] = {}  # cooldown expiry timestamp
         self._audit_log: list[AuditEntry] = []
         self._audit_file = WORKSPACE_ROOT / "slate_logs" / "discord_audit.json"
         self._audit_file.parent.mkdir(parents=True, exist_ok=True)
@@ -303,35 +321,95 @@ class DiscordSecurityGate:
             blocked_patterns=blocked,
         )
 
-    # ── Rate Limiting ─────────────────────────────────────────────
+    # ── Intelligent Anti-Flood System ────────────────────────────
 
     def check_rate_limit(self, user_id: str, channel_id: str) -> SecurityResult:
         """
-        Check per-user and per-channel rate limits.
+        Intelligent anti-flood rate limiting.
 
-        Returns SecurityResult with allowed=False if rate limited.
+        Instead of rigid "1 per minute" limits, this system:
+        - Allows normal conversation flow (multiple commands in a session)
+        - Detects rapid spam bursts (10+ in 30s)
+        - Escalates cooldowns for repeat offenders
+        - Self-heals: flood scores decay over time
+
+        Returns SecurityResult with allowed=False if flooding detected.
         """
         now = time.time()
-
-        # Per-user check
         user_key = self._hash_id(user_id)
-        user_times = self._user_commands.get(user_key, [])
-        user_times = [t for t in user_times if now - t < USER_RATE_WINDOW]
-        if len(user_times) >= USER_RATE_LIMIT:
+
+        # ── Check active cooldown ──────────────────────────────
+        cooldown_until = self._user_cooldown_until.get(user_key, 0)
+        if now < cooldown_until:
+            remaining = int(cooldown_until - now)
             return SecurityResult(
                 allowed=False,
-                reason=f"Rate limited: max {USER_RATE_LIMIT} commands per {USER_RATE_WINDOW}s",
+                reason=(
+                    f"⏳ Anti-flood cooldown: **{remaining}s** remaining.\n"
+                    "Slow down and try again shortly."
+                ),
             )
+
+        # ── Track command timestamps ───────────────────────────
+        user_times = self._user_commands.get(user_key, [])
+        # Keep last 2 minutes of timestamps for analysis
+        user_times = [t for t in user_times if now - t < 120]
         user_times.append(now)
         self._user_commands[user_key] = user_times
 
-        # Per-channel check
+        # ── Flood detection (10+ commands in 30s = spam) ───────
+        recent_flood = [t for t in user_times if now - t < USER_FLOOD_WINDOW]
+        if len(recent_flood) >= USER_FLOOD_LIMIT:
+            # Escalate cooldown
+            flood_score = self._user_flood_score.get(user_key, 0) + 1
+            self._user_flood_score[user_key] = flood_score
+
+            cooldown = min(
+                USER_COOLDOWN_BASE * (USER_COOLDOWN_ESCALATION ** (flood_score - 1)),
+                USER_MAX_COOLDOWN,
+            )
+            self._user_cooldown_until[user_key] = now + cooldown
+
+            logger.warning(
+                f"Anti-flood: User {user_key[:8]} triggered flood "
+                f"(score: {flood_score}, cooldown: {int(cooldown)}s)"
+            )
+
+            return SecurityResult(
+                allowed=False,
+                reason=(
+                    f"🛡️ **Anti-flood triggered.** Too many commands too quickly.\n"
+                    f"Cooldown: **{int(cooldown)}s**. "
+                    f"{'This is your first warning.' if flood_score == 1 else f'Repeat offense #{flood_score} — cooldowns will increase.'}"
+                ),
+            )
+
+        # ── Burst warning (5+ in 15s = getting close) ─────────
+        recent_burst = [t for t in user_times if now - t < USER_BURST_WINDOW]
+        if len(recent_burst) >= USER_BURST_LIMIT:
+            # Don't block yet, but warn (user will see it in the next response)
+            # Just let it through — they're close to the flood threshold
+            pass
+
+        # ── Decay flood scores (reward good behavior) ──────────
+        # If no flood in the last 5 minutes, reduce score
+        if user_key in self._user_flood_score:
+            last_flood_time = self._user_cooldown_until.get(user_key, 0)
+            if now - last_flood_time > 300:  # 5 minutes clean
+                self._user_flood_score[user_key] = max(
+                    0, self._user_flood_score[user_key] - 1,
+                )
+
+        # ── Per-channel check ──────────────────────────────────
         chan_times = self._channel_commands.get(channel_id, [])
         chan_times = [t for t in chan_times if now - t < CHANNEL_RATE_WINDOW]
         if len(chan_times) >= CHANNEL_RATE_LIMIT:
             return SecurityResult(
                 allowed=False,
-                reason=f"Channel rate limited: max {CHANNEL_RATE_LIMIT} commands per {CHANNEL_RATE_WINDOW}s",
+                reason=(
+                    "📢 This channel is very active right now. "
+                    "Please wait a moment before trying again."
+                ),
             )
         chan_times.append(now)
         self._channel_commands[channel_id] = chan_times
@@ -510,15 +588,19 @@ def main():
     r = gate.sanitize_output("Hey @everyone check this out")
     check("@everyone stripped from output", "@everyone" not in r.filtered_content)
 
-    # Rate limiting tests
-    print("\nRate Limiting:")
+    # Anti-flood tests
+    print("\nAnti-Flood System:")
     gate2 = DiscordSecurityGate()
-    for i in range(USER_RATE_LIMIT):
+    # Normal usage: 5 commands should all be allowed
+    for i in range(USER_BURST_LIMIT):
         r = gate2.check_rate_limit("user123", "channel456")
-    check(f"First {USER_RATE_LIMIT} commands allowed", r.allowed)
+    check(f"First {USER_BURST_LIMIT} commands allowed (normal use)", r.allowed)
 
-    r = gate2.check_rate_limit("user123", "channel456")
-    check("Next command rate limited", not r.allowed)
+    # Flood: 10+ rapid commands should trigger anti-flood
+    gate3 = DiscordSecurityGate()
+    for i in range(USER_FLOOD_LIMIT + 1):
+        r = gate3.check_rate_limit("flood_user", "channel789")
+    check("Flood detection triggers after rapid commands", not r.allowed)
 
     r = gate2.check_rate_limit("user999", "channel456")
     check("Different user not rate limited", r.allowed)

@@ -159,6 +159,10 @@ install_state.json
 .slate_instruction_state.json
 .slate_instruction_context.json
 
+# Updater runtime state
+# Modified: 2026-02-09T23:50:00Z | Author: COPILOT | Change: Add updater state file to gitignore
+.slate_update_state.json
+
 # Extension build artifacts (root level)
 *.vsix
 
@@ -178,6 +182,8 @@ Thumbs.db
 
 # Transient test output
 test_results.txt
+test_results_full.txt
+test_out.txt
 
 tools/helm.exe
 dashboard_err.txt
