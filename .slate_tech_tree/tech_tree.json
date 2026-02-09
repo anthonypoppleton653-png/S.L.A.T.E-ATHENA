@@ -1,6 +1,6 @@
 {
   "version": "3.0.0",
-  "last_updated": "2026-02-09T15:00:00Z",
+  "last_updated": "2026-02-09T22:30:00Z",
   "metadata": {
     "project": "S.L.A.T.E.",
     "description": "Synchronized Living Architecture for Transformation and Evolution",
@@ -137,22 +137,23 @@
     {
       "id": "uv-migration",
       "name": "UV Package Manager",
-      "status": "available",
+      "status": "complete",
       "phase": 2,
-      "description": "Migrate from pip to UV for faster dependency management",
+      "description": "UV v0.9.30 integration: slate_uv.py management module, uv.lock (251 packages), 120x speedup over pip (148ms vs 17,767ms), pre-release support for semantic-kernel deps",
       "paths": [
         "pyproject.toml",
-        "uv.lock"
+        "uv.lock",
+        "slate/slate_uv.py"
       ]
     },
     {
       "id": "discord-bot",
       "name": "Discord Bot",
-      "status": "available",
+      "status": "complete",
       "phase": 2,
-      "description": "SLATE Discord integration for notifications and commands",
+      "description": "Webhook-based Discord notifications: 4 channels (builds/status/alerts/progress), SLATE brand-colored embeds, rate limiting, event routing, zero-dependency (urllib only), env-var config",
       "paths": [
-        "slate/discord_bot.py"
+        "slate/slate_discord.py"
       ]
     },
     {
