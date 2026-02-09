@@ -9,9 +9,9 @@
 		"url": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git"
 	},
 	"slateMetadata": {
-		"modified": "2026-02-07T18:00:00Z",
+		"modified": "2026-02-08T16:00:00Z",
 		"author": "COPILOT",
-		"change": "Unified dashboard — merge guided setup, control board, and dashboard into single integrated view with shared SLATE M3 ProArt design system"
+		"change": "SLATE-ATHENA UI/Theme Unification — added SLATE-ATHENA Dark color theme with Parthenon Gold, Aegean Deep, Acropolis Gray palette"
 	},
 	"version": "3.2.0",
 	"icon": "media/icon.png",
@@ -29,6 +29,11 @@
 	"main": "./out/extension.js",
 	"contributes": {
 		"themes": [
+			{
+				"label": "SLATE-ATHENA Dark",
+				"uiTheme": "vs-dark",
+				"path": "./themes/slate-athena-color-theme.json"
+			},
 			{
 				"label": "SLATE Dark",
 				"uiTheme": "vs-dark",
@@ -691,7 +696,7 @@
 			},
 			{
 				"command": "slate.applyTheme",
-				"title": "SLATE: Apply SLATE Dark Theme"
+				"title": "SLATE: Apply SLATE-ATHENA Dark Theme"
 			},
 			{
 				"command": "slate.refreshBackground",

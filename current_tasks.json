@@ -85,10 +85,20 @@
       "started_by": "workflow",
       "completed_at": "2026-02-06T22:45:00+00:00",
       "completed_by": "claude-code"
+    },
+    {
+      "id": "93d83d43",
+      "title": "2+2",
+      "description": "",
+      "status": "pending",
+      "priority": 3,
+      "assigned_to": "auto",
+      "created_at": "2026-02-08T02:13:20.784010+00:00",
+      "created_by": "dashboard"
     }
   ],
-  "created_at": "2026-02-06T04:19:10.197376+00:00",
-  "last_cleaned": "2026-02-08T01:35:35.537660+00:00",
+  "created_at": "2026-02-08T03:45:08.886787+00:00",
+  "last_cleaned": "2026-02-09T20:30:33.289981+00:00",
   "clean_reason": "Workflow cleanup: 0 removed, 0 reset",
-  "last_updated": "2026-02-08T01:35:35.537660+00:00"
+  "last_updated": "2026-02-09T20:30:33.289992+00:00"
 }

@@ -342,42 +342,72 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 	// ── Guided Installation Flow ────────────────────────────────────────────
 
 	private async _startGuidedInstall(): Promise<void> {
-		if (this._isRunning) { return; }
-		this._isRunning = true;
-		this._currentStep = 0;
-		this._steps = JSON.parse(JSON.stringify(GUIDED_STEPS));
+		if (this._isRunning) { console.warn('Guided setup already running'); return; }
+		
+		try {
+			this._isRunning = true;
+			this._currentStep = 0;
+			this._steps = JSON.parse(JSON.stringify(GUIDED_STEPS));
+			
+			console.log('Guided setup started with', this._steps.length, 'steps');
+			this._sendToWebview({ type: 'narration', text: 'Starting guided setup wizard...' });
 
-		for (let i = 0; i < this._steps.length; i++) {
-			this._currentStep = i;
-			await this._executeStep(this._steps[i]);
-			if (!this._isRunning) { break; }
+			// Make hero section inactive/hidden
+			this._sendToWebview({ 
+				type: 'message',
+				script: `document.getElementById('hero').classList.add('hidden'); 
+				         document.getElementById('guidedOverlay').classList.add('active');`
+			});
+
+			for (let i = 0; i < this._steps.length; i++) {
+				if (!this._isRunning) { break; }
+				this._currentStep = i;
+				console.log(`Executing step ${i + 1}/${this._steps.length}: ${this._steps[i].title}`);
+				await this._executeStep(this._steps[i]);
+			}
+
+			if (this._isRunning) {
+				console.log('Guided setup completed successfully');
+				await this._completeOnboarding();
+			}
+		} catch (err: any) {
+			console.error('Guided setup error:', err);
+			this._sendToWebview({ type: 'narration', text: `Setup error: ${err.message}` });
+			this._isRunning = false;
 		}
-
-		this._isRunning = false;
 	}
 
 	private async _executeStep(step: GuidedStep): Promise<void> {
+		if (!this._isRunning) { return; }
+		
 		step.status = 'active';
 
-		// Send narration
-		const narration = await this._getAINarration(step.id);
-		this._sendToWebview({ type: 'narration', text: narration });
-		this._sendToWebview({ type: 'stepUpdate', step, currentIndex: this._currentStep });
+		try {
+			// Send narration
+			const narration = await this._getAINarration(step.id);
+			console.log(`Narration for ${step.id}:`, narration);
+			this._sendToWebview({ type: 'narration', text: narration });
+			this._sendToWebview({ type: 'stepUpdate', step, currentIndex: this._currentStep });
 
-		// Execute all substeps
-		step.status = 'executing';
-		this._sendToWebview({ type: 'stepUpdate', step, currentIndex: this._currentStep });
+			// Execute all substeps
+			step.status = 'executing';
+			this._sendToWebview({ type: 'stepUpdate', step, currentIndex: this._currentStep });
 
-		for (const substep of step.substeps) {
-			await this._executeSubstep(step, substep);
-			if (!this._isRunning) { return; }
+			for (const substep of step.substeps) {
+				if (!this._isRunning) { return; }
+				await this._executeSubstep(step, substep);
+			}
+
+			step.status = 'complete';
+			this._sendToWebview({ type: 'stepComplete', step, currentIndex: this._currentStep });
+
+			// Auto-advance after a brief pause
+			await new Promise(resolve => setTimeout(resolve, 800));
+		} catch (err: any) {
+			console.error(`Step ${step.id} error:`, err);
+			step.status = 'error';
+			this._sendToWebview({ type: 'stepComplete', step, currentIndex: this._currentStep });
 		}
-
-		step.status = 'complete';
-		this._sendToWebview({ type: 'stepComplete', step, currentIndex: this._currentStep });
-
-		// Auto-advance after a brief pause
-		await new Promise(resolve => setTimeout(resolve, 800));
 	}
 
 	private async _executeSubstep(step: GuidedStep, substep: SubStep): Promise<void> {
@@ -1187,8 +1217,8 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 			</div>
 
 			<div class="cta-container">
-				<button class="cta-primary" onclick="startGuided()">Start Guided Setup</button>
-				<button class="cta-secondary" onclick="skipOnboarding()">Skip to Dashboard</button>
+				<button class="cta-primary" data-action="startGuided">Start Guided Setup</button>
+				<button class="cta-secondary" data-action="skipOnboarding">Skip to Dashboard</button>
 			</div>
 
 			<div class="features">
@@ -1394,11 +1424,54 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 		let currentStep = 0;
 		const totalSteps = 7;
 
+		// Store button references for event listener attachment
+		window._setupUI = function() {
+			const guideBtn = document.querySelector('[data-action="startGuided"]');
+			const skipBtn = document.querySelector('[data-action="skipOnboarding"]');
+			const overlay = document.getElementById('guidedOverlay');
+			
+			if (guideBtn) {
+				guideBtn.addEventListener('click', startGuided);
+			}
+			if (skipBtn) {
+				skipBtn.addEventListener('click', skipOnboarding);
+			}
+		};
+
+		// Call on DOMContentLoaded
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', window._setupUI);
+		} else {
+			window._setupUI();
+		}
+
 		function startGuided() {
-			document.getElementById('hero').classList.add('hidden');
-			document.getElementById('guidedOverlay').classList.add('active');
-			vscode.postMessage({ type: 'startGuided' });
-			renderStepProgress();
+			try {
+				console.log('Start Guided button clicked');
+				const hero = document.getElementById('hero');
+				const overlay = document.getElementById('guidedOverlay');
+				
+				if (!hero) {
+					console.error('Hero element not found');
+					return;
+				}
+				if (!overlay) {
+					console.error('Guided overlay element not found');
+					return;
+				}
+				
+				console.log('Adding hidden class to hero, active class to overlay');
+				hero.classList.add('hidden');
+				overlay.classList.add('active');
+				
+				console.log('Posting startGuided message to VSCode');
+				vscode.postMessage({ type: 'startGuided' });
+				renderStepProgress();
+				console.log('startGuided() completed');
+			} catch (err) {
+				console.error('Error in startGuided:', err);
+				alert('Error starting guided setup: ' + err.message);
+			}
 		}
 
 		function skipOnboarding() {

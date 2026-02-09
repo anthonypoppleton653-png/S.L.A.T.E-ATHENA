@@ -267,6 +267,10 @@ jobs:
         run: python slate/slate_workflow_manager.py --status
       - name: Orchestrator status
         run: python slate/slate_orchestrator.py status
+      # Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Add TRELLIS.2 health check
+      - name: TRELLIS.2 status
+        run: python slate/slate_trellis.py --status
+        continue-on-error: true
 
   # ------------ Build/Rebuild SLATE Models (Matrix per model) ------------
   build-models:

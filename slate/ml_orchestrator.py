@@ -57,6 +57,7 @@ STATE_FILE = WORKSPACE_ROOT / ".slate_ml_state.json"
 EMBEDDINGS_DIR = WORKSPACE_ROOT / "slate_memory" / "embeddings"
 
 # Modified: 2026-02-07T06:00:00Z | Author: COPILOT | Change: SLATE model routing with dual-GPU
+# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Add TRELLIS.2 3D generation routing
 # Model routing: task type -> preferred model (SLATE custom models preferred)
 MODEL_ROUTING = {
     "code_generation": "slate-coder:latest",        # 12B SLATE-tuned code gen (GPU 0)
@@ -67,6 +68,9 @@ MODEL_ROUTING = {
     "general": "slate-planner:latest",              # 7B SLATE-tuned general (GPU 0/1)
     "planning": "slate-planner:latest",             # 7B SLATE-tuned planning
     "quick": "slate-fast:latest",                   # 3B SLATE-tuned fast (GPU 1)
+    "image_to_3d": "trellis2:4B",                   # TRELLIS.2 image-to-3D (PyTorch)
+    "3d_generation": "trellis2:4B",                 # TRELLIS.2 3D asset gen (PyTorch)
+    "texture_generation": "trellis2:4B",            # TRELLIS.2 PBR texturing (PyTorch)
 }
 
 # Fallback routing: if SLATE models not built, use base models
@@ -266,10 +270,19 @@ class MLOrchestrator:
 
     def infer(self, prompt: str, task_type: str = "general",
               system: str = "", temperature: float = 0.7,
-              max_tokens: int = 2048) -> dict:
-        """Run inference with automatic model routing and tracing."""
+              max_tokens: int = 2048, **kwargs) -> dict:
+        """Run inference with automatic model routing and tracing.
+        
+        For TRELLIS.2 3D tasks, pass image_path in kwargs.
+        """
         # Modified: 2026-07-12T02:55:00Z | Author: COPILOT | Change: Add AI tracing to inference
+        # Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Route TRELLIS.2 3D tasks
         model = self.get_model_for_task(task_type)
+
+        # Route TRELLIS.2 tasks to the 3D generation pipeline
+        if task_type in ("image_to_3d", "3d_generation", "texture_generation"):
+            return self._infer_trellis(task_type, prompt, **kwargs)
+
         start = time.time()
         error_msg = None
         try:
@@ -322,6 +335,48 @@ class MLOrchestrator:
             "eval_time": result.get("eval_duration", 0) / 1e9,
             "total_time": elapsed,
             "tok_per_sec": result.get("eval_count", 0) / max(result.get("eval_duration", 1) / 1e9, 0.001),
+        }
+
+    # Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: TRELLIS.2 3D inference bridge
+    def _infer_trellis(self, task_type: str, prompt: str, **kwargs) -> dict:
+        """Route 3D generation tasks to TRELLIS.2 pipeline."""
+        try:
+            from slate.slate_trellis import generate_3d_from_image, is_ready
+        except ImportError:
+            return {
+                "response": "TRELLIS.2 integration not available. Run: python slate/slate_trellis.py --install",
+                "model": "trellis2:4B",
+                "task_type": task_type,
+                "error": "import_failed",
+            }
+
+        if not is_ready():
+            return {
+                "response": "TRELLIS.2 dependencies not installed. Run: python slate/slate_trellis.py --install",
+                "model": "trellis2:4B",
+                "task_type": task_type,
+                "error": "not_ready",
+            }
+
+        image_path = kwargs.get("image_path", prompt)
+        preset = kwargs.get("preset", "fast")
+        export_video = kwargs.get("export_video", False)
+
+        start = time.time()
+        result = generate_3d_from_image(
+            image_path=image_path,
+            preset=preset,
+            export_glb=True,
+            export_video=export_video,
+        )
+        elapsed = time.time() - start
+
+        return {
+            "response": f"3D asset generated: {result.get('mesh_path', 'N/A')}",
+            "model": "trellis2:4B",
+            "task_type": task_type,
+            "total_time": elapsed,
+            "trellis_result": result,
         }
 
     def analyze_code(self, code: str, instruction: str = "Review this code") -> dict:

@@ -709,6 +709,84 @@
 			"isBackground": false,
 			"problemMatcher": [],
 			"detail": "Clean up unused Docker images and stopped containers"
+		},
+		{
+			"label": "SLATE: TRELLIS Status",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"${workspaceFolder}/slate/slate_trellis.py",
+				"--status"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"detail": "TRELLIS.2 image-to-3D integration status"
+		},
+		{
+			"label": "SLATE: TRELLIS Install",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"${workspaceFolder}/slate/slate_trellis.py",
+				"--install"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"detail": "Install TRELLIS.2 dependencies into SLATE venv"
+		},
+		{
+			"label": "SLATE: TRELLIS Generate 3D",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"${workspaceFolder}/slate/slate_trellis.py",
+				"--generate", "${input:trellisImage}",
+				"--preset", "${input:trellisPreset}",
+				"--video"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"detail": "Generate 3D asset from image using TRELLIS.2"
+		},
+		{
+			"label": "SLATE: TRELLIS Benchmark",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"${workspaceFolder}/slate/slate_trellis.py",
+				"--benchmark"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"detail": "Run TRELLIS.2 3D generation benchmark"
+		},
+		{
+			"label": "SLATE: TRELLIS Unload",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": [
+				"${workspaceFolder}/slate/slate_trellis.py",
+				"--unload"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"detail": "Unload TRELLIS.2 pipeline to free GPU memory"
 		}
 	],
 	"inputs": [
@@ -732,6 +810,19 @@
 			"description": "Docker Compose profile",
 			"options": ["default", "dev", "prod"],
 			"default": "default"
+		},
+		{
+			"id": "trellisPreset",
+			"type": "pickString",
+			"description": "TRELLIS.2 resolution preset",
+			"options": ["fast", "standard", "high"],
+			"default": "fast"
+		},
+		{
+			"id": "trellisImage",
+			"type": "promptString",
+			"description": "Path to input image for 3D generation",
+			"default": ""
 		}
 	]
 }

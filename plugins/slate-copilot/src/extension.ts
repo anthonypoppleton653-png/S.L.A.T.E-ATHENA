@@ -1,4 +1,4 @@
-// Modified: 2026-02-07T22:00:00Z | Author: COPILOT | Change: Fix full-panel dashboard theme to SLATE M3 ProArt + unified view cleanup
+// Modified: 2026-02-08T16:10:00Z | Author: COPILOT | Change: Default VS Code theme + prompts to SLATE-ATHENA Dark
 import * as vscode from 'vscode';
 import { registerSlateParticipant } from './slateParticipant';
 import { registerSlateTools } from './tools';
@@ -11,7 +11,7 @@ import {
 } from './slateSchematicBackground';
 
 const DASHBOARD_URL = 'http://127.0.0.1:8080';
-const SLATE_THEME_ID = 'SLATE Dark';
+const SLATE_THEME_ID = 'SLATE-ATHENA Dark';
 
 /** Status bar item showing SLATE is installed */
 let slateStatusBarItem: vscode.StatusBarItem;
@@ -65,6 +65,14 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
+	// Reset onboarding state (for troubleshooting)
+	context.subscriptions.push(
+		vscode.commands.registerCommand('slate.resetOnboarding', async () => {
+			await context.globalState.update('slateOnboardingComplete', false);
+			vscode.window.showInformationMessage('Onboarding reset. Reload VS Code to see the guided setup button.');
+		})
+	);
+
 	context.subscriptions.push(
 		vscode.commands.registerCommand('slate.openDashboard', async () => {
 			const panel = vscode.window.createWebviewPanel(
@@ -95,7 +103,7 @@ export function deactivate() { }
 
 /**
  * Initialize the SLATE visual environment:
- * 1. Apply SLATE Dark theme (on first install or if requested)
+ * 1. Apply SLATE-ATHENA Dark theme (on first install or if requested)
  * 2. Generate and apply the evolving schematic background
  * 3. Set up watchers for automatic background evolution
  */
@@ -110,7 +118,7 @@ async function initializeSlateEnvironment(context: vscode.ExtensionContext): Pro
 		await context.globalState.update('slateInitialized', true);
 
 		const applyTheme = await vscode.window.showInformationMessage(
-			'Welcome to SLATE! Apply the SLATE Dark theme and schematic background?',
+			'Welcome to SLATE-ATHENA! Apply the SLATE-ATHENA Dark theme and schematic background?',
 			'Yes, Transform VS Code',
 			'Just Theme',
 			'Skip'
@@ -165,7 +173,7 @@ async function initializeSlateEnvironment(context: vscode.ExtensionContext): Pro
 			);
 
 			const enableBg = await vscode.window.showInformationMessage(
-				'SLATE Dark theme applied! Enable evolving schematic background?',
+				'SLATE-ATHENA Dark theme applied! Enable evolving schematic background?',
 				'Yes',
 				'No'
 			);

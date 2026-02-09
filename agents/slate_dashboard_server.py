@@ -61,8 +61,8 @@ sys.path.insert(0, str(WORKSPACE_ROOT))
 # ─── Dependencies ─────────────────────────────────────────────────────────────
 
 try:
-    from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
-    from fastapi.responses import HTMLResponse, JSONResponse
+    from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request, UploadFile, File, Form
+    from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
     from fastapi.middleware.cors import CORSMiddleware
     from starlette.middleware.base import BaseHTTPMiddleware
     from starlette.responses import Response
@@ -636,9 +636,9 @@ async def api_logo_custom(request: Request):
         config = StarburstConfig(
             size=data.get("size", 200),
             ray_count=data.get("rays", 8),
-            ray_color=data.get("primary", "#B85A3C"),
-            center_fill=data.get("primary", "#B85A3C"),
-            letter_color=data.get("onPrimary", "#FFFFFF"),
+            ray_color=data.get("primary", "#D4AF37"),
+            center_fill=data.get("primary", "#D4AF37"),
+            letter_color=data.get("onPrimary", "#0A0A0A"),
             center_letter=data.get("letter", "S"),
             animate_pulse=data.get("animate", False)
         )
@@ -1357,6 +1357,204 @@ async def slate_ai_recovery(request: Request):
         return JSONResponse(content={"suggestion": suggestion})
     except Exception as e:
         return JSONResponse(content={"suggestion": None, "error": str(e)})
+
+
+# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Add TRELLIS.2 image-to-3D API endpoints
+# ─── TRELLIS.2 3D Generation Endpoints ────────────────────────────────────────
+
+TRELLIS_UPLOAD_DIR = WORKSPACE_ROOT / "slate_memory" / "trellis_uploads"
+TRELLIS_OUTPUT_DIR = WORKSPACE_ROOT / "slate_memory" / "trellis_outputs"
+
+
+@app.get("/api/trellis/status")
+async def trellis_status():
+    """Get TRELLIS.2 integration status."""
+    # Modified: 2026-02-09T14:00:00Z | Author: COPILOT | Change: Fix status response to match JS field names
+    try:
+        from slate.slate_trellis import check_dependencies, _load_state, RESOLUTION_PRESETS, is_ready
+        deps = check_dependencies()
+        state_data = _load_state()
+        ready = is_ready()
+        # Derive simple state string for the JS badge
+        if state_data.get("model_loaded") or state_data.get("pipeline_ready"):
+            state_str = "loaded"
+        elif ready:
+            state_str = "ready"
+        else:
+            state_str = "not-ready"
+        # GPU info for status bar
+        gpu_info = None
+        if deps.get("gpu_available"):
+            try:
+                import torch
+                gpu_info = {
+                    "name": deps.get("gpu_name", "Unknown"),
+                    "total_mb": deps.get("gpu_vram_mb", 0),
+                    "used_mb": round(torch.cuda.memory_allocated(0) / (1024 * 1024)) if torch.cuda.is_available() else 0,
+                }
+            except Exception:
+                pass
+        return JSONResponse(content={
+            "ready": ready,
+            "deps": deps,
+            "state": state_str,
+            "presets": RESOLUTION_PRESETS,
+            "gpu": gpu_info,
+        })
+    except Exception as e:
+        return JSONResponse(content={
+            "ready": False,
+            "error": str(e),
+            "deps": {},
+            "state": "error",
+            "presets": {},
+            "gpu": None,
+        })
+
+
+@app.post("/api/trellis/upload")
+async def trellis_upload(file: UploadFile = File(...)):
+    """Upload an image for 3D generation."""
+    TRELLIS_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Validate file type
+    allowed_types = {"image/png", "image/jpeg", "image/webp", "image/bmp", "image/gif"}
+    if file.content_type not in allowed_types:
+        raise HTTPException(400, f"Unsupported file type: {file.content_type}. Use PNG, JPG, or WEBP.")
+
+    # Save with unique name
+    from datetime import datetime, timezone
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    ext = Path(file.filename).suffix or ".png"
+    safe_name = f"upload_{ts}{ext}"
+    save_path = TRELLIS_UPLOAD_DIR / safe_name
+
+    content = await file.read()
+    # Modified: 2026-02-09T16:00:00Z | Author: COPILOT | Change: Add 50MB upload size limit
+    if len(content) > 50 * 1024 * 1024:
+        raise HTTPException(400, "File too large. Maximum 50 MB.")
+    save_path.write_bytes(content)
+
+    # Modified: 2026-02-09T14:00:00Z | Author: COPILOT | Change: Fix upload response field name to match JS
+    return JSONResponse(content={
+        "filename": safe_name,
+        "image_path": str(save_path),
+        "size": len(content),
+        "content_type": file.content_type,
+    })
+
+
+@app.post("/api/trellis/generate")
+async def trellis_generate(request: Request):
+    """Generate a 3D model from an uploaded image. Runs in background thread."""
+    # Modified: 2026-02-09T16:00:00Z | Author: COPILOT | Change: Pre-check deps, read export_glb, use get_running_loop
+    body = await request.json()
+    image_path = body.get("image_path", "")
+    preset = body.get("preset", "fast")
+    export_video = body.get("export_video", False)
+    export_glb = body.get("export_glb", True)
+    name = body.get("name", None)
+
+    if not image_path or not Path(image_path).exists():
+        raise HTTPException(400, f"Image not found: {image_path}")
+
+    # Pre-check dependencies before attempting generation
+    try:
+        from slate.slate_trellis import is_ready, check_dependencies
+        if not is_ready():
+            deps = check_dependencies()
+            missing = [k for k, v in deps.items()
+                       if k in ('submodule', 'trellis2_package', 'torch_cuda', 'o_voxel')
+                       and v is not True]
+            if deps.get('attention_backend') == 'none':
+                missing.append('attention_backend (install flash-attn or xformers)')
+            return JSONResponse(content={
+                "success": False,
+                "error": f"TRELLIS.2 not ready. Missing: {', '.join(missing)}. Run: python slate/slate_trellis.py --install",
+                "missing_deps": missing,
+            })
+    except Exception as e:
+        return JSONResponse(content={"success": False, "error": f"Dependency check failed: {e}"})
+
+    # Run in background thread to avoid blocking
+    import asyncio
+
+    def _run_generation():
+        try:
+            from slate.slate_trellis import generate_3d_from_image
+            return generate_3d_from_image(
+                image_path=image_path,
+                preset=preset,
+                export_glb=export_glb,
+                export_video=export_video,
+                name=name,
+            )
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    loop = asyncio.get_running_loop()
+    result = await loop.run_in_executor(None, _run_generation)
+
+    # Broadcast status update via WebSocket
+    try:
+        await manager.broadcast({"type": "trellis_complete", "data": result})
+    except Exception:
+        pass
+
+    return JSONResponse(content=result)
+
+
+@app.get("/api/trellis/outputs")
+async def trellis_list_outputs():
+    """List generated 3D model outputs."""
+    # Modified: 2026-02-09T14:00:00Z | Author: COPILOT | Change: Fix outputs response to match JS field names
+    TRELLIS_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    files = []
+    for f in sorted(TRELLIS_OUTPUT_DIR.iterdir(), key=lambda x: x.stat().st_mtime, reverse=True):
+        if f.suffix in (".glb", ".obj", ".ply", ".mp4"):
+            stat = f.stat()
+            files.append({
+                "name": f.name,
+                "size_bytes": stat.st_size,
+                "type": f.suffix[1:],
+                "modified": stat.st_mtime,
+            })
+    return JSONResponse(content={"files": files})
+
+
+@app.get("/api/trellis/download/{filename}")
+async def trellis_download(filename: str):
+    """Download a generated 3D model file."""
+    file_path = TRELLIS_OUTPUT_DIR / filename
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(404, f"File not found: {filename}")
+    # Ensure the file is within our output directory (path traversal check)
+    if not str(file_path.resolve()).startswith(str(TRELLIS_OUTPUT_DIR.resolve())):
+        raise HTTPException(403, "Access denied")
+    media_types = {
+        ".glb": "model/gltf-binary",
+        ".obj": "text/plain",
+        ".ply": "application/octet-stream",
+        ".mp4": "video/mp4",
+    }
+    media_type = media_types.get(file_path.suffix, "application/octet-stream")
+    return FileResponse(
+        path=str(file_path),
+        filename=filename,
+        media_type=media_type,
+    )
+
+
+@app.post("/api/trellis/unload")
+async def trellis_unload():
+    """Unload TRELLIS.2 pipeline to free GPU memory."""
+    # Modified: 2026-02-09T14:00:00Z | Author: COPILOT | Change: Return message field for JS
+    try:
+        from slate.slate_trellis import unload_pipeline
+        unload_pipeline()
+        return JSONResponse(content={"unloaded": True, "message": "TRELLIS.2 pipeline unloaded, GPU memory freed"})
+    except Exception as e:
+        return JSONResponse(content={"unloaded": False, "message": f"Unload failed: {e}", "error": str(e)})
 
 
 # Modified: 2025-07-21T10:30:00Z | Author: COPILOT | Change: Add background CLI action endpoints
@@ -2387,66 +2585,66 @@ DASHBOARD_HTML = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; img-src 'self' data:;">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>S.L.A.T.E. Dashboard</title>
+    <title>SLATE-ATHENA Dashboard</title>
     <style>
         :root {
-            /* ═══ SLATE UNIFIED DESIGN SYSTEM v2.0 ═══ */
-            /* Synthesizing: M3 Material + Anthropic Geometric + Awwwards Patterns */
+            /* Modified: 2026-02-08T16:10:00Z | Author: COPILOT | Change: Apply SLATE-ATHENA design system colors and typography */
+            /* ═══ SLATE-ATHENA DESIGN SYSTEM v1.0 ═══ */
             /* Theme Value: 0=dark, 1=light (procedural interpolation) */
             --theme-value: 0.15;
 
-            /* ═══ PRIMARY PALETTE (Anthropic-Inspired Warm) ═══ */
-            --slate-primary: #B85A3C;
-            --slate-primary-light: #D4785A;
-            --slate-primary-dark: #8B4530;
-            --slate-primary-container: #FFE4D9;
-            --slate-on-primary: #FFFFFF;
-            --slate-on-primary-container: #3D1E10;
+            /* ═══ PRIMARY PALETTE (Parthenon Gold) ═══ */
+            --slate-primary: #D4AF37;
+            --slate-primary-light: #E4BF47;
+            --slate-primary-dark: #8A7F1A;
+            --slate-primary-container: #F5E6D3;
+            --slate-on-primary: #0A0A0A;
+            --slate-on-primary-container: #2A2510;
 
-            /* ═══ SECONDARY PALETTE ═══ */
-            --slate-secondary: #5D5D74;
-            --slate-secondary-light: #7A7A94;
-            --slate-secondary-container: #E2E2F0;
-            --slate-on-secondary: #FFFFFF;
+            /* ═══ SECONDARY PALETTE (Aegean Deep) ═══ */
+            --slate-secondary: #1A3A52;
+            --slate-secondary-light: #2A5A72;
+            --slate-secondary-container: #102633;
+            --slate-on-secondary: #F5F0EB;
 
-            /* ═══ NEUTRAL SURFACES (Natural Earth) ═══ */
+            /* ═══ NEUTRAL SURFACES (Acropolis Gray + Marble) ═══ */
             /* Light Mode */
-            --slate-surface-light: #FBF8F6;
-            --slate-surface-container-light: #F0EBE7;
-            --slate-on-surface-light: #1C1B1A;
-            --slate-on-surface-variant-light: #4D4845;
-            --slate-outline-light: #7D7873;
-            --slate-outline-variant-light: #CFC8C3;
+            --slate-surface-light: #F7F3EC;
+            --slate-surface-container-light: #EFE7DC;
+            --slate-on-surface-light: #1A1814;
+            --slate-on-surface-variant-light: #4A463F;
+            --slate-outline-light: #7A746A;
+            --slate-outline-variant-light: #D6CCBF;
 
             /* Dark Mode */
-            --slate-surface-dark: #1A1816;
-            --slate-surface-container-dark: #2A2624;
-            --slate-on-surface-dark: #E8E2DE;
-            --slate-on-surface-variant-dark: #CAC4BF;
-            --slate-outline-dark: #968F8A;
-            --slate-outline-variant-dark: #4D4845;
+            --slate-surface-dark: #0A0A0A;
+            --slate-surface-container-dark: #10141A;
+            --slate-on-surface-dark: #F5F0EB;
+            --slate-on-surface-variant-dark: #C6BFAF;
+            --slate-outline-dark: #3A3A3A;
+            --slate-outline-variant-dark: #1A3A52;
 
             /* ═══ COMPUTED (Interpolated from theme-value) ═══ */
-            --dark-bg-primary: #1A1816;
-            --dark-bg-surface: #2A2624;
-            --dark-bg-card: rgba(42, 38, 36, 0.85);
-            --dark-bg-elevated: rgba(52, 48, 46, 0.9);
-            --dark-text-primary: #E8E2DE;
-            --dark-text-secondary: #CAC4BF;
-            --dark-text-muted: #5a6a5a;
-            --dark-border: rgba(168, 184, 168, 0.12);
-            --dark-accent: #4ade80;
+            --dark-bg-primary: #0A0A0A;
+            --dark-bg-surface: #10141A;
+            --dark-bg-card: rgba(16, 20, 26, 0.88);
+            --dark-bg-elevated: rgba(20, 26, 34, 0.92);
+            --dark-text-primary: #F5F0EB;
+            --dark-text-secondary: #C6BFAF;
+            --dark-text-muted: #7A8A8A;
+            --dark-border: rgba(212, 175, 55, 0.12);
+            --dark-accent: #4A6741;
 
             /* Light Mode Base Colors */
-            --light-bg-primary: #f5f7f5;
-            --light-bg-surface: #e8ece8;
-            --light-bg-card: rgba(255, 255, 255, 0.85);
-            --light-bg-elevated: rgba(255, 255, 255, 0.95);
-            --light-text-primary: #1a1f1a;
-            --light-text-secondary: #4a524a;
-            --light-text-muted: #7a827a;
-            --light-border: rgba(26, 31, 26, 0.12);
-            --light-accent: #16a34a;
+            --light-bg-primary: #F7F3EC;
+            --light-bg-surface: #EFE7DC;
+            --light-bg-card: rgba(255, 255, 255, 0.9);
+            --light-bg-elevated: rgba(255, 255, 255, 0.96);
+            --light-text-primary: #1A1814;
+            --light-text-secondary: #4A463F;
+            --light-text-muted: #7A746A;
+            --light-border: rgba(26, 24, 20, 0.12);
+            --light-accent: #4A6741;
 
             /* Spacing Scale (fluid) */
             --space-xs: clamp(4px, 0.5vw, 8px);
@@ -2482,37 +2680,37 @@ DASHBOARD_HTML = """
             --bg-overlay: rgba(10, 15, 10, 0.85);
 
             /* Border System */
-            --border: rgba(255, 255, 255, 0.06);
-            --border-hover: rgba(255, 255, 255, 0.12);
-            --border-focus: rgba(255, 255, 255, 0.2);
-            --border-accent: rgba(255, 255, 255, 0.25);
+            --border: rgba(212, 175, 55, 0.08);
+            --border-hover: rgba(212, 175, 55, 0.16);
+            --border-focus: rgba(212, 175, 55, 0.28);
+            --border-accent: rgba(212, 175, 55, 0.32);
 
             /* Text Hierarchy */
-            --text-primary: #ffffff;
-            --text-secondary: #a3a3a3;
-            --text-muted: #525252;
-            --text-dim: #333333;
+            --text-primary: #F5F0EB;
+            --text-secondary: #C6BFAF;
+            --text-muted: #8A8072;
+            --text-dim: #3A3A3A;
 
             /* Status Colors (semantic) */
-            --status-success: #22c55e;
-            --status-error: #ef4444;
-            --status-warning: #eab308;
-            --status-info: #ffffff;
-            --status-success-bg: rgba(34, 197, 94, 0.12);
-            --status-error-bg: rgba(239, 68, 68, 0.12);
-            --status-warning-bg: rgba(234, 179, 8, 0.12);
+            --status-success: #4A6741;
+            --status-error: #E85050;
+            --status-warning: #FF6B1A;
+            --status-info: #D4AF37;
+            --status-success-bg: rgba(74, 103, 65, 0.12);
+            --status-error-bg: rgba(232, 80, 80, 0.12);
+            --status-warning-bg: rgba(255, 107, 26, 0.12);
 
             /* Neutral Status (monochrome) */
-            --status-pending: #737373;
-            --status-active: #ffffff;
-            --status-pending-bg: rgba(115, 115, 115, 0.15);
-            --status-active-bg: rgba(255, 255, 255, 0.08);
+            --status-pending: #7A8A8A;
+            --status-active: #F5F0EB;
+            --status-pending-bg: rgba(122, 138, 138, 0.15);
+            --status-active-bg: rgba(245, 240, 235, 0.08);
 
             /* Workflow Pipeline */
-            --pipeline-task: #737373;
-            --pipeline-runner: #a3a3a3;
-            --pipeline-workflow: #ffffff;
-            --pipeline-result: #22c55e;
+            --pipeline-task: #7A8A8A;
+            --pipeline-runner: #A9A292;
+            --pipeline-workflow: #F5F0EB;
+            --pipeline-result: #4A6741;
 
             /* Shadows (layered depth) */
             --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
@@ -2526,11 +2724,11 @@ DASHBOARD_HTML = """
             --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
             /* Legacy compatibility */
-            --accent-blue: #ffffff;
-            --accent-green: #22c55e;
-            --accent-yellow: #eab308;
-            --accent-red: #ef4444;
-            --accent-purple: #a3a3a3;
+            --accent-blue: #1A3A52;
+            --accent-green: #4A6741;
+            --accent-yellow: #D4AF37;
+            --accent-red: #E85050;
+            --accent-purple: #8A7F1A;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -2542,11 +2740,11 @@ DASHBOARD_HTML = """
         }
 
         body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            font-family: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
             background: var(--bg-dark);
             background-image:
-                radial-gradient(ellipse at 0% 0%, rgba(255, 255, 255, 0.015) 0%, transparent 50%),
-                radial-gradient(ellipse at 100% 100%, rgba(255, 255, 255, 0.01) 0%, transparent 50%),
+                radial-gradient(ellipse at 0% 0%, rgba(212, 175, 55, 0.05) 0%, transparent 55%),
+                radial-gradient(ellipse at 100% 100%, rgba(26, 58, 82, 0.08) 0%, transparent 60%),
                 linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-surface) 100%);
             background-attachment: fixed;
             color: var(--text-primary);
@@ -2587,13 +2785,13 @@ DASHBOARD_HTML = """
         .logo-icon {
             width: clamp(44px, 5vw, 60px);
             height: clamp(44px, 5vw, 60px);
-            background: linear-gradient(135deg, var(--slate-primary-container, #FFE4D9) 0%, var(--slate-primary, #B85A3C) 100%);
+            background: linear-gradient(135deg, var(--slate-primary-container, #F5E6D3) 0%, var(--slate-primary, #D4AF37) 100%);
             border-radius: var(--rounded-lg);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--slate-primary, #B85A3C);
-            box-shadow: var(--shadow-md), 0 0 20px rgba(184, 90, 60, 0.2);
+            color: var(--slate-primary, #D4AF37);
+            box-shadow: var(--shadow-md), 0 0 20px rgba(212, 175, 55, 0.2);
             transition: transform var(--transition-base), box-shadow var(--transition-base);
             overflow: hidden;
             padding: 4px;
@@ -4224,24 +4422,24 @@ DASHBOARD_HTML = """
 
         /* Blueprint Colors */
         :root {
-            --blueprint-bg: #0D1B2A;
-            --blueprint-grid: rgba(27, 58, 75, 0.5);
-            --blueprint-line: #3D5A80;
-            --blueprint-accent: #98C1D9;
-            --blueprint-node: #E0FBFC;
-            --blueprint-text: #EEF0F2;
-            --blueprint-glow: rgba(152, 193, 217, 0.3);
+            --blueprint-bg: #0A1420;
+            --blueprint-grid: rgba(26, 58, 82, 0.45);
+            --blueprint-line: #1A3A52;
+            --blueprint-accent: #D4AF37;
+            --blueprint-node: #F5E6D3;
+            --blueprint-text: #F5F0EB;
+            --blueprint-glow: rgba(212, 175, 55, 0.3);
 
             /* Connection status */
-            --conn-active: #22C55E;
-            --conn-pending: #F59E0B;
-            --conn-error: #EF4444;
-            --conn-inactive: #6B7280;
+            --conn-active: #4A6741;
+            --conn-pending: #FF6B1A;
+            --conn-error: #E85050;
+            --conn-inactive: #6A7A8A;
 
             /* Wizard steps */
-            --step-active: #3B82F6;
-            --step-complete: #22C55E;
-            --step-pending: #9CA3AF;
+            --step-active: #D4AF37;
+            --step-complete: #4A6741;
+            --step-pending: #8A8072;
         }
 
         /* Blueprint Background with Grid */

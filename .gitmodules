@@ -1,0 +1,3 @@
+[submodule "models/trellis2"]
+	path = models/trellis2
+	url = https://github.com/microsoft/TRELLIS.2.git

@@ -101,6 +101,28 @@ def chromadb_details():
     return chromadb.__version__
 
 
+# Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Add TRELLIS.2 integration check
+def check_trellis2():
+    try:
+        from slate.slate_trellis import check_dependencies
+        deps = check_dependencies()
+        return deps["submodule"] and deps["trellis2_package"]
+    except Exception:
+        # Fallback: just check if submodule exists
+        return (Path(__file__).parent.parent / "models" / "trellis2" / "trellis2" / "__init__.py").exists()
+
+
+def trellis2_details():
+    try:
+        from slate.slate_trellis import check_dependencies
+        deps = check_dependencies()
+        if deps["trellis2_package"]:
+            return "4B param, image-to-3D"
+        return "submodule only, needs --install"
+    except Exception:
+        return "not configured"
+
+
 INTEGRATIONS = [
     ("Python 3.11+", check_python, python_details),
     ("Virtual Env", check_venv, None),
@@ -109,6 +131,7 @@ INTEGRATIONS = [
     ("Transformers", check_transformers, None),
     ("Ollama", check_ollama, None),
     ("ChromaDB", check_chromadb, chromadb_details),
+    ("TRELLIS.2", check_trellis2, trellis2_details),
 ]
 
 def check_all():

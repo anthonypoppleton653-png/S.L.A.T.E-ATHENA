@@ -63,6 +63,17 @@ class SlateWorkflowManager:
         if not self.ARCHIVE_FILE.exists():
             self.ARCHIVE_FILE.write_text('{"archived": [], "last_archive": null}')
 
+    # Modified: 2026-02-08T02:25:00Z | Author: COPILOT | Change: normalize list-based task files
+    def _normalize_tasks_data(self, data: Any) -> Dict[str, Any]:
+        """Normalize task data to the expected object shape."""
+        if isinstance(data, list):
+            return {"tasks": data, "created_at": datetime.now(timezone.utc).isoformat()}
+        if isinstance(data, dict):
+            if "tasks" not in data:
+                data["tasks"] = []
+            return data
+        return {"tasks": [], "created_at": datetime.now(timezone.utc).isoformat()}
+
     def _load_tasks(self) -> Dict[str, Any]:
         """Load current tasks with file locking."""
         if not self.TASK_FILE.exists():
@@ -71,9 +82,11 @@ class SlateWorkflowManager:
         if filelock:
             lock = filelock.FileLock(str(self.TASK_FILE) + ".lock", timeout=10)
             with lock:
-                return json.loads(self.TASK_FILE.read_text(encoding="utf-8"))
+                data = json.loads(self.TASK_FILE.read_text(encoding="utf-8"))
+                return self._normalize_tasks_data(data)
         else:
-            return json.loads(self.TASK_FILE.read_text(encoding="utf-8"))
+            data = json.loads(self.TASK_FILE.read_text(encoding="utf-8"))
+            return self._normalize_tasks_data(data)
 
     def _save_tasks(self, data: Dict[str, Any]):
         """Save tasks with file locking."""

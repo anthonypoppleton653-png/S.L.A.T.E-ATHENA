@@ -18,7 +18,7 @@ import os
 import re
 import sys
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -301,7 +301,8 @@ class PersonalizationConfig:
     personality_traits: List[str] = field(default_factory=list)
 
     # Metadata
-    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    # Modified: 2026-02-08T02:25:00Z | Author: COPILOT | Change: Use timezone-aware datetime
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     modified_at: Optional[str] = None
     version: str = "1.0"
 
@@ -812,7 +813,8 @@ class PersonalizationManager:
         self.identity_dir.mkdir(parents=True, exist_ok=True)
 
         if self.config:
-            self.config.modified_at = datetime.utcnow().isoformat()
+            # Modified: 2026-02-08T02:25:00Z | Author: COPILOT | Change: Use timezone-aware datetime
+            self.config.modified_at = datetime.now(timezone.utc).isoformat()
             self.config_path.write_text(
                 json.dumps(self.config.to_dict(), indent=2),
                 encoding="utf-8"

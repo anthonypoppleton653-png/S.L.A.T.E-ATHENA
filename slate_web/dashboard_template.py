@@ -17,26 +17,55 @@ The template is self-contained (inline CSS/JS, no external deps) for 127.0.0.1 s
 """
 
 from pathlib import Path
-from slate_web.design_system import SlateDesignTokens, SlateLogoGenerator, GeometricPatternGenerator
+from slate_web.design_system import SlateDesignTokens, SlateLogoGenerator, AthenaLogoGenerator, GeometricPatternGenerator
 
 import base64
 
 
+# Modified: 2026-02-08T02:41:00Z | Author: COPILOT | Change: support Athena theme assets
 def _svg_to_data_uri(svg: str) -> str:
     """Convert SVG string to data URI for CSS background-image."""
     encoded = base64.b64encode(svg.encode('utf-8')).decode('ascii')
     return f"data:image/svg+xml;base64,{encoded}"
 
 
+def _hex_to_rgba(hex_color: str, alpha: float) -> str:
+    hex_color = hex_color.lstrip('#')
+    r = int(hex_color[0:2], 16)
+    g = int(hex_color[2:4], 16)
+    b = int(hex_color[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha})"
+
+
 def build_template() -> str:
     """Build the complete dashboard HTML template."""
 
+    # Modified: 2026-02-08T03:10:00Z | Author: COPILOT | Change: use AthenaLogoGenerator owl + enhanced glow
     # Generate assets inline
-    logo_icon_svg = SlateLogoGenerator.generate(48, "icon")
-    constellation_svg = GeometricPatternGenerator.constellation_grid(1920, 1080, 60, seed=42)
+    theme = "athena"
+    tokens = SlateDesignTokens.generate_tokens(theme)
+    athena = SlateDesignTokens.ATHENA
+    accent = tokens.get("--sl-accent", athena["gold"])
+    accent_dim = tokens.get("--sl-accent-dim", athena["gold_dim"])
+
+    # Athena owl logo for topbar (40px) and hero (96px)
+    logo_topbar_svg = AthenaLogoGenerator.generate(
+        40, "icon", gold=athena["gold"], gold_dim=athena["gold_dim"],
+        aegean=athena["aegean"], white=athena["thunderbolt"]
+    )
+    logo_hero_svg = AthenaLogoGenerator.generate(
+        96, "icon", gold=athena["gold"], gold_dim=athena["gold_dim"],
+        aegean=athena["aegean"], white=athena["thunderbolt"]
+    )
+    # Keep lattice logo for secondary use
+    logo_icon_svg = SlateLogoGenerator.generate(48, "icon", accent=accent, accent_dim=accent_dim)
+    constellation_svg = GeometricPatternGenerator.constellation_grid(
+        1920, 1080, 60, seed=42, accent_hex=athena["gold"]
+    )
     constellation_uri = _svg_to_data_uri(constellation_svg)
 
-    tokens = SlateDesignTokens.generate_tokens("dark")
+    gold_glow = _hex_to_rgba(athena["gold"], 0.10)
+    aegean_glow = _hex_to_rgba(athena["aegean"], 0.22)
 
     # Build CSS custom properties string
     token_css_lines = []
@@ -45,16 +74,17 @@ def build_template() -> str:
     tokens_css = "\n".join(token_css_lines)
 
     return f'''<!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="{theme}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; img-src 'self' data:;">
-    <title>S.L.A.T.E.</title>
+    <title>S.L.A.T.E. &mdash; Wisdom Meets Precision</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,{{}}"/>
     <style>
         /* ═══════════════════════════════════════════════════════════════
-           SLATE Design System v4.0
-           ASUS ProArt + Anthropic Geometric + Menu-Driven UX
+           SLATE-ATHENA Design System v5.0
+           Greek Minimalism + Strategic Depth + Owl Mark
            ═══════════════════════════════════════════════════════════════ */
 
         :root {{
@@ -80,16 +110,17 @@ def build_template() -> str:
             overflow-x: hidden;
         }}
 
-        /* ─── Geometric Background ─────────────────────────────────── */
+        /* ─── Athena Geometric Background ──────────────────────────── */
         body::before {{
             content: '';
             position: fixed;
             inset: 0;
             background:
                 url("{constellation_uri}") center/cover no-repeat,
-                radial-gradient(ellipse at 20% 0%, rgba(184,115,51,0.04) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 100%, rgba(184,115,51,0.03) 0%, transparent 50%);
-            opacity: 0.6;
+                radial-gradient(ellipse at 15% 5%, {gold_glow} 0%, transparent 50%),
+                radial-gradient(ellipse at 85% 95%, {aegean_glow} 0%, transparent 55%),
+                radial-gradient(circle at 50% 50%, rgba(212,175,55,0.02) 0%, transparent 70%);
+            opacity: 0.55;
             pointer-events: none;
             z-index: 0;
         }}
@@ -139,6 +170,11 @@ def build_template() -> str:
             width: 40px;
             height: 40px;
             flex-shrink: 0;
+            filter: drop-shadow(0 0 6px rgba(212,175,55,0.25));
+            transition: filter var(--sl-duration-medium) var(--sl-ease-standard);
+        }}
+        .topbar-logo:hover {{
+            filter: drop-shadow(0 0 12px rgba(212,175,55,0.45));
         }}
 
         .topbar-title {{
@@ -150,15 +186,17 @@ def build_template() -> str:
             font-size: var(--sl-space-5);
             font-weight: 700;
             letter-spacing: 0.12em;
+            font-family: var(--sl-font-display);
             color: var(--sl-text-primary);
             line-height: 1.1;
         }}
 
         .topbar-title .subtitle {{
-            font-size: 0.65rem;
-            color: var(--sl-text-tertiary);
-            letter-spacing: 0.2em;
+            font-size: 0.6rem;
+            color: var(--sl-accent);
+            letter-spacing: 0.25em;
             text-transform: uppercase;
+            opacity: 0.65;
         }}
 
         .topbar-actions {{
@@ -232,6 +270,26 @@ def build_template() -> str:
         .card:hover {{
             border-color: var(--sl-border-variant);
             box-shadow: var(--sl-elevation-2);
+        }}
+
+        /* Athena gold accent stripe on card top */
+        .card::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 20%;
+            right: 20%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--sl-accent), transparent);
+            opacity: 0;
+            transition: opacity var(--sl-duration-medium) var(--sl-ease-standard);
+        }}
+        .card {{
+            position: relative;
+            overflow: hidden;
+        }}
+        .card:hover::before {{
+            opacity: 0.5;
         }}
 
         .card-header {{
@@ -2438,10 +2496,10 @@ def build_template() -> str:
     <!-- Onboarding Overlay -->
     <div class="onboard-overlay" id="onboard">
         <div class="onboard-card">
-            <div style="margin-bottom: 20px;">{logo_icon_svg}</div>
+            <div style="margin-bottom: 20px;">{logo_hero_svg}</div>
             <h2>Welcome to S.L.A.T.E.</h2>
             <p>Synchronized Living Architecture for Transformation and Evolution.<br>
-            Your local AI orchestration system is ready to get started.</p>
+            <em style="color:var(--sl-accent);opacity:0.8;">Wisdom Meets Precision.</em></p>
             <div class="onboard-steps">
                 <div class="onboard-step">
                     <div class="onboard-step-num">1</div>
@@ -2507,7 +2565,7 @@ def build_template() -> str:
         <!-- ═══ Sidebar Navigation ═══ -->
         <nav class="nav-sidebar" role="navigation" aria-label="Main navigation">
             <div class="nav-brand">
-                <div style="width:28px;height:28px;flex-shrink:0;">{logo_icon_svg}</div>
+                <div style="width:28px;height:28px;flex-shrink:0;">{logo_topbar_svg}</div>
                 <div class="nav-brand-text">
                     <span class="nav-brand-name">S.L.A.T.E.</span>
                     <span class="nav-brand-sub">Architecture</span>
@@ -2546,6 +2604,9 @@ def build_template() -> str:
                 <div class="nav-section-label">Intelligence</div>
                 <button class="nav-item" onclick="showSection('agents', this)">
                     <span class="nav-item-icon">&#129302;</span><span>Agents</span>
+                </button>
+                <button class="nav-item" onclick="showSection('trellis', this)">
+                    <span class="nav-item-icon">&#127922;</span><span>3D Studio</span>
                 </button>
                 <button class="nav-item" onclick="showSection('activity', this)">
                     <span class="nav-item-icon">&#128200;</span><span>Activity</span>
@@ -2608,9 +2669,10 @@ def build_template() -> str:
                 <!-- Topbar -->
                 <header class="topbar" role="banner">
                     <div class="topbar-brand">
+                        <div class="topbar-logo">{logo_topbar_svg}</div>
                         <div class="topbar-title">
-                            <h1 id="section-title">Overview</h1>
-                            <span class="subtitle" id="section-subtitle">System status and quick actions</span>
+                            <h1 id="section-title">S.L.A.T.E.</h1>
+                            <span class="subtitle" id="section-subtitle">Wisdom Meets Precision</span>
                         </div>
                     </div>
                     <div class="topbar-actions">
@@ -3376,6 +3438,133 @@ def build_template() -> str:
                     </div>
                 </div>
 
+                <!-- ═══ TRELLIS.2 3D Studio Section ═══ -->
+                <!-- Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Add TRELLIS.2 image-to-3D UI -->
+                <div class="dash-section" id="sec-trellis">
+                    <div class="dashboard-3d">
+
+                        <!-- Status Banner -->
+                        <div class="watchmaker-card active" style="margin-bottom:20px;">
+                            <div class="watchmaker-card-header">
+                                <svg class="gear-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 3L2 12h3v8h14v-8h3L12 3z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                                    <path d="M9 21v-6h6v6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                                </svg>
+                                <span style="font-weight:600;font-size:0.85rem;">TRELLIS.2 — Image to 3D</span>
+                                <span id="trellis-status-badge" class="status-jewel pending" style="margin-left:8px;" title="Checking..."></span>
+                                <span id="trellis-status-text" style="font-size:0.7rem;color:var(--sl-text-muted);margin-left:4px;">Checking...</span>
+                                <button class="card-action" onclick="refreshTrellisStatus()" style="margin-left:auto;">Refresh</button>
+                                <button class="card-action" onclick="trellisUnload()" style="margin-left:4px;">Unload GPU</button>
+                            </div>
+                            <div style="padding:12px 16px;">
+                                <div id="trellis-dep-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;font-size:0.72rem;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upload + Generate -->
+                        <div class="grid" style="margin-bottom:20px;">
+                            <div class="card col-8">
+                                <div class="card-header">
+                                    <span class="card-title">Upload Image</span>
+                                </div>
+                                <div style="padding:16px;">
+                                    <!-- Drop zone -->
+                                    <div id="trellis-dropzone"
+                                         style="border:2px dashed var(--sl-border);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--sl-surface-1);"
+                                         onclick="document.getElementById('trellis-file-input').click()"
+                                         ondragover="event.preventDefault();this.style.borderColor='var(--sl-accent)';this.style.background='rgba(var(--sl-accent-rgb),0.05)'"
+                                         ondragleave="this.style.borderColor='var(--sl-border)';this.style.background='var(--sl-surface-1)'"
+                                         ondrop="trellisHandleDrop(event)">
+                                        <input type="file" id="trellis-file-input" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="trellisHandleFile(this.files[0])">
+                                        <div id="trellis-upload-placeholder">
+                                            <div style="font-size:2.5rem;margin-bottom:8px;opacity:0.4;">&#128444;</div>
+                                            <div style="font-size:0.8rem;font-weight:500;color:var(--sl-text-primary);">Drop image here or click to browse</div>
+                                            <div style="font-size:0.7rem;color:var(--sl-text-muted);margin-top:4px;">PNG, JPG, WEBP &bull; Any resolution</div>
+                                        </div>
+                                        <div id="trellis-preview-container" style="display:none;">
+                                            <img id="trellis-preview-img" style="max-width:100%;max-height:300px;border-radius:8px;object-fit:contain;" alt="Preview">
+                                            <div id="trellis-preview-name" style="font-size:0.7rem;color:var(--sl-text-muted);margin-top:8px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card col-4">
+                                <div class="card-header">
+                                    <span class="card-title">Generation Options</span>
+                                </div>
+                                <div style="padding:16px;">
+                                    <!-- Preset selector -->
+                                    <label style="font-size:0.7rem;font-weight:600;color:var(--sl-text-muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Resolution Preset</label>
+                                    <div id="trellis-preset-group" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+                                        <label class="trellis-preset-option active" data-preset="fast" onclick="trellisSelectPreset('fast',this)" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;border:1px solid var(--sl-border);cursor:pointer;font-size:0.75rem;transition:all 0.15s;">
+                                            <input type="radio" name="trellis-preset" value="fast" checked style="display:none;">
+                                            <span style="font-weight:600;">&#9889; Fast</span>
+                                            <span style="color:var(--sl-text-muted);margin-left:auto;">512&sup3; &bull; ~3s</span>
+                                        </label>
+                                        <label class="trellis-preset-option" data-preset="standard" onclick="trellisSelectPreset('standard',this)" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;border:1px solid var(--sl-border);cursor:pointer;font-size:0.75rem;transition:all 0.15s;">
+                                            <input type="radio" name="trellis-preset" value="standard" style="display:none;">
+                                            <span style="font-weight:600;">&#9881; Standard</span>
+                                            <span style="color:var(--sl-text-muted);margin-left:auto;">1024&sup3; &bull; ~17s</span>
+                                        </label>
+                                        <label class="trellis-preset-option" data-preset="high" onclick="trellisSelectPreset('high',this)" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;border:1px solid var(--sl-border);cursor:pointer;font-size:0.75rem;transition:all 0.15s;">
+                                            <input type="radio" name="trellis-preset" value="high" style="display:none;">
+                                            <span style="font-weight:600;">&#10024; High</span>
+                                            <span style="color:var(--sl-text-muted);margin-left:auto;">1536&sup3; &bull; ~60s</span>
+                                        </label>
+                                    </div>
+
+                                    <!-- Export options -->
+                                    <label style="font-size:0.7rem;font-weight:600;color:var(--sl-text-muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Export</label>
+                                    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px;">
+                                        <label style="font-size:0.72rem;display:flex;align-items:center;gap:6px;cursor:pointer;">
+                                            <input type="checkbox" id="trellis-export-glb" checked> GLB (3D model + PBR textures)
+                                        </label>
+                                        <label style="font-size:0.72rem;display:flex;align-items:center;gap:6px;cursor:pointer;">
+                                            <input type="checkbox" id="trellis-export-video"> MP4 preview video
+                                        </label>
+                                    </div>
+
+                                    <!-- Generate button -->
+                                    <button id="trellis-generate-btn"
+                                            onclick="trellisGenerate()"
+                                            disabled
+                                            style="width:100%;padding:12px 16px;border:none;border-radius:8px;background:var(--sl-accent,#6366F1);color:white;font-weight:600;font-size:0.8rem;cursor:pointer;opacity:0.5;transition:all 0.2s;">
+                                        &#9654; Generate 3D Model
+                                    </button>
+                                    <div id="trellis-generate-status" style="font-size:0.7rem;color:var(--sl-text-muted);text-align:center;margin-top:8px;min-height:16px;"></div>
+
+                                    <!-- Progress bar -->
+                                    <div id="trellis-progress" style="display:none;margin-top:12px;">
+                                        <div style="height:4px;background:var(--sl-border);border-radius:2px;overflow:hidden;">
+                                            <div id="trellis-progress-bar" style="height:100%;width:0%;background:var(--sl-accent,#6366F1);transition:width 0.3s;border-radius:2px;"></div>
+                                        </div>
+                                        <div id="trellis-progress-text" style="font-size:0.65rem;color:var(--sl-text-muted);margin-top:4px;text-align:center;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Output Gallery -->
+                        <div class="watchmaker-card active">
+                            <div class="watchmaker-card-header">
+                                <svg class="gear-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                                    <path d="M3 14l5-5 4 4 3-3 6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                                </svg>
+                                <span style="font-weight:600;font-size:0.85rem;">Generated Models</span>
+                                <span id="trellis-output-count" class="nav-item-badge" style="margin-left:6px;">0</span>
+                                <button class="card-action" onclick="refreshTrellisOutputs()" style="margin-left:auto;">Refresh</button>
+                            </div>
+                            <div id="trellis-output-gallery" style="padding:16px;">
+                                <div class="empty">No models generated yet. Upload an image and click Generate.</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
                 </main>
             </div>
         </div>
@@ -3457,6 +3646,7 @@ def build_template_js() -> str:
             tasks:     { title: 'Tasks',      sub: 'Task queue, heatmap, and scheduling' },
             github:    { title: 'GitHub',     sub: 'PRs, issues, commits, and releases' },
             agents:    { title: 'Agents',     sub: 'AI agent system and routing' },
+            trellis:   { title: '3D Studio',  sub: 'TRELLIS.2 — Image to 3D asset generation' },
             activity:  { title: 'Activity',   sub: 'Recent operations and events' },
             'command-center': { title: 'Command Center', sub: 'Watchmaker system health overview' },
             'constellation':  { title: 'Service Constellation', sub: 'Interactive service topology map' },
@@ -3482,13 +3672,15 @@ def build_template_js() -> str:
             // Persist
             activeSection = name;
             localStorage.setItem('slate_section', name);
+            // Section-specific refresh on navigation
+            if (name === 'trellis') refreshTrellis();
         }
 
         // Restore last section on load
         (function() {
             const saved = localStorage.getItem('slate_section') || 'overview';
             const navItems = document.querySelectorAll('.nav-item');
-            const sectionNames = ['overview','controls','hardware','workflows','tasks','github','agents','activity','command-center','constellation','gpu-workbench','task-orch'];
+            const sectionNames = ['overview','controls','hardware','workflows','tasks','github','agents','trellis','activity','command-center','constellation','gpu-workbench','task-orch'];
             const idx = sectionNames.indexOf(saved);
             if (idx >= 0 && navItems[idx]) {
                 showSection(saved, navItems[idx]);
@@ -3535,6 +3727,12 @@ def build_template_js() -> str:
                     if (data.type === 'status') updateStatus(data);
                     if (data.type === 'task_update') refreshTasks();
                     if (data.type === 'workflow_update') refreshWorkflows();
+                    if (data.type === 'trellis_complete') {
+                        refreshTrellisOutputs();
+                        refreshTrellisStatus();
+                        const st = document.getElementById('trellis-generate-status');
+                        if (st && data.data && data.data.success) st.innerHTML = '<span style="color:#22c55e;">&#10003;</span> Generation complete!';
+                    }
                 } catch(err) {}
             };
         }
@@ -3888,6 +4086,258 @@ def build_template_js() -> str:
             } catch (e) {}
         }
 
+        // ═══ TRELLIS.2 3D Studio Functions ═══
+        // Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: TRELLIS.2 UI JS functions
+        let trellisUploadedPath = null;
+        let trellisSelectedPreset = 'fast';
+        let trellisGenerating = false;
+
+        async function refreshTrellisStatus() {
+            try {
+                const res = await fetch('/api/trellis/status');
+                const data = await res.json();
+                const badge = document.getElementById('trellis-status-badge');
+                const text = document.getElementById('trellis-status-text');
+                const depGrid = document.getElementById('trellis-dep-grid');
+                if (data.state === 'ready' || data.state === 'loaded') {
+                    badge.className = 'status-jewel online';
+                    text.textContent = data.state === 'loaded' ? 'Pipeline loaded' : 'Ready';
+                } else if (data.state === 'generating') {
+                    badge.className = 'status-jewel warning';
+                    text.textContent = 'Generating...';
+                } else {
+                    badge.className = 'status-jewel pending';
+                    text.textContent = data.state || 'Not ready';
+                }
+                if (data.deps) {
+                    const depDisplay = ['submodule','trellis2_package','torch_cuda','o_voxel','pillow','opencv','gpu_available'];
+                    const attn = data.deps.attention_backend || 'none';
+                    depGrid.innerHTML = depDisplay.filter(k => k in data.deps).map(k => {
+                        const v = data.deps[k];
+                        const ok = v === true;
+                        const label = k.replace(/_/g, ' ');
+                        return '<div style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;background:var(--sl-surface-1);"><span style="color:' + (ok ? '#22c55e' : '#f87171') + ';font-size:0.8rem;">' + (ok ? '&#10003;' : '&#10007;') + '</span><span>' + label + '</span></div>';
+                    }).join('') + '<div style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;background:var(--sl-surface-1);"><span style="color:' + (attn !== 'none' ? '#22c55e' : '#f87171') + ';font-size:0.8rem;">' + (attn !== 'none' ? '&#10003;' : '&#10007;') + '</span><span>attention: ' + attn + '</span></div>';
+                }
+                if (data.gpu) {
+                    text.textContent += ' | VRAM: ' + (data.gpu.used_mb || '?') + '/' + (data.gpu.total_mb || '?') + ' MB';
+                }
+                // Modified: 2026-02-09T20:00:00Z | Author: COPILOT | Change: VRAM warnings per preset + generate button gating
+                if (data.presets && data.gpu && data.gpu.total_mb) {
+                    const totalMb = data.gpu.total_mb;
+                    ['fast','standard','high'].forEach(p => {
+                        const el = document.querySelector('.trellis-preset-option[data-preset="'+p+'"]');
+                        if (!el || !data.presets[p]) return;
+                        const needed = data.presets[p].min_vram_mb;
+                        const warn = el.querySelector('.trellis-vram-warn');
+                        if (totalMb < needed) {
+                            if (!warn) {
+                                const w = document.createElement('span');
+                                w.className = 'trellis-vram-warn';
+                                w.style.cssText = 'color:#f87171;font-size:0.6rem;margin-left:4px;';
+                                w.textContent = '\\u26A0 ' + needed + ' MB needed';
+                                el.appendChild(w);
+                            }
+                        } else if (warn) { warn.remove(); }
+                    });
+                }
+                // Gate generate button on readiness (not just upload)
+                const genBtn = document.getElementById('trellis-generate-btn');
+                if (genBtn && trellisUploadedPath && !data.ready) {
+                    genBtn.disabled = true;
+                    genBtn.style.opacity = '0.5';
+                    document.getElementById('trellis-generate-status').textContent = 'Dependencies missing. Check status above.';
+                } else if (genBtn && trellisUploadedPath && data.ready) {
+                    genBtn.disabled = false;
+                    genBtn.style.opacity = '1';
+                }
+            } catch (e) {
+                document.getElementById('trellis-status-badge').className = 'status-jewel offline';
+                document.getElementById('trellis-status-text').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        function trellisSelectPreset(preset, el) {
+            trellisSelectedPreset = preset;
+            document.querySelectorAll('.trellis-preset-option').forEach(o => {
+                o.classList.remove('active');
+                o.style.borderColor = 'var(--sl-border)';
+                o.style.background = 'transparent';
+            });
+            el.classList.add('active');
+            el.style.borderColor = 'var(--sl-accent, #6366F1)';
+            el.style.background = 'rgba(99,102,241,0.06)';
+        }
+
+        function trellisHandleDrop(event) {
+            event.preventDefault();
+            event.target.closest('#trellis-dropzone').style.borderColor = 'var(--sl-border)';
+            event.target.closest('#trellis-dropzone').style.background = 'var(--sl-surface-1)';
+            const file = event.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) trellisHandleFile(file);
+        }
+
+        async function trellisHandleFile(file) {
+            if (!file) return;
+            const placeholder = document.getElementById('trellis-upload-placeholder');
+            const container = document.getElementById('trellis-preview-container');
+            const img = document.getElementById('trellis-preview-img');
+            const nameEl = document.getElementById('trellis-preview-name');
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => { img.src = e.target.result; };
+            reader.readAsDataURL(file);
+            nameEl.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+            placeholder.style.display = 'none';
+            container.style.display = 'block';
+
+            // Upload to server
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const res = await fetch('/api/trellis/upload', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.image_path) {
+                    trellisUploadedPath = data.image_path;
+                    document.getElementById('trellis-generate-btn').disabled = false;
+                    document.getElementById('trellis-generate-btn').style.opacity = '1';
+                    document.getElementById('trellis-generate-status').textContent = 'Image uploaded. Ready to generate.';
+                } else {
+                    document.getElementById('trellis-generate-status').textContent = 'Upload failed: ' + (data.error || 'Unknown');
+                }
+            } catch (e) {
+                document.getElementById('trellis-generate-status').textContent = 'Upload error: ' + e.message;
+            }
+        }
+
+        async function trellisGenerate() {
+            if (!trellisUploadedPath || trellisGenerating) return;
+            trellisGenerating = true;
+            const btn = document.getElementById('trellis-generate-btn');
+            const status = document.getElementById('trellis-generate-status');
+            const progress = document.getElementById('trellis-progress');
+            const progressBar = document.getElementById('trellis-progress-bar');
+            const progressText = document.getElementById('trellis-progress-text');
+
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.innerHTML = '&#9203; Generating...';
+            progress.style.display = 'block';
+            progressBar.style.width = '10%';
+            status.textContent = 'Loading TRELLIS.2 pipeline...';
+
+            // Animate progress bar
+            let pct = 10;
+            const timer = setInterval(() => {
+                if (pct < 90) { pct += Math.random() * 5; progressBar.style.width = pct + '%'; }
+            }, 500);
+
+            try {
+                const exportVideo = document.getElementById('trellis-export-video').checked;
+                const exportGlb = document.getElementById('trellis-export-glb').checked;
+                const res = await fetch('/api/trellis/generate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        image_path: trellisUploadedPath,
+                        preset: trellisSelectedPreset,
+                        export_video: exportVideo,
+                        export_glb: exportGlb
+                    })
+                });
+                const data = await res.json();
+                clearInterval(timer);
+                progressBar.style.width = '100%';
+
+                if (data.success) {
+                    status.innerHTML = '<span style="color:#22c55e;">&#10003;</span> Generated in ' + (data.duration_s || '?') + 's &mdash; ' + (data.vertices || '?') + ' vertices, ' + (data.faces || '?') + ' faces';
+                    refreshTrellisOutputs();
+                } else {
+                    status.innerHTML = '<span style="color:#f87171;">&#10007;</span> ' + (data.error || 'Generation failed');
+                }
+            } catch (e) {
+                clearInterval(timer);
+                status.innerHTML = '<span style="color:#f87171;">&#10007;</span> Error: ' + e.message;
+            } finally {
+                trellisGenerating = false;
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.innerHTML = '&#9654; Generate 3D Model';
+                setTimeout(() => { progress.style.display = 'none'; }, 3000);
+            }
+        }
+
+        async function refreshTrellisOutputs() {
+            try {
+                const res = await fetch('/api/trellis/outputs');
+                const data = await res.json();
+                const gallery = document.getElementById('trellis-output-gallery');
+                const countEl = document.getElementById('trellis-output-count');
+                const files = data.files || [];
+                countEl.textContent = files.length;
+
+                if (files.length === 0) {
+                    gallery.innerHTML = '<div class="empty">No models generated yet. Upload an image and click Generate.</div>';
+                    return;
+                }
+
+                gallery.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">' +
+                    files.map(f => {
+                        const ext = f.name.split('.').pop().toUpperCase();
+                        const icon = ext === 'MP4' ? '&#127910;' : ext === 'GLB' ? '&#129513;' : '&#128451;';
+                        const sizeMB = (f.size_bytes / 1048576).toFixed(2);
+                        const date = f.modified ? new Date(f.modified * 1000).toLocaleString() : '';
+                        return '<div style="border:1px solid var(--sl-border);border-radius:10px;padding:14px;background:var(--sl-surface-1);transition:all 0.15s;">' +
+                            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+                                '<span style="font-size:1.4rem;">' + icon + '</span>' +
+                                '<div style="flex:1;min-width:0;">' +
+                                    '<div style="font-size:0.75rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + f.name + '">' + f.name + '</div>' +
+                                    '<div style="font-size:0.65rem;color:var(--sl-text-muted);">' + ext + ' &bull; ' + sizeMB + ' MB' + (date ? ' &bull; ' + date : '') + '</div>' +
+                                '</div>' +
+                            '</div>' +
+                            '<div style="display:flex;gap:6px;">' +
+                                '<a href="/api/trellis/download/' + encodeURIComponent(f.name) + '" download style="flex:1;text-align:center;padding:6px;border-radius:6px;background:var(--sl-accent,#6366F1);color:white;font-size:0.7rem;font-weight:500;text-decoration:none;">&#11015; Download</a>' +
+                                (ext === 'MP4' ? '<button onclick="trellisPreviewVideo(&quot;' + f.name + '&quot;)" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--sl-border);background:transparent;color:var(--sl-text-primary);font-size:0.7rem;cursor:pointer;">&#9654; Preview</button>' : '') +
+                            '</div>' +
+                        '</div>';
+                    }).join('') +
+                '</div>';
+            } catch (e) {
+                document.getElementById('trellis-output-gallery').innerHTML = '<div class="empty">Error loading outputs: ' + e.message + '</div>';
+            }
+        }
+
+        function trellisPreviewVideo(filename) {
+            const url = '/api/trellis/download/' + encodeURIComponent(filename);
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:10000;display:flex;align-items:center;justify-content:center;cursor:pointer;';
+            overlay.onclick = () => overlay.remove();
+            const video = document.createElement('video');
+            video.src = url;
+            video.controls = true;
+            video.autoplay = true;
+            video.style.cssText = 'max-width:80%;max-height:80%;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.5);';
+            overlay.appendChild(video);
+            document.body.appendChild(overlay);
+        }
+
+        async function trellisUnload() {
+            try {
+                const res = await fetch('/api/trellis/unload', { method: 'POST' });
+                const data = await res.json();
+                document.getElementById('trellis-generate-status').textContent = data.message || 'Pipeline unloaded';
+                refreshTrellisStatus();
+            } catch (e) {
+                document.getElementById('trellis-generate-status').textContent = 'Unload error: ' + e.message;
+            }
+        }
+
+        function refreshTrellis() {
+            refreshTrellisStatus();
+            refreshTrellisOutputs();
+        }
+
         async function refreshAgents() {
             try {
                 const res = await fetch('/api/agents');
@@ -4025,6 +4475,7 @@ def build_template_js() -> str:
             refreshSpecs();
             refreshForks();
             refreshDocker();
+            refreshTrellis();
         }
 
         // ─── Schematic Hero Widget ──────────────────────────────────────
@@ -4909,6 +5360,11 @@ def build_template_js() -> str:
 
         fetchInitialStatus();
         refreshAll();
+        // Initialize TRELLIS preset styling
+        (function() {
+            const active = document.querySelector('.trellis-preset-option.active');
+            if (active) { active.style.borderColor = 'var(--sl-accent, #6366F1)'; active.style.background = 'rgba(99,102,241,0.06)'; }
+        })();
         loadSchematic();
         connectSchematicWebSocket();
         updateSidebarSchematic();

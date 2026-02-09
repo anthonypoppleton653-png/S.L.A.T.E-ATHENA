@@ -43,6 +43,11 @@ DEFAULT_FLAGS = {
     "flash_attention": False,
     "quantization": False,
 
+    # 3D Generation (TRELLIS.2)
+    # Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Add TRELLIS.2 feature flag
+    "trellis2_integration": True,
+    "trellis2_auto_load": False,  # Auto-load pipeline on startup
+
     # CI/CD
     "auto_dispatch": False,
     "nightly_benchmarks": True,
