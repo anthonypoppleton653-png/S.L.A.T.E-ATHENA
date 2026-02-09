@@ -180,3 +180,12 @@ temp_spec.json
 
 # SLATE Token Store (NEVER commit)
 .slate_tokens/
+
+# NPM cache artifacts (Gemini CLI install)
+.pip_tmp/
+
+# Test deploy state artifacts
+.slate_deploy_state.json
+
+# Restored file backups
+*.restored

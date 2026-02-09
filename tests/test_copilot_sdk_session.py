@@ -9,11 +9,9 @@ from pathlib import Path
 
 # The module imports vendor SDK which may not be available
 try:
-    from slate.copilot_sdk_session import (
-        SLATESessionManager if 'SLATESessionManager' in dir() else None,
-    )
+    from slate.copilot_sdk_session import SLATESessionManager
     MODULE_AVAILABLE = True
-except (ImportError, TypeError):
+except (ImportError, TypeError, AttributeError):
     MODULE_AVAILABLE = False
 
 
