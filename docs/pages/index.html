@@ -2225,8 +2225,8 @@
 <span style="color: var(--sl-on-surface-dim);"># CPU-only alternative</span>
 <span style="color: var(--sl-blueprint-accent);">docker compose</span> --profile cpu up -d
 
-<span style="color: var(--sl-on-surface-dim);"># Open dashboard</span>
-<span style="color: var(--sl-blueprint-accent);">open</span> http://127.0.0.1:8080</code></pre>
+<span style="color: var(--sl-on-surface-dim);"># Open dashboard (binds to loopback only)</span>
+<span style="color: var(--sl-blueprint-accent);">open</span> http://&lt;loopback&gt;:SVC_DASH</code></pre>
                 </div>
 
                 <!-- Services Grid -->
@@ -2240,7 +2240,7 @@
                             Dashboard</div>
                         <div
                             style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--sl-primary-light); margin-top: 4px;">
-                            :8080</div>
+                            PORT 8xxx &middot; HTTP</div>
                     </div>
                     <div
                         style="background: var(--sl-surface-variant); border: 1px solid rgba(184,115,51,0.15); border-radius: 10px; padding: 20px; text-align: center;">
@@ -2250,7 +2250,7 @@
                             Ollama LLM</div>
                         <div
                             style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--sl-primary-light); margin-top: 4px;">
-                            :11434</div>
+                            PORT 11xxx &middot; gRPC</div>
                     </div>
                     <div
                         style="background: var(--sl-surface-variant); border: 1px solid rgba(184,115,51,0.15); border-radius: 10px; padding: 20px; text-align: center;">
@@ -2260,7 +2260,7 @@
                             ChromaDB</div>
                         <div
                             style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--sl-primary-light); margin-top: 4px;">
-                            :8000</div>
+                            PORT 8xxx &middot; REST</div>
                     </div>
                     <div
                         style="background: var(--sl-surface-variant); border: 1px solid rgba(184,115,51,0.15); border-radius: 10px; padding: 20px; text-align: center;">
@@ -2270,7 +2270,7 @@
                             Grafana</div>
                         <div
                             style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--sl-primary-light); margin-top: 4px;">
-                            :3000</div>
+                            PORT 3xxx &middot; HTTP</div>
                     </div>
                 </div>
 
@@ -2489,7 +2489,7 @@
                         </div>
                         <div
                             style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--sl-on-surface-dim);">
-                            TRELLIS.2: 4B params | GLB + PBR materials | K8s service :8085
+                            TRELLIS.2: 4B params | GLB + PBR materials | K8s service
                         </div>
                         <a href="avatar.html"
                             style="display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 6px 14px; background: rgba(184,90,60,0.15); border: 1px solid var(--sl-primary); border-radius: 8px; color: var(--sl-primary-light); text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: background 0.2s;"
