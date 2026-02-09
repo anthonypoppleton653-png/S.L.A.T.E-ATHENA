@@ -17,15 +17,16 @@ def mock_guard():
     return MagicMock()
 
 @pytest.mark.parametrize(
-    "platform, expected",
+    "platform, env_patch, expected",
     [
-        ("win32", Path("C:/Users/USERNAME/.claude")),
-        ("linux", Path.home() / ".claude"),
+        ("win32", {"USERPROFILE": "C:/Users/USERNAME"}, Path("C:/Users/USERNAME/.claude")),
+        ("linux", {"HOME": str(Path.home())}, Path.home() / ".claude"),
     ],
 )
-def test_get_user_claude_dir(platform, expected):
-    with patch.dict(os.environ, {"USERPROFILE": "" if platform == "win32" else None}):
-        assert get_user_claude_dir() == expected
+def test_get_user_claude_dir(platform, env_patch, expected):
+    with patch("sys.platform", platform):
+        with patch.dict(os.environ, env_patch):
+            assert get_user_claude_dir() == expected
 
 def test_get_project_claude_dir(tmp_path):
     workspace = tmp_path / "project"
@@ -33,14 +34,15 @@ def test_get_project_claude_dir(tmp_path):
 
 def test_hook_registry_register_unregister(mock_guard):
     registry = HookRegistry(mock_guard)
+    initial_count = len(registry._hooks["PreToolUse"])
 
     def mock_callback(_: HookContext) -> HookResult:
         return HookResult("allow")
 
     registry.register("PreToolUse", "Test", mock_callback)
-    assert len(registry._hooks["PreToolUse"]) == 1
+    assert len(registry._hooks["PreToolUse"]) == initial_count + 1
     assert registry.unregister("PreToolUse", "Test")
-    assert len(registry._hooks["PreToolUse"]) == 0
+    assert len(registry._hooks["PreToolUse"]) == initial_count
 
     with pytest.raises(ValueError):
         registry.register("UnknownEvent", ".*", mock_callback)

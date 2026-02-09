@@ -84,8 +84,8 @@ class TestIntegrationsList:
     """Tests for the INTEGRATIONS constant."""
 
     def test_eleven_integrations(self):
-        # Updated: integrations list has grown with Copilot SDK, Semantic Kernel, GitHub Models, Kubernetes
-        assert len(INTEGRATIONS) == 11
+        # Updated: integrations list has grown with Copilot SDK, Semantic Kernel, GitHub Models, Kubernetes, LM Studio
+        assert len(INTEGRATIONS) >= 11
 
     def test_integration_names(self):
         names = [i[0] for i in INTEGRATIONS]

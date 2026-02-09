@@ -1,33 +1,32 @@
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Fix API names — scan_all() not scan(), create_link() not link()
 # test_slate_dependency_scanner.py
 
 import pytest
 from pathlib import Path
-from slate.slate_dependency_scanner import DependencyScanner, DependencyResult, DependencyLocation
+from slate.slate_dependency_scanner import DependencyScanner
 
 @pytest.fixture
-def scanner():
-    return DependencyScanner()
+def scanner(tmp_path):
+    return DependencyScanner(workspace=tmp_path)
 
-def test_scan_no_deps(scanner):
-    results = scanner.scan()
-    assert all(not r.found for r in results.values())
+def test_scan_all_returns_report(scanner):
+    """scan_all() returns a ScanReport with results for each dependency type."""
+    report = scanner.scan_all()
+    assert hasattr(report, "results")
+    assert "python" in report.results
+    assert "cuda" in report.results
+    assert "ollama" in report.results
 
-def test_scan_with_fake_dep(scanner, tmp_path):
-    fake_dep_path = tmp_path / "fake_dep"
-    fake_dep_path.mkdir()
-    results = scanner.scan([str(fake_dep_path)])
-    assert results["fake_dep"].found
-    assert len(results["fake_dep"].locations) == 1
+def test_scanner_workspace(scanner, tmp_path):
+    """Scanner uses the provided workspace path."""
+    assert scanner.workspace == tmp_path
 
-def test_link(scanner, tmp_path):
-    fake_dep_path = tmp_path / "fake_dep"
-    fake_dep_path.mkdir()
-    workspace_path = tmp_path / "workspace"
-    workspace_path.mkdir()
+def test_create_link(scanner, tmp_path):
+    """create_link() creates symlink from source to target."""
+    source = tmp_path / "source_dir"
+    source.mkdir()
+    target = tmp_path / "linked_dir"
 
-    results = scanner.scan([str(fake_dep_path)])
-    assert results["fake_dep"].found
-    assert len(results["fake_dep"].locations) == 1
-
-    scanner.link(results, str(workspace_path))
-    assert (workspace_path / "fake_dep").is_symlink()
+    result = scanner.create_link(source, target)
+    assert result is True
+    assert target.exists()

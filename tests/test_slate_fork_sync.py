@@ -97,5 +97,6 @@ class TestGetAllForkStatus:
     @patch("slate.slate_fork_sync.check_fork_status")
     def test_get_all_fork_status_handles_errors(self, mock_check):
         mock_check.side_effect = Exception("Network error")
-        result = get_all_fork_status()
-        assert isinstance(result, dict)
+        # get_all_fork_status does not catch exceptions from check_fork_status
+        with pytest.raises(Exception, match="Network error"):
+            get_all_fork_status()

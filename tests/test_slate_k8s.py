@@ -1,63 +1,71 @@
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Rewrite test_slate_k8s.py — fix Linux-only paths, missing imports, wrong assertions
 # test_slate_k8s.py
 
+import subprocess
 import pytest
+from unittest.mock import patch, MagicMock
 from slate.slate_k8s import run, detect_provider, NAMESPACE
 
+
+def test_namespace_is_slate():
+    """NAMESPACE constant should be 'slate'."""
+    assert NAMESPACE == "slate"
+
+
 def test_run_command_success():
-    # Arrange
-    cmd = ["echo", "Hello, World!"]
-    expected_output = "Hello, World!\n"
-
-    # Act
-    result = run(cmd, capture=True)
-
-    # Assert
+    """run() with a simple echo should succeed."""
+    result = run(["echo", "Hello"], capture=True, check=False)
     assert result.returncode == 0
-    assert result.stdout.strip() == expected_output
+    assert "Hello" in result.stdout.strip()
 
-def test_run_command_failure():
-    # Arrange
-    cmd = ["false"]
 
-    # Act
-    result = run(cmd)
+def test_run_command_not_found():
+    """run() with a nonexistent command should return returncode=1."""
+    result = run(["__nonexistent_command_12345__"], check=False, capture=True)
+    assert result.returncode == 1
 
-    # Assert
-    assert result.returncode != 0
-    assert "Command failed" in result.stderr
 
 def test_detect_provider_kubectl_available():
-    # Arrange
-    kubectl_version_output = '{"clientVersion": {"gitVersion": "v1.23.6"}}'
-    with open("/usr/local/bin/kubectl", "w") as f:
-        f.write("kubectl\n")
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.stdout = kubectl_version_output
-        mock_run.return_value.returncode = 0
+    """detect_provider() should return kubectl version when available."""
+    mock_kubectl_version = subprocess.CompletedProcess(
+        ["kubectl", "version"], returncode=0,
+        stdout='{"clientVersion": {"gitVersion": "v1.23.6"}}', stderr=""
+    )
+    mock_cluster_info = subprocess.CompletedProcess(
+        ["kubectl", "cluster-info"], returncode=0, stdout="running", stderr=""
+    )
+    mock_context = subprocess.CompletedProcess(
+        ["kubectl", "config", "current-context"], returncode=0,
+        stdout="docker-desktop", stderr=""
+    )
+    mock_helm = subprocess.CompletedProcess(
+        ["helm", "version"], returncode=0, stdout="v3.12.0", stderr=""
+    )
 
-        # Act
+    with patch("slate.slate_k8s.run") as mock_run:
+        mock_run.side_effect = [mock_kubectl_version, mock_cluster_info, mock_context, mock_helm]
         providers = detect_provider()
 
-    # Assert
-    assert "kubectl" in providers
     assert providers["kubectl"] == "v1.23.6"
+    assert providers["cluster_connected"] is True
+
 
 def test_detect_provider_cluster_not_connected():
-    # Arrange
-    kubectl_version_output = '{"clientVersion": {"gitVersion": "v1.23.6"}}'
-    with open("/usr/local/bin/kubectl", "w") as f:
-        f.write("kubectl\n")
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value.stdout = kubectl_version_output
-        mock_run.return_value.returncode = 0
-        mock_run.side_effect = [
-            subprocess.CompletedProcess(["kubectl", "version"], returncode=0, stdout=kubectl_version_output),
-            subprocess.CompletedProcess(["kubectl", "cluster-info"], returncode=1, stderr="error"),
-        ]
+    """detect_provider() should report cluster not connected when cluster-info fails."""
+    mock_kubectl_version = subprocess.CompletedProcess(
+        ["kubectl", "version"], returncode=0,
+        stdout='{"clientVersion": {"gitVersion": "v1.23.6"}}', stderr=""
+    )
+    mock_cluster_info = subprocess.CompletedProcess(
+        ["kubectl", "cluster-info"], returncode=1, stdout="", stderr="error"
+    )
+    mock_helm = subprocess.CompletedProcess(
+        ["helm", "version"], returncode=1, stdout="", stderr="not found"
+    )
 
-        # Act
+    with patch("slate.slate_k8s.run") as mock_run:
+        mock_run.side_effect = [mock_kubectl_version, mock_cluster_info, mock_helm]
         providers = detect_provider()
 
-    # Assert
-    assert not providers["cluster_connected"]
+    assert providers["cluster_connected"] is False
     assert providers["provider"] == "None (cluster not running)"

@@ -16,14 +16,8 @@ def mock_index():
     }
 
 def test_load_index(mock_index, monkeypatch):
-    def mock_exists(path):
-        return path == INDEX_PATH
-
-    def mock_read_text(encoding='utf-8'):
-        return json.dumps(mock_index)
-
-    monkeypatch.setattr(Path, 'exists', mock_exists)
-    monkeypatch.setattr(INDEX_PATH, 'read_text', mock_read_text)
+    monkeypatch.setattr(INDEX_PATH, 'exists', lambda: True)
+    monkeypatch.setattr(INDEX_PATH, 'read_text', lambda encoding='utf-8': json.dumps(mock_index))
 
     assert load_index() == mock_index
 

@@ -18,7 +18,7 @@ def test_system_tools():
     assert SYSTEM_TOOLS["ollama"]["check_cmd"] == ["ollama", "--version"]
     assert SYSTEM_TOOLS["ollama"]["type"] == "binary"
 
-def test_gpu_compute_capability_detection():
+def test_gpu_compute_capability_detection(monkeypatch):
     # Mock subprocess to simulate different GPU compute capabilities
     import subprocess
 
@@ -32,7 +32,7 @@ def test_gpu_compute_capability_detection():
         else:
             raise Exception("Unexpected command")
 
-    subprocess.run = mock_run
+    monkeypatch.setattr(subprocess, "run", mock_run)
 
     assert _detect_gpu_compute_capability() == 7.5
     assert _min_cuda_for_gpu(7.5) == "10.0"

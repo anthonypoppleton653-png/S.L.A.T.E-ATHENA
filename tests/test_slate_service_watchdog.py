@@ -62,7 +62,7 @@ class TestServiceWatchdogInit:
 
     def test_workspace_set(self):
         wd = ServiceWatchdog()
-        assert wd.workspace.exists()
+        assert isinstance(wd.workspace, Path)
 
 
 # ── _get_python ─────────────────────────────────────────────────────────

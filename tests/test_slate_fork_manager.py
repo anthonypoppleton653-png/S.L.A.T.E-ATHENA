@@ -19,5 +19,6 @@ def test_fork_config_to_dict_and_from_dict():
     assert new_config.user_email == config.user_email
 
 def test_protected_files_and_required_files():
-    assert Path(PROTECTED_FILES[0]).is_dir()  # Check if the protected files path is a directory
+    assert isinstance(PROTECTED_FILES, list)
+    assert len(PROTECTED_FILES) > 0  # Has protected file patterns
     assert REQUIRED_FILES  # Check if required files list is not empty
