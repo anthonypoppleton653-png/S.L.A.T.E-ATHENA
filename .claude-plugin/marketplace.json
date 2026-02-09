@@ -13,6 +13,7 @@
       "author": {
         "name": "Synchronized Living Architecture"
       },
+      "source": "./plugins/slate",
       "category": "development",
       "strict": false
     }
