@@ -17,44 +17,8 @@
     {
       "name": "slate",
       "version": "5.3.0",
-      "source": ".",
-      "description": "S.L.A.T.E. — Unified AI agent orchestration with GPU support, K8s deployment, ActionGuard security, and 12 MCP tools",
-      "mode": {
-        "name": "S.L.A.T.E",
-        "description": "SLATE Operator Mode — Full system access with ActionGuard security",
-        "behavior": "slate-operator",
-        "permissionMode": "bypassWithActionGuard",
-        "activationCommand": "/slate"
-      },
-      "collection": "collections/slate.collection.yml",
-      "features": [
-        "Claude Agent SDK integration with custom tools and hooks",
-        "S.L.A.T.E mode for Claude Code with permission bypass",
-        "ActionGuard security validation on all operations",
-        "12 MCP tools for comprehensive system management",
-        "12 slash command skills",
-        "Kubernetes-first deployment with Docker fallback",
-        "Dual-GPU load balancing for RTX 5070 Ti",
-        "GitHub Actions self-hosted runner integration"
-      ],
-      "skills": [
-        {"name": "slate", "command": "/slate"},
-        {"name": "slate-status", "command": "/slate-status"},
-        {"name": "slate-workflow", "command": "/slate-workflow"},
-        {"name": "slate-runner", "command": "/slate-runner"},
-        {"name": "slate-gpu", "command": "/slate-gpu"},
-        {"name": "slate-multirunner", "command": "/slate-multirunner"},
-        {"name": "slate-discussions", "command": "/slate-discussions"},
-        {"name": "slate-claude", "command": "/slate-claude"},
-        {"name": "slate-spec-kit", "command": "/slate-spec-kit"},
-        {"name": "slate-schematic", "command": "/slate-schematic"},
-        {"name": "slate-help", "command": "/slate-help"}
-      ],
-      "mcpTools": [
-        "slate_status", "slate_workflow", "slate_orchestrator", "slate_runner",
-        "slate_ai", "slate_runtime", "slate_hardware", "slate_benchmark",
-        "slate_gpu", "slate_claude_code", "slate_spec_kit", "slate_schematic"
-      ]
+      "source": "./.claude-plugin",
+      "description": "S.L.A.T.E. — Unified AI agent orchestration with GPU support, K8s deployment, ActionGuard security, and 12 MCP tools"
     }
   ],
 
