@@ -1,6 +1,6 @@
 {
-  "version": "3.0.0",
-  "last_updated": "2026-02-09T22:30:00Z",
+  "version": "3.1.0",
+  "last_updated": "2026-02-10T12:00:00Z",
   "metadata": {
     "project": "S.L.A.T.E.",
     "description": "Synchronized Living Architecture for Transformation and Evolution",
@@ -487,6 +487,115 @@
       "paths": [
         "specs/024-trellis-3d-integration/"
       ]
+    },
+    {
+      "id": "semantic-kernel",
+      "name": "Semantic Kernel Integration",
+      "status": "complete",
+      "phase": 2,
+      "description": "Microsoft Semantic Kernel v1.39.3 with Ollama connector: chat completion, embeddings, SK function calling, unified AI backend provider",
+      "paths": [
+        "slate/slate_semantic_kernel.py",
+        "vendor/semantic-kernel/"
+      ]
+    },
+    {
+      "id": "github-models",
+      "name": "GitHub Models Integration",
+      "status": "complete",
+      "phase": 2,
+      "description": "GitHub Models local inference: 11 models (GPT-4o, Phi-4, Mistral, Llama, DeepSeek, Cohere), OpenAI-compatible API, throughput benchmarks, SK bridge",
+      "paths": [
+        "slate/slate_github_models.py"
+      ]
+    },
+    {
+      "id": "chromadb",
+      "name": "ChromaDB Vector Store",
+      "status": "complete",
+      "phase": 2,
+      "description": "ChromaDB v1.4.1 vector store: 10K+ embeddings, codebase indexing, semantic search, nomic-embed-text model, telemetry disabled",
+      "paths": [
+        "slate/slate_chromadb.py"
+      ]
+    },
+    {
+      "id": "generative-ui",
+      "name": "Generative UI System",
+      "status": "complete",
+      "phase": 2,
+      "description": "Dashboard generative UI: narrative engine, system schematic generation, step-by-step analysis, tech tree integration, component status visualization",
+      "paths": [
+        "slate/slate_generative_ui.py"
+      ]
+    },
+    {
+      "id": "adaptive-instructions",
+      "name": "Adaptive Instruction Layer",
+      "status": "complete",
+      "phase": 3,
+      "description": "K8s-driven dynamic instruction controller: 6 operating modes (NORMAL/DEGRADED/MAINTENANCE/AUTONOMOUS/EMERGENCY/DEVELOPMENT), ConfigMap source of truth, CronJob sync, agent availability levels, instruction API (port 8085)",
+      "paths": [
+        "slate/adaptive_instructions.py",
+        "k8s/instruction-controller.yaml"
+      ]
+    },
+    {
+      "id": "antigravity-agent",
+      "name": "Antigravity Agent System",
+      "status": "complete",
+      "phase": 3,
+      "description": "Google AI Ultra primary developer agent: GPU energy scheduling, permission gates, token counting, design token propagation (CSS/Python/YAML), agent verification",
+      "paths": [
+        "slate/energy_scheduler.py",
+        "slate/permission_gate.py",
+        "slate/token_counter.py",
+        "slate/token_propagator.py"
+      ]
+    },
+    {
+      "id": "discord-interactive",
+      "name": "Discord Interactive Bot",
+      "status": "complete",
+      "phase": 3,
+      "description": "Full Discord bot with slash commands, security gate (rate limiting, content filtering, role-based access), K8s deployment manifest, 4 command categories (status/workflow/runner/help)",
+      "paths": [
+        "slate/slate_discord_bot.py",
+        "slate/discord_security.py",
+        "k8s/discord-bot.yaml"
+      ]
+    },
+    {
+      "id": "project-boards",
+      "name": "GitHub Projects V2",
+      "status": "complete",
+      "phase": 2,
+      "description": "GitHub Projects V2 integration: 4 boards (KANBAN, Bug Tracking, Iterative Dev, Roadmap), bidirectional task sync, auto-routing by keywords, board processing pipeline",
+      "paths": [
+        "slate/slate_project_board.py"
+      ]
+    },
+    {
+      "id": "copilot-agent-bridge",
+      "name": "Copilot Agent Bridge",
+      "status": "complete",
+      "phase": 2,
+      "description": "Bidirectional IPC bridge between autonomous loop and @slate chat participant: JSON file-based task queue, result reporting, stale cleanup, COPILOT_CHAT agent routing",
+      "paths": [
+        "slate/copilot_agent_bridge.py"
+      ]
+    },
+    {
+      "id": "container-first-ext",
+      "name": "Container-First Extension",
+      "status": "complete",
+      "phase": 3,
+      "description": "@slate VS Code extension v5.1.0: K8s/Docker-only execution (no local fallback), 30 LM tools, Copilot SDK hooks (ActionGuard), runtime adapter, service monitor, 15 source files",
+      "paths": [
+        "plugins/slate-copilot/src/extension.ts",
+        "plugins/slate-copilot/src/slateRuntimeBackend.ts",
+        "plugins/slate-copilot/src/tools.ts"
+      ]
     }
   ],
   "edges": [
@@ -684,6 +793,29 @@
     {"from": "k8s-infra", "to": "trellis-3d"},
     {"from": "gpu-manager", "to": "trellis-3d"},
     {"from": "fork-sync", "to": "graphrag"},
-    {"from": "unified-ai-backend", "to": "prompt-compression"}
+    {"from": "unified-ai-backend", "to": "prompt-compression"},
+    {"from": "vendor-integration", "to": "semantic-kernel"},
+    {"from": "semantic-kernel", "to": "unified-ai-backend"},
+    {"from": "semantic-kernel", "to": "github-models"},
+    {"from": "github-models", "to": "unified-ai-backend"},
+    {"from": "custom-models", "to": "chromadb"},
+    {"from": "chromadb", "to": "autonomous-loop"},
+    {"from": "chromadb", "to": "graphrag"},
+    {"from": "ui-dev", "to": "generative-ui"},
+    {"from": "schematic-sdk", "to": "generative-ui"},
+    {"from": "k8s-infra", "to": "adaptive-instructions"},
+    {"from": "agent-system", "to": "adaptive-instructions"},
+    {"from": "adaptive-instructions", "to": "container-first-ext"},
+    {"from": "agent-system", "to": "antigravity-agent"},
+    {"from": "gpu-manager", "to": "antigravity-agent"},
+    {"from": "brand-identity", "to": "antigravity-agent"},
+    {"from": "discord-bot", "to": "discord-interactive"},
+    {"from": "k8s-infra", "to": "discord-interactive"},
+    {"from": "workflow-pipeline", "to": "project-boards"},
+    {"from": "project-boards", "to": "autonomous-loop"},
+    {"from": "autonomous-loop", "to": "copilot-agent-bridge"},
+    {"from": "copilot-sdk", "to": "copilot-agent-bridge"},
+    {"from": "copilot-sdk", "to": "container-first-ext"},
+    {"from": "k8s-infra", "to": "container-first-ext"}
   ]
 }
