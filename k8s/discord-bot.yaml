@@ -1,0 +1,189 @@
+# Modified: 2026-02-09T18:30:00Z | Author: Claude Opus 4.6 | Change: Create Discord bot K8s deployment
+# SLATE Discord Bot — Kubernetes Deployment
+# Security: Non-root, no privilege escalation, dedicated ServiceAccount, minimal RBAC
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ServiceAccount: Dedicated identity for Discord bot (minimal permissions)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: slate-discord-bot
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate-discord-bot
+    app.kubernetes.io/component: community
+    app.kubernetes.io/part-of: slate-system
+automountServiceAccountToken: false
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Role: Read-only access to ConfigMaps only (no Secrets, no pods)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: slate-discord-bot-role
+  namespace: slate
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: slate-discord-bot-binding
+  namespace: slate
+subjects:
+  - kind: ServiceAccount
+    name: slate-discord-bot
+    namespace: slate
+roleRef:
+  kind: Role
+  name: slate-discord-bot-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Secret: Discord bot token (template — actual value injected at deploy time)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Secret
+metadata:
+  name: slate-discord-secrets
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate-discord-bot
+    app.kubernetes.io/component: community
+type: Opaque
+data:
+  # Base64-encoded bot token — replace at deploy time
+  # kubectl create secret generic slate-discord-secrets \
+  #   --from-literal=bot-token=YOUR_TOKEN_HERE -n slate
+  bot-token: REPLACE_WITH_BASE64_TOKEN
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ConfigMap: Discord bot configuration (non-sensitive)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: slate-discord-config
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate-discord-bot
+    app.kubernetes.io/component: community
+data:
+  DISCORD_APP_ID: "1470475063386964153"
+  DISCORD_PORT: "8086"
+  LOG_LEVEL: "INFO"
+  SLATE_MODE: "production"
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Deployment: Discord bot with security hardening
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slate-discord-bot
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate-discord-bot
+    app.kubernetes.io/component: community
+    app.kubernetes.io/part-of: slate-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: slate-discord-bot
+  template:
+    metadata:
+      labels:
+        app: slate-discord-bot
+        app.kubernetes.io/name: slate-discord-bot
+        app.kubernetes.io/component: community
+    spec:
+      serviceAccountName: slate-discord-bot
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: discord-bot
+          image: ghcr.io/synchronizedlivingarchitecture/slate-discord-bot:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8086
+              protocol: TCP
+              name: health
+          envFrom:
+            - configMapRef:
+                name: slate-discord-config
+          env:
+            - name: DISCORD_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: slate-discord-secrets
+                  key: bot-token
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false  # Needs write for feedback storage
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8086
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8086
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: feedback-storage
+              mountPath: /app/.slate_discussions
+            - name: audit-logs
+              mountPath: /app/slate_logs
+      volumes:
+        - name: feedback-storage
+          emptyDir: {}
+        - name: audit-logs
+          emptyDir: {}
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Service: Internal health check endpoint (ClusterIP — NOT exposed externally)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: slate-discord-bot-svc
+  namespace: slate
+  labels:
+    app.kubernetes.io/name: slate-discord-bot
+    app.kubernetes.io/component: community
+spec:
+  type: ClusterIP
+  selector:
+    app: slate-discord-bot
+  ports:
+    - port: 8086
+      targetPort: 8086
+      protocol: TCP
+      name: health

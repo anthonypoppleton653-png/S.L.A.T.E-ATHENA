@@ -1,0 +1,61 @@
+# SLATE Discord Bot — Docker Build Exclusions
+# CRITICAL: Ensure NO secrets enter the build context
+
+# Secrets and credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+.slate_tokens/
+
+# Git and VCS
+.git/
+.gitignore
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+.venv_slate_ag/
+venv/
+
+# Runner and CI
+actions-runner/
+.github/
+
+# Large vendored dependencies
+vendor/
+
+# Test data
+tests/
+*.test.*
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# SLATE state (runtime, not build)
+.slate_orchestrator_state.json
+.slate_copilot_bridge.json
+.slate_changes/
+.slate_errors/
+.slate_nemo/
+.slate_prompts/
+.slate_index/
+current_tasks.json

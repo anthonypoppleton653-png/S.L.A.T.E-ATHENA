@@ -104,13 +104,19 @@ class DiscordConfig:
     """Discord webhook configuration."""
     webhooks: dict = field(default_factory=dict)  # channel_name -> webhook_url
     enabled: bool = False
+    application_id: str = ""
+    application_name: str = ""
     server_name: str = ""
+    port: int = 8086
     notification_channels: dict = field(default_factory=dict)  # event_type -> channel_name
 
     def to_dict(self) -> dict:
         return {
             "enabled": self.enabled,
+            "application_id": self.application_id,
+            "application_name": self.application_name,
             "server_name": self.server_name,
+            "port": self.port,
             "webhooks": {k: "***configured***" for k in self.webhooks},  # Never expose URLs
             "notification_channels": self.notification_channels,
         }
@@ -143,11 +149,22 @@ class SlateDiscord:
             try:
                 data = json.loads(DISCORD_CONFIG.read_text(encoding="utf-8"))
                 config.enabled = data.get("enabled", False)
+                config.application_id = data.get("application_id", "")
+                config.application_name = data.get("application_name", "")
                 config.server_name = data.get("server_name", "")
+                config.port = data.get("port", 8086)
                 config.webhooks = data.get("webhooks", {})
                 config.notification_channels = data.get("notification_channels", {})
             except Exception:
                 pass
+
+        # Override application ID from environment
+        env_app_id = os.environ.get("DISCORD_APP_ID", "")
+        if env_app_id:
+            config.application_id = env_app_id
+        env_port = os.environ.get("DISCORD_PORT", "")
+        if env_port:
+            config.port = int(env_port)
 
         # Override from environment variables
         for key, value in os.environ.items():

@@ -203,12 +203,30 @@ ALLOWED_GITHUB_DOMAINS = [
 ]
 # Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Add GitHub Models endpoint to allowed domains
 
+# Discord API domains (bot gateway + CDN only)
+# Modified: 2026-02-09T18:00:00Z | Author: Claude Opus 4.6 | Change: Add Discord domains for bot integration
+ALLOWED_DISCORD_DOMAINS = [
+    "discord.com",
+    "gateway.discord.gg",
+    "cdn.discordapp.com",
+]
+
+# Discord-specific blocked patterns (prevent bot abuse)
+DISCORD_BLOCKED_PATTERNS = [
+    r"@everyone",           # Mass ping prevention
+    r"@here",               # Mass ping prevention
+    r"discord\.gg/",        # No invite link generation from bot
+    r"<@&\d+>",            # No role mentions from bot output
+]
+
 # Rate limiting: max calls per minute per action type
 RATE_LIMITS = {
     "api_call": 60,
     "file_write": 120,
     "command_exec": 30,
     "network_request": 30,
+    "discord_command": 60,  # Discord slash command processing
+    "discord_send": 30,     # Discord webhook/message sends
 }
 
 
