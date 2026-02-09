@@ -26,29 +26,32 @@ from slate.slate_orchestrator import (
 
 class TestDetectMode:
     """Tests for detect_mode()."""
+    # Modified: 2026-02-10T13:00:00Z | Author: COPILOT | Change: Use monkeypatch.setenv for robust env isolation — fixes test pollution in full suite
 
-    @patch.dict(os.environ, {"SLATE_MODE": "dev"})
-    def test_env_dev(self):
+    def test_env_dev(self, monkeypatch):
+        monkeypatch.setenv("SLATE_MODE", "dev")
         assert detect_mode() == "dev"
 
-    @patch.dict(os.environ, {"SLATE_MODE": "development"})
-    def test_env_development(self):
+    def test_env_development(self, monkeypatch):
+        monkeypatch.setenv("SLATE_MODE", "development")
         assert detect_mode() == "dev"
 
-    @patch.dict(os.environ, {"SLATE_MODE": "prod"})
-    def test_env_prod(self):
+    def test_env_prod(self, monkeypatch):
+        monkeypatch.setenv("SLATE_MODE", "prod")
         assert detect_mode() == "prod"
 
-    @patch.dict(os.environ, {"SLATE_MODE": "production"})
-    def test_env_production(self):
+    def test_env_production(self, monkeypatch):
+        monkeypatch.setenv("SLATE_MODE", "production")
         assert detect_mode() == "prod"
 
-    @patch.dict(os.environ, {"SLATE_MODE": "", "SLATE_DOCKER": "1"})
-    def test_docker_detection(self):
+    def test_docker_detection(self, monkeypatch):
+        monkeypatch.setenv("SLATE_MODE", "")
+        monkeypatch.setenv("SLATE_DOCKER", "1")
         assert detect_mode() == "prod"
 
-    @patch.dict(os.environ, {"SLATE_MODE": ""}, clear=False)
-    def test_venv_implies_dev(self):
+    def test_venv_implies_dev(self, monkeypatch):
+        monkeypatch.setenv("SLATE_MODE", "")
+        monkeypatch.delenv("SLATE_DOCKER", raising=False)
         # If .venv exists and no env override, should be dev
         if (WORKSPACE_ROOT / ".venv").exists():
             assert detect_mode() == "dev"

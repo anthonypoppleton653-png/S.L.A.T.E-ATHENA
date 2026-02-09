@@ -38,9 +38,19 @@ sys.path.insert(0, str(WORKSPACE_ROOT))
 
 logger = logging.getLogger("slate.semantic_kernel")
 
-# ── Constants ────────────────────────────────────────────────────────────
-OLLAMA_ENDPOINT = "http://127.0.0.1:11434"
+# ── K8s-Aware Service Configuration ──────────────────────────────────────
+def _normalize_url(host: str, default_port: int = 11434) -> str:
+    """Normalize a host string to a proper URL."""
+    if host.startswith("http://") or host.startswith("https://"):
+        return host.rstrip("/")
+    if ":" not in host:
+        host = f"{host}:{default_port}"
+    return f"http://{host}"
+
+_raw_ollama = os.environ.get("OLLAMA_HOST", "127.0.0.1:11434")
+OLLAMA_ENDPOINT = _normalize_url(_raw_ollama, 11434)
 OLLAMA_CHAT_ENDPOINT = f"{OLLAMA_ENDPOINT}/v1"  # OpenAI-compatible endpoint
+K8S_MODE = os.environ.get("SLATE_K8S", "false").lower() == "true"
 STATE_FILE = WORKSPACE_ROOT / ".slate_sk_state.json"
 
 # SLATE model mapping for SK services

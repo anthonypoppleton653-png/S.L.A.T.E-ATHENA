@@ -41,8 +41,23 @@ except ImportError:
 # Initialize MCP server
 server = Server("slate-mcp")
 
-# Python executable in venv
+# Python executable detection
+import os
 PYTHON = WORKSPACE_ROOT / ".venv" / "Scripts" / "python.exe"
+
+# 1. Check env var
+if os.environ.get("SLATE_VENV"):
+    env_python = Path(os.environ["SLATE_VENV"]) / "Scripts" / "python.exe"
+    if env_python.exists():
+        PYTHON = env_python
+
+# 2. Check isolated venv (Antigravity fallback)
+if not PYTHON.exists():
+    iso_python = WORKSPACE_ROOT / ".venv_slate_ag" / "Scripts" / "python.exe"
+    if iso_python.exists():
+        PYTHON = iso_python
+
+# 3. Default fallback
 if not PYTHON.exists():
     PYTHON = WORKSPACE_ROOT / ".venv" / "bin" / "python"
 

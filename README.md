@@ -839,14 +839,23 @@ SLATE development follows a specification-driven approach. Each major feature st
 
 | # | Specification | Status | Description |
 |:--|:--------------|:------:|:------------|
-| 005 | Dashboard Monochrome Theme | `Completed` | Black/white base theme with minimal status colors |
-| 006 | Natural Theme System | `Completed` | Procedural dark/light slider with natural color palette |
-| 007 | Unified Design System | `Completed` | M3 Material Design + Anthropic Geometric Art |
-| 008 | Guided Experience | `Completed` | AI-driven onboarding wizard with zero-config setup |
-| 009 | Copilot Roadmap Awareness | `Completed` | @slate participant with dev cycle integration |
-| 010 | Generative Onboarding | `Completed` | AI-generated installation and setup flows |
-| 011 | Schematic Diagram SDK | `Completed` | Circuit-board style architecture visualization |
-| 012 | Schematic GUI Layout | `Implementing` | Dashboard-integrated schematic widgets |
+| 005 | Dashboard Monochrome Theme | Completed | Black/white base theme with minimal status colors |
+| 006 | Natural Theme System | Completed | Procedural dark/light slider with natural color palette |
+| 007 | Unified Design System | Completed | M3 Material Design + Anthropic Geometric Art |
+| 008 | Guided Experience | Completed | AI-driven onboarding wizard with zero-config setup |
+| 009 | Copilot Roadmap Awareness | Completed | @slate participant with dev cycle integration |
+| 010 | Generative Onboarding | Completed | AI-generated installation and setup flows |
+| 011 | Schematic Diagram SDK | Completed | Circuit-board style architecture visualization |
+| 012 | Watchmaker Dashboard | Completed | 3D dashboard with watchmaker aesthetic |
+| 013 | Engineering Drawing Theme | Completed | ISO 128/IEC 60617 technical drawing system |
+| 014 | Golden Ratio UI | Completed | Fibonacci-based layout system |
+| 015 | Vendor SDK Integration | Completed | OpenAI, AutoGen, SK, Copilot SDK bridges |
+| 016 | Multi-Runner System | Completed | 19 parallel runners across 2 GPUs |
+| 017 | Claude Agent SDK | Completed | Claude Code plugin and MCP integration |
+| 018 | Kubernetes Infrastructure | Completed | K8s local cloud deployment |
+| 019 | Dual-GPU Manager | Completed | Load-balanced GPU management |
+| 020 | Custom SLATE Models | Completed | slate-coder, slate-fast, slate-planner |
+| 021 | Autonomous Task Loop | Completed | Self-healing autonomous operation |
 
 ### Spec Lifecycle
 
@@ -863,14 +872,97 @@ DRAFT → SPECIFIED → PLANNED → IMPLEMENTING → COMPLETED
 <tr>
 <td align="center"><strong>M3 Material Design</strong><br><sub>Design tokens, elevation, state layers</sub></td>
 <td align="center"><strong>Anthropic Geometric Art</strong><br><sub>Starburst patterns, warm palette</sub></td>
-<td align="center"><strong>Awwwards Patterns</strong><br><sub>Card architecture, interactions</sub></td>
+<td align="center"><strong>Watchmaker Aesthetic</strong><br><sub>3D dashboard, precision mechanics</sub></td>
 <td align="center"><strong>Blueprint Engineering</strong><br><sub>Technical precision, grid systems</sub></td>
+</tr>
+<tr>
+<td align="center"><strong>Golden Ratio UI</strong><br><sub>Fibonacci layouts, natural proportions</sub></td>
+<td align="center"><strong>Engineering Drawings</strong><br><sub>ISO 128/IEC 60617 standards</sub></td>
+<td align="center"><strong>Schematic SDK</strong><br><sub>Circuit-board visualizations</sub></td>
+<td align="center"><strong>Evolving Background</strong><br><sub>Tech tree progress reflection</sub></td>
 </tr>
 </table>
 
 **Primary Color**: `#B85A3C` (Anthropic-inspired warm rust)
 
 See the [Specifications Wiki](https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/wiki/Specifications) for detailed documentation.
+
+### Vendor SDK Integration
+
+SLATE provides bridges to major AI SDK ecosystems:
+
+| SDK | Integration | Purpose |
+|-----|-------------|---------|
+| **OpenAI Agents** | `vendor/openai-agents-python` | Agent orchestration patterns |
+| **AutoGen** | `vendor/autogen` | Multi-agent conversations |
+| **Semantic Kernel** | `vendor/semantic-kernel` | Plugin architecture |
+| **GitHub Copilot** | VS Code extension | @slate chat participant |
+| **Claude Code** | MCP server | 26 tools, slash commands |
+
+```bash
+# Check vendor integration status
+python slate/vendor_integration.py --status
+
+# Test SDK bridges
+python slate/vendor_integration.py --test-all
+```
+
+### Multi-Runner System
+
+SLATE deploys up to 19 parallel runners across dual GPUs for maximum throughput:
+
+| Runner Type | Count | GPU | Purpose |
+|-------------|-------|-----|---------|
+| GPU Light | 6 per GPU | RTX 5070 Ti | Inference, code generation |
+| GPU Heavy | 1 per GPU | RTX 5070 Ti | Fine-tuning, batch processing |
+| CPU | 5 | N/A | Linting, testing, git ops |
+
+```bash
+# Check multi-runner status
+python slate/slate_multi_runner.py --status
+
+# View runner distribution
+python slate/slate_multi_runner.py --distribution
+
+# Benchmark runner capacity
+python slate/slate_runner_benchmark.py
+```
+
+### Kubernetes Deployment
+
+SLATE runs as a complete containerized local cloud in Kubernetes:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Ingress (slate.local)                        │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │
+    ┌──────────────────────────┼──────────────────────────────────────┐
+    │                          │                                      │
+    ▼                          ▼                                      ▼
+┌─────────────┐     ┌─────────────────┐     ┌──────────────────────┐
+│  Dashboard  │     │  Agent Router   │     │  Autonomous Loop     │
+│  (HPA 2-6)  │     │    (2 pods)     │     │   (1 pod + GPU)      │
+└─────────────┘     └─────────────────┘     └──────────────────────┘
+```
+
+| Service | K8s Service | Port | Purpose |
+|---------|-------------|------|---------|
+| Dashboard | `slate-dashboard-svc` | 8080 | Full UI + WebSocket + K8s API |
+| Ollama | `ollama-svc` | 11434 | Local LLM inference |
+| ChromaDB | `chromadb-svc` | 8000 | Vector store for RAG |
+| Agent Router | `slate-agent-router-svc` | 8081 | Task routing |
+
+```bash
+# Deploy to Kubernetes
+.\k8s\deploy.ps1 -Environment local
+
+# Check K8s status
+python slate/slate_k8s_deploy.py --status
+
+# Port-forward dashboard
+kubectl port-forward -n slate svc/slate-dashboard-svc 8080:8080
+```
 
 ## Contributing
 

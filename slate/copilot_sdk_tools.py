@@ -172,6 +172,62 @@ class ModelTrainerParams(BaseModel):
     )
 
 
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add 6 missing tool param models from slate_copilot_sdk.py consolidation
+
+class AIParams(BaseModel):
+    """Parameters for SLATE AI inference via local Ollama LLMs."""
+    task: str = Field(default="", description="AI task to execute")
+    check_status: bool = Field(default=False, description="Check backend status instead")
+
+
+class ClaudeCodeParams(BaseModel):
+    """Parameters for Claude Code configuration validation."""
+    action: str = Field(
+        default="status",
+        description="Action: 'validate', 'report', 'status', or 'agent-options'"
+    )
+    format: str = Field(default="text", description="Output format: 'text' or 'json'")
+
+
+class SpecKitParams(BaseModel):
+    """Parameters for spec processing and wiki generation."""
+    action: str = Field(
+        default="status",
+        description="Action: 'status', 'process-all', 'wiki', or 'analyze'"
+    )
+    format: str = Field(default="text", description="Output format: 'text' or 'json'")
+
+
+class SchematicParams(BaseModel):
+    """Parameters for SLATE system diagram generation."""
+    action: str = Field(
+        default="from-system",
+        description="Action: 'from-system', 'from-tech-tree', or 'components'"
+    )
+    output: str = Field(
+        default="docs/assets/slate-schematic.svg",
+        description="Output file path"
+    )
+    theme: str = Field(default="blueprint", description="Theme: 'blueprint', 'dark', or 'light'")
+
+
+class KubernetesParams(BaseModel):
+    """Parameters for SLATE Kubernetes cluster management."""
+    action: str = Field(
+        default="status",
+        description="Action: 'status', 'deploy', 'health', 'teardown', 'logs', or 'port-forward'"
+    )
+    component: str = Field(default="", description="Component name for logs action")
+
+
+class AdaptiveInstructionsParams(BaseModel):
+    """Parameters for K8s-driven adaptive instruction management."""
+    action: str = Field(
+        default="status",
+        description="Action: 'status', 'evaluate', 'sync', 'get-context', 'get-active', or 'apply'"
+    )
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Helper: Run SLATE Python module and capture output
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -430,6 +486,107 @@ slate_model_trainer = define_tool(
 )
 
 
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add 6 tool handlers from slate_copilot_sdk.py consolidation
+
+# 15. AI Inference
+def _handle_ai(params: AIParams) -> str:
+    """Handle AI inference via local Ollama LLMs."""
+    if params.check_status:
+        return _run_slate_command("slate/ml_orchestrator.py", ["--status"])
+    if not params.task:
+        return "ERROR: No task provided. Set task='your prompt' or check_status=true"
+    return _run_slate_command("slate/ml_orchestrator.py", ["--infer", params.task], timeout=120)
+
+slate_ai = define_tool(
+    name="slate_ai",
+    description="Execute AI tasks using SLATE's local LLM backend (Ollama — slate-coder 12B, slate-fast 3B, slate-planner 7B)",
+    handler=_handle_ai,
+)
+
+# 16. Claude Code Validation
+def _handle_claude_code(params: ClaudeCodeParams) -> str:
+    """Handle Claude Code configuration validation."""
+    args = [f"--{params.action}"]
+    if params.format == "json":
+        args.append("--json")
+    return _run_slate_command("slate/claude_code_manager.py", args)
+
+slate_claude_code = define_tool(
+    name="slate_claude_code",
+    description="Validate Claude Code configuration — MCP server, permissions, ActionGuard hooks, behavior profile",
+    handler=_handle_claude_code,
+)
+
+# 17. Spec Kit
+def _handle_spec_kit(params: SpecKitParams) -> str:
+    """Handle spec processing and wiki generation."""
+    action_map = {
+        "status": ["--status"],
+        "process-all": ["--process-all", "--wiki", "--analyze"],
+        "wiki": ["--process-all", "--wiki"],
+        "analyze": ["--process-all", "--analyze"],
+    }
+    args = action_map.get(params.action, ["--status"])
+    if params.format == "json":
+        args.append("--json")
+    return _run_slate_command("slate/slate_spec_kit.py", args, timeout=120)
+
+slate_spec_kit = define_tool(
+    name="slate_spec_kit",
+    description="Process specifications, run AI analysis, generate wiki pages from spec documents",
+    handler=_handle_spec_kit,
+)
+
+# 18. Schematic Generator
+def _handle_schematic(params: SchematicParams) -> str:
+    """Handle SLATE system diagram generation."""
+    if params.action == "components":
+        return _run_slate_command("schematic_sdk/cli.py", ["components", "--list"])
+    if params.action == "from-tech-tree":
+        return _run_slate_command("schematic_sdk/cli.py", ["from-tech-tree", "--output", params.output, "--theme", params.theme])
+    return _run_slate_command("schematic_sdk/cli.py", ["from-system", "--output", params.output, "--theme", params.theme])
+
+slate_schematic = define_tool(
+    name="slate_schematic",
+    description="Generate SLATE system diagrams — circuit-board style schematics of architecture",
+    handler=_handle_schematic,
+)
+
+# 19. Kubernetes
+def _handle_kubernetes(params: KubernetesParams) -> str:
+    """Handle SLATE Kubernetes cluster management."""
+    action_map = {
+        "deploy": ["--deploy"],
+        "health": ["--health"],
+        "teardown": ["--teardown"],
+        "port-forward": ["--port-forward"],
+        "logs": ["--logs", params.component] if params.component else ["--logs", "dashboard"],
+    }
+    args = action_map.get(params.action, ["--status"])
+    return _run_slate_command("slate/slate_k8s_deploy.py", args)
+
+slate_kubernetes = define_tool(
+    name="slate_kubernetes",
+    description="Manage SLATE Kubernetes cluster — deploy manifests, health checks, teardown, pod logs, port-forwarding",
+    handler=_handle_kubernetes,
+)
+
+# 20. Adaptive Instructions
+def _handle_adaptive_instructions(params: AdaptiveInstructionsParams) -> str:
+    """Handle K8s-driven adaptive instruction management."""
+    flag_map = {
+        "status": "--status", "evaluate": "--evaluate", "sync": "--sync",
+        "get-context": "--get-context", "get-active": "--get-active", "apply": "--apply",
+    }
+    return _run_slate_command("slate/adaptive_instructions.py", [flag_map.get(params.action, "--status")])
+
+slate_adaptive_instructions = define_tool(
+    name="slate_adaptive_instructions",
+    description="Manage K8s-driven adaptive instructions — operating mode, agent availability, live directives",
+    handler=_handle_adaptive_instructions,
+)
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Tool Collection — all SLATE tools for SDK session registration
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -443,6 +600,7 @@ def get_all_slate_tools() -> list[Tool]:
     Returns:
         List of Tool objects ready for SessionConfig.tools
     """
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add 6 consolidated tools to collection (20 total)
     return [
         slate_system_status,
         slate_runtime_check,
@@ -458,6 +616,12 @@ def get_all_slate_tools() -> list[Tool]:
         slate_autonomous,
         slate_chromadb,
         slate_model_trainer,
+        slate_ai,
+        slate_claude_code,
+        slate_spec_kit,
+        slate_schematic,
+        slate_kubernetes,
+        slate_adaptive_instructions,
     ]
 
 

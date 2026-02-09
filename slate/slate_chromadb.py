@@ -51,6 +51,19 @@ if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+# K8s-aware service configuration
+def _normalize_url(host: str, default_port: int = 11434) -> str:
+    """Normalize host to include protocol."""
+    if host.startswith("http://") or host.startswith("https://"):
+        return host.rstrip("/")
+    if ":" not in host:
+        host = f"{host}:{default_port}"
+    return f"http://{host}"
+
+OLLAMA_URL = _normalize_url(os.environ.get("OLLAMA_HOST", "127.0.0.1:11434"), 11434)
+CHROMADB_URL = _normalize_url(os.environ.get("CHROMADB_HOST", "127.0.0.1:8000"), 8000)
+K8S_MODE = os.environ.get("SLATE_K8S", "false").lower() == "true"
+
 CHROMADB_DIR = WORKSPACE_ROOT / "slate_memory" / "chromadb"
 STATE_FILE = WORKSPACE_ROOT / ".slate_chromadb_state.json"
 

@@ -1,11 +1,9 @@
 {
 	// Modified: 2026-02-07T14:00:00Z | Author: COPILOT | Change: Activate SLATE Dark theme
-
 	// ========================================
 	// SLATE THEME
 	// ========================================
-	"workbench.colorTheme": "SLATE Dark",
-
+	"workbench.colorTheme": "Default Dark Modern",
 	// ========================================
 	// PYTHON ENVIRONMENT
 	// ========================================
@@ -20,7 +18,6 @@
 		"c:\\Users\\Dan\\.vscode\\extensions\\ms-security.ms-sentinel-1.1.1\\python"
 	],
 	"python.analysis.autoSearchPaths": true,
-
 	// ========================================
 	// COPILOT / SLATE AGENT
 	// ========================================
@@ -50,7 +47,6 @@
 			"text": "Use pytest for all tests. Place tests in tests/ directory. Use pytest-asyncio for async tests."
 		}
 	],
-
 	// ========================================
 	// SLATE PLUGINS (LOCAL SDK)
 	// ========================================
@@ -60,7 +56,6 @@
 	"slate.multiRunner.enabled": true,
 	"slate.multiRunner.maxRunners": 50,
 	"slate.multiRunner.configPath": "${workspaceFolder}/.slate_runners.json",
-
 	// ========================================
 	// EDITOR
 	// ========================================
@@ -85,7 +80,6 @@
 		"_temp/**": true,
 		"plugins/**/node_modules/**": true
 	},
-
 	// ========================================
 	// TERMINAL
 	// Modified: 2026-02-08T18:00:00Z | Author: COPILOT | Change: Add pwsh 7.5 as default terminal profile
@@ -112,7 +106,6 @@
 		"CUDA_VISIBLE_DEVICES": "0,1",
 		"SLATE_MULTI_RUNNER": "true"
 	},
-
 	// ========================================
 	// Modified: 2026-02-08T19:00:00Z | Author: COPILOT | Change: Add Docker, Kubernetes, Helm extension settings — standard practice
 	// DOCKER / CONTAINERS (ms-azuretools.vscode-docker, ms-azuretools.vscode-containers)
@@ -128,7 +121,6 @@
 		"SLATE_DOCKER": "1",
 		"DOCKER_BUILDKIT": "1"
 	},
-
 	// ========================================
 	// KUBERNETES (ms-kubernetes-tools.vscode-kubernetes-tools)
 	// ========================================
@@ -140,12 +132,10 @@
 		"vs-kubernetes.autoCleanupOnDebugTerminate": true,
 		"vs-kubernetes.outputFormat": "yaml"
 	},
-
 	// ========================================
 	// HELM INTELLISENSE (tim-koehler.helm-intellisense)
 	// ========================================
 	"helm-intellisense.chartRootPath": "${workspaceFolder}/helm",
-
 	// ========================================
 	// YAML (redhat.vscode-yaml) — K8s schema validation
 	// ========================================
@@ -165,5 +155,15 @@
 		"*test.py"
 	],
 	"python.testing.pytestEnabled": false,
-	"python.testing.unittestEnabled": true
+	"python.testing.unittestEnabled": true,
+	"containers.commands.build": "docker build --tag slate:local -f ${file} ${workspaceFolder}",
+	"containers.containers.label": "Status",
+	"containers.containers.sortBy": "Label",
+	"containers.images.label": "Tag",
+	"containers.environment": {
+		"SLATE_WORKSPACE": "${workspaceFolder}",
+		"SLATE_DOCKER": "1",
+		"DOCKER_BUILDKIT": "1"
+	},
+	"containers.composeBuild": true
 }

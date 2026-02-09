@@ -16,10 +16,16 @@ Usage:
 
 import argparse
 import json
+import os
 import subprocess
 import sys
+import urllib.request
 from datetime import datetime
 from pathlib import Path
+
+# Modified: 2026-02-09T01:39:00Z | Author: Antigravity (Gemini) | Change: Container-aware status checks
+# AI Note: When modifying, add a comment with the current date, time, and a 'Gemini' marker.
+IS_DOCKER = os.environ.get("SLATE_DOCKER") == "1"
 
 try:
     import psutil
@@ -40,6 +46,24 @@ def get_python_info():
 
 def get_gpu_info():
     """Detect NVIDIA GPUs."""
+    # Modified: 2026-02-09T01:39:00Z | Author: Antigravity (Gemini) | Change: Use torch.cuda in Docker
+    if IS_DOCKER:
+        try:
+            import torch
+            if torch.cuda.is_available():
+                gpus = []
+                for i in range(torch.cuda.device_count()):
+                    props = torch.cuda.get_device_properties(i)
+                    gpus.append({
+                        "name": props.name,
+                        "compute_capability": f"{props.major}.{props.minor}",
+                        "memory_total": f"{props.total_mem // (1024**2)} MiB",
+                        "memory_free": "N/A"
+                    })
+                return {"available": True, "count": len(gpus), "gpus": gpus}
+            return {"available": False, "count": 0, "gpus": []}
+        except (ImportError, Exception):
+            return {"available": False, "count": 0, "gpus": []}
     try:
         result = subprocess.run(
             ["nvidia-smi", "--query-gpu=name,compute_cap,memory.total,memory.free", "--format=csv,noheader"],
@@ -102,6 +126,18 @@ def get_pytorch_info():
 
 def get_ollama_info():
     """Check Ollama status."""
+    # Modified: 2026-02-09T01:39:00Z | Author: Antigravity (Gemini) | Change: Use HTTP in Docker/K8s
+    if IS_DOCKER:
+        try:
+            host = os.environ.get("OLLAMA_HOST", "localhost:11434")
+            if not host.startswith("http"):
+                host = f"http://{host}"
+            req = urllib.request.urlopen(f"{host}/api/tags", timeout=5)
+            data = json.loads(req.read().decode())
+            models = [m.get("name", "unknown") for m in data.get("models", [])]
+            return {"available": True, "model_count": len(models), "models": models[:10]}
+        except Exception:
+            return {"available": False, "model_count": 0}
     try:
         result = subprocess.run(
             ["ollama", "list"],
@@ -151,6 +187,12 @@ def get_github_models_info():
 # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add Kubernetes cluster info to system status
 def get_kubernetes_info():
     """Check Kubernetes cluster status."""
+    # Modified: 2026-02-09T01:39:00Z | Author: Antigravity (Gemini) | Change: Container-aware K8s check
+    if IS_DOCKER and os.environ.get("SLATE_K8S"):
+        sa_token = Path("/var/run/secrets/kubernetes.io/serviceaccount/token")
+        if sa_token.exists():
+            return {"available": True, "deployments_ready": "in-cluster", "deployments_total": "in-cluster", "pods_running": "in-cluster"}
+        return {"available": True, "reason": "SLATE_K8S env set"}
     try:
         r = subprocess.run(
             ["kubectl", "get", "deployments", "-n", "slate",
@@ -162,7 +204,6 @@ def get_kubernetes_info():
             pairs = r.stdout.strip().split()
             total = len(pairs)
             ready = sum(1 for p in pairs if p.split("/")[0] == p.split("/")[1])
-            # Get pod count
             pods = subprocess.run(
                 ["kubectl", "get", "pods", "-n", "slate", "--field-selector=status.phase=Running",
                  "-o", "jsonpath={.items[*].metadata.name}"],

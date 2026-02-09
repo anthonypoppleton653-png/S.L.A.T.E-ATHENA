@@ -45,6 +45,7 @@ data:
   # Kubernetes-specific settings
   SLATE_K8S: "true"
   SLATE_MODE: "prod"
+  SLATE_TECH_TREE_PATH: "/app/.slate_tech_tree/tech_tree.json"
 
 ---
 # ─────────────────────────────────────────────────────────────────────────────
@@ -106,9 +107,53 @@ data:
         # Import and run dashboard
         os.chdir(workspace)
 
+        # Copy tech tree to expected location (workspace may be read-only)
+        tech_tree_src = os.environ.get("SLATE_TECH_TREE_PATH")
+        if tech_tree_src and os.path.exists(tech_tree_src):
+            import shutil
+            tech_tree_dir = "/tmp/.slate_tech_tree"
+            os.makedirs(tech_tree_dir, exist_ok=True)
+            dest = os.path.join(tech_tree_dir, "tech_tree.json")
+            shutil.copy2(tech_tree_src, dest)
+            # Update environment so dashboard finds it
+            os.environ["SLATE_WORKSPACE_TECH_TREE"] = dest
+            print(f"[+] Copied tech tree to {dest}")
+
         try:
             import uvicorn
             from agents.slate_dashboard_server import app
+            from fastapi.responses import JSONResponse
+
+            # Override tech-tree endpoint to use ConfigMap-mounted file
+            tech_tree_file = os.environ.get("SLATE_TECH_TREE_PATH")
+            if tech_tree_file and os.path.exists(tech_tree_file):
+                # Remove existing route first
+                for route in list(app.routes):
+                    if hasattr(route, 'path') and route.path == "/api/tech-tree":
+                        app.routes.remove(route)
+                        break
+
+                @app.get("/api/tech-tree")
+                async def api_tech_tree_k8s():
+                    import json as _json
+                    try:
+                        with open(tech_tree_file, "r", encoding="utf-8") as f:
+                            data = _json.load(f)
+                        nodes = data.get("nodes", [])
+                        edges = data.get("edges", [])
+                        by_status = {}
+                        for node in nodes:
+                            status = node.get("status", "unknown")
+                            by_status[status] = by_status.get(status, 0) + 1
+                        return JSONResponse(content={
+                            "nodes": nodes, "edges": edges,
+                            "metadata": data.get("metadata", {}),
+                            "version": data.get("version", "1.0.0"),
+                            "total": len(nodes), "by_status": by_status
+                        })
+                    except Exception as e:
+                        return JSONResponse(content={"nodes": [], "edges": [], "error": str(e)})
+                print(f"[+] Tech tree API overridden with: {tech_tree_file}")
 
             host = os.environ.get("SLATE_DASHBOARD_HOST", "0.0.0.0")
             port = int(os.environ.get("SLATE_DASHBOARD_PORT", "8080"))
@@ -302,6 +347,9 @@ spec:
               mountPath: /tmp
             - name: cache
               mountPath: /home/slate/.cache
+            - name: tech-tree
+              mountPath: /app/.slate_tech_tree
+              readOnly: true
 
           # Health probes
           startupProbe:
@@ -346,6 +394,9 @@ spec:
         - name: cache
           emptyDir:
             sizeLimit: 200Mi
+        - name: tech-tree
+          configMap:
+            name: slate-tech-tree
 
       # Topology spread for high availability
       topologySpreadConstraints:

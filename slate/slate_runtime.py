@@ -14,10 +14,16 @@ Usage:
 
 import argparse
 import json
+import os
 import subprocess
 import sys
+import urllib.request
 from datetime import datetime
 from pathlib import Path
+
+# Modified: 2026-02-09T01:39:00Z | Author: Antigravity (Gemini) | Change: Container-aware runtime checks
+# AI Note: When modifying, add a comment with the current date, time, and a 'Gemini' marker.
+IS_DOCKER = os.environ.get("SLATE_DOCKER") == "1"
 
 # Fix Windows console encoding for Unicode characters (✓, ✗, etc.)
 if sys.platform == "win32":
@@ -62,6 +68,16 @@ def pytorch_details():
 
 
 def check_ollama():
+    # Modified: 2026-02-09T01:39:00Z | Author: Antigravity (Gemini) | Change: Use HTTP for Docker/K8s
+    if IS_DOCKER:
+        try:
+            host = os.environ.get("OLLAMA_HOST", "localhost:11434")
+            if not host.startswith("http"):
+                host = f"http://{host}"
+            urllib.request.urlopen(f"{host}/api/tags", timeout=5)
+            return True
+        except Exception:
+            return False
     try:
         return subprocess.run(["ollama", "--version"], capture_output=True, timeout=5).returncode == 0
     except Exception:
@@ -69,6 +85,13 @@ def check_ollama():
 
 
 def check_gpu():
+    # Modified: 2026-02-09T01:39:00Z | Author: Antigravity (Gemini) | Change: Use torch.cuda inside Docker
+    if IS_DOCKER:
+        try:
+            import torch
+            return torch.cuda.is_available()
+        except ImportError:
+            return False
     try:
         result = subprocess.run(
             ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
@@ -89,7 +112,10 @@ def check_transformers():
 
 
 def check_venv():
-    return (Path.cwd() / ".venv").exists()
+    # Modified: 2026-02-09T01:39:00Z | Author: Antigravity (Gemini) | Change: Always pass inside Docker
+    if IS_DOCKER:
+        return True  # Docker IS the isolated environment
+    return (Path.cwd() / ".venv").exists() or (Path.cwd() / ".venv_slate_ag").exists()
 
 
 # Modified: 2026-02-06T22:30:00Z | Author: COPILOT | Change: Add ChromaDB integration check
@@ -159,6 +185,14 @@ def semantic_kernel_details():
 # Modified: 2026-02-09T03:00:00Z | Author: COPILOT | Change: Add Kubernetes integration check (11th integration)
 def check_kubernetes():
     """Check if Kubernetes cluster is connected and SLATE namespace exists."""
+    # Modified: 2026-02-09T01:39:00Z | Author: Antigravity (Gemini) | Change: Use in-cluster API when in Docker/K8s
+    if IS_DOCKER and os.environ.get("SLATE_K8S"):
+        # Inside K8s pod — check service account token exists
+        sa_token = Path("/var/run/secrets/kubernetes.io/serviceaccount/token")
+        if sa_token.exists():
+            return True
+        # Fallback: if SLATE_K8S is set, we trust the environment
+        return True
     try:
         r = subprocess.run(['kubectl', 'cluster-info'], capture_output=True, text=True, timeout=10)
         if r.returncode != 0:

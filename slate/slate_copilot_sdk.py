@@ -221,164 +221,25 @@ if PYDANTIC_AVAILABLE:
 
 
 # ===========================================================================
-# SLATE TOOLS -- Created via Copilot SDK define_tool()
+# SLATE TOOLS -- Delegated to copilot_sdk_tools.py (canonical source)
 # ===========================================================================
-# Each tool is a proper Tool object that the Copilot CLI presents to the LLM.
-# The LLM fills parameters (from Pydantic schema), Copilot SDK calls the handler.
-
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Delegate tool creation to copilot_sdk_tools.py — eliminate duplication across 2 files
 
 def create_slate_tools() -> list:
     """
-    Create all 15 SLATE tools using Copilot SDK define_tool().
-    Returns list of Tool objects ready for SessionConfig.
+    Create all SLATE tools by delegating to copilot_sdk_tools.get_all_slate_tools().
+
+    copilot_sdk_tools.py is the canonical source for all 20 SLATE tool definitions.
+    This function provides backward compatibility for existing importers.
     """
-    if not COPILOT_SDK_AVAILABLE or not PYDANTIC_AVAILABLE:
+    try:
+        from slate.copilot_sdk_tools import get_all_slate_tools
+        return get_all_slate_tools()
+    except ImportError:
+        # Fallback: if copilot_sdk_tools isn't available, return empty
+        if not COPILOT_SDK_AVAILABLE or not PYDANTIC_AVAILABLE:
+            return []
         return []
-
-    tools: list = []
-
-    # 1. slate_status
-    @define_tool(description="Check SLATE system health -- GPUs, services, workflows, Python env, K8s cluster, Ollama models")
-    def slate_status(params: StatusParams) -> str:
-        return fmt(run_slate_command("slate_status.py", f"--{params.format}"))
-    tools.append(slate_status)
-
-    # 2. slate_workflow
-    @define_tool(description="Manage SLATE task queue -- view status, cleanup stale tasks, enforce completion rules before new work")
-    def slate_workflow(params: WorkflowParams) -> str:
-        return fmt(run_slate_command("slate_workflow_manager.py", f"--{params.action}"))
-    tools.append(slate_workflow)
-
-    # 3. slate_orchestrator
-    @define_tool(description="Control SLATE services -- start/stop/status for dashboard, runner, monitor, autonomous loop")
-    def slate_orchestrator(params: OrchestratorParams) -> str:
-        return fmt(run_slate_command("slate_orchestrator.py", params.action))
-    tools.append(slate_orchestrator)
-
-    # 4. slate_runner
-    @define_tool(description="Manage GitHub Actions self-hosted runner (slate-runner) -- status, detect, dispatch CI/CD workflows")
-    def slate_runner(params: RunnerParams) -> str:
-        if params.action == "dispatch":
-            return fmt(run_slate_command("slate_runner_manager.py", "--dispatch", params.workflow))
-        return fmt(run_slate_command("slate_runner_manager.py", f"--{params.action}"))
-    tools.append(slate_runner)
-
-    # 5. slate_ai
-    @define_tool(description="Execute AI tasks using SLATE's local LLM backend (Ollama -- slate-coder 12B, slate-fast 3B, slate-planner 7B)")
-    def slate_ai(params: AIParams) -> str:
-        if params.check_status:
-            return fmt(run_slate_command("ml_orchestrator.py", "--status"))
-        if not params.task:
-            return "ERROR: No task provided. Set task='your prompt' or check_status=true"
-        return fmt(run_slate_command("ml_orchestrator.py", "--infer", params.task, timeout=120))
-    tools.append(slate_ai)
-
-    # 6. slate_runtime
-    @define_tool(description="Verify all 7 SLATE runtime integrations: Python, GPU, PyTorch, Transformers, Ollama, ChromaDB, venv")
-    def slate_runtime(params: RuntimeParams) -> str:
-        args = ["--check-all"]
-        if params.format == "json":
-            args.append("--json")
-        return fmt(run_slate_command("slate_runtime.py", *args))
-    tools.append(slate_runtime)
-
-    # 7. slate_hardware
-    @define_tool(description="Detect GPUs (2x RTX 5070 Ti Blackwell), optimize CUDA settings, install correct PyTorch for compute 12.0")
-    def slate_hardware(params: HardwareParams) -> str:
-        if params.action == "optimize":
-            return fmt(run_slate_command("slate_hardware_optimizer.py", "--optimize"))
-        if params.action == "install-pytorch":
-            return fmt(run_slate_command("slate_hardware_optimizer.py", "--install-pytorch", timeout=300))
-        return fmt(run_slate_command("slate_hardware_optimizer.py"))
-    tools.append(slate_hardware)
-
-    # 8. slate_benchmark
-    @define_tool(description="Run SLATE performance benchmarks -- GPU throughput, inference latency, system metrics")
-    def slate_benchmark(params: BenchmarkParams) -> str:
-        return fmt(run_slate_command("slate_benchmark.py", timeout=120))
-    tools.append(slate_benchmark)
-
-    # 9. slate_gpu
-    @define_tool(description="Manage dual-GPU load balancing for Ollama LLMs -- model placement, VRAM monitoring, preload warmup")
-    def slate_gpu(params: GPUParams) -> str:
-        if params.action == "configure":
-            return fmt(run_slate_command("slate_gpu_manager.py", "--configure"))
-        if params.action == "preload":
-            return fmt(run_slate_command("slate_gpu_manager.py", "--preload", timeout=120))
-        return fmt(run_slate_command("slate_gpu_manager.py", "--status"))
-    tools.append(slate_gpu)
-
-    # 10. slate_claude_code
-    @define_tool(description="Validate Claude Code configuration -- MCP server, permissions, ActionGuard hooks, behavior profile")
-    def slate_claude_code(params: ClaudeCodeParams) -> str:
-        args = [f"--{params.action}"]
-        if params.format == "json":
-            args.append("--json")
-        return fmt(run_slate_command("claude_code_manager.py", *args))
-    tools.append(slate_claude_code)
-
-    # 11. slate_spec_kit
-    @define_tool(description="Process specifications, run AI analysis, generate wiki pages from spec documents")
-    def slate_spec_kit(params: SpecKitParams) -> str:
-        action_map = {
-            "status": ["--status"],
-            "process-all": ["--process-all", "--wiki", "--analyze"],
-            "wiki": ["--process-all", "--wiki"],
-            "analyze": ["--process-all", "--analyze"],
-        }
-        args = action_map.get(params.action, ["--status"])
-        if params.format == "json":
-            args.append("--json")
-        return fmt(run_slate_command("slate_spec_kit.py", *args, timeout=120))
-    tools.append(slate_spec_kit)
-
-    # 12. slate_schematic
-    @define_tool(description="Generate SLATE system diagrams -- circuit-board style schematics of architecture")
-    def slate_schematic(params: SchematicParams) -> str:
-        if params.action == "components":
-            return fmt(run_slate_command("schematic_sdk/cli.py", "components", "--list"))
-        if params.action == "from-tech-tree":
-            return fmt(run_slate_command("schematic_sdk/cli.py", "from-tech-tree", "--output", params.output, "--theme", params.theme))
-        return fmt(run_slate_command("schematic_sdk/cli.py", "from-system", "--output", params.output, "--theme", params.theme))
-    tools.append(slate_schematic)
-
-    # 13. slate_kubernetes
-    @define_tool(description="Manage SLATE Kubernetes cluster -- deploy manifests, health checks, teardown, pod logs, port-forwarding")
-    def slate_kubernetes(params: KubernetesParams) -> str:
-        action_map = {
-            "deploy": ["--deploy"],
-            "health": ["--health"],
-            "teardown": ["--teardown"],
-            "port-forward": ["--port-forward"],
-            "logs": ["--logs", params.component] if params.component else ["--logs", "dashboard"],
-        }
-        args = action_map.get(params.action, ["--status"])
-        return fmt(run_slate_command("slate_k8s_deploy.py", *args))
-    tools.append(slate_kubernetes)
-
-    # 14. slate_adaptive_instructions
-    @define_tool(description="Manage K8s-driven adaptive instructions -- operating mode, agent availability, live directives")
-    def slate_adaptive_instructions(params: AdaptiveInstructionsParams) -> str:
-        flag_map = {
-            "status": "--status", "evaluate": "--evaluate", "sync": "--sync",
-            "get-context": "--get-context", "get-active": "--get-active", "apply": "--apply",
-        }
-        return fmt(run_slate_command("adaptive_instructions.py", flag_map.get(params.action, "--status")))
-    tools.append(slate_adaptive_instructions)
-
-    # 15. slate_autonomous
-    @define_tool(description="Control the autonomous task loop -- discover tasks, execute one, run full loop with max limit")
-    def slate_autonomous(params: AutonomousParams) -> str:
-        if params.action == "discover":
-            return fmt(run_slate_command("slate_unified_autonomous.py", "--discover"))
-        if params.action == "single":
-            return fmt(run_slate_command("slate_unified_autonomous.py", "--single", timeout=120))
-        if params.action == "run":
-            return fmt(run_slate_command("slate_unified_autonomous.py", "--run", "--max", str(params.max_tasks), timeout=300))
-        return fmt(run_slate_command("slate_unified_autonomous.py", "--status"))
-    tools.append(slate_autonomous)
-
-    return tools
 
 
 # Build tools once at module load (cheap -- no Copilot connection needed)

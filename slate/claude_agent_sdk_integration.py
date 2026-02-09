@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
-# Modified: 2026-02-08T18:00:00Z | Author: COPILOT | Change: Initial Claude Agent SDK integration module
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Wire vendor openai-agents-python SDK — proper Agent objects, InputGuardrail, Handoff replacing plain dict subagents
 """
 SLATE Claude Agent SDK Integration
 
 Provides SLATE-specific tools, hooks, and subagents for the Claude Agent SDK.
-Based on https://platform.claude.com/docs/en/agent-sdk/overview
+Now uses the vendored openai-agents-python SDK for proper Agent, InputGuardrail,
+and Handoff definitions instead of plain dict reimplementations.
+
+Architecture:
+    vendor/openai-agents-python/src  →  Agent, InputGuardrail, function_tool
+    slate/vendor_agents_sdk.py       →  sys.path swap import helper
+    slate/action_guard.py            →  ActionGuardInputGuardrail
 
 Usage:
     from slate.claude_agent_sdk_integration import (
-        create_slate_tools,
-        create_slate_hooks,
-        get_slate_agent_options,
-        SLATE_SUBAGENTS
+        create_slate_tools,          # MCP-style tool functions (backward compat)
+        create_slate_hooks,          # ActionGuard hooks
+        get_slate_agent_options,     # Full agent options dict
+        SLATE_SUBAGENTS,             # Plain dict agents (backward compat)
+        get_sdk_agents,              # Proper Agent objects from vendor SDK
+        ActionGuardInputGuardrail,   # SDK InputGuardrail wrapping ActionGuard
     )
 """
 
@@ -28,6 +36,27 @@ WORKSPACE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(WORKSPACE_ROOT))
 
 from slate.action_guard import ActionGuard
+
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Import vendor openai-agents-python SDK for proper Agent/Guardrail types
+from slate.vendor_agents_sdk import (
+    Agent as SDKAgent,
+    function_tool as sdk_function_tool,
+    FunctionTool as SDKFunctionTool,
+    InputGuardrail as SDKInputGuardrail,
+    Handoff as SDKHandoff,
+    handoff as sdk_handoff,
+    SDK_AVAILABLE as AGENTS_SDK_AVAILABLE,
+)
+
+# Modified: 2026-02-09T04:45:00Z | Author: Claude | Change: Import vendor autogen SDK for multi-agent conversations
+from slate.vendor_autogen_sdk import (
+    Agent as AutoGenAgent,
+    BaseAgent as AutoGenBaseAgent,
+    AgentRuntime as AutoGenRuntime,
+    ClosureAgent as AutoGenClosureAgent,
+    MessageContext as AutoGenMessageContext,
+    SDK_AVAILABLE as AUTOGEN_SDK_AVAILABLE,
+)
 
 
 # ============================================================================
@@ -527,6 +556,140 @@ Only update documentation files, never modify code.""",
 # SLATE Agent Options Builder
 # ============================================================================
 
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add ActionGuardInputGuardrail and SDK Agent objects from vendor openai-agents-python
+
+class ActionGuardInputGuardrail:
+    """
+    InputGuardrail that wraps SLATE's ActionGuard for the openai-agents SDK.
+
+    When AGENTS_SDK_AVAILABLE, this creates a proper SDK InputGuardrail.
+    Otherwise provides a compatible fallback.
+    """
+
+    def __init__(self):
+        self.action_guard = ActionGuard()
+
+    async def check(self, input_data: Dict[str, Any], context: Any = None) -> Dict[str, Any]:
+        """Validate input through ActionGuard. Returns empty dict to allow, or error to deny."""
+        text = json.dumps(input_data) if isinstance(input_data, dict) else str(input_data)
+        result = self.action_guard.validate_command(text)
+        if not result.allowed:
+            return {"blocked": True, "reason": f"ActionGuard: {result.reason}"}
+        return {}
+
+
+def _create_sdk_action_guard_guardrail():
+    """Create an SDK InputGuardrail wrapping ActionGuard, if SDK available."""
+    if not AGENTS_SDK_AVAILABLE or SDKInputGuardrail is None:
+        return None
+
+    guard = ActionGuard()
+
+    async def action_guard_check(ctx, agent, input_text):
+        """ActionGuard input guardrail for openai-agents SDK."""
+        from agents.guardrail import GuardrailFunctionOutput
+        text = str(input_text)
+        result = guard.validate_command(text)
+        return GuardrailFunctionOutput(
+            output_info={"checked": text[:100], "allowed": result.allowed},
+            tripwire_triggered=not result.allowed,
+        )
+
+    try:
+        return SDKInputGuardrail(guardrail_function=action_guard_check)
+    except Exception:
+        return None
+
+
+def get_sdk_agents() -> Dict[str, Any]:
+    """
+    Create proper Agent objects from the vendor openai-agents-python SDK.
+
+    Returns a dict mapping agent name -> Agent object (or plain dict fallback).
+    Uses the SDK's Agent class with proper instructions, handoffs, and guardrails.
+    """
+    if not AGENTS_SDK_AVAILABLE or SDKAgent is None:
+        # Fallback to plain dict subagents
+        return SLATE_SUBAGENTS
+
+    guardrail = _create_sdk_action_guard_guardrail()
+    input_guardrails = [guardrail] if guardrail else []
+
+    try:
+        # Create proper SDK Agent objects
+        docs_agent = SDKAgent(
+            name="slate_docs_generator",
+            instructions="""You are the SLATE Documentation Generator. Your role is to:
+1. Analyze code and generate documentation
+2. Update CLAUDE.md with new features
+3. Create API reference for MCP tools
+4. Maintain specs/ documentation
+
+Only update documentation files, never modify code.""",
+            input_guardrails=input_guardrails,
+        )
+
+        test_agent = SDKAgent(
+            name="slate_test_runner",
+            instructions="""You are the SLATE Test Runner. Your role is to:
+1. Run pytest tests in the tests/ directory
+2. Analyze test failures and suggest fixes
+3. Check test coverage for slate/ modules
+4. Report test results clearly
+
+Use pytest with -v flag for verbose output.""",
+            input_guardrails=input_guardrails,
+        )
+
+        reviewer_agent = SDKAgent(
+            name="slate_code_reviewer",
+            instructions="""You are the SLATE Code Reviewer. Your role is to:
+1. Analyze code quality and suggest improvements
+2. Check for security vulnerabilities (OWASP Top 10)
+3. Verify ActionGuard patterns are not bypassed
+4. Ensure PII protection is maintained
+
+Focus on the slate/ and slate_core/ directories.""",
+            input_guardrails=input_guardrails,
+        )
+
+        operator_agent = SDKAgent(
+            name="slate_operator",
+            instructions="""You are the SLATE Operator agent. Your role is to:
+1. Monitor and manage SLATE infrastructure
+2. Deploy and maintain K8s/Docker services
+3. Handle GPU configuration and model placement
+4. Execute DIAGNOSE -> ACT -> VERIFY pattern
+
+Always use SLATE MCP tools (slate_status, slate_workflow, slate_gpu, etc.) for operations.
+Report results clearly with service status and any issues found.""",
+            handoffs=[
+                sdk_handoff(docs_agent),
+                sdk_handoff(test_agent),
+                sdk_handoff(reviewer_agent),
+            ],
+            input_guardrails=input_guardrails,
+        )
+
+        return {
+            "slate-operator": operator_agent,
+            "slate-code-reviewer": reviewer_agent,
+            "slate-test-runner": test_agent,
+            "slate-docs-generator": docs_agent,
+            # SDK-native names
+            "slate_operator": operator_agent,
+            "slate_code_reviewer": reviewer_agent,
+            "slate_test_runner": test_agent,
+            "slate_docs_generator": docs_agent,
+        }
+
+    except Exception as e:
+        # If Agent creation fails (e.g., version issues), fall back to dicts
+        import traceback
+        print(f"[SLATE] SDK Agent creation failed, using dict fallback: {e}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        return SLATE_SUBAGENTS
+
 def get_slate_agent_options(
     mode: str = "operator",
     allowed_tools: Optional[List[str]] = None,
@@ -612,6 +775,8 @@ def get_slate_agent_options(
         "mcp_servers": mcp_servers,
         "hooks": hooks_config,
         "agents": SLATE_SUBAGENTS,
+        "sdk_agents": get_sdk_agents() if AGENTS_SDK_AVAILABLE else None,
+        "sdk_available": AGENTS_SDK_AVAILABLE,
         "cwd": str(WORKSPACE_ROOT),
         "system_prompt": f"""You are operating in SLATE mode: {mode}
 
@@ -660,6 +825,23 @@ async def main():
             print(f"    {config['description']}")
             print(f"    Tools: {', '.join(config['tools'][:3])}...")
             print()
+
+        # Show SDK agents if available
+        if AGENTS_SDK_AVAILABLE:
+            print("\nSDK Agent Objects (vendor openai-agents-python):")
+            print("=" * 50)
+            sdk_agents = get_sdk_agents()
+            for name, agent in sdk_agents.items():
+                if hasattr(agent, 'instructions'):
+                    handoff_count = len(agent.handoffs) if hasattr(agent, 'handoffs') and agent.handoffs else 0
+                    guardrail_count = len(agent.input_guardrails) if hasattr(agent, 'input_guardrails') and agent.input_guardrails else 0
+                    print(f"  {name} (SDK Agent)")
+                    print(f"    Handoffs: {handoff_count}, Guardrails: {guardrail_count}")
+                else:
+                    print(f"  {name} (dict fallback)")
+            print()
+        else:
+            print("\n[SDK not available — using dict-based agents]")
 
     elif args.show_options:
         options = get_slate_agent_options(mode=args.mode)

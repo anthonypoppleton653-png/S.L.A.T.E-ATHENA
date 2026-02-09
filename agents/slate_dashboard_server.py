@@ -2496,7 +2496,12 @@ async def api_specs():
 @app.get("/api/tech-tree")
 async def api_tech_tree():
     """Get tech tree data from .slate_tech_tree/tech_tree.json."""
-    tech_tree_file = WORKSPACE_ROOT / ".slate_tech_tree" / "tech_tree.json"
+    # Check environment variable first (for K8s), then default path
+    tech_tree_path = os.environ.get("SLATE_TECH_TREE_PATH")
+    if tech_tree_path:
+        tech_tree_file = Path(tech_tree_path)
+    else:
+        tech_tree_file = WORKSPACE_ROOT / ".slate_tech_tree" / "tech_tree.json"
 
     try:
         if tech_tree_file.exists():

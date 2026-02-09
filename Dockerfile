@@ -1,10 +1,7 @@
 # S.L.A.T.E. Docker Image — RELEASE / STABLE (GPU Variant)
-# Modified: 2026-02-08T19:00:00Z | Author: COPILOT | Change: Full release image with all SLATE runtimes containerized
+# Modified: 2026-02-09T01:32:00Z | Author: Antigravity | Change: Multi-stage build, layer optimization, security hardening
+# AI Note: When modifying, add a comment with the current date, time, and a 'Gemini' marker.
 # Base: NVIDIA CUDA 12.8 Runtime on Ubuntu 22.04 (matches local Blackwell GPU stack)
-#
-# This is the RELEASE image — the stable runtime that Kubernetes deploys.
-# Local development improves the codebase, then builds this image as the
-# containerized "release" that runs as a local cloud via K8s.
 #
 # Build:  docker build -t slate:local -t ghcr.io/synchronizedlivingarchitecture/slate:latest-gpu .
 # Push:   docker push ghcr.io/synchronizedlivingarchitecture/slate:latest-gpu
@@ -12,7 +9,7 @@
 #
 # Runtimes included:
 #   - SLATE Core (orchestrator, dashboard, status)
-#   - Agent Router + Agent Workers (ALPHA/BETA/GAMMA/DELTA/COPILOT)
+#   - Agent Router + Agent Workers (ALPHA/BETA/GAMMA/DELTA/COPILOT/ANTIGRAVITY)
 #   - Autonomous Loop (self-healing task brain)
 #   - Copilot Bridge (VS Code <-> K8s)
 #   - Workflow Manager (task lifecycle, PR workflows)
@@ -24,20 +21,15 @@
 #   - GitHub Actions runner integration
 #   - Spec Kit (spec processing, wiki generation)
 
-FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
+# ═══════════════════════════════════════════════════════════════════════════════
+# Stage 1: Builder — install dependencies (large, cached, discardable)
+# ═══════════════════════════════════════════════════════════════════════════════
+FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04 AS builder
 
-LABEL org.opencontainers.image.source="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E"
-LABEL org.opencontainers.image.description="SLATE - Synchronized Living Architecture for Transformation and Evolution (Release GPU)"
-LABEL org.opencontainers.image.licenses="MIT"
-LABEL org.opencontainers.image.version="2.4.0"
-LABEL slate.image.type="release"
-
-# Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Install Python 3.11 and system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.11 \
     python3.11-venv \
@@ -48,20 +40,49 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ln -sf /usr/bin/python3.11 /usr/bin/python \
     && ln -sf /usr/bin/python3.11 /usr/bin/python3
 
-# Set working directory
-WORKDIR /slate
+WORKDIR /build
 
 # Copy requirements first for layer caching
 COPY requirements.txt .
 
-# Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Add PyTorch CUDA install, fix dependency chain for full runtime
-# Install Python dependencies (full runtime — all SLATE integrations)
-# PyTorch CUDA must be installed first (before requirements.txt) with the correct index URL
+# Install Python dependencies: PyTorch CUDA first, then the rest
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cu128 \
+    && pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128 \
     && pip install --no-cache-dir -r requirements.txt
 
-# Copy complete SLATE codebase — every runtime module
+# ═══════════════════════════════════════════════════════════════════════════════
+# Stage 2: Runtime — slim final image
+# ═══════════════════════════════════════════════════════════════════════════════
+FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
+
+LABEL org.opencontainers.image.source="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E"
+LABEL org.opencontainers.image.description="SLATE - Synchronized Living Architecture for Transformation and Evolution (Release GPU)"
+LABEL org.opencontainers.image.licenses="EOSL-1.0"
+LABEL org.opencontainers.image.version="2.4.0"
+LABEL slate.image.type="release"
+LABEL slate.agent.primary="Antigravity"
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Install Python runtime only (no dev headers)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3-pip \
+    git \
+    tini \
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -sf /usr/bin/python3.11 /usr/bin/python \
+    && ln -sf /usr/bin/python3.11 /usr/bin/python3
+
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.11/dist-packages /usr/local/lib/python3.11/dist-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+WORKDIR /slate
+
+# Copy complete SLATE codebase
 COPY slate/ ./slate/
 COPY agents/ ./agents/
 COPY slate_core/ ./slate_core/
@@ -69,10 +90,10 @@ COPY slate_web/ ./slate_web/
 COPY models/ ./models/
 COPY skills/ ./skills/
 COPY plugins/ ./plugins/
-# Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Add vendor, docs, specs for complete runtime
 COPY vendor/ ./vendor/
 COPY docs/ ./docs/
 COPY specs/ ./specs/
+COPY .agent/ ./.agent/
 COPY pyproject.toml .
 COPY current_tasks.json .
 COPY AGENTS.md .
@@ -88,30 +109,20 @@ ENV SLATE_MODE=prod
 ENV SLATE_DOCKER=1
 ENV SLATE_K8S=true
 ENV SLATE_VERSION=2.4.0
+ENV SLATE_AGENT_NAME=Antigravity
 
 # Create non-root user for security
-RUN useradd -m -s /bin/bash slate \
+RUN useradd -m -s /bin/bash -u 1000 slate \
     && chown -R slate:slate /slate
 USER slate
 
 # Expose service ports
-EXPOSE 8080  
-# 8080 = Dashboard/Core API
-EXPOSE 8081  
-# 8081 = Agent Router API
-EXPOSE 8082  
-# 8082 = Autonomous Loop API
-EXPOSE 8083  
-# 8083 = Copilot Bridge API (extension v5.0.0 runtime backend)
-EXPOSE 8084  
-# 8084 = Workflow Manager API
-EXPOSE 9090  
-# 9090 = Prometheus Metrics
+EXPOSE 8080 8081 8082 8083 8084 9090
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health', timeout=5)" || exit 1
 
-# Default entrypoint: start SLATE orchestrator
-ENTRYPOINT ["python", "slate/slate_orchestrator.py"]
-CMD ["start", "--mode", "prod"]
+# Use tini as init system for proper signal handling
+ENTRYPOINT ["tini", "--"]
+CMD ["python", "slate/slate_orchestrator.py", "start", "--mode", "prod"]

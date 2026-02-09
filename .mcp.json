@@ -1,10 +1,13 @@
 {
   "mcpServers": {
     "slate": {
-      "command": "powershell",
-      "args": ["-ExecutionPolicy", "Bypass", "-File", "${CLAUDE_PLUGIN_ROOT}/slate/mcp_launcher.ps1"],
+      "command": "${workspaceFolder}/.venv_slate_ag/Scripts/python.exe",
+      "args": [
+        "slate/mcp_server.py"
+      ],
+      "cwd": "${workspaceFolder}",
       "env": {
-        "SLATE_PLUGIN_ROOT": "${CLAUDE_PLUGIN_ROOT}",
+        "PYTHONPATH": "${workspaceFolder}",
         "SLATE_BEHAVIOR": "operator",
         "SLATE_ACTIONGUARD": "enabled"
       },

@@ -1,9 +1,10 @@
 # S.L.A.T.E. Docker Compose - PRODUCTION Mode
-# Modified: 2026-02-07T06:00:00Z | Author: COPILOT | Change: Prod compose - static, no reload
+# Modified: 2026-02-09T01:32:00Z | Author: Antigravity | Change: Industry-standard prod compose, read-only FS, tmpfs, structured logging, security hardening
+# AI Note: When modifying, add a comment with the current date, time, and a 'Gemini' marker.
 #
 # Usage:
-#   docker-compose -f docker-compose.prod.yml up -d
-#   docker-compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml up -d
+#   docker compose -f docker-compose.prod.yml up -d --build
 #
 # Features:
 #   - Static container — no source bind mounts, no file watcher
@@ -11,21 +12,33 @@
 #   - Pre-built image from ghcr.io registry
 #   - Auto-restart on failure
 #   - Resource limits enforced
+#   - Read-only filesystem
 #
 # Security:
 #   - All ports bound to 127.0.0.1 (local only)
 #   - No telemetry, no external network calls
 #   - Runs as non-root user (slate)
-#   - Read-only filesystem where possible
+#   - Read-only root filesystem with tmpfs for /tmp
+
+x-slate-prod-common: &slate-prod-common
+  restart: unless-stopped
+  networks:
+    - slate_network
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+  security_opt:
+    - no-new-privileges:true
 
 services:
-  # SLATE Core (Production - GPU)
+  # ─── SLATE Core (Production — GPU) ─────────────────────────────────────
   slate:
+    <<: *slate-prod-common
     image: ghcr.io/synchronizedlivingarchitecture/slate:latest-gpu
     container_name: slate
     hostname: slate
-    restart: unless-stopped
-    # Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Expose all SLATE service ports, add ChromaDB HTTP env
     ports:
       - "127.0.0.1:8080:8080"  # Dashboard/Core API
       - "127.0.0.1:8081:8081"  # Agent Router API
@@ -42,6 +55,7 @@ services:
       - SLATE_MODE=prod
       - SLATE_WORKSPACE=/slate
       - SLATE_DOCKER=1
+      - SLATE_AGENT_NAME=Antigravity
       - OLLAMA_HOST=ollama:11434
       - CHROMADB_HOST=chromadb
       - CHROMADB_PORT=8000
@@ -50,6 +64,8 @@ services:
     depends_on:
       ollama:
         condition: service_healthy
+      chromadb:
+        condition: service_started
     deploy:
       resources:
         reservations:
@@ -59,8 +75,7 @@ services:
               capabilities: [gpu]
         limits:
           memory: 8G
-    networks:
-      - slate_network
+          cpus: "4.0"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)"]
       interval: 30s
@@ -71,20 +86,20 @@ services:
     tmpfs:
       - /tmp:size=256M
 
-  # Ollama Local LLM Service
+  # ─── Ollama Local LLM Service ──────────────────────────────────────────
   ollama:
+    <<: *slate-prod-common
     image: ollama/ollama:latest
     container_name: ollama
     hostname: ollama
-    restart: unless-stopped
     ports:
       - "127.0.0.1:11434:11434"
     volumes:
       - ollama_data:/root/.ollama
     environment:
-      # 0.0.0.0 required inside Docker bridge network for inter-container comms.
-      # Host port binding is 127.0.0.1 — does NOT violate local-only policy.
       - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_NUM_PARALLEL=4
+      - OLLAMA_MAX_LOADED_MODELS=3
     deploy:
       resources:
         reservations:
@@ -94,9 +109,6 @@ services:
               capabilities: [gpu]
         limits:
           memory: 16G
-    networks:
-      - slate_network
-    # Modified: 2026-02-08T23:00:00Z | Author: COPILOT | Change: Use wget for Ollama healthcheck, fail properly on health issues
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:11434/api/tags || exit 1"]
       interval: 30s
@@ -104,12 +116,12 @@ services:
       retries: 5
       start_period: 30s
 
-  # ChromaDB Vector Store
+  # ─── ChromaDB Vector Store ─────────────────────────────────────────────
   chromadb:
+    <<: *slate-prod-common
     image: chromadb/chroma:latest
     container_name: chromadb
     hostname: chromadb
-    restart: unless-stopped
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
@@ -117,12 +129,38 @@ services:
     environment:
       - IS_PERSISTENT=TRUE
       - ANONYMIZED_TELEMETRY=FALSE
-    networks:
-      - slate_network
     deploy:
       resources:
         limits:
           memory: 2G
+          cpus: "1.0"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8000/api/v1/heartbeat || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ─── Grafana Monitoring ────────────────────────────────────────────────
+  grafana:
+    <<: *slate-prod-common
+    image: grafana/grafana:latest
+    container_name: aurora-grafana
+    hostname: grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=slate
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
 
 volumes:
   slate_data:
@@ -135,12 +173,13 @@ volumes:
     name: ollama_prod_data
   chroma_data:
     name: chroma_prod_data
+  grafana_data:
+    name: grafana_prod_data
 
 networks:
   slate_network:
     name: slate_prod_network
     driver: bridge
-    # Modified: 2026-02-08T23:00:00Z | Author: COPILOT | Change: Add IPAM config for network isolation
     ipam:
       config:
         - subnet: 172.30.0.0/16

@@ -1,9 +1,10 @@
 # S.L.A.T.E. Docker Compose - DEVELOPMENT Mode
-# Modified: 2026-02-07T06:00:00Z | Author: COPILOT | Change: Dev compose with hot-reload volumes
+# Modified: 2026-02-09T01:32:00Z | Author: Antigravity | Change: Industry-standard dev compose with hot-reload, structured logging, resource limits
+# AI Note: When modifying, add a comment with the current date, time, and a 'Gemini' marker.
 #
 # Usage:
-#   docker-compose -f docker-compose.dev.yml up
-#   docker-compose -f docker-compose.dev.yml up --build
+#   docker compose -f docker-compose.dev.yml up
+#   docker compose -f docker-compose.dev.yml up --build
 #
 # Features:
 #   - Source code bind-mounted for hot-reload
@@ -15,17 +16,30 @@
 #   - All ports bound to 127.0.0.1 (local only)
 #   - No telemetry, no external network calls
 
+x-slate-dev-common: &slate-dev-common
+  restart: unless-stopped
+  networks:
+    - slate_network
+  logging:
+    driver: json-file
+    options:
+      max-size: "25m"
+      max-file: "5"
+  security_opt:
+    - no-new-privileges:true
+
 services:
-  # SLATE Core (Dev Mode - GPU)
+  # ─── SLATE Core (Dev Mode — GPU) ───────────────────────────────────────
   slate-dev:
+    <<: *slate-dev-common
     image: slate-dev:local
     build:
       context: .
       dockerfile: Dockerfile.dev
+      args:
+        SLATE_VERSION: "2.4.0"
     container_name: slate-dev
     hostname: slate
-    restart: unless-stopped
-    # Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Expose all SLATE service ports
     ports:
       - "127.0.0.1:8080:8080"  # Dashboard/Core API
       - "127.0.0.1:8081:8081"  # Agent Router API
@@ -38,9 +52,12 @@ services:
       - ./slate:/slate/slate:rw
       - ./agents:/slate/agents:rw
       - ./skills:/slate/skills:rw
+      - ./.agent:/slate/.agent:rw
+      - ./plugins:/slate/plugins:rw
       - ./current_tasks.json:/slate/current_tasks.json:rw
       - ./models:/slate/models:ro
       - ./pyproject.toml:/slate/pyproject.toml:ro
+      - ./.env:/slate/.env:ro
       # Persistent data
       - slate_data:/slate/.slate_index
       - slate_prompts:/slate/.slate_prompts
@@ -48,6 +65,7 @@ services:
       - SLATE_MODE=dev
       - SLATE_WORKSPACE=/slate
       - SLATE_DOCKER=1
+      - SLATE_AGENT_NAME=Antigravity
       - OLLAMA_HOST=ollama:11434
       - CHROMADB_HOST=chromadb
       - CHROMADB_PORT=8000
@@ -56,6 +74,8 @@ services:
     depends_on:
       ollama:
         condition: service_healthy
+      chromadb:
+        condition: service_started
     deploy:
       resources:
         reservations:
@@ -63,8 +83,9 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    networks:
-      - slate_network
+        limits:
+          memory: 8G
+          cpus: "4.0"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)"]
       interval: 15s
@@ -72,12 +93,12 @@ services:
       retries: 3
       start_period: 10s
 
-  # Ollama Local LLM Service
+  # ─── Ollama Local LLM Service ──────────────────────────────────────────
   ollama:
+    <<: *slate-dev-common
     image: ollama/ollama:latest
     container_name: ollama-dev
     hostname: ollama
-    restart: unless-stopped
     ports:
       - "127.0.0.1:11434:11434"
     volumes:
@@ -86,6 +107,8 @@ services:
       # 0.0.0.0 required inside Docker bridge network for inter-container comms.
       # Host port binding is 127.0.0.1 — does NOT violate local-only policy.
       - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_NUM_PARALLEL=4
+      - OLLAMA_MAX_LOADED_MODELS=3
     deploy:
       resources:
         reservations:
@@ -93,9 +116,8 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    networks:
-      - slate_network
-    # Modified: 2026-02-08T23:00:00Z | Author: COPILOT | Change: Use wget for Ollama healthcheck (python3 not in ollama image), fail properly
+        limits:
+          memory: 16G
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:11434/api/tags || exit 1"]
       interval: 30s
@@ -103,13 +125,12 @@ services:
       retries: 5
       start_period: 30s
 
-  # ChromaDB Vector Store (Dev)
-  # Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Add ChromaDB to dev compose
+  # ─── ChromaDB Vector Store (Dev) ───────────────────────────────────────
   chromadb:
+    <<: *slate-dev-common
     image: chromadb/chroma:latest
     container_name: chromadb-dev
     hostname: chromadb
-    restart: unless-stopped
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
@@ -117,8 +138,38 @@ services:
     environment:
       - IS_PERSISTENT=TRUE
       - ANONYMIZED_TELEMETRY=FALSE
-    networks:
-      - slate_network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "1.0"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8000/api/v1/heartbeat || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ─── Grafana Monitoring (Dev) ──────────────────────────────────────────
+  grafana:
+    <<: *slate-dev-common
+    image: grafana/grafana:latest
+    container_name: aurora-grafana-dev
+    hostname: grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana_provisioning:/etc/grafana/provisioning:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=slate
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
 volumes:
   slate_data:
@@ -129,12 +180,13 @@ volumes:
     name: ollama_dev_data
   chroma_data:
     name: chroma_dev_data
+  grafana_data:
+    name: grafana_dev_data
 
 networks:
   slate_network:
     name: slate_dev_network
     driver: bridge
-    # Modified: 2026-02-08T23:00:00Z | Author: COPILOT | Change: Add IPAM config for network isolation
     ipam:
       config:
         - subnet: 172.29.0.0/16

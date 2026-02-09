@@ -3,16 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Watchmaker component showcase for SLATE. Gear system, status jewels, flow lines, and schematic layout components.">
+    <meta name="description" content="Watchmaker component showcase for SLATE. Complete UI component library including vendor SDK integration, multi-runner status, GPU workbench, K8s deployment, autonomous loop, custom models, and Claude Code integration.">
     <meta name="robots" content="index, follow">
     <title>SLATE Watchmaker Component Showcase</title>
     <link rel="icon" type="image/svg+xml" href="assets/slate-logo-v2.svg">
     <link rel="stylesheet" href="css/watchmaker.css">
-    <!-- Modified: 2026-02-09T06:45:00Z | Author: COPILOT | Change: Add watchmaker component showcase page -->
+    <!-- Modified: 2026-02-08T12:00:00Z | Author: Claude Opus 4.5 | Change: Add comprehensive component showcase with 7 new sections -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
 
         :root {
+            /* Primary copper/rust palette */
+            --copper-primary: #B87333;
+            --copper-light: #C9956B;
+            --copper-dark: #8B4530;
+            --rust-accent: #B85A3C;
+
+            /* Surface colors */
             --slate-primary: #B85A3C;
             --slate-primary-dark: #8B4530;
             --slate-surface: #1A1816;
@@ -20,9 +27,18 @@
             --slate-on-surface: #E8E2DE;
             --slate-on-surface-variant: #A59B90;
             --slate-outline-variant: #4D4845;
+
+            /* Blueprint colors */
             --blueprint-bg: #0D1B2A;
             --blueprint-grid: #1B3A4B;
             --blueprint-accent: #98C1D9;
+
+            /* Status colors */
+            --status-active: #22C55E;
+            --status-pending: #F59E0B;
+            --status-error: #EF4444;
+            --status-info: #3B82F6;
+            --status-disabled: #6B7280;
         }
 
         * {
@@ -31,14 +47,23 @@
 
         body {
             margin: 0;
-            font-family: 'Space Grotesk', sans-serif;
-            background: radial-gradient(circle at 20% 10%, #1B2838 0%, #0A0A0A 40%, #050505 100%);
+            font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+            background:
+                /* Major grid (64px) */
+                linear-gradient(90deg, rgba(184,115,51,0.03) 1px, transparent 1px),
+                linear-gradient(rgba(184,115,51,0.03) 1px, transparent 1px),
+                /* Minor grid (16px) */
+                linear-gradient(90deg, rgba(184,115,51,0.015) 1px, transparent 1px),
+                linear-gradient(rgba(184,115,51,0.015) 1px, transparent 1px),
+                radial-gradient(circle at 20% 10%, #1B2838 0%, #0A0A0A 40%, #050505 100%);
+            background-size: 64px 64px, 64px 64px, 16px 16px, 16px 16px, 100% 100%;
             color: var(--slate-on-surface);
             min-height: 100vh;
+            line-height: 1.6;
         }
 
         .page-shell {
-            max-width: 1100px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 32px 24px 80px;
         }
@@ -48,6 +73,8 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
         }
 
         .brand {
@@ -63,6 +90,11 @@
             height: 32px;
         }
 
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
         .link-chip {
             border: 1px solid var(--slate-outline-variant);
             padding: 8px 14px;
@@ -71,6 +103,13 @@
             color: var(--slate-on-surface);
             font-size: 0.85rem;
             font-family: 'IBM Plex Mono', monospace;
+            transition: all 0.2s;
+        }
+
+        .link-chip:hover {
+            background: var(--copper-primary);
+            border-color: var(--copper-primary);
+            color: white;
         }
 
         .warning-banner {
@@ -91,40 +130,138 @@
         .hero {
             display: grid;
             gap: 16px;
-            margin-bottom: 40px;
+            margin-bottom: 48px;
         }
 
         .hero h1 {
             font-size: clamp(2.2rem, 4vw, 3.4rem);
             margin: 0;
+            background: linear-gradient(135deg, var(--copper-primary), var(--copper-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .hero p {
             color: var(--slate-on-surface-variant);
             font-size: 1rem;
             margin: 0;
+            max-width: 800px;
+        }
+
+        /* Table of Contents */
+        .toc {
+            background: var(--slate-surface-variant);
+            border: 1px solid var(--slate-outline-variant);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 48px;
+        }
+
+        .toc h2 {
+            margin: 0 0 16px 0;
+            font-size: 1rem;
+            color: var(--copper-primary);
+            font-family: 'IBM Plex Mono', monospace;
+            letter-spacing: 0.1em;
+        }
+
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 8px;
+        }
+
+        .toc a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            color: var(--slate-on-surface-variant);
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .toc a:hover {
+            background: rgba(184, 115, 51, 0.1);
+            color: var(--copper-light);
+        }
+
+        .toc a .jewel {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--copper-primary);
+            flex-shrink: 0;
+        }
+
+        /* Section Headers */
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 48px 0 24px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--copper-primary);
+        }
+
+        .section-divider h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--copper-light);
+        }
+
+        .section-divider .section-badge {
+            background: var(--copper-primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
         }
 
         .section-grid {
             display: grid;
             gap: 24px;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         }
 
         .showcase-section {
-            background: rgba(26, 24, 22, 0.85);
+            background: rgba(26, 24, 22, 0.9);
             border: 1px solid var(--slate-outline-variant);
             border-radius: 16px;
             padding: 24px;
             box-shadow: 0 16px 32px rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
         }
 
-        .showcase-section h2 {
+        .showcase-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--copper-primary), var(--copper-light), var(--copper-primary));
+        }
+
+        .showcase-section h3 {
             margin: 0 0 8px 0;
             font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .showcase-section p {
+        .showcase-section h3 .icon {
+            font-size: 1.2rem;
+        }
+
+        .showcase-section > p {
             margin: 0 0 16px 0;
             color: var(--slate-on-surface-variant);
             font-size: 0.9rem;
@@ -141,13 +278,446 @@
             font-family: 'IBM Plex Mono', monospace;
             font-size: 0.75rem;
             color: var(--slate-on-surface-variant);
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--slate-outline-variant);
         }
 
+        /* Full Width Sections */
+        .showcase-full {
+            grid-column: 1 / -1;
+        }
+
+        /* Demo Containers */
+        .demo-box {
+            background: var(--blueprint-bg);
+            border: 1px solid var(--blueprint-grid);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 12px;
+        }
+
+        .demo-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Status Cards */
+        .status-card {
+            background: var(--slate-surface-variant);
+            border: 1px solid var(--slate-outline-variant);
+            border-radius: 12px;
+            padding: 16px;
+            min-width: 160px;
+            position: relative;
+        }
+
+        .status-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .status-card-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .status-card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--copper-light);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .status-card-label {
+            font-size: 0.75rem;
+            color: var(--slate-on-surface-variant);
+            margin-top: 4px;
+        }
+
+        /* Vendor SDK Cards */
+        .sdk-card {
+            background: linear-gradient(135deg, rgba(26, 24, 22, 0.95), rgba(13, 27, 42, 0.8));
+            border: 1px solid var(--blueprint-grid);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 180px;
+            transition: all 0.3s;
+        }
+
+        .sdk-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(184, 115, 51, 0.15);
+            border-color: var(--copper-primary);
+        }
+
+        .sdk-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .sdk-icon.openai { background: linear-gradient(135deg, #10A37F, #1A7F5A); }
+        .sdk-icon.autogen { background: linear-gradient(135deg, #4A90D9, #2E5A87); }
+        .sdk-icon.semantic { background: linear-gradient(135deg, #5C2D91, #3A1B5C); }
+        .sdk-icon.copilot { background: linear-gradient(135deg, #238636, #156A26); }
+        .sdk-icon.claude { background: linear-gradient(135deg, #D4A054, #B87333); }
+
+        .sdk-info {
+            flex: 1;
+        }
+
+        .sdk-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+
+        .sdk-status {
+            font-size: 0.75rem;
+            color: var(--slate-on-surface-variant);
+        }
+
+        /* Runner Cards */
+        .runner-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+        }
+
+        .runner-card {
+            background: var(--slate-surface);
+            border: 1px solid var(--slate-outline-variant);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .runner-card.active {
+            border-color: var(--status-active);
+            box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
+        }
+
+        .runner-card.busy {
+            border-color: var(--status-pending);
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
+        }
+
+        .runner-card.offline {
+            border-color: var(--status-disabled);
+            opacity: 0.6;
+        }
+
+        .runner-id {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .runner-status {
+            font-size: 0.65rem;
+            color: var(--slate-on-surface-variant);
+        }
+
+        /* GPU Workbench */
+        .gpu-card {
+            background: linear-gradient(135deg, var(--slate-surface-variant), rgba(13, 27, 42, 0.6));
+            border: 1px solid var(--copper-primary);
+            border-radius: 12px;
+            padding: 16px;
+            min-width: 220px;
+        }
+
+        .gpu-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--slate-outline-variant);
+        }
+
+        .gpu-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .gpu-arch {
+            font-size: 0.7rem;
+            background: var(--copper-primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .gpu-metrics {
+            display: grid;
+            gap: 8px;
+        }
+
+        .gpu-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .gpu-metric-label {
+            font-size: 0.75rem;
+            color: var(--slate-on-surface-variant);
+        }
+
+        .gpu-metric-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--copper-light);
+        }
+
+        .gpu-bar {
+            height: 6px;
+            background: var(--slate-surface);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .gpu-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .gpu-bar-fill.low { background: var(--status-active); }
+        .gpu-bar-fill.medium { background: var(--status-pending); }
+        .gpu-bar-fill.high { background: var(--status-error); }
+
+        /* K8s Deployment */
+        .k8s-container {
+            background:
+                repeating-linear-gradient(0deg, transparent, transparent 19px, var(--blueprint-grid) 19px, var(--blueprint-grid) 20px),
+                repeating-linear-gradient(90deg, transparent, transparent 19px, var(--blueprint-grid) 19px, var(--blueprint-grid) 20px),
+                var(--blueprint-bg);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .k8s-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .k8s-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .k8s-node {
+            background: var(--slate-surface-variant);
+            border: 2px solid var(--blueprint-accent);
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            min-width: 120px;
+        }
+
+        .k8s-connector {
+            flex: 1;
+            height: 2px;
+            background: var(--blueprint-accent);
+            position: relative;
+        }
+
+        .k8s-connector::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 4px solid transparent;
+            border-left: 6px solid var(--blueprint-accent);
+        }
+
+        /* Autonomous Loop */
+        .loop-container {
+            position: relative;
+            padding: 20px;
+        }
+
+        .loop-circle {
+            width: 200px;
+            height: 200px;
+            border: 3px solid var(--copper-primary);
+            border-radius: 50%;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .loop-circle::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border: 2px dashed var(--copper-light);
+            border-radius: 50%;
+            animation: loop-rotate 20s linear infinite;
+        }
+
+        @keyframes loop-rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loop-stage {
+            position: absolute;
+            background: var(--slate-surface-variant);
+            border: 2px solid var(--copper-primary);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .loop-stage.top { top: -15px; left: 50%; transform: translateX(-50%); }
+        .loop-stage.right { right: -40px; top: 50%; transform: translateY(-50%); }
+        .loop-stage.bottom { bottom: -15px; left: 50%; transform: translateX(-50%); }
+        .loop-stage.left { left: -40px; top: 50%; transform: translateY(-50%); }
+
+        .loop-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .loop-center-icon {
+            font-size: 2rem;
+            margin-bottom: 4px;
+        }
+
+        .loop-center-label {
+            font-size: 0.7rem;
+            color: var(--slate-on-surface-variant);
+        }
+
+        /* Model Selector */
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+        }
+
+        .model-chip {
+            background: var(--slate-surface);
+            border: 1px solid var(--slate-outline-variant);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .model-chip:hover {
+            border-color: var(--copper-primary);
+            background: rgba(184, 115, 51, 0.1);
+        }
+
+        .model-chip.selected {
+            border-color: var(--copper-primary);
+            background: var(--copper-primary);
+            color: white;
+        }
+
+        .model-chip .model-type {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            background: var(--slate-surface-variant);
+            border-radius: 4px;
+            color: var(--slate-on-surface-variant);
+        }
+
+        .model-chip.selected .model-type {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        /* Claude Code Integration */
+        .claude-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .claude-card {
+            background: linear-gradient(135deg, rgba(212, 160, 84, 0.1), rgba(184, 115, 51, 0.05));
+            border: 1px solid var(--copper-primary);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .claude-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .claude-card-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--copper-primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .claude-card-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .claude-card-content {
+            font-size: 0.8rem;
+            color: var(--slate-on-surface-variant);
+        }
+
+        .claude-card-metric {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--copper-light);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        /* Flow Demo */
         .flow-demo svg {
             width: 100%;
             max-width: 260px;
         }
 
+        /* Schematic Demo */
         .schematic-demo {
             display: grid;
             gap: 12px;
@@ -157,11 +727,86 @@
             width: 100%;
         }
 
+        /* Progress Bars */
+        .progress-bar {
+            height: 8px;
+            background: var(--slate-surface);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--copper-primary), var(--copper-light));
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        /* Metric Display */
+        .metric-display {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--copper-light);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .metric-unit {
+            font-size: 0.8rem;
+            color: var(--slate-on-surface-variant);
+        }
+
         footer {
-            margin-top: 48px;
+            margin-top: 64px;
             text-align: center;
             font-size: 0.8rem;
             color: var(--slate-on-surface-variant);
+            padding: 24px 0;
+            border-top: 1px solid var(--slate-outline-variant);
+        }
+
+        footer a {
+            color: var(--copper-light);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Animations */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 8px rgba(184, 115, 51, 0.3); }
+            50% { box-shadow: 0 0 16px rgba(184, 115, 51, 0.6); }
+        }
+
+        .pulse-glow {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-shell {
+                padding: 16px 16px 48px;
+            }
+
+            .section-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .runner-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
     </style>
 </head>
@@ -170,9 +815,12 @@
         <div class="top-bar">
             <div class="brand">
                 <img src="assets/slate-logo-v2.svg" alt="SLATE logo">
-                <span>S.L.A.T.E. Watchmaker Components</span>
+                <span>S.L.A.T.E. Component Library</span>
             </div>
-            <a class="link-chip" href="index.html">Back to Home</a>
+            <div class="nav-links">
+                <a class="link-chip" href="index.html">Home</a>
+                <a class="link-chip" href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E">GitHub</a>
+            </div>
         </div>
 
         <div class="warning-banner" role="alert">
@@ -181,12 +829,35 @@
 
         <div class="hero">
             <h1>Watchmaker Component Showcase</h1>
-            <p>Reference implementations for gears, status jewels, flow lines, cards, and schematic layout primitives. Use these patterns to keep the dashboard consistent and precise.</p>
+            <p>Complete reference implementation for SLATE UI components. Includes core watchmaker primitives, vendor SDK integration, multi-runner status, GPU workbench widgets, K8s deployment visualization, autonomous loop, custom models selector, and Claude Code integration status.</p>
+        </div>
+
+        <!-- Table of Contents -->
+        <nav class="toc" aria-label="Component sections">
+            <h2>COMPONENT SECTIONS</h2>
+            <div class="toc-grid">
+                <a href="#core-primitives"><span class="jewel"></span> Core Primitives</a>
+                <a href="#vendor-sdk"><span class="jewel"></span> Vendor SDK Integration</a>
+                <a href="#multi-runner"><span class="jewel"></span> Multi-Runner Status</a>
+                <a href="#gpu-workbench"><span class="jewel"></span> GPU Workbench</a>
+                <a href="#k8s-deployment"><span class="jewel"></span> K8s Deployment</a>
+                <a href="#autonomous-loop"><span class="jewel"></span> Autonomous Loop</a>
+                <a href="#custom-models"><span class="jewel"></span> Custom Models</a>
+                <a href="#claude-code"><span class="jewel"></span> Claude Code Integration</a>
+            </div>
+        </nav>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- SECTION: CORE PRIMITIVES -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section-divider" id="core-primitives">
+            <h2>Core Primitives</h2>
+            <span class="section-badge">FOUNDATION</span>
         </div>
 
         <div class="section-grid">
             <section class="showcase-section">
-                <h2>Gear System</h2>
+                <h3><span class="icon">&#x2699;</span> Gear System</h3>
                 <p>Animated SVG gears with slow, medium, and reverse rotation speeds.</p>
                 <div class="component-row">
                     <svg class="gear gear-spin-slow" viewBox="0 0 100 100" width="70" height="70" xmlns="http://www.w3.org/2000/svg">
@@ -204,8 +875,8 @@
                     </svg>
                     <svg class="gear gear-spin-reverse" viewBox="0 0 100 100" width="54" height="54" xmlns="http://www.w3.org/2000/svg">
                         <g style="transform-origin:50% 50%">
-                            <circle cx="50" cy="50" r="20" fill="none" stroke="#B85A3C" stroke-width="2.5"/>
-                            <path d="M50,14 L53,24 L47,24Z M86,50 L76,53 L76,47Z M50,86 L47,76 L53,76Z M14,50 L24,47 L24,53Z M74,26 L68,32Z M74,74 L68,68Z M26,74 L32,68Z M26,26 L32,32Z" fill="#B85A3C"/>
+                            <circle cx="50" cy="50" r="20" fill="none" stroke="#B87333" stroke-width="2.5"/>
+                            <path d="M50,14 L53,24 L47,24Z M86,50 L76,53 L76,47Z M50,86 L47,76 L53,76Z M14,50 L24,47 L24,53Z M74,26 L68,32Z M74,74 L68,68Z M26,74 L32,68Z M26,26 L32,32Z" fill="#B87333"/>
                         </g>
                     </svg>
                 </div>
@@ -213,19 +884,31 @@
             </section>
 
             <section class="showcase-section">
-                <h2>Status Jewels</h2>
+                <h3><span class="icon">&#x1F48E;</span> Status Jewels</h3>
                 <p>Compact health indicators with glow and pulse states.</p>
                 <div class="component-row">
-                    <span class="status-jewel active"></span>
-                    <span class="status-jewel pending"></span>
-                    <span class="status-jewel error"></span>
-                    <span class="status-jewel inactive"></span>
+                    <div style="text-align: center">
+                        <span class="status-jewel active"></span>
+                        <div class="code-label">Active</div>
+                    </div>
+                    <div style="text-align: center">
+                        <span class="status-jewel pending"></span>
+                        <div class="code-label">Pending</div>
+                    </div>
+                    <div style="text-align: center">
+                        <span class="status-jewel error"></span>
+                        <div class="code-label">Error</div>
+                    </div>
+                    <div style="text-align: center">
+                        <span class="status-jewel inactive"></span>
+                        <div class="code-label">Inactive</div>
+                    </div>
                 </div>
                 <div class="code-label">Classes: .status-jewel .active .pending .error .inactive</div>
             </section>
 
             <section class="showcase-section flow-demo">
-                <h2>Flow Lines</h2>
+                <h3><span class="icon">&#x2192;</span> Flow Lines</h3>
                 <p>Animated data flow connectors for schematic signals.</p>
                 <svg viewBox="0 0 260 40" xmlns="http://www.w3.org/2000/svg">
                     <line class="flow-line active" x1="10" y1="20" x2="250" y2="20" />
@@ -234,7 +917,7 @@
             </section>
 
             <section class="showcase-section">
-                <h2>Watchmaker Card</h2>
+                <h3><span class="icon">&#x1F4C7;</span> Watchmaker Card</h3>
                 <p>Primary information container with depth polish and header gear icon.</p>
                 <div class="watchmaker-card active">
                     <div class="watchmaker-card-header">
@@ -251,7 +934,7 @@
             </section>
 
             <section class="showcase-section schematic-demo">
-                <h2>Schematic Layout</h2>
+                <h3><span class="icon">&#x1F4D0;</span> Schematic Layout</h3>
                 <p>Blueprint container with nodes and connectors.</p>
                 <div class="schematic-container">
                     <div class="schematic-node">
@@ -268,7 +951,7 @@
             </section>
 
             <section class="showcase-section">
-                <h2>Mechanism Indicators</h2>
+                <h3><span class="icon">&#x1F550;</span> Mechanism Indicators</h3>
                 <p>Motion primitives for activity visualization.</p>
                 <div class="component-row">
                     <div class="balance-wheel"></div>
@@ -289,8 +972,817 @@
             </section>
         </div>
 
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- SECTION: VENDOR SDK INTEGRATION -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section-divider" id="vendor-sdk">
+            <h2>Vendor SDK Integration</h2>
+            <span class="section-badge">5 SDKS</span>
+        </div>
+
+        <div class="section-grid">
+            <section class="showcase-section showcase-full">
+                <h3><span class="icon">&#x1F517;</span> SDK Status Cards</h3>
+                <p>Visual representation of integrated vendor SDKs with connection status and version info.</p>
+                <div class="demo-box">
+                    <div class="demo-row">
+                        <div class="sdk-card">
+                            <div class="sdk-icon openai">&#x1F4AC;</div>
+                            <div class="sdk-info">
+                                <div class="sdk-name">OpenAI Agents</div>
+                                <div class="sdk-status"><span class="status-jewel active" style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span> Connected v1.2.0</div>
+                            </div>
+                        </div>
+                        <div class="sdk-card">
+                            <div class="sdk-icon autogen">&#x1F465;</div>
+                            <div class="sdk-info">
+                                <div class="sdk-name">AutoGen</div>
+                                <div class="sdk-status"><span class="status-jewel active" style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span> Connected v0.4.0</div>
+                            </div>
+                        </div>
+                        <div class="sdk-card">
+                            <div class="sdk-icon semantic">&#x2699;</div>
+                            <div class="sdk-info">
+                                <div class="sdk-name">Semantic Kernel</div>
+                                <div class="sdk-status"><span class="status-jewel active" style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span> Connected v1.29.0</div>
+                            </div>
+                        </div>
+                        <div class="sdk-card">
+                            <div class="sdk-icon copilot">&#x1F4BB;</div>
+                            <div class="sdk-info">
+                                <div class="sdk-name">GitHub Copilot</div>
+                                <div class="sdk-status"><span class="status-jewel pending" style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span> Syncing</div>
+                            </div>
+                        </div>
+                        <div class="sdk-card">
+                            <div class="sdk-icon claude">&#x1F4A0;</div>
+                            <div class="sdk-info">
+                                <div class="sdk-name">Claude Agent SDK</div>
+                                <div class="sdk-status"><span class="status-jewel active" style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span> Active</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="code-label">Components: .sdk-card .sdk-icon .sdk-info .sdk-name .sdk-status</div>
+            </section>
+
+            <section class="showcase-section">
+                <h3><span class="icon">&#x1F504;</span> SDK Router Widget</h3>
+                <p>Unified agent router showing task distribution across SDKs.</p>
+                <div class="demo-box">
+                    <div style="margin-bottom:16px">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:0.8rem">
+                            <span>OpenAI Agents</span>
+                            <span style="color:var(--copper-light)">34%</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:34%"></div></div>
+                    </div>
+                    <div style="margin-bottom:16px">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:0.8rem">
+                            <span>AutoGen</span>
+                            <span style="color:var(--copper-light)">28%</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:28%"></div></div>
+                    </div>
+                    <div style="margin-bottom:16px">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:0.8rem">
+                            <span>Semantic Kernel</span>
+                            <span style="color:var(--copper-light)">22%</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:22%"></div></div>
+                    </div>
+                    <div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:0.8rem">
+                            <span>Claude Agent</span>
+                            <span style="color:var(--copper-light)">16%</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:16%"></div></div>
+                    </div>
+                </div>
+                <div class="code-label">Component: SDK Router Distribution Widget</div>
+            </section>
+
+            <section class="showcase-section">
+                <h3><span class="icon">&#x1F4CA;</span> SDK Metrics</h3>
+                <p>Real-time performance metrics for SDK operations.</p>
+                <div class="demo-box">
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
+                        <div class="status-card">
+                            <div class="status-card-value">247</div>
+                            <div class="status-card-label">Tasks Today</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-card-value">98.2%</div>
+                            <div class="status-card-label">Success Rate</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-card-value">1.4s</div>
+                            <div class="status-card-label">Avg Response</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-card-value">5/5</div>
+                            <div class="status-card-label">SDKs Online</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="code-label">Component: .status-card with metrics</div>
+            </section>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- SECTION: MULTI-RUNNER STATUS -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section-divider" id="multi-runner">
+            <h2>Multi-Runner Status</h2>
+            <span class="section-badge">19 RUNNERS</span>
+        </div>
+
+        <div class="section-grid">
+            <section class="showcase-section showcase-full">
+                <h3><span class="icon">&#x1F3C3;</span> Runner Grid</h3>
+                <p>Visual status of all 19 parallel GitHub Actions runners with GPU-aware scheduling.</p>
+                <div class="demo-box">
+                    <div class="runner-grid">
+                        <div class="runner-card active">
+                            <div class="runner-id">R-01</div>
+                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                        </div>
+                        <div class="runner-card busy">
+                            <div class="runner-id">R-02</div>
+                            <div class="runner-status"><span class="status-jewel pending" style="width:6px;height:6px"></span> Running</div>
+                        </div>
+                        <div class="runner-card busy">
+                            <div class="runner-id">R-03</div>
+                            <div class="runner-status"><span class="status-jewel pending" style="width:6px;height:6px"></span> Running</div>
+                        </div>
+                        <div class="runner-card active">
+                            <div class="runner-id">R-04</div>
+                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                        </div>
+                        <div class="runner-card active">
+                            <div class="runner-id">R-05</div>
+                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                        </div>
+                        <div class="runner-card busy">
+                            <div class="runner-id">R-06</div>
+                            <div class="runner-status"><span class="status-jewel pending" style="width:6px;height:6px"></span> Running</div>
+                        </div>
+                        <div class="runner-card active">
+                            <div class="runner-id">R-07</div>
+                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                        </div>
+                        <div class="runner-card offline">
+                            <div class="runner-id">R-08</div>
+                            <div class="runner-status"><span class="status-jewel inactive" style="width:6px;height:6px"></span> Offline</div>
+                        </div>
+                        <div class="runner-card active">
+                            <div class="runner-id">R-09</div>
+                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                        </div>
+                        <div class="runner-card active">
+                            <div class="runner-id">R-10</div>
+                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                        </div>
+                        <div class="runner-card busy">
+                            <div class="runner-id">R-11</div>
+                            <div class="runner-status"><span class="status-jewel pending" style="width:6px;height:6px"></span> Running</div>
+                        </div>
+                        <div class="runner-card active">
+                            <div class="runner-id">R-12</div>
+                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                        </div>
+                        <div class="runner-card active">
+                            <div class="runner-id">R-13</div>
+                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                        </div>
+                        <div class="runner-card busy">
+                            <div class="runner-id">R-14</div>
+                            <div class="runner-status"><span class="status-jewel pending" style="width:6px;height:6px"></span> Running</div>
+                        </div>
+                        <div class="runner-card active">
+                            <div class="runner-id">R-15</div>
+                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                        </div>
+                        <div class="runner-card active">
+                            <div class="runner-id">R-16</div>
+                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                        </div>
+                        <div class="runner-card active">
+                            <div class="runner-id">R-17</div>
+                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                        </div>
+                        <div class="runner-card busy">
+                            <div class="runner-id">R-18</div>
+                            <div class="runner-status"><span class="status-jewel pending" style="width:6px;height:6px"></span> Running</div>
+                        </div>
+                        <div class="runner-card active">
+                            <div class="runner-id">R-19</div>
+                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="code-label">Components: .runner-grid .runner-card .runner-id .runner-status (states: .active .busy .offline)</div>
+            </section>
+
+            <section class="showcase-section">
+                <h3><span class="icon">&#x1F4C8;</span> Runner Summary</h3>
+                <p>Aggregated runner statistics and queue status.</p>
+                <div class="demo-box">
+                    <div style="display:flex;gap:24px;flex-wrap:wrap">
+                        <div style="text-align:center">
+                            <div class="metric-display">
+                                <span class="metric-value">12</span>
+                                <span class="metric-unit">/ 19</span>
+                            </div>
+                            <div class="code-label" style="border:none;padding:0;margin:0">Idle</div>
+                        </div>
+                        <div style="text-align:center">
+                            <div class="metric-display">
+                                <span class="metric-value">6</span>
+                            </div>
+                            <div class="code-label" style="border:none;padding:0;margin:0">Running</div>
+                        </div>
+                        <div style="text-align:center">
+                            <div class="metric-display">
+                                <span class="metric-value">1</span>
+                            </div>
+                            <div class="code-label" style="border:none;padding:0;margin:0">Offline</div>
+                        </div>
+                        <div style="text-align:center">
+                            <div class="metric-display">
+                                <span class="metric-value">23</span>
+                            </div>
+                            <div class="code-label" style="border:none;padding:0;margin:0">Queue</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="code-label">Component: Runner Summary Stats</div>
+            </section>
+
+            <section class="showcase-section">
+                <h3><span class="icon">&#x1F50D;</span> Runner Details Card</h3>
+                <p>Expanded view of individual runner with job history.</p>
+                <div class="status-card" style="margin-top:12px">
+                    <div class="status-card-header">
+                        <span class="status-card-title">Runner R-02</span>
+                        <span class="status-jewel pending"></span>
+                    </div>
+                    <div style="font-size:0.8rem;color:var(--slate-on-surface-variant);margin-bottom:8px">
+                        <div>Job: <span style="color:var(--copper-light)">ci.yml #847</span></div>
+                        <div>Duration: <span style="color:var(--copper-light)">4m 32s</span></div>
+                        <div>GPU: <span style="color:var(--copper-light)">GPU-0 (RTX 5070 Ti)</span></div>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:68%"></div></div>
+                    <div class="code-label" style="border:none;padding:0;margin-top:4px">68% complete</div>
+                </div>
+                <div class="code-label">Component: Runner Details Expanded Card</div>
+            </section>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- SECTION: GPU WORKBENCH -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section-divider" id="gpu-workbench">
+            <h2>GPU Workbench</h2>
+            <span class="section-badge">DUAL GPU</span>
+        </div>
+
+        <div class="section-grid">
+            <section class="showcase-section">
+                <h3><span class="icon">&#x1F4BB;</span> GPU Card - Primary</h3>
+                <p>Detailed GPU status with memory, utilization, and temperature metrics.</p>
+                <div class="gpu-card pulse-glow">
+                    <div class="gpu-header">
+                        <span class="gpu-name">RTX 5070 Ti #0</span>
+                        <span class="gpu-arch">BLACKWELL</span>
+                    </div>
+                    <div class="gpu-metrics">
+                        <div class="gpu-metric">
+                            <span class="gpu-metric-label">Memory</span>
+                            <span class="gpu-metric-value">8.2 / 16 GB</span>
+                        </div>
+                        <div class="gpu-bar"><div class="gpu-bar-fill medium" style="width:51%"></div></div>
+                        <div class="gpu-metric">
+                            <span class="gpu-metric-label">Utilization</span>
+                            <span class="gpu-metric-value">67%</span>
+                        </div>
+                        <div class="gpu-bar"><div class="gpu-bar-fill medium" style="width:67%"></div></div>
+                        <div class="gpu-metric">
+                            <span class="gpu-metric-label">Temperature</span>
+                            <span class="gpu-metric-value">62C</span>
+                        </div>
+                        <div class="gpu-bar"><div class="gpu-bar-fill low" style="width:42%"></div></div>
+                    </div>
+                </div>
+                <div class="code-label">Components: .gpu-card .gpu-header .gpu-metrics .gpu-bar</div>
+            </section>
+
+            <section class="showcase-section">
+                <h3><span class="icon">&#x1F4BB;</span> GPU Card - Secondary</h3>
+                <p>Second GPU in dual-GPU configuration for load balancing.</p>
+                <div class="gpu-card">
+                    <div class="gpu-header">
+                        <span class="gpu-name">RTX 5070 Ti #1</span>
+                        <span class="gpu-arch">BLACKWELL</span>
+                    </div>
+                    <div class="gpu-metrics">
+                        <div class="gpu-metric">
+                            <span class="gpu-metric-label">Memory</span>
+                            <span class="gpu-metric-value">4.1 / 16 GB</span>
+                        </div>
+                        <div class="gpu-bar"><div class="gpu-bar-fill low" style="width:26%"></div></div>
+                        <div class="gpu-metric">
+                            <span class="gpu-metric-label">Utilization</span>
+                            <span class="gpu-metric-value">23%</span>
+                        </div>
+                        <div class="gpu-bar"><div class="gpu-bar-fill low" style="width:23%"></div></div>
+                        <div class="gpu-metric">
+                            <span class="gpu-metric-label">Temperature</span>
+                            <span class="gpu-metric-value">48C</span>
+                        </div>
+                        <div class="gpu-bar"><div class="gpu-bar-fill low" style="width:32%"></div></div>
+                    </div>
+                </div>
+                <div class="code-label">State: Secondary GPU (lower load)</div>
+            </section>
+
+            <section class="showcase-section">
+                <h3><span class="icon">&#x2696;</span> Load Balancer Widget</h3>
+                <p>GPU task distribution and load balancing visualization.</p>
+                <div class="demo-box">
+                    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+                        <div style="flex:1;text-align:center">
+                            <div style="font-weight:600;margin-bottom:4px">GPU-0</div>
+                            <div class="metric-value">67%</div>
+                        </div>
+                        <svg width="60" height="40" viewBox="0 0 60 40">
+                            <path d="M5 20 L25 20 L35 10 L55 10" stroke="var(--status-pending)" stroke-width="2" fill="none" stroke-dasharray="4 2">
+                                <animate attributeName="stroke-dashoffset" from="12" to="0" dur="1s" repeatCount="indefinite"/>
+                            </path>
+                            <path d="M5 20 L25 20 L35 30 L55 30" stroke="var(--status-active)" stroke-width="2" fill="none" stroke-dasharray="4 2">
+                                <animate attributeName="stroke-dashoffset" from="12" to="0" dur="1s" repeatCount="indefinite"/>
+                            </path>
+                        </svg>
+                        <div style="flex:1;text-align:center">
+                            <div style="font-weight:600;margin-bottom:4px">GPU-1</div>
+                            <div class="metric-value">23%</div>
+                        </div>
+                    </div>
+                    <div style="text-align:center;font-size:0.8rem;color:var(--slate-on-surface-variant)">
+                        <span class="status-jewel active" style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span>
+                        Load Balancing Active
+                    </div>
+                </div>
+                <div class="code-label">Component: GPU Load Balancer Status</div>
+            </section>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- SECTION: K8S DEPLOYMENT -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section-divider" id="k8s-deployment">
+            <h2>K8s Deployment Status</h2>
+            <span class="section-badge">KUBERNETES</span>
+        </div>
+
+        <div class="section-grid">
+            <section class="showcase-section showcase-full">
+                <h3><span class="icon">&#x2638;</span> Service Topology</h3>
+                <p>Kubernetes service mesh visualization with pod status and connections.</p>
+                <div class="k8s-container">
+                    <div class="k8s-row">
+                        <div class="k8s-node">
+                            <span class="status-jewel active"></span>
+                            <span>Ingress</span>
+                        </div>
+                        <div class="k8s-connector"></div>
+                        <div class="k8s-node">
+                            <span class="status-jewel active"></span>
+                            <span>Dashboard</span>
+                        </div>
+                        <div class="k8s-connector"></div>
+                        <div class="k8s-node">
+                            <span class="status-jewel active"></span>
+                            <span>Agent Router</span>
+                        </div>
+                    </div>
+                    <div class="k8s-row" style="padding-left:80px">
+                        <div class="k8s-node">
+                            <span class="status-jewel active"></span>
+                            <span>Ollama</span>
+                        </div>
+                        <div class="k8s-connector"></div>
+                        <div class="k8s-node">
+                            <span class="status-jewel active"></span>
+                            <span>ChromaDB</span>
+                        </div>
+                        <div class="k8s-connector"></div>
+                        <div class="k8s-node">
+                            <span class="status-jewel pending"></span>
+                            <span>Autonomous</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="code-label">Components: .k8s-container .k8s-row .k8s-node .k8s-connector</div>
+            </section>
+
+            <section class="showcase-section">
+                <h3><span class="icon">&#x1F4E6;</span> Pod Status Cards</h3>
+                <p>Individual pod health and resource consumption.</p>
+                <div class="demo-box">
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+                        <div class="status-card">
+                            <div class="status-card-header">
+                                <span class="status-card-title">dashboard-6f8b9</span>
+                                <span class="status-jewel active"></span>
+                            </div>
+                            <div style="font-size:0.75rem;color:var(--slate-on-surface-variant)">
+                                CPU: 120m | Mem: 256Mi
+                            </div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-card-header">
+                                <span class="status-card-title">ollama-gpu-4a2c</span>
+                                <span class="status-jewel active"></span>
+                            </div>
+                            <div style="font-size:0.75rem;color:var(--slate-on-surface-variant)">
+                                CPU: 2000m | Mem: 8Gi
+                            </div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-card-header">
+                                <span class="status-card-title">chromadb-7c3d</span>
+                                <span class="status-jewel active"></span>
+                            </div>
+                            <div style="font-size:0.75rem;color:var(--slate-on-surface-variant)">
+                                CPU: 500m | Mem: 1Gi
+                            </div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-card-header">
+                                <span class="status-card-title">autonomous-9e1f</span>
+                                <span class="status-jewel pending"></span>
+                            </div>
+                            <div style="font-size:0.75rem;color:var(--slate-on-surface-variant)">
+                                CPU: 800m | Mem: 2Gi
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="code-label">Component: K8s Pod Status Cards</div>
+            </section>
+
+            <section class="showcase-section">
+                <h3><span class="icon">&#x1F4CA;</span> Cluster Metrics</h3>
+                <p>Aggregated Kubernetes cluster resource usage.</p>
+                <div class="demo-box">
+                    <div style="margin-bottom:12px">
+                        <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
+                            <span>CPU Usage</span>
+                            <span style="color:var(--copper-light)">3.4 / 8 cores</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:42%"></div></div>
+                    </div>
+                    <div style="margin-bottom:12px">
+                        <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
+                            <span>Memory Usage</span>
+                            <span style="color:var(--copper-light)">11.5 / 32 GB</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:36%"></div></div>
+                    </div>
+                    <div>
+                        <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
+                            <span>GPU Allocation</span>
+                            <span style="color:var(--copper-light)">2 / 2 devices</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+                    </div>
+                </div>
+                <div class="code-label">Component: K8s Cluster Metrics</div>
+            </section>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- SECTION: AUTONOMOUS LOOP -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section-divider" id="autonomous-loop">
+            <h2>Autonomous Loop Visualization</h2>
+            <span class="section-badge">SELF-HEALING</span>
+        </div>
+
+        <div class="section-grid">
+            <section class="showcase-section">
+                <h3><span class="icon">&#x1F504;</span> Task Loop Diagram</h3>
+                <p>Continuous autonomous task execution cycle with self-healing capabilities.</p>
+                <div class="loop-container">
+                    <div class="loop-circle">
+                        <div class="loop-stage top">FETCH</div>
+                        <div class="loop-stage right">EXECUTE</div>
+                        <div class="loop-stage bottom">VERIFY</div>
+                        <div class="loop-stage left">HEAL</div>
+                        <div class="loop-center">
+                            <div class="loop-center-icon">&#x1F916;</div>
+                            <div class="loop-center-label">AUTONOMOUS</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="code-label">Component: Autonomous Task Loop Visualization</div>
+            </section>
+
+            <section class="showcase-section">
+                <h3><span class="icon">&#x1F6E0;</span> Loop Status</h3>
+                <p>Current state of the autonomous execution loop.</p>
+                <div class="demo-box">
+                    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+                        <div class="balance-wheel"></div>
+                        <div>
+                            <div style="font-weight:600;margin-bottom:4px">Loop Active</div>
+                            <div style="font-size:0.8rem;color:var(--slate-on-surface-variant)">Cycle #1,247 | 4.2s avg</div>
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+                        <div class="status-card">
+                            <div class="status-card-value">847</div>
+                            <div class="status-card-label">Tasks Completed</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-card-value">23</div>
+                            <div class="status-card-label">Auto-Healed</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="code-label">Component: Autonomous Loop Status Widget</div>
+            </section>
+
+            <section class="showcase-section">
+                <h3><span class="icon">&#x26A0;</span> Error Recovery Log</h3>
+                <p>Recent self-healing actions and error recovery events.</p>
+                <div class="demo-box" style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem">
+                    <div style="padding:8px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                        <span style="color:var(--status-pending)">[14:32:15]</span> Stale task T-892 reset to pending
+                    </div>
+                    <div style="padding:8px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                        <span style="color:var(--status-active)">[14:31:02]</span> GPU-0 memory cleared after OOM
+                    </div>
+                    <div style="padding:8px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                        <span style="color:var(--status-active)">[14:28:47]</span> Duplicate task T-891 archived
+                    </div>
+                    <div style="padding:8px 0">
+                        <span style="color:var(--status-pending)">[14:25:33]</span> Runner R-08 marked offline
+                    </div>
+                </div>
+                <div class="code-label">Component: Error Recovery Log Display</div>
+            </section>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- SECTION: CUSTOM MODELS -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section-divider" id="custom-models">
+            <h2>Custom Models Selector</h2>
+            <span class="section-badge">LOCAL AI</span>
+        </div>
+
+        <div class="section-grid">
+            <section class="showcase-section showcase-full">
+                <h3><span class="icon">&#x1F9E0;</span> Model Selection Grid</h3>
+                <p>Available local AI models with provider and capability indicators.</p>
+                <div class="demo-box">
+                    <div class="model-grid">
+                        <div class="model-chip selected">
+                            <span class="status-jewel active"></span>
+                            <span>mistral-nemo</span>
+                            <span class="model-type">Ollama</span>
+                        </div>
+                        <div class="model-chip">
+                            <span class="status-jewel active"></span>
+                            <span>llama3.2</span>
+                            <span class="model-type">Ollama</span>
+                        </div>
+                        <div class="model-chip">
+                            <span class="status-jewel active"></span>
+                            <span>phi-3.5</span>
+                            <span class="model-type">Foundry</span>
+                        </div>
+                        <div class="model-chip">
+                            <span class="status-jewel active"></span>
+                            <span>codellama</span>
+                            <span class="model-type">Ollama</span>
+                        </div>
+                        <div class="model-chip">
+                            <span class="status-jewel pending"></span>
+                            <span>slate-custom</span>
+                            <span class="model-type">Custom</span>
+                        </div>
+                        <div class="model-chip">
+                            <span class="status-jewel inactive"></span>
+                            <span>mistral-7b</span>
+                            <span class="model-type">Foundry</span>
+                        </div>
+                        <div class="model-chip">
+                            <span class="status-jewel active"></span>
+                            <span>deepseek-r1</span>
+                            <span class="model-type">Ollama</span>
+                        </div>
+                        <div class="model-chip">
+                            <span class="status-jewel active"></span>
+                            <span>qwen2.5</span>
+                            <span class="model-type">Ollama</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="code-label">Components: .model-grid .model-chip .model-type (states: .selected)</div>
+            </section>
+
+            <section class="showcase-section">
+                <h3><span class="icon">&#x1F4C1;</span> Model Details</h3>
+                <p>Selected model information and performance metrics.</p>
+                <div class="status-card" style="margin-top:12px">
+                    <div class="status-card-header">
+                        <span class="status-card-title">mistral-nemo</span>
+                        <span class="status-jewel active"></span>
+                    </div>
+                    <div style="font-size:0.8rem;color:var(--slate-on-surface-variant);display:grid;gap:4px">
+                        <div>Provider: <span style="color:var(--copper-light)">Ollama</span></div>
+                        <div>Size: <span style="color:var(--copper-light)">12B params</span></div>
+                        <div>Context: <span style="color:var(--copper-light)">128K tokens</span></div>
+                        <div>Speed: <span style="color:var(--copper-light)">42 tok/s</span></div>
+                    </div>
+                </div>
+                <div class="code-label">Component: Model Details Card</div>
+            </section>
+
+            <section class="showcase-section">
+                <h3><span class="icon">&#x1F3AF;</span> Task Routing</h3>
+                <p>Optimal model selection for different task types.</p>
+                <div class="demo-box" style="font-size:0.8rem">
+                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                        <span>Code Generation</span>
+                        <span style="color:var(--copper-light)">codellama</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                        <span>Documentation</span>
+                        <span style="color:var(--copper-light)">mistral-nemo</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                        <span>Analysis</span>
+                        <span style="color:var(--copper-light)">llama3.2</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:8px 0">
+                        <span>Planning</span>
+                        <span style="color:var(--copper-light)">deepseek-r1</span>
+                    </div>
+                </div>
+                <div class="code-label">Component: Task-Model Routing Table</div>
+            </section>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- SECTION: CLAUDE CODE INTEGRATION -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section-divider" id="claude-code">
+            <h2>Claude Code Integration Status</h2>
+            <span class="section-badge">MCP</span>
+        </div>
+
+        <div class="section-grid">
+            <section class="showcase-section showcase-full">
+                <h3><span class="icon">&#x1F4A0;</span> Integration Dashboard</h3>
+                <p>Claude Code plugin status, MCP tools, and session metrics.</p>
+                <div class="claude-status">
+                    <div class="claude-card">
+                        <div class="claude-card-header">
+                            <div class="claude-card-icon">&#x1F50C;</div>
+                            <div class="claude-card-title">Plugin Status</div>
+                        </div>
+                        <div class="claude-card-content">
+                            <div class="claude-card-metric">
+                                <span class="status-jewel active" style="vertical-align:middle;margin-right:8px"></span>
+                                Active
+                            </div>
+                            <div style="margin-top:8px">Scope: Project</div>
+                        </div>
+                    </div>
+                    <div class="claude-card">
+                        <div class="claude-card-header">
+                            <div class="claude-card-icon">&#x1F6E0;</div>
+                            <div class="claude-card-title">MCP Tools</div>
+                        </div>
+                        <div class="claude-card-content">
+                            <div class="claude-card-metric">26</div>
+                            <div style="margin-top:8px">Tools Available</div>
+                        </div>
+                    </div>
+                    <div class="claude-card">
+                        <div class="claude-card-header">
+                            <div class="claude-card-icon">&#x1F4AC;</div>
+                            <div class="claude-card-title">Session</div>
+                        </div>
+                        <div class="claude-card-content">
+                            <div class="claude-card-metric">2h 14m</div>
+                            <div style="margin-top:8px">Active Duration</div>
+                        </div>
+                    </div>
+                    <div class="claude-card">
+                        <div class="claude-card-header">
+                            <div class="claude-card-icon">&#x1F4DD;</div>
+                            <div class="claude-card-title">Tool Calls</div>
+                        </div>
+                        <div class="claude-card-content">
+                            <div class="claude-card-metric">147</div>
+                            <div style="margin-top:8px">This Session</div>
+                        </div>
+                    </div>
+                    <div class="claude-card">
+                        <div class="claude-card-header">
+                            <div class="claude-card-icon">&#x1F6E1;</div>
+                            <div class="claude-card-title">ActionGuard</div>
+                        </div>
+                        <div class="claude-card-content">
+                            <div class="claude-card-metric">
+                                <span class="status-jewel active" style="vertical-align:middle;margin-right:8px"></span>
+                                Enabled
+                            </div>
+                            <div style="margin-top:8px">3 blocked</div>
+                        </div>
+                    </div>
+                    <div class="claude-card">
+                        <div class="claude-card-header">
+                            <div class="claude-card-icon">&#x2699;</div>
+                            <div class="claude-card-title">Hooks</div>
+                        </div>
+                        <div class="claude-card-content">
+                            <div class="claude-card-metric">4</div>
+                            <div style="margin-top:8px">PreToolUse Active</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="code-label">Components: .claude-status .claude-card .claude-card-header .claude-card-icon .claude-card-title .claude-card-metric</div>
+            </section>
+
+            <section class="showcase-section">
+                <h3><span class="icon">&#x1F4CB;</span> Available Commands</h3>
+                <p>SLATE plugin slash commands and descriptions.</p>
+                <div class="demo-box" style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem">
+                    <div style="padding:6px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                        <span style="color:var(--copper-light)">/slate:status</span>
+                        <span style="color:var(--slate-on-surface-variant)"> - System status</span>
+                    </div>
+                    <div style="padding:6px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                        <span style="color:var(--copper-light)">/slate:workflow</span>
+                        <span style="color:var(--slate-on-surface-variant)"> - Task queue</span>
+                    </div>
+                    <div style="padding:6px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                        <span style="color:var(--copper-light)">/slate:runner</span>
+                        <span style="color:var(--slate-on-surface-variant)"> - Runner control</span>
+                    </div>
+                    <div style="padding:6px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                        <span style="color:var(--copper-light)">/slate:gpu</span>
+                        <span style="color:var(--slate-on-surface-variant)"> - GPU management</span>
+                    </div>
+                    <div style="padding:6px 0">
+                        <span style="color:var(--copper-light)">/slate:help</span>
+                        <span style="color:var(--slate-on-surface-variant)"> - All commands</span>
+                    </div>
+                </div>
+                <div class="code-label">Component: Command List Display</div>
+            </section>
+
+            <section class="showcase-section">
+                <h3><span class="icon">&#x1F50D;</span> Hook Activity</h3>
+                <p>Recent Claude Code hook executions and validations.</p>
+                <div class="demo-box" style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem">
+                    <div style="padding:6px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                        <span class="status-jewel active" style="width:6px;height:6px;margin-right:6px"></span>
+                        <span style="color:var(--slate-on-surface-variant)">[14:45:02]</span> PreToolUse:Bash <span style="color:var(--status-active)">ALLOW</span>
+                    </div>
+                    <div style="padding:6px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                        <span class="status-jewel active" style="width:6px;height:6px;margin-right:6px"></span>
+                        <span style="color:var(--slate-on-surface-variant)">[14:44:58]</span> PreToolUse:Edit <span style="color:var(--status-active)">ALLOW</span>
+                    </div>
+                    <div style="padding:6px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                        <span class="status-jewel error" style="width:6px;height:6px;margin-right:6px"></span>
+                        <span style="color:var(--slate-on-surface-variant)">[14:42:31]</span> PreToolUse:Bash <span style="color:var(--status-error)">DENY</span>
+                    </div>
+                    <div style="padding:6px 0">
+                        <span class="status-jewel active" style="width:6px;height:6px;margin-right:6px"></span>
+                        <span style="color:var(--slate-on-surface-variant)">[14:41:15]</span> PreToolUse:Read <span style="color:var(--status-active)">ALLOW</span>
+                    </div>
+                </div>
+                <div class="code-label">Component: Hook Activity Log</div>
+            </section>
+        </div>
+
         <footer>
-            Watchmaker Component Showcase - SLATE Experimental UI Kit
+            <p>
+                SLATE Watchmaker Component Showcase v4.0<br>
+                <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E">GitHub</a> |
+                <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/wiki">Documentation</a> |
+                <a href="index.html">Home</a>
+            </p>
+            <p style="margin-top:12px;color:var(--status-error)">
+                EXPERIMENTAL AI HOBBYIST PROJECT - Not for critical systems
+            </p>
         </footer>
     </div>
 </body>

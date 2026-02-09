@@ -46,17 +46,26 @@ spec:
             - containerPort: 8080
               name: dashboard
               protocol: TCP
+          # Modified: 2026-02-09T01:39:00Z | Author: Antigravity (Gemini) | Change: Add ChromaDB, Docker-awareness, agent name
           env:
             - name: SLATE_WORKSPACE
               value: /workspace
             - name: OLLAMA_HOST
               value: ollama-svc:11434
+            - name: CHROMADB_HOST
+              value: chromadb-svc
+            - name: CHROMADB_PORT
+              value: "8000"
             - name: PYTHONPATH
               value: /slate:/workspace
             - name: SLATE_MODE
               value: prod
             - name: SLATE_K8S
               value: "true"
+            - name: SLATE_DOCKER
+              value: "1"
+            - name: SLATE_AGENT_NAME
+              value: Antigravity
           # Container-level security context
           securityContext:
             allowPrivilegeEscalation: false

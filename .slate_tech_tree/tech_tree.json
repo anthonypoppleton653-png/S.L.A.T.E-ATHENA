@@ -1,6 +1,6 @@
 {
-  "version": "2.2.0",
-  "last_updated": "2026-02-09T03:40:00Z",
+  "version": "2.5.0",
+  "last_updated": "2026-02-08T12:00:00Z",
   "metadata": {
     "project": "S.L.A.T.E.",
     "description": "Synchronized Living Architecture for Transformation and Evolution",
@@ -202,6 +202,78 @@
       "phase": 2,
       "description": "Ollama-based custom models: slate-coder (12B), slate-fast (3B), slate-planner (7B)",
       "paths": ["models/Modelfile.slate-coder", "models/Modelfile.slate-fast", "models/Modelfile.slate-planner", "slate/slate_model_trainer.py"]
+    },
+    {
+      "id": "fork-sync",
+      "name": "Vendor Fork Sync",
+      "status": "complete",
+      "phase": 2,
+      "description": "Fork management for 16 vendor dependencies: OpenAI agents, Microsoft SK/AutoGen, NVIDIA TensorRT/NeMo, HuggingFace transformers",
+      "paths": ["slate/slate_fork_sync.py", ".gitmodules", "vendor/"]
+    },
+    {
+      "id": "vendor-integration",
+      "name": "Vendor SDK Integration",
+      "status": "complete",
+      "phase": 2,
+      "description": "Unified SDK integration for 5 vendors: openai-agents, autogen, semantic-kernel, copilot-sdk, spec-kit with import helpers and type bridges",
+      "paths": ["slate/vendor_integration.py", "slate/vendor_agents_sdk.py", "slate/vendor_autogen_sdk.py", "slate/claude_agent_sdk_integration.py"]
+    },
+    {
+      "id": "spec-015-vendor",
+      "name": "Spec 015: Vendor SDK Integration",
+      "status": "complete",
+      "phase": 2,
+      "description": "Specification for unified vendor SDK integration layer",
+      "paths": ["specs/015-vendor-sdk-integration/"]
+    },
+    {
+      "id": "spec-016-multirunner",
+      "name": "Spec 016: Multi-Runner System",
+      "status": "complete",
+      "phase": 2,
+      "description": "Specification for parallel runner infrastructure across dual GPUs",
+      "paths": ["specs/016-multi-runner-system/"]
+    },
+    {
+      "id": "spec-017-claude-sdk",
+      "name": "Spec 017: Claude SDK Integration",
+      "status": "complete",
+      "phase": 2,
+      "description": "Specification for Claude Code plugin and Agent SDK integration",
+      "paths": ["specs/017-claude-sdk-integration/"]
+    },
+    {
+      "id": "spec-018-k8s",
+      "name": "Spec 018: Kubernetes Infrastructure",
+      "status": "complete",
+      "phase": 2,
+      "description": "Specification for Kubernetes deployment and service orchestration",
+      "paths": ["specs/018-kubernetes-infrastructure/"]
+    },
+    {
+      "id": "spec-019-gpu-manager",
+      "name": "Spec 019: Dual-GPU Manager",
+      "status": "complete",
+      "phase": 2,
+      "description": "Specification for load-balanced dual-GPU management",
+      "paths": ["specs/019-dual-gpu-manager/"]
+    },
+    {
+      "id": "spec-020-custom-models",
+      "name": "Spec 020: Custom SLATE Models",
+      "status": "complete",
+      "phase": 2,
+      "description": "Specification for custom Ollama models training and deployment",
+      "paths": ["specs/020-custom-slate-models/"]
+    },
+    {
+      "id": "spec-021-autonomous",
+      "name": "Spec 021: Autonomous Task Loop",
+      "status": "complete",
+      "phase": 2,
+      "description": "Specification for unified autonomous loop with self-healing capabilities",
+      "paths": ["specs/021-autonomous-task-loop/"]
     }
   ],
   "edges": [
@@ -234,6 +306,17 @@
     {"from": "docker-infra", "to": "k8s-infra"},
     {"from": "github-runner", "to": "gpu-manager"},
     {"from": "gpu-manager", "to": "custom-models"},
-    {"from": "custom-models", "to": "autonomous-loop"}
+    {"from": "custom-models", "to": "autonomous-loop"},
+    {"from": "core-sdk", "to": "fork-sync"},
+    {"from": "fork-sync", "to": "autonomous-loop"},
+    {"from": "fork-sync", "to": "vendor-integration"},
+    {"from": "vendor-integration", "to": "autonomous-loop"},
+    {"from": "spec-system", "to": "spec-015-vendor"},
+    {"from": "spec-system", "to": "spec-016-multirunner"},
+    {"from": "spec-system", "to": "spec-017-claude-sdk"},
+    {"from": "spec-system", "to": "spec-018-k8s"},
+    {"from": "spec-system", "to": "spec-019-gpu-manager"},
+    {"from": "spec-system", "to": "spec-020-custom-models"},
+    {"from": "spec-system", "to": "spec-021-autonomous"}
   ]
 }

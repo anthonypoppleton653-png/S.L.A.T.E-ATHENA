@@ -1,0 +1,24 @@
+{
+    "name": "slate-antigravity",
+    "version": "1.0.0",
+    "description": "Google AI Ultra (Antigravity) integration for SLATE. Provides advanced architectural capabilities and orchestration.",
+    "author": "Antigravity",
+    "main": "index.py",
+    "dependencies": {
+        "slate": ">=2.4.0"
+    },
+    "permissions": [
+        "slate.orchestrator.*",
+        "slate.workflow.*",
+        "slate.code.*"
+    ],
+    "agent": {
+        "name": "ANTIGRAVITY",
+        "type": "architect",
+        "capabilities": [
+            "refactor",
+            "design",
+            "security"
+        ]
+    }
+}
