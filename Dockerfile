@@ -1,10 +1,10 @@
 # S.L.A.T.E. Docker Image — RELEASE / STABLE (GPU Variant)
-# Modified: 2026-02-09T01:32:00Z | Author: Antigravity | Change: Multi-stage build, layer optimization, security hardening
+# Modified: 2026-02-09T16:01:00-05:00 | Author: Gemini (Antigravity) | Change: v3.0.0-stable, add Spec 025 modules
 # AI Note: When modifying, add a comment with the current date, time, and a 'Gemini' marker.
 # Base: NVIDIA CUDA 12.8 Runtime on Ubuntu 22.04 (matches local Blackwell GPU stack)
 #
-# Build:  docker build -t slate:local -t ghcr.io/synchronizedlivingarchitecture/slate:latest-gpu .
-# Push:   docker push ghcr.io/synchronizedlivingarchitecture/slate:latest-gpu
+# Build:  docker build -t slate:local -t ghcr.io/synchronizedlivingarchitecture/slate:stable .
+# Push:   docker push ghcr.io/synchronizedlivingarchitecture/slate:stable
 # K8s:    kubectl apply -k k8s/overlays/local/
 #
 # Runtimes included:
@@ -18,6 +18,7 @@
 #   - ChromaDB client (vector store for RAG)
 #   - Semantic Kernel (AI orchestration)
 #   - Security guards (ActionGuard, PII scanner, SDK source guard)
+#   - Spec 025: Permission Gate, Token Counter, Energy Scheduler, Benchmark Suite
 #   - GitHub Actions runner integration
 #   - Spec Kit (spec processing, wiki generation)
 
@@ -58,8 +59,8 @@ FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
 LABEL org.opencontainers.image.source="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E"
 LABEL org.opencontainers.image.description="SLATE - Synchronized Living Architecture for Transformation and Evolution (Release GPU)"
 LABEL org.opencontainers.image.licenses="EOSL-1.0"
-LABEL org.opencontainers.image.version="2.4.0"
-LABEL slate.image.type="release"
+LABEL org.opencontainers.image.version="3.0.0"
+LABEL slate.image.type="stable"
 LABEL slate.agent.primary="Antigravity"
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -98,6 +99,8 @@ COPY pyproject.toml .
 COPY current_tasks.json .
 COPY AGENTS.md .
 COPY .github/copilot-instructions.md ./.github/copilot-instructions.md
+COPY design-tokens.json .
+COPY templates/ ./templates/
 
 # Copy K8s & Helm configs (for self-management inside cluster)
 COPY k8s/ ./k8s/
@@ -108,7 +111,8 @@ ENV PYTHONPATH="/slate"
 ENV SLATE_MODE=prod
 ENV SLATE_DOCKER=1
 ENV SLATE_K8S=true
-ENV SLATE_VERSION=2.4.0
+ENV SLATE_VERSION=3.0.0
+ENV SLATE_RELEASE=stable
 ENV SLATE_AGENT_NAME=Antigravity
 
 # Create non-root user for security

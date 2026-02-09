@@ -1,9 +1,9 @@
 # S.L.A.T.E. Agent Instructions
-# Modified: 2026-02-07T22:00:00Z | Author: COPILOT | Change: Add document evolution rules, participant enforcement, spec-kit mandate
+# Modified: 2026-02-09T16:01:00-05:00 | Author: Gemini (Antigravity) | Change: v3.0.0-stable, add Spec 025 modules, Docker stable image
 
 ## Overview
 SLATE (Synchronized Living Architecture for Transformation and Evolution) is a local-first
-AI agent orchestration framework. Version 2.4.0. All operations LOCAL ONLY (127.0.0.1).
+AI agent orchestration framework. Version 3.0.0-stable. All operations LOCAL ONLY (127.0.0.1).
 
 ## MANDATORY PROTOCOL  All Agents Must Follow
 
@@ -197,6 +197,11 @@ slate/              # Core SDK modules (30+ Python files)
   install_tracker.py        # Installation tracking
   # Modified: 2026-02-09T04:30:00Z | Author: COPILOT | Change: Add K8s deploy to project structure
   slate_k8s_deploy.py       # Kubernetes deployment manager
+  benchmark_suite.py        # Spec 025: 9 hardware benchmarks + profile card + thermal policy
+  permission_gate.py        # Spec 025: Role-based permission system (0-5 tiers)
+  token_counter.py          # Spec 025: LLM token metering with cost tracking
+  energy_scheduler.py       # Spec 025: Energy-aware task scheduling
+  token_propagator.py       # Spec 025: Design token distribution
 
 agents/             # API servers & agent modules
   runner_api.py             # RunnerAPI class for CI integration

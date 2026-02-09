@@ -1335,6 +1335,8 @@
                 <li><a href="#sdk-integrations">SDKs</a></li>
                 <!-- Modified: 2026-02-09T14:01:00-05:00 | Author: Gemini (Antigravity) | Change: Add AI Agents nav link -->
                 <li><a href="#ai-agents">Agents</a></li>
+                <!-- Modified: 2026-02-09T16:01:00-05:00 | Author: Gemini (Antigravity) | Change: Add Docker nav link -->
+                <li><a href="#docker-start">Docker</a></li>
                 <!-- Modified: 2026-02-09T06:45:00Z | Author: COPILOT | Change: Add Components showcase link -->
                 <li><a href="components.html">Components</a></li>
                 <li><a href="#phase3">Phase 3</a></li>
@@ -1911,6 +1913,141 @@
                         Every AI action passes through the Permission Gate • Append-only audit trail • Budget
                         enforcement • Path-level ACLs
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Modified: 2026-02-09T16:01:00-05:00 | Author: Gemini (Antigravity) | Change: Add Docker Quick-Start section -->
+        <!-- Docker Quick-Start Section -->
+        <section id="docker-start"
+            style="background: linear-gradient(180deg, var(--sl-surface) 0%, rgba(13,27,42,0.2) 100%); border-top: 1px solid rgba(184,115,51,0.1); padding: 80px 0;">
+            <div class="container">
+                <div class="section-header">
+                    <h2
+                        style="background: linear-gradient(135deg, var(--sl-primary), #98C1D9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                        &#x1F433; Docker Quick-Start</h2>
+                    <p>Pull the stable image from GitHub Container Registry and run SLATE in minutes.</p>
+                </div>
+
+                <!-- Install Commands -->
+                <div
+                    style="background: var(--sl-blueprint-bg); border: 1px solid rgba(152,193,217,0.2); border-radius: 12px; padding: 28px; margin-top: 32px; position: relative; overflow: hidden;">
+                    <div style="position: absolute; inset: 0; background: var(--polish); pointer-events: none;"></div>
+                    <div
+                        style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; position: relative;">
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.12em; color: var(--sl-blueprint-accent); text-transform: uppercase;">
+                            STABLE IMAGE v3.0.0</div>
+                        <span class="status-jewel active" style="margin-left: auto;" aria-label="Published"></span>
+                    </div>
+                    <pre
+                        style="background: rgba(0,0,0,0.4); border: 1px solid rgba(152,193,217,0.1); border-radius: 8px; padding: 20px; margin: 0; font-family: var(--font-mono); font-size: 0.85rem; color: var(--sl-on-surface); line-height: 1.8; overflow-x: auto; position: relative;"><code><span style="color: var(--sl-on-surface-dim);"># Pull stable image from GHCR</span>
+<span style="color: var(--sl-blueprint-accent);">docker pull</span> ghcr.io/synchronizedlivingarchitecture/slate:<span style="color: var(--sl-status-active);">stable</span>
+
+<span style="color: var(--sl-on-surface-dim);"># Start full stack (GPU + Ollama + ChromaDB + Grafana)</span>
+<span style="color: var(--sl-blueprint-accent);">docker compose</span> up -d
+
+<span style="color: var(--sl-on-surface-dim);"># CPU-only alternative</span>
+<span style="color: var(--sl-blueprint-accent);">docker compose</span> --profile cpu up -d
+
+<span style="color: var(--sl-on-surface-dim);"># Open dashboard</span>
+<span style="color: var(--sl-blueprint-accent);">open</span> http://127.0.0.1:8080</code></pre>
+                </div>
+
+                <!-- Services Grid -->
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 32px;">
+                    <div
+                        style="background: var(--sl-surface-variant); border: 1px solid rgba(184,115,51,0.15); border-radius: 10px; padding: 20px; text-align: center;">
+                        <div style="font-size: 1.5rem; margin-bottom: 8px;">&#x1F3AF;</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: var(--sl-on-surface);">
+                            Dashboard</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--sl-primary-light); margin-top: 4px;">
+                            :8080</div>
+                    </div>
+                    <div
+                        style="background: var(--sl-surface-variant); border: 1px solid rgba(184,115,51,0.15); border-radius: 10px; padding: 20px; text-align: center;">
+                        <div style="font-size: 1.5rem; margin-bottom: 8px;">&#x1F9E0;</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: var(--sl-on-surface);">
+                            Ollama LLM</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--sl-primary-light); margin-top: 4px;">
+                            :11434</div>
+                    </div>
+                    <div
+                        style="background: var(--sl-surface-variant); border: 1px solid rgba(184,115,51,0.15); border-radius: 10px; padding: 20px; text-align: center;">
+                        <div style="font-size: 1.5rem; margin-bottom: 8px;">&#x1F4CA;</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: var(--sl-on-surface);">
+                            ChromaDB</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--sl-primary-light); margin-top: 4px;">
+                            :8000</div>
+                    </div>
+                    <div
+                        style="background: var(--sl-surface-variant); border: 1px solid rgba(184,115,51,0.15); border-radius: 10px; padding: 20px; text-align: center;">
+                        <div style="font-size: 1.5rem; margin-bottom: 8px;">&#x1F4C8;</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; color: var(--sl-on-surface);">
+                            Grafana</div>
+                        <div
+                            style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--sl-primary-light); margin-top: 4px;">
+                            :3000</div>
+                    </div>
+                </div>
+
+                <!-- Image variants -->
+                <div
+                    style="margin-top: 32px; background: var(--sl-surface-variant); border: 1px solid rgba(184,115,51,0.12); border-radius: 10px; padding: 20px; overflow-x: auto;">
+                    <table
+                        style="width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.8rem; color: var(--sl-on-surface-variant);">
+                        <thead>
+                            <tr style="border-bottom: 1px solid rgba(184,115,51,0.2);">
+                                <th
+                                    style="text-align: left; padding: 8px 12px; color: var(--sl-primary-light); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em;">
+                                    Image</th>
+                                <th
+                                    style="text-align: left; padding: 8px 12px; color: var(--sl-primary-light); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em;">
+                                    Base</th>
+                                <th
+                                    style="text-align: center; padding: 8px 12px; color: var(--sl-primary-light); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em;">
+                                    Size</th>
+                                <th
+                                    style="text-align: left; padding: 8px 12px; color: var(--sl-primary-light); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em;">
+                                    Use Case</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid rgba(184,115,51,0.08);">
+                                <td style="padding: 10px 12px; color: var(--sl-status-active); font-weight: 700;">
+                                    :stable</td>
+                                <td style="padding: 10px 12px;">CUDA 12.8</td>
+                                <td style="padding: 10px 12px; text-align: center;">~8GB</td>
+                                <td style="padding: 10px 12px;">Recommended — GPU inference</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(184,115,51,0.08);">
+                                <td style="padding: 10px 12px; color: var(--sl-blueprint-accent);">:latest-gpu</td>
+                                <td style="padding: 10px 12px;">CUDA 12.8</td>
+                                <td style="padding: 10px 12px; text-align: center;">~8GB</td>
+                                <td style="padding: 10px 12px;">Latest GPU build</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(184,115,51,0.08);">
+                                <td style="padding: 10px 12px; color: var(--sl-blueprint-accent);">:stable-cpu</td>
+                                <td style="padding: 10px 12px;">Python 3.11-slim</td>
+                                <td style="padding: 10px 12px; text-align: center;">~500MB</td>
+                                <td style="padding: 10px 12px;">CPU-only deployment</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px 12px; color: var(--sl-on-surface-dim);">:latest-dev</td>
+                                <td style="padding: 10px 12px;">CUDA 12.8</td>
+                                <td style="padding: 10px 12px; text-align: center;">~10GB</td>
+                                <td style="padding: 10px 12px;">Development build (hot reload)</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>
