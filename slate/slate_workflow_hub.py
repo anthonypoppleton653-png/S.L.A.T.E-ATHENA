@@ -47,6 +47,84 @@ SLATE_DIR = WORKSPACE / "slate"
 PLANS_DIR = WORKSPACE / "plans"
 CHANGELOG_FILE = WORKSPACE / "CHANGELOG.md"
 
+# ─── Production Safety Guards ────────────────────────────────────────────────
+# Modified: 2026-02-09T07:06:00-05:00 | Author: Gemini | Change: Add production safety guards
+# NOTE: All AIs modifying this file must add a dated comment like the one above.
+#
+# AI automation can ONLY write to these directories. Everything else is READ-ONLY.
+SAFE_WRITE_DIRS = [
+    WIKI_DIR,           # docs/wiki/       — Generated documentation
+    REPORT_DIR,         # docs/report/     — Analysis reports
+    PAGES_DIR / "slate-data.json",    # Pages data file
+    PAGES_DIR / "status.html",        # Generated status page
+    PLANS_DIR,          # plans/           — Roadmaps, planning artifacts
+    CHANGELOG_FILE,     # CHANGELOG.md     — Auto-generated changelog
+]
+
+# NEVER write to these — production source code & configs
+PROTECTED_PATHS = [
+    WORKSPACE / "slate",              # Source code
+    WORKSPACE / ".github" / "workflows",  # CI/CD workflows
+    WORKSPACE / ".github" / "slate.config.yaml",  # Core config
+    WORKSPACE / "k8s",               # Kubernetes manifests
+    WORKSPACE / "tests",             # Test suite
+    WORKSPACE / "plugins",           # Plugin source
+    WORKSPACE / "Dockerfile",        # Docker configs
+    WORKSPACE / "docker-compose.yml",
+    WORKSPACE / "docker-compose.prod.yml",
+    WORKSPACE / ".agent",            # Agent configs
+]
+
+def safe_write(target_path: pathlib.Path, content: str, encoding: str = "utf-8") -> bool:
+    """Write a file ONLY if it's in a safe output directory. Blocks writes to production code.
+    
+    Returns True if write succeeded, False if blocked.
+    """
+    target = target_path.resolve()
+    workspace = WORKSPACE.resolve()
+    
+    # Must be inside workspace
+    try:
+        target.relative_to(workspace)
+    except ValueError:
+        print(f"  🛑 BLOCKED: {target} is outside workspace")
+        return False
+    
+    # Check against protected paths — never allow writes here
+    for protected in PROTECTED_PATHS:
+        prot_resolved = protected.resolve()
+        try:
+            target.relative_to(prot_resolved)
+            print(f"  🛑 BLOCKED: Cannot write to protected path {target}")
+            print(f"     Protected by: {protected}")
+            return False
+        except ValueError:
+            continue  # Not under this protected path, check next
+        
+    # Verify it's in a safe write directory
+    is_safe = False
+    for safe in SAFE_WRITE_DIRS:
+        safe_resolved = safe.resolve()
+        if target == safe_resolved:
+            is_safe = True
+            break
+        try:
+            target.relative_to(safe_resolved)
+            is_safe = True
+            break
+        except ValueError:
+            continue
+    
+    if not is_safe:
+        print(f"  🛑 BLOCKED: {target} is not in any safe write directory")
+        print(f"     Safe dirs: {[str(s) for s in SAFE_WRITE_DIRS]}")
+        return False
+    
+    # Safe to write
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_text(content, encoding=encoding)
+    return True
+
 # Model routing by task type
 MODEL_MAP = {
     "docs": "slate-planner",        # 7B — good at structured writing
@@ -294,9 +372,12 @@ coverage: {mod_info['doc_coverage']}%
 ---
 
 """
-                doc_path.write_text(header + doc_content, encoding="utf-8")
-                self.results["files_generated"] += 1
-                print(f"    ✓ Generated {doc_path.name}")
+                if safe_write(doc_path, header + doc_content):
+                    self.results["files_generated"] += 1
+                    print(f"    ✓ Generated {doc_path.name}")
+                else:
+                    self.results["errors"].append(f"Write blocked for {doc_path}")
+                    print(f"    🛑 Write blocked for {doc_path.name}")
             else:
                 self.results["errors"].append(f"Empty/short doc for {mod_info['file']}")
                 print(f"    ✗ Failed for {mod_info['file']}")
@@ -331,8 +412,8 @@ coverage: {mod_info['doc_coverage']}%
                     else:
                         header = ""
                     
-                    doc_file.write_text(header + doc_content, encoding="utf-8")
-                    self.results["files_updated"] += 1
+                    if safe_write(doc_file, header + doc_content):
+                        self.results["files_updated"] += 1
         
         return self.results
 
@@ -430,9 +511,10 @@ class PagesAutomation:
             "last_updated": datetime.now(timezone.utc).isoformat(),
         }
         
-        data_file.parent.mkdir(parents=True, exist_ok=True)
-        data_file.write_text(json.dumps(page_data, indent=2), encoding="utf-8")
-        print(f"  ✓ Updated {data_file}")
+        if safe_write(data_file, json.dumps(page_data, indent=2)):
+            print(f"  ✓ Updated {data_file}")
+        else:
+            print(f"  🛑 Write blocked for {data_file}")
         return True
     
     def generate_status_page(self) -> bool:
@@ -591,9 +673,10 @@ Write a 3-paragraph HTML status summary with stats formatted as a clean dashboar
 </body>
 </html>"""
         
-        status_html_path.parent.mkdir(parents=True, exist_ok=True)
-        status_html_path.write_text(status_html, encoding="utf-8")
-        print(f"  ✓ Generated {status_html_path}")
+        if safe_write(status_html_path, status_html):
+            print(f"  ✓ Generated {status_html_path}")
+        else:
+            print(f"  🛑 Write blocked for {status_html_path}")
         return True
 
 
@@ -787,21 +870,20 @@ For each item include: priority (P0-P3), estimated effort, and why it matters.""
             "model": result.get("model", ""),
         }
         
-        # Save roadmap
-        PLANS_DIR.mkdir(parents=True, exist_ok=True)
+        # Save roadmap (via safe_write)
         roadmap_file = PLANS_DIR / "roadmap.json"
-        roadmap_file.write_text(json.dumps(roadmap, indent=2), encoding="utf-8")
+        safe_write(roadmap_file, json.dumps(roadmap, indent=2))
         
         # Also save as Markdown
         roadmap_md = PLANS_DIR / "ROADMAP.md"
-        roadmap_md.write_text(f"""# S.L.A.T.E. Project Roadmap
+        safe_write(roadmap_md, f"""# S.L.A.T.E. Project Roadmap
 *Generated: {roadmap['generated']} by {roadmap['model']}*
 
 {roadmap['roadmap']}
 
 ---
 *Generated by SLATE Workflow Hub — AI-Powered Planning*
-""", encoding="utf-8")
+""")
         
         print(f"  ✓ Generated roadmap ({len(result.get('response', ''))} chars)")
         return roadmap
@@ -853,8 +935,10 @@ Use concise, user-facing language (not git commit messages)."""
 *Auto-generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d')}*
 
 """
-            CHANGELOG_FILE.write_text(header + changelog_content, encoding="utf-8")
-            print(f"  ✓ Generated CHANGELOG.md ({len(changelog_content)} chars)")
+            if safe_write(CHANGELOG_FILE, header + changelog_content):
+                print(f"  ✓ Generated CHANGELOG.md ({len(changelog_content)} chars)")
+            else:
+                print(f"  🛑 Write blocked for CHANGELOG.md")
         
         return changelog_content
 
@@ -985,10 +1069,9 @@ class WorkflowHub:
             print("           research, plan, wiki-sync, changelog, roadmap, full-automation")
             self.results["error"] = f"Unknown mode: {mode}"
         
-        # Save results
+        # Save results (via safe_write)
         report_file = REPORT_DIR / f"hub_{mode.replace('-', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        report_file.parent.mkdir(parents=True, exist_ok=True)
-        report_file.write_text(json.dumps(self.results, indent=2, default=str), encoding="utf-8")
+        safe_write(report_file, json.dumps(self.results, indent=2, default=str))
         
         if as_json:
             print(json.dumps(self.results, indent=2, default=str))
@@ -999,7 +1082,12 @@ class WorkflowHub:
         return self.results
     
     def _commit_changes(self, mode: str):
-        """Commit any changes made by automation."""
+        """Commit any changes made by automation. ONLY stages safe output directories."""
+        # Modified: 2026-02-09T07:06:00-05:00 | Author: Gemini | Change: Harden git commit scope
+        SAFE_GIT_PATHS = ["docs/wiki/", "docs/report/", "docs/pages/slate-data.json",
+                          "docs/pages/status.html", "plans/", "CHANGELOG.md"]
+        NEVER_STAGE = ["slate/", ".github/", "k8s/", "tests/", "plugins/",
+                       "Dockerfile", "docker-compose*"]
         try:
             status = subprocess.run(
                 ["git", "status", "--porcelain"],
@@ -1013,9 +1101,14 @@ class WorkflowHub:
             subprocess.run(["git", "config", "user.name", "SLATE Workflow Hub"], cwd=str(WORKSPACE))
             subprocess.run(["git", "config", "user.email", "slate-hub@slate.local"], cwd=str(WORKSPACE))
             
-            # Stage relevant directories
-            for path in ["docs/", "plans/", "CHANGELOG.md"]:
-                subprocess.run(["git", "add", path], cwd=str(WORKSPACE), capture_output=True)
+            # Safety: reset any accidentally staged production files
+            for unsafe in NEVER_STAGE:
+                subprocess.run(["git", "reset", "HEAD", "--", unsafe],
+                             cwd=str(WORKSPACE), capture_output=True)
+            
+            # Stage ONLY safe output directories
+            for path in SAFE_GIT_PATHS:
+                subprocess.run(["git", "add", "--", path], cwd=str(WORKSPACE), capture_output=True)
             
             msg = (
                 f"automation: {mode} — SLATE Workflow Hub\n\n"
