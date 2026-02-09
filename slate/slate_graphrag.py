@@ -367,7 +367,7 @@ class GraphBuilder:
             ("svc:mcp", "MCP Server", "Model Context Protocol integration", 0),
             ("svc:agent-router", "Agent Router", "Task routing service on port 8081", 8081),
             ("svc:autonomous", "Autonomous Loop", "Self-healing autonomous system on port 8082", 8082),
-            ("svc:trellis2", "TRELLIS.2", "Image-to-3D generation on port 8085", 8085),
+            ("svc:trellis2", "TRELLIS.2", "Image-to-3D generation on port 8086", 8086),
         ]
         count = 0
         for eid, name, desc, port in services:

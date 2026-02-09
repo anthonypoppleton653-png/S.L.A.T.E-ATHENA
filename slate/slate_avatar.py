@@ -66,7 +66,7 @@ AVATAR_NODES = [
 
     # Outer ring — advanced (Level 3+)
     {"id": "trellis", "label": "TRELLIS.2", "ring": 3, "angle": 45, "type": "ai",
-     "color": "#00E676", "service": "trellis", "port": 8085, "level_req": 3},
+     "color": "#00E676", "service": "trellis", "port": 8086, "level_req": 3},
     {"id": "graphrag", "label": "GraphRAG", "ring": 3, "angle": 135, "type": "data",
      "color": "#7C4DFF", "service": "graphrag", "port": None, "level_req": 3},
     {"id": "llmlingua", "label": "LLMLingua", "ring": 3, "angle": 225, "type": "ai",

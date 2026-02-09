@@ -70,6 +70,8 @@ logger = logging.getLogger("slate.unified_ai_backend")
 
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 FOUNDRY_HOST = os.environ.get("FOUNDRY_HOST", "http://127.0.0.1:5272")
+LMSTUDIO_HOST = os.environ.get("LMSTUDIO_HOST", "http://127.0.0.1:1234")
+TRELLIS_HOST = os.environ.get("TRELLIS_HOST", "http://127.0.0.1:8086")
 
 # CLI tool paths — everything on E:\ drive
 TOOLS_DIR = Path(os.environ.get("SLATE_TOOLS_DIR", str(WORKSPACE_ROOT / ".tools" / "npm-global")))
@@ -77,36 +79,39 @@ CLAUDE_CMD = str(TOOLS_DIR / ("claude.cmd" if sys.platform == "win32" else "clau
 GEMINI_CMD = str(TOOLS_DIR / ("gemini.cmd" if sys.platform == "win32" else "gemini"))
 GH_CMD = os.environ.get("GH_PATH", "gh")  # gh is in system PATH
 
-# Model mapping per task type (5 providers)
+# Model mapping per task type (6 providers)
 TASK_MODELS = {
-    "code_generation":    {"ollama": "slate-coder",   "claude_code": "opus-4.6",  "gemini": "gemini-2.5-pro", "copilot": "gpt-4o"},
-    "code_review":        {"gemini": "gemini-2.5-pro", "claude_code": "opus-4.6", "ollama": "slate-coder"},
-    "test_generation":    {"ollama": "slate-coder",   "claude_code": "opus-4.6",  "gemini": "gemini-2.5-pro"},
-    "bug_fix":            {"claude_code": "opus-4.6", "ollama": "slate-coder",    "gemini": "gemini-2.5-pro"},
-    "refactoring":        {"claude_code": "opus-4.6", "ollama": "slate-coder",    "gemini": "gemini-2.5-pro"},
-    "documentation":      {"ollama": "slate-fast",    "gemini": "gemini-2.5-flash", "copilot": "gpt-4o"},
-    "analysis":           {"gemini": "gemini-2.5-pro", "claude_code": "opus-4.6", "ollama": "slate-planner"},
-    "research":           {"gemini": "gemini-2.5-pro", "claude_code": "opus-4.6", "ollama": "slate-planner"},
-    "planning":           {"ollama": "slate-planner", "claude_code": "opus-4.6",  "gemini": "gemini-2.5-pro"},
-    "classification":     {"ollama": "slate-fast"},
-    "prompt_engineering": {"claude_code": "opus-4.6", "ollama": "slate-planner",  "gemini": "gemini-2.5-pro"},
-    "verification":       {"gemini": "gemini-2.5-pro", "copilot": "gpt-4o",      "ollama": "slate-planner"},
+    "code_generation":    {"ollama": "slate-coder",   "claude_code": "opus-4.6",  "gemini": "gemini-2.5-pro", "copilot": "gpt-4o", "lmstudio": "auto"},
+    "code_review":        {"gemini": "gemini-2.5-pro", "claude_code": "opus-4.6", "ollama": "slate-coder", "lmstudio": "auto"},
+    "test_generation":    {"ollama": "slate-coder",   "claude_code": "opus-4.6",  "gemini": "gemini-2.5-pro", "lmstudio": "auto"},
+    "bug_fix":            {"claude_code": "opus-4.6", "ollama": "slate-coder",    "gemini": "gemini-2.5-pro", "lmstudio": "auto"},
+    "refactoring":        {"claude_code": "opus-4.6", "ollama": "slate-coder",    "gemini": "gemini-2.5-pro", "lmstudio": "auto"},
+    "documentation":      {"ollama": "slate-fast",    "gemini": "gemini-2.5-flash", "copilot": "gpt-4o", "lmstudio": "auto"},
+    "analysis":           {"gemini": "gemini-2.5-pro", "claude_code": "opus-4.6", "ollama": "slate-planner", "lmstudio": "auto"},
+    "research":           {"gemini": "gemini-2.5-pro", "claude_code": "opus-4.6", "ollama": "slate-planner", "lmstudio": "auto"},
+    "planning":           {"ollama": "slate-planner", "claude_code": "opus-4.6",  "gemini": "gemini-2.5-pro", "lmstudio": "auto"},
+    "classification":     {"ollama": "slate-fast", "lmstudio": "auto"},
+    "prompt_engineering": {"claude_code": "opus-4.6", "ollama": "slate-planner",  "gemini": "gemini-2.5-pro", "lmstudio": "auto"},
+    "verification":       {"gemini": "gemini-2.5-pro", "copilot": "gpt-4o",      "ollama": "slate-planner", "lmstudio": "auto"},
 }
 
-# Provider priority per task type (first = preferred)
+# Provider priority per task type (first = preferred, lmstudio = failover for GPU tasks)
 TASK_ROUTING = {
-    "code_generation":    ["ollama", "claude_code", "gemini", "foundry"],
-    "code_review":        ["gemini", "claude_code", "ollama"],
-    "test_generation":    ["ollama", "claude_code", "gemini"],
-    "bug_fix":            ["claude_code", "ollama", "gemini"],
-    "refactoring":        ["claude_code", "ollama", "gemini"],
-    "documentation":      ["ollama", "gemini", "copilot"],
-    "analysis":           ["gemini", "claude_code", "ollama"],
-    "research":           ["gemini", "claude_code", "ollama"],
-    "planning":           ["ollama", "claude_code", "gemini"],
-    "classification":     ["ollama"],
-    "prompt_engineering": ["claude_code", "ollama", "gemini"],
-    "verification":       ["gemini", "copilot", "ollama"],
+    "code_generation":    ["ollama", "claude_code", "gemini", "lmstudio", "foundry"],
+    "code_review":        ["gemini", "claude_code", "ollama", "lmstudio"],
+    "test_generation":    ["ollama", "claude_code", "gemini", "lmstudio"],
+    "bug_fix":            ["claude_code", "ollama", "gemini", "lmstudio"],
+    "refactoring":        ["claude_code", "ollama", "gemini", "lmstudio"],
+    "documentation":      ["ollama", "gemini", "copilot", "lmstudio"],
+    "analysis":           ["gemini", "claude_code", "ollama", "lmstudio"],
+    "research":           ["gemini", "claude_code", "ollama", "lmstudio"],
+    "planning":           ["ollama", "claude_code", "gemini", "lmstudio"],
+    "classification":     ["ollama", "lmstudio"],
+    "prompt_engineering": ["claude_code", "ollama", "gemini", "lmstudio"],
+    "verification":       ["gemini", "copilot", "ollama", "lmstudio"],
+    "3d_generation":      ["trellis2"],
+    "avatar_generation":  ["trellis2"],
+    "asset_generation":   ["trellis2"],
 }
 
 # Cross-verification mapping: task_type → which provider verifies the work
@@ -475,6 +480,214 @@ class FoundryProvider:
             )
 
 
+# Modified: 2026-02-09T22:00:00Z | Author: COPILOT | Change: Add LMStudioProvider — 6th provider, OpenAI-compatible API, speculative decoding, JIT model loading, MCP tools
+class LMStudioProvider:
+    """LM Studio local LLM inference provider.
+
+    LM Studio (https://lmstudio.ai) is a local-first LLM inference platform with:
+    - OpenAI-compatible API at /v1/chat/completions, /v1/models, /v1/embeddings
+    - Anthropic-compatible API at /v1/messages
+    - Native REST API at /api/v0/ and /api/v1/ with rich stats (tok/s, TTFT)
+    - GGUF model support (same format as Ollama, llama.cpp backend)
+    - Speculative decoding for 2-3x faster inference
+    - JIT (Just-In-Time) model loading — auto-loads on demand, unloads after TTL
+    - Structured output via JSON schema constrained generation
+    - Continuous batching for parallel requests
+    - MCP tool integration via /v1/responses and /api/v1/chat
+    - Multi-model serving with named identifiers
+    - CUDA GPU acceleration on Windows/Linux, Metal/MLX on macOS
+
+    Default port: 1234  |  Env var: LMSTUDIO_HOST
+    CLI: lms (model management, server control, runtime selection)
+
+    SDKs:
+    - Python: pip install lmstudio (sync/async, agents, embeddings, tools, plugins)
+    - TypeScript: @lmstudio/sdk (npm, Node.js + browser)
+
+    Integration with SLATE:
+    - Serves as failover for Ollama (same GGUF models, different runtime)
+    - Unique advantages: speculative decoding, JIT loading, structured output
+    - Model value 'auto' means use whatever model is currently loaded in LM Studio
+    - No Docker/K8s support (host-level only, not containerizable)
+    """
+
+    def __init__(self, host: str = LMSTUDIO_HOST):
+        self.host = host
+        self.name = "lmstudio"
+
+    def check_status(self) -> ProviderStatus:
+        """Check LM Studio server availability and list loaded/available models."""
+        start = time.time()
+        try:
+            # Use OpenAI-compatible /v1/models endpoint
+            url = f"{self.host}/v1/models"
+            req = urllib.request.Request(url)
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                models = [m.get("id", "") for m in data.get("data", [])]
+                latency = (time.time() - start) * 1000
+                return ProviderStatus(
+                    name=self.name,
+                    available=True,
+                    endpoint=self.host,
+                    models=models,
+                    latency_ms=latency,
+                    cost="FREE",
+                )
+        except Exception as e:
+            return ProviderStatus(
+                name=self.name,
+                available=False,
+                endpoint=self.host,
+                error=str(e),
+            )
+
+    def get_native_status(self) -> dict:
+        """Get extended model info from LM Studio native API (/api/v0/models).
+
+        Returns richer metadata than OpenAI-compat: architecture, quantization,
+        max context length, load state, file size.
+        """
+        try:
+            url = f"{self.host}/api/v0/models"
+            req = urllib.request.Request(url)
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except Exception:
+            return {}
+
+    def generate(self, prompt: str, model: str = "auto",
+                 max_tokens: int = 2048, temperature: float = 0.7) -> InferenceResult:
+        """Generate via LM Studio OpenAI-compatible /v1/chat/completions API.
+
+        When model='auto', uses whatever model is currently loaded in LM Studio.
+        LM Studio's JIT loading will auto-load the first available model if none loaded.
+        """
+        start = time.time()
+        try:
+            url = f"{self.host}/v1/chat/completions"
+            payload_dict = {
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "stream": False,
+            }
+            # Only set model if not 'auto' — omitting lets LM Studio pick the loaded model
+            if model and model != "auto":
+                payload_dict["model"] = model
+
+            payload = json.dumps(payload_dict).encode("utf-8")
+            req = urllib.request.Request(url, data=payload, method="POST")
+            req.add_header("Content-Type", "application/json")
+
+            with urllib.request.urlopen(req, timeout=180) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
+                choices = result.get("choices", [])
+                response_text = choices[0]["message"]["content"] if choices else ""
+                usage = result.get("usage", {})
+                actual_model = result.get("model", model)
+                duration = (time.time() - start) * 1000
+                return InferenceResult(
+                    success=True,
+                    provider=self.name,
+                    model=actual_model,
+                    response=response_text,
+                    tokens=usage.get("completion_tokens", 0),
+                    duration_ms=duration,
+                    cost="FREE",
+                )
+        except Exception as e:
+            return InferenceResult(
+                success=False,
+                provider=self.name,
+                model=model,
+                response="",
+                error=str(e),
+            )
+
+    def generate_native(self, prompt: str, model: str = "auto",
+                        max_tokens: int = 2048, temperature: float = 0.7,
+                        context_length: int = 8000) -> InferenceResult:
+        """Generate via LM Studio native /api/v1/chat endpoint.
+
+        Provides richer response with stats (tok/s, TTFT), MCP tool integration,
+        and reasoning tokens. Use this for tasks requiring extended context or
+        tool-augmented generation.
+        """
+        start = time.time()
+        try:
+            url = f"{self.host}/api/v1/chat"
+            payload_dict = {
+                "input": prompt,
+                "context_length": context_length,
+                "temperature": temperature,
+            }
+            if model and model != "auto":
+                payload_dict["model"] = model
+
+            payload = json.dumps(payload_dict).encode("utf-8")
+            req = urllib.request.Request(url, data=payload, method="POST")
+            req.add_header("Content-Type", "application/json")
+
+            with urllib.request.urlopen(req, timeout=180) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
+                # Native API returns output as array of typed blocks
+                output_blocks = result.get("output", [])
+                response_parts = []
+                for block in output_blocks:
+                    if block.get("type") == "message":
+                        response_parts.append(block.get("content", ""))
+                response_text = "\n".join(response_parts)
+
+                stats = result.get("stats", {})
+                actual_model = result.get("model_instance_id", model)
+                duration = (time.time() - start) * 1000
+                return InferenceResult(
+                    success=True,
+                    provider=self.name,
+                    model=actual_model,
+                    response=response_text,
+                    tokens=stats.get("total_output_tokens", 0),
+                    duration_ms=duration,
+                    cost="FREE",
+                )
+        except Exception as e:
+            return InferenceResult(
+                success=False,
+                provider=self.name,
+                model=model,
+                response="",
+                error=str(e),
+            )
+
+    def embed(self, text: str, model: str = "auto") -> list[float]:
+        """Generate embeddings via LM Studio /v1/embeddings endpoint.
+
+        Requires an embedding model to be loaded in LM Studio
+        (e.g., nomic-embed-text, bge-small, etc.)
+        """
+        try:
+            url = f"{self.host}/v1/embeddings"
+            payload_dict = {
+                "input": text,
+            }
+            if model and model != "auto":
+                payload_dict["model"] = model
+
+            payload = json.dumps(payload_dict).encode("utf-8")
+            req = urllib.request.Request(url, data=payload, method="POST")
+            req.add_header("Content-Type", "application/json")
+
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
+                data = result.get("data", [])
+                if data:
+                    return data[0].get("embedding", [])
+                return []
+        except Exception:
+            return []
+
+
 # Modified: 2026-02-10T18:00:00Z | Author: COPILOT | Change: Add GeminiCliProvider for Gemini CLI inference
 class GeminiCliProvider:
     """Gemini CLI inference provider — wraps the local Gemini CLI for analysis and verification.
@@ -741,6 +954,7 @@ class UnifiedAIBackend:
             "gemini": GeminiCliProvider(),
             "copilot": CopilotCliProvider(),
             "foundry": FoundryProvider(),
+            "lmstudio": LMStudioProvider(),
         }
         self._status_cache: dict[str, ProviderStatus] = {}
         self._cache_time: float = 0
@@ -799,6 +1013,7 @@ class UnifiedAIBackend:
             "gemini": "gemini-2.5-pro",
             "copilot": "gpt-4o",
             "foundry": "phi-3.5",
+            "lmstudio": "auto",
         }
         return models.get(provider, defaults.get(provider, "slate-fast"))
 
@@ -991,7 +1206,7 @@ def print_status(as_json: bool = False):
         return
 
     print("=" * 75)
-    print("  SLATE Unified AI Backend — Provider Status (5 providers)")
+    print("  SLATE Unified AI Backend — Provider Status (6 providers)")
     print("=" * 75)
 
     for name, status in statuses.items():
@@ -1023,16 +1238,16 @@ def print_status(as_json: bool = False):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="SLATE Unified AI Backend — 5 providers, cross-verification")
+    parser = argparse.ArgumentParser(description="SLATE Unified AI Backend — 6 providers, cross-verification")
     parser.add_argument("--status", action="store_true", help="Check all provider status")
     parser.add_argument("--task", type=str, help="Execute an AI task")
     parser.add_argument("--provider", type=str,
-                        choices=["ollama", "claude_code", "gemini", "copilot", "foundry"],
+                        choices=["ollama", "claude_code", "gemini", "copilot", "foundry", "lmstudio"],
                         help="Force a specific provider")
     parser.add_argument("--model", type=str, help="Force a specific model")
     parser.add_argument("--verify", type=str, help="Cross-verify content with a verifier")
     parser.add_argument("--verifier", type=str,
-                        choices=["ollama", "claude_code", "gemini", "copilot"],
+                        choices=["ollama", "claude_code", "gemini", "copilot", "lmstudio"],
                         help="Force a specific verifier for --verify")
     parser.add_argument("--with-verification", action="store_true",
                         help="Execute task AND cross-verify the result")

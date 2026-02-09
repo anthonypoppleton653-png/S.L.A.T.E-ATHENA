@@ -1,16 +1,16 @@
 {
   "version": "1.0.0",
   "timestamp": "2026-02-09T11:32:47.723547+00:00",
-  "level": 3,
-  "level_name": "Full Orrery",
+  "level": 4,
+  "level_name": "Glass Dome Observatory",
   "expression": "idle",
   "orbit_speed": 0.3,
   "tech_tree": {
     "total_nodes": 44,
-    "complete": 36,
-    "in_progress": 3,
-    "available": 5,
-    "completion_pct": 81.8,
+    "complete": 44,
+    "in_progress": 0,
+    "available": 0,
+    "completion_pct": 100.0,
     "total_edges": 60,
     "version": "3.0.0"
   },
@@ -191,7 +191,7 @@
       "type": "ai",
       "color": "#00E676",
       "service": "trellis",
-      "port": 8085,
+      "port": 8086,
       "level_req": 3,
       "health": "unknown",
       "visible": true

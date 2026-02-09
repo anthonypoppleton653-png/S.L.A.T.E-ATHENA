@@ -428,9 +428,9 @@
     {
       "id": "trellis-3d",
       "name": "TRELLIS.2 3D Integration",
-      "status": "available",
+      "status": "complete",
       "phase": 3,
-      "description": "Microsoft TRELLIS.2 (4B) image-to-3D generation as K8s microservice for avatar and asset generation",
+      "description": "TRELLIS.2 4B image-to-3D client (slate_trellis.py), K8s manifest (port 8086), TrellisProvider for unified AI backend, asset management with manifest tracking, NetworkPolicy, PVC storage (16Gi model + 8Gi assets)",
       "paths": [
         "specs/024-trellis-3d-integration/",
         "slate/slate_trellis.py",

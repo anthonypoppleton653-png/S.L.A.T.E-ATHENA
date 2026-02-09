@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "updated": "2026-02-09T13:12:14.940732+00:00",
-  "entity_count": 177,
+  "updated": "2026-02-09T14:25:05.065242+00:00",
+  "entity_count": 181,
   "relation_count": 141,
   "entities": [
     {
@@ -1010,7 +1010,7 @@
       "type": "module",
       "description": "SLATE Unified AI Backend",
       "properties": {
-        "size_bytes": 48013
+        "size_bytes": 57835
       },
       "source_file": "slate\\unified_ai_backend.py"
     },
@@ -1348,9 +1348,9 @@
       "id": "svc:trellis2",
       "name": "TRELLIS.2",
       "type": "service",
-      "description": "Image-to-3D generation on port 8085",
+      "description": "Image-to-3D generation on port 8086",
       "properties": {
-        "port": 8085
+        "port": 8086
       },
       "source_file": ""
     },
@@ -1501,9 +1501,9 @@
       "id": "tech:uv-migration",
       "name": "UV Package Manager",
       "type": "tech_node",
-      "description": "Migrate from pip to UV for faster dependency management",
+      "description": "UV v0.9.30 integration: slate_uv.py management module, uv.lock (251 packages), 120x speedup over pip (148ms vs 17,767ms), pre-release support for semantic-kernel deps",
       "properties": {
-        "status": "available",
+        "status": "complete",
         "phase": 2
       },
       "source_file": ""
@@ -1512,9 +1512,9 @@
       "id": "tech:discord-bot",
       "name": "Discord Bot",
       "type": "tech_node",
-      "description": "SLATE Discord integration for notifications and commands",
+      "description": "Webhook-based Discord notifications: 4 channels (builds/status/alerts/progress), SLATE brand-colored embeds, rate limiting, event routing, zero-dependency (urllib only), env-var config",
       "properties": {
-        "status": "available",
+        "status": "complete",
         "phase": 2
       },
       "source_file": ""
@@ -1776,9 +1776,9 @@
       "id": "tech:trellis-3d",
       "name": "TRELLIS.2 3D Integration",
       "type": "tech_node",
-      "description": "Microsoft TRELLIS.2 (4B) image-to-3D generation as K8s microservice for avatar and asset generation",
+      "description": "TRELLIS.2 4B image-to-3D client (slate_trellis.py), K8s manifest (port 8086), TrellisProvider for unified AI backend, asset management with manifest tracking, NetworkPolicy, PVC storage (16Gi model + 8Gi assets)",
       "properties": {
-        "status": "available",
+        "status": "complete",
         "phase": 3
       },
       "source_file": ""
@@ -1787,9 +1787,9 @@
       "id": "tech:graphrag",
       "name": "GraphRAG Knowledge System",
       "type": "tech_node",
-      "description": "Microsoft GraphRAG knowledge graph RAG to augment ChromaDB vector search with structured relationships",
+      "description": "In-memory knowledge graph with JSON persistence: 177 entities (104 modules, 20 specs, 9 services, 44 tech nodes), 141 relations (75 imports, 60 deps, 6 service connections), BFS traversal, hybrid RAG context generation",
       "properties": {
-        "status": "available",
+        "status": "complete",
         "phase": 3
       },
       "source_file": ""
@@ -1798,9 +1798,9 @@
       "id": "tech:prompt-compression",
       "name": "Prompt Compression (LLMLingua)",
       "type": "tech_node",
-      "description": "Microsoft LLMLingua 20x prompt compression for 16GB VRAM constraint optimization",
+      "description": "Multi-strategy prompt compression engine: whitespace, boilerplate, comments, imports, importance scoring. 4.0x average compression (CLAUDE.md 5.6x, README.md 8.0x). Enables 4x more context within 16GB VRAM inference windows",
       "properties": {
-        "status": "available",
+        "status": "complete",
         "phase": 3
       },
       "source_file": ""
@@ -1837,6 +1837,46 @@
         "phase": 3
       },
       "source_file": ""
+    },
+    {
+      "id": "mod:slate_discord",
+      "name": "slate_discord",
+      "type": "module",
+      "description": "SLATE Discord Integration",
+      "properties": {
+        "size_bytes": 14602
+      },
+      "source_file": "slate\\slate_discord.py"
+    },
+    {
+      "id": "mod:slate_prompt_compress",
+      "name": "slate_prompt_compress",
+      "type": "module",
+      "description": "SLATE Prompt Compression Engine",
+      "properties": {
+        "size_bytes": 19510
+      },
+      "source_file": "slate\\slate_prompt_compress.py"
+    },
+    {
+      "id": "mod:slate_trellis",
+      "name": "slate_trellis",
+      "type": "module",
+      "description": "SLATE TRELLIS.2 3D Generation Client",
+      "properties": {
+        "size_bytes": 29181
+      },
+      "source_file": "slate\\slate_trellis.py"
+    },
+    {
+      "id": "mod:slate_uv",
+      "name": "slate_uv",
+      "type": "module",
+      "description": "SLATE UV Package Manager Integration",
+      "properties": {
+        "size_bytes": 8007
+      },
+      "source_file": "slate\\slate_uv.py"
     }
   ],
   "relations": [

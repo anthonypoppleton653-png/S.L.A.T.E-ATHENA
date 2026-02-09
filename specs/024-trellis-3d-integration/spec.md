@@ -62,7 +62,7 @@ Integrate Microsoft TRELLIS.2 (4B parameter image-to-3D model) into SLATE as a c
                    ▼
 ┌──────────────────────────────────────────────────────────┐
 │              TRELLIS.2 K8s Service                        │
-│  trellis2-svc:8085                                       │
+│  trellis2-svc:8086                                       │
 │                                                          │
 │  Endpoints:                                              │
 │    POST /generate    - Image to 3D mesh                  │
@@ -124,7 +124,7 @@ spec:
             memory: "16Gi"
             nvidia.com/gpu: 1
         ports:
-        - containerPort: 8085
+        - containerPort: 8086
           name: http
         env:
         - name: TRELLIS_LOW_VRAM
@@ -153,8 +153,8 @@ spec:
   selector:
     app: trellis2
   ports:
-  - port: 8085
-    targetPort: 8085
+  - port: 8086
+    targetPort: 8086
     name: http
 ```
 
