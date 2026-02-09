@@ -56,8 +56,7 @@ htmlcov/
 *.log
 
 # SLATE runtime data (not source)
-.aurora_pids/
-.aurora_training/
+.slate_pids_legacy/
 .slate_analytics/
 .slate_archive/
 .slate_cas/
@@ -72,8 +71,7 @@ htmlcov/
 .slate_traces/
 .slate_training/
 .tools/
-aurora_logs/
-aurora_memory/
+slate_logs/
 slate_memory/
 _PipelineMapping/
 

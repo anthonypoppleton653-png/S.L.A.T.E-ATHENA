@@ -103,8 +103,7 @@ plugins/slate-copilot/node_modules/
 plugins/slate-copilot/*.vsix
 plugins/slate-sdk/node_modules/
 
-# Aurora logs
-aurora_logs/
+# SLATE logs
 slate_logs/
 slate_memory/
 

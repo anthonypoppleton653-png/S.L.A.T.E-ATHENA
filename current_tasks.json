@@ -89,7 +89,7 @@
     {
       "id": "kanban_PVTI_lAH",
       "title": "chore: Push workflow file updates (aurora_core \u2192 slate unification)",
-      "description": "Synced from KANBAN project board (item type: unknown). Verified: no aurora_core references remain in .github/workflows/ — unification already complete.",
+      "description": "Synced from KANBAN project board (item type: unknown). Verified: no aurora_core references remain in .github/workflows/ or ignore files — unification fully complete. .gitignore/.dockerignore aurora_ dirs renamed to slate_ equivalents.",
       "priority": "medium",
       "assigned_to": "workflow",
       "source": "project_board",

@@ -1,6 +1,6 @@
 {
-  "version": "2.1.0",
-  "last_updated": "2026-02-08T06:10:00Z",
+  "version": "2.2.0",
+  "last_updated": "2026-02-09T03:40:00Z",
   "metadata": {
     "project": "S.L.A.T.E.",
     "description": "Synchronized Living Architecture for Transformation and Evolution",
@@ -38,9 +38,9 @@
     {
       "id": "dashboard",
       "name": "Dashboard",
-      "status": "in_progress",
+      "status": "complete",
       "phase": 1,
-      "description": "Web-based status dashboard with monochrome theme"
+      "description": "Web-based status dashboard with K8s integration"
     },
     {
       "id": "workflow-pipeline",
@@ -182,10 +182,10 @@
     {
       "id": "k8s-infra",
       "name": "Kubernetes Infrastructure",
-      "status": "available",
+      "status": "complete",
       "phase": 2,
-      "description": "Kubernetes manifests for SLATE deployment — namespace, RBAC, deployments, network policies",
-      "paths": ["k8s/"]
+      "description": "Kubernetes manifests for SLATE deployment — namespace, RBAC, deployments, network policies, dashboard service discovery",
+      "paths": ["k8s/", "slate/k8s_entrypoints.py", "slate/k8s_integration.py"]
     },
     {
       "id": "gpu-manager",
