@@ -1,9 +1,8 @@
 {
   "mcpServers": {
     "slate": {
-      "command": "python",
-      "args": ["slate/mcp_launcher.py"],
-      "cwd": "${CLAUDE_PLUGIN_ROOT}",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy", "Bypass", "-File", "${CLAUDE_PLUGIN_ROOT}/slate/mcp_launcher.ps1"],
       "env": {
         "SLATE_PLUGIN_ROOT": "${CLAUDE_PLUGIN_ROOT}",
         "SLATE_BEHAVIOR": "operator",
