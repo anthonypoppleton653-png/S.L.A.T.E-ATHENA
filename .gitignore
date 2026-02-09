@@ -22,7 +22,9 @@ wheels/
 *.egg
 
 # Virtual environments
+# Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Add extra venv patterns for antigravity/slate_ag environments
 .venv/
+.venv_*/
 venv/
 ENV/
 env/
@@ -93,6 +95,7 @@ actions-runner-*/
 .slate_ml_state.json
 .slate_model_state.json
 .slate_copilot_runner.json
+.slate_copilot_runner.pid
 .slate_copilot_queue.json
 .slate_runner_costs.json
 .slate_runners.json
@@ -144,6 +147,11 @@ install_state.json
 .slate_startup_state.json
 .slate_startup.pid
 .slate_spec_kit.json
+
+# Adaptive instruction runtime state
+# Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Add instruction state files to gitignore
+.slate_instruction_state.json
+.slate_instruction_context.json
 
 # Extension build artifacts (root level)
 *.vsix

@@ -36,6 +36,7 @@ Agents are routed by task pattern from `slate.config.yaml`:
 | claude, mcp, sdk, integration | DELTA | External Bridge | No |
 | diagnose, investigate, troubleshoot, interactive, explain | COPILOT_CHAT | Chat Participant | No |
 | complex, multi-step | COPILOT | Full Orchestration | Yes |
+| architect, refactor, master | ANTIGRAVITY | Primary Developer (Google AI Ultra) | Yes |
 
 ### @slate Agent (COPILOT_CHAT)
 The `@slate` agent is the primary copilot chat participant for the SLATE system.
@@ -722,3 +723,53 @@ SLATE integrates via `slateAgentSdkHooks.ts`:
 | `slate.runtime.backend` | `auto` | `auto`, `kubernetes`, `docker` |
 | `slate.runtime.k8sEndpoint` | `http://127.0.0.1:8083` | Custom K8s bridge URL |
 | `slate.runtime.dockerContainer` | `slate` | Docker container name |
+
+## Runtime Integrations Update — 11 Integrations (Corrected)
+# Modified: 2026-02-09T01:48:00Z | Author: COPILOT | Change: Correct integration count from 7 to 11, document PyTorch local-vs-Docker split, add current operational state
+
+Previous sections reference "7 integrations" for `slate_runtime.py --check-all`. The actual
+count is now **11 integrations** after adding Copilot SDK, Semantic Kernel, GitHub Models, and Kubernetes:
+
+| # | Integration | Local Status | Notes |
+|---|-------------|-------------|-------|
+| 1 | Python 3.11+ | active | 3.11.9 via `.venv` |
+| 2 | Virtual Env | active | `.venv\Scripts\python.exe` |
+| 3 | NVIDIA GPU | inactive (local) | GPU access via Ollama/Docker/K8s, not torch.cuda locally |
+| 4 | PyTorch | active (CPU) | 2.10.0+cpu locally; CUDA 12.8 in Docker image |
+| 5 | Transformers | active | 5.1.0 |
+| 6 | Ollama | active | 11 models, 4 loaded in VRAM |
+| 7 | ChromaDB | active | 1.4.1, 10398 embeddings indexed |
+| 8 | Copilot SDK | active | Protocol v2 |
+| 9 | Semantic Kernel | active | 1.39.3 (Ollama connected) |
+| 10 | GitHub Models | active | 11 models, local inference |
+| 11 | Kubernetes | active | 9/9 deployments ready |
+
+### PyTorch Configuration (Local vs Docker)
+
+PyTorch is intentionally **CPU-only** in the local `.venv`. GPU-accelerated PyTorch
+with CUDA 12.8 runs inside the Docker release image (`nvidia/cuda:12.8.0-runtime-ubuntu22.04`).
+This is by design — local development uses Ollama for GPU inference, Docker/K8s for
+containerized GPU workloads.
+
+```
+Local (.venv):    torch 2.10.0+cpu    → CPU inference, model loading, testing
+Docker/K8s:       torch + cu128       → Full CUDA GPU inference, training
+Ollama (local):   GPU direct          → LLM inference (slate-coder, slate-fast, slate-planner)
+```
+
+### Corrected Protocol Commands
+
+References to "7 integrations" in this document should read "11 integrations":
+```bash
+python slate/slate_runtime.py --check-all     # All 11 integrations (Python, venv, GPU, PyTorch, Transformers, Ollama, ChromaDB, Copilot SDK, Semantic Kernel, GitHub Models, K8s)
+```
+
+### Current Operational State (2026-02-09)
+
+- **GPUs**: 2x RTX 5070 Ti (Blackwell, 16GB each), GPU 0 = heavy_inference, GPU 1 = quick_tasks
+- **Ollama Models**: 11 total — slate-coder (12B), slate-fast (3B), slate-planner (7B), codellama:13b, mistral-nemo, llama3.2:3b, nomic-embed-text, phi, llama3.2, llama2, mistral
+- **K8s**: 9 deployments (chromadb, ollama, agent-router, autonomous-loop, copilot-bridge, core, dashboard, instruction-controller, workflow-manager)
+- **CronJobs**: 5 (codebase-indexer daily 2am, inference-benchmarks weekly, model-trainer weekly, nightly-health daily midnight, workflow-cleanup every 4h)
+- **Dashboard**: http://127.0.0.1:8080
+- **Inference Speed**: ~100 tok/s (slate-coder), ~308 tok/s (slate-fast)
+- **ChromaDB**: 10398 embeddings, last indexed 2026-02-07
