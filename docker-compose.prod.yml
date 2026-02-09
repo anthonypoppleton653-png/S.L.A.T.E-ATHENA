@@ -61,6 +61,8 @@ services:
       - SLATE_AGENT_NAME=Antigravity
       - SLATE_PLUGIN_ANTIGRAVITY=true
       - OLLAMA_HOST=ollama:11434
+      # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio host for prod compose
+      - LMSTUDIO_HOST=http://host.docker.internal:1234
       - CHROMADB_HOST=chromadb
       - CHROMADB_PORT=8000
       - PYTHONPATH=/slate

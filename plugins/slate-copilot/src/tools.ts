@@ -285,6 +285,7 @@ class InstallTool implements vscode.LanguageModelTool<IInstallParams> {
 					'- pip dependencies (requirements.txt)\n' +
 					'- PyTorch (GPU-aware)\n' +
 					'- Ollama (local LLM)\n' +
+					'- LM Studio (OpenAI-compatible inference, port 1234)\n' +
 					'- Docker (containerization)\n' +
 					'- VS Code extension\n' +
 					'- SLATE custom models\n' +

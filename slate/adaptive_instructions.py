@@ -107,6 +107,8 @@ class SystemState:
 
     # Services
     ollama_available: bool = False
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio availability to SystemState
+    lmstudio_available: bool = False
     chromadb_available: bool = False
     dashboard_available: bool = False
     runner_online: bool = False
@@ -287,8 +289,10 @@ class AdaptiveInstructionController:
         import urllib.request
         import urllib.error
 
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio health check to service collection
         services = {
             "ollama": ("http://127.0.0.1:11434/api/tags", "ollama_available"),
+            "lmstudio": ("http://127.0.0.1:1234/v1/models", "lmstudio_available"),
             "dashboard": ("http://127.0.0.1:8080/health", "dashboard_available"),
         }
 
@@ -396,7 +400,9 @@ class AdaptiveInstructionController:
             ctx.mode = InstructionMode.NORMAL
 
         # ── Determine agent availability ────────────────────────────────
-        if state.gpu_available and state.ollama_available:
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Include LM Studio as fallback inference provider for agent availability
+        inference_available = state.ollama_available or state.lmstudio_available
+        if state.gpu_available and inference_available:
             ctx.agent_availability = AgentAvailability.FULL
         elif state.gpu_available:
             ctx.agent_availability = AgentAvailability.GPU_ONLY
@@ -440,11 +446,12 @@ class AdaptiveInstructionController:
         if state.runner_online:
             ctx.active_protocols.append("ci_cd_dispatch")  # Allow workflow dispatch
 
-        if state.ollama_available:
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: LM Studio as fallback inference provider
+        if state.ollama_available or state.lmstudio_available:
             ctx.active_protocols.append("local_ai_inference")  # Enable local LLM ops
 
         # Disabled protocols
-        if not state.ollama_available:
+        if not state.ollama_available and not state.lmstudio_available:
             ctx.disabled_protocols.append("local_ai_inference")
         if not state.runner_online:
             ctx.disabled_protocols.append("ci_cd_dispatch")
@@ -519,6 +526,8 @@ class AdaptiveInstructionController:
             degraded_services = []
             if not state.ollama_available:
                 degraded_services.append("Ollama")
+            if not state.lmstudio_available:
+                degraded_services.append("LM Studio")
             if not state.dashboard_available:
                 degraded_services.append("Dashboard")
             if not state.runner_online:

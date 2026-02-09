@@ -24,6 +24,8 @@ export interface RuntimeState {
 	backend: RuntimeBackend;
 	dashboardUrl: string;
 	ollamaUrl: string;
+	// Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio URL to RuntimeState
+	lmstudioUrl: string;
 	chromaDbUrl: string;
 	healthy: boolean;
 	podCount: number;
@@ -78,6 +80,8 @@ export class SlateRuntimeAdapter implements vscode.Disposable {
 			backend: 'none',
 			dashboardUrl: 'http://127.0.0.1:8080',
 			ollamaUrl: 'http://127.0.0.1:11434',
+			// Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio default URL
+			lmstudioUrl: 'http://127.0.0.1:1234',
 			chromaDbUrl: 'http://127.0.0.1:8000',
 			healthy: false,
 			podCount: 0,
@@ -107,6 +111,12 @@ export class SlateRuntimeAdapter implements vscode.Disposable {
 	/** Get the Ollama URL for the current runtime */
 	public get ollamaUrl(): string {
 		return this._state.ollamaUrl;
+	}
+
+	// Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio URL getter
+	/** Get the LM Studio URL (always host-level, port 1234) */
+	public get lmstudioUrl(): string {
+		return this._state.lmstudioUrl;
 	}
 
 	// ─── Lifecycle ────────────────────────────────────────────────────────
@@ -443,6 +453,8 @@ export class SlateRuntimeAdapter implements vscode.Disposable {
 			{ name: 'Dashboard',    url: `${this._state.dashboardUrl}/api/status`, port: 8080 },
 			{ name: 'Ollama',       url: `${this._state.ollamaUrl}/api/tags`,      port: 11434 },
 			{ name: 'ChromaDB',     url: `${this._state.chromaDbUrl}/api/v1/heartbeat`, port: 8000 },
+			// Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio health check (host-level)
+			{ name: 'LM Studio',    url: `${this._state.lmstudioUrl}/v1/models`,   port: 1234 },
 		];
 
 		let allHealthy = true;

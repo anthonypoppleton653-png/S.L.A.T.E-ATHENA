@@ -258,6 +258,16 @@ jobs:
             if ($response) { $available = $true }
           } catch { }
           "available=$available" | Out-File -Append $env:GITHUB_OUTPUT
+      # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio availability check step
+      - name: Check LM Studio
+        id: lmstudio
+        run: |
+          $available = $false
+          try {
+            $response = Invoke-RestMethod -Uri "http://127.0.0.1:1234/v1/models" -TimeoutSec 5
+            if ($response) { $available = $true; Write-Host "LM Studio: RUNNING ($($response.data.Count) models)" }
+          } catch { Write-Host "LM Studio: not available" }
+          "available=$available" | Out-File -Append $env:GITHUB_OUTPUT
       - name: AI Review Changed Files
         if: steps.ollama.outputs.available == 'True'
         run: |

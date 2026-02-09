@@ -45,6 +45,7 @@ COMPONENTS = [
 ]
 
 # Modified: 2026-02-09T03:30:00Z | Author: COPILOT | Change: Add instruction-controller to PORT_FORWARDS
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio note — host-level service, not K8s pod
 PORT_FORWARDS = {
     'dashboard': ('slate-dashboard-svc', 8080, 8080),
     'agent-router': ('slate-agent-router-svc', 8081, 8081),
@@ -55,6 +56,8 @@ PORT_FORWARDS = {
     'ollama': ('ollama-svc', 11434, 11434),
     'chromadb': ('chromadb-svc', 8000, 8000),
     'metrics': ('slate-metrics-svc', 9090, 9090),
+    # LM Studio (port 1234) runs on the host — K8s pods reach it via host.docker.internal:1234
+    # No port-forward needed; env var LMSTUDIO_HOST is set in deployments.yaml
 }
 
 

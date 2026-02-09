@@ -77,10 +77,13 @@ def _normalize_host(host: str, default_port: int) -> str:
 _raw_ollama = os.environ.get("OLLAMA_HOST", "127.0.0.1:11434")
 _raw_chromadb = os.environ.get("CHROMADB_HOST", "127.0.0.1:8000")
 _raw_foundry = os.environ.get("FOUNDRY_HOST", "127.0.0.1:5272")
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio host config to dashboard
+_raw_lmstudio = os.environ.get("LMSTUDIO_HOST", "127.0.0.1:1234")
 
 OLLAMA_URL = _normalize_host(_raw_ollama, 11434)
 CHROMADB_URL = _normalize_host(_raw_chromadb, 8000)
 FOUNDRY_URL = _normalize_host(_raw_foundry, 5272)
+LMSTUDIO_URL = _normalize_host(_raw_lmstudio, 1234)
 K8S_MODE = os.environ.get("SLATE_K8S", "false").lower() == "true"
 
 # ─── Dependencies ─────────────────────────────────────────────────────────────
@@ -947,6 +950,24 @@ async def api_system_ollama():
 
     return JSONResponse(content=result)
 
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio API endpoint to dashboard
+@app.get("/api/system/lmstudio")
+async def api_system_lmstudio():
+    """Get LM Studio server status and loaded models."""
+    result = {"available": False, "models": []}
+    try:
+        import urllib.request
+        req = urllib.request.urlopen(f"{LMSTUDIO_URL}/v1/models", timeout=2)
+        if req.status == 200:
+            import json
+            data = json.loads(req.read().decode())
+            models = data.get("data", [])
+            result["available"] = True
+            result["models"] = [{"id": m.get("id", "unknown")} for m in models]
+    except Exception:
+        pass
+    return JSONResponse(content=result)
+
 @app.get("/api/services")
 async def api_services():
     """Get all service statuses."""
@@ -988,6 +1009,15 @@ async def api_services():
         services.append({"id": "foundry", "name": "Foundry Local", "online": req.status == 200, "port": 5272})
     except Exception:
         services.append({"id": "foundry", "name": "Foundry Local", "online": False, "port": 5272})
+
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio to service health checks
+    # LM Studio
+    try:
+        import urllib.request
+        req = urllib.request.urlopen(f"{LMSTUDIO_URL}/v1/models", timeout=2)
+        services.append({"id": "lmstudio", "name": "LM Studio", "online": req.status == 200, "port": 1234})
+    except Exception:
+        services.append({"id": "lmstudio", "name": "LM Studio", "online": False, "port": 1234})
 
     return JSONResponse(content={"services": services})
 

@@ -31,6 +31,8 @@ dashboard:
     SLATE_DASHBOARD_PORT: "8080"
     SLATE_LOG_LEVEL: INFO
     OLLAMA_HOST: "http://ollama-svc:11434"
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio host for Helm chart
+    LMSTUDIO_HOST: "http://host.docker.internal:1234"
     CHROMADB_HOST: "http://chromadb-svc:8000"
     SLATE_ENABLE_WEBSOCKET: "true"
     SLATE_ENABLE_GPU_MONITORING: "true"

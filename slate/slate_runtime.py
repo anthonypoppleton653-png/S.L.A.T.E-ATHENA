@@ -84,6 +84,33 @@ def check_ollama():
         return False
 
 
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio integration check (12th integration)
+def check_lmstudio():
+    """Check if LM Studio server is reachable via OpenAI-compatible API."""
+    try:
+        host = os.environ.get("LMSTUDIO_HOST", "http://127.0.0.1:1234")
+        if not host.startswith("http"):
+            host = f"http://{host}"
+        req = urllib.request.urlopen(f"{host.rstrip('/')}/v1/models", timeout=5)
+        return req.status == 200
+    except Exception:
+        return False
+
+
+def lmstudio_details():
+    """Get LM Studio model count and version info."""
+    try:
+        host = os.environ.get("LMSTUDIO_HOST", "http://127.0.0.1:1234")
+        if not host.startswith("http"):
+            host = f"http://{host}"
+        req = urllib.request.urlopen(f"{host.rstrip('/')}/v1/models", timeout=5)
+        data = json.loads(req.read().decode())
+        models = data.get("data", [])
+        return f"{len(models)} model(s) loaded"
+    except Exception:
+        return "offline"
+
+
 def check_gpu():
     # Modified: 2026-02-09T01:39:00Z | Author: Antigravity (Gemini) | Change: Use torch.cuda inside Docker
     if IS_DOCKER:
@@ -249,6 +276,7 @@ INTEGRATIONS = [
     ("PyTorch", check_pytorch, pytorch_details),
     ("Transformers", check_transformers, None),
     ("Ollama", check_ollama, None),
+    ("LM Studio", check_lmstudio, lmstudio_details),
     ("ChromaDB", check_chromadb, chromadb_details),
     ("Copilot SDK", check_copilot_sdk, copilot_sdk_details),
     ("Semantic Kernel", check_semantic_kernel, semantic_kernel_details),

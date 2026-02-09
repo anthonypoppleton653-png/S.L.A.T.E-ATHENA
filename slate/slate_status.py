@@ -154,6 +154,22 @@ def get_ollama_info():
         return {"available": False, "model_count": 0}
 
 
+# Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio status to system health check
+def get_lmstudio_info():
+    """Check LM Studio server status via OpenAI-compatible API."""
+    try:
+        host = os.environ.get("LMSTUDIO_HOST", "http://127.0.0.1:1234")
+        if not host.startswith("http"):
+            host = f"http://{host}"
+        req = urllib.request.urlopen(f"{host.rstrip('/')}/v1/models", timeout=5)
+        data = json.loads(req.read().decode())
+        models = data.get("data", [])
+        model_names = [m.get("id", "unknown") for m in models]
+        return {"available": True, "model_count": len(models), "models": model_names[:10]}
+    except Exception:
+        return {"available": False, "model_count": 0}
+
+
 # Modified: 2026-02-08T10:00:00Z | Author: COPILOT | Change: Add Semantic Kernel status to system health check
 def get_sk_info():
     """Check Semantic Kernel installation."""
@@ -274,6 +290,7 @@ def get_status():
         "system": get_system_info(),
         "pytorch": get_pytorch_info(),
         "ollama": get_ollama_info(),
+        "lmstudio": get_lmstudio_info(),
         "semantic_kernel": get_sk_info(),
         "github_models": get_github_models_info(),
         "kubernetes": get_kubernetes_info(),
@@ -330,6 +347,14 @@ def print_quick_status(status: dict):
         print(f"  Ollama:   {OK} {ollama['model_count']} models")
     else:
         print(f"  Ollama:   {NONE} Not available")
+
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Display LM Studio in quick status
+    # LM Studio
+    lms = status.get("lmstudio", {})
+    if lms.get("available"):
+        print(f"  LMStudio: {OK} {lms.get('model_count', 0)} model(s) loaded")
+    else:
+        print(f"  LMStudio: {NONE} Not available")
 
     # Modified: 2026-02-08T10:00:00Z | Author: COPILOT | Change: Display Semantic Kernel in quick status
     # Semantic Kernel

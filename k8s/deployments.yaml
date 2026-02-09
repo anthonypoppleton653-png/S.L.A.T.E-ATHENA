@@ -59,6 +59,9 @@ spec:
               value: /workspace
             - name: OLLAMA_HOST
               value: ollama-svc:11434
+            # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio host env for K8s pods
+            - name: LMSTUDIO_HOST
+              value: http://host.docker.internal:1234
             - name: CHROMADB_HOST
               value: chromadb-svc
             - name: CHROMADB_PORT

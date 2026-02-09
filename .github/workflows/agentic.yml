@@ -78,6 +78,22 @@ jobs:
               print(f'Ollama: NOT RUNNING - {e}')
               exit(1)
           "@
+      # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio check to agentic workflow
+      - name: Check LM Studio
+        continue-on-error: true
+        run: |
+          python -c @"
+          import urllib.request, json
+          try:
+              r = urllib.request.urlopen('http://127.0.0.1:1234/v1/models', timeout=5)
+              data = json.loads(r.read())
+              models = data.get('data', [])
+              print(f'LM Studio: RUNNING ({len(models)} models)')
+              for m in models:
+                  print(f'  {m.get("id","?")}')
+          except Exception as e:
+              print(f'LM Studio: NOT RUNNING - {e}')
+          "@
       - name: Check GPUs
         run: |
           nvidia-smi --query-gpu=index,name,memory.used,memory.total,utilization.gpu --format=csv,noheader

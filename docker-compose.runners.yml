@@ -34,6 +34,8 @@ x-runner-common: &runner-common
     SLATE_DOCKER: "1"
     SLATE_SAFE_MODE: "1"
     OLLAMA_HOST: "host.docker.internal:11434"
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add LM Studio host for runners compose
+    LMSTUDIO_HOST: "http://host.docker.internal:1234"
     PYTHONPATH: "/workspace"
     PYTHONUNBUFFERED: "1"
   volumes:

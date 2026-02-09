@@ -65,7 +65,11 @@ class TestLMStudioConfig(unittest.TestCase):
 
     def test_lmstudio_in_task_routing(self):
         from slate.unified_ai_backend import TASK_ROUTING
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Skip specialized task types that don't use LM Studio
+        skip_tasks = {"3d_generation", "avatar_generation", "asset_generation"}  # Trellis2-only tasks
         for task_type, providers in TASK_ROUTING.items():
+            if task_type in skip_tasks:
+                continue
             self.assertIn("lmstudio", providers,
                           f"lmstudio missing from TASK_ROUTING['{task_type}']")
 

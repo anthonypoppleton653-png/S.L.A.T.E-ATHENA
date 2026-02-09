@@ -120,7 +120,7 @@ SLATE is layered. Fix the LOWEST broken layer first. Progress upward.
 | 1 | Foundation | slate_systemStatus, slate_runtimeCheck, slate_checkDeps |
 | 2 | Hardware | slate_hardwareInfo, slate_gpuManager |
 | 3 | Infrastructure | slate_runnerStatus, slate_orchestrator, slate_startServices |
-| 4 | AI Pipeline | slate_gpuManager(preload), slate_runtimeCheck, slate_githubModels |
+| 4 | AI Pipeline | slate_gpuManager(preload), slate_runtimeCheck, slate_githubModels, LM Studio (port 1234) |
 | 5 | Agent Registry | slate_agentStatus, slate_agentBridge |
 | 6 | Services | slate_orchestrator, slate_startServices |
 | 7 | Task Mgmt | slate_workflow, slate_autonomous, slate_executeWork, slate_handoff |
@@ -234,7 +234,7 @@ Report: service name | was | now. Concise table.`,
 1. slate_hardwareInfo + slate_gpuManager(action="status") — gather GPU state
 2. If not optimized → slate_hardwareInfo(optimize=true) immediately
 3. If models not loaded → slate_gpuManager(action="preload") immediately
-4. slate_runtimeCheck — verify Ollama/PyTorch/ChromaDB
+4. slate_runtimeCheck — verify Ollama/LM Studio/PyTorch/ChromaDB
 5. Report: GPU table with VRAM, model assignments, optimizations applied.`,
 
 	// ─── /agents — Agent orchestration mission ─────────────────────────
