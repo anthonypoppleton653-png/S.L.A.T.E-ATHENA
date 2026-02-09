@@ -13,7 +13,10 @@
       "author": {
         "name": "Synchronized Living Architecture"
       },
-      "source": "./plugins/slate",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E"
+      },
       "category": "development",
       "strict": false
     }
