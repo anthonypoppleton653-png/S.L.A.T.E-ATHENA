@@ -1,0 +1,36 @@
+{
+    "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/settings-schema.json",
+    "_comment": "S.L.A.T.E. Claude Code settings template — copied during install",
+    "_modified": "2026-02-09T23:00:00Z",
+
+    "mcpServers": {
+        "slate": {
+            "type": "stdio",
+            "command": "{{PYTHON_PATH}}",
+            "args": ["slate/mcp_server.py"],
+            "env": {
+                "SLATE_WORKSPACE": "{{WORKSPACE_PATH}}"
+            }
+        }
+    },
+
+    "permissions": {
+        "allow": [
+            "mcp__slate__slate_status(*)",
+            "mcp__slate__slate_workflow(*)",
+            "mcp__slate__slate_orchestrator(*)",
+            "mcp__slate__slate_runner(*)",
+            "mcp__slate__slate_ai(*)",
+            "mcp__slate__slate_runtime(*)",
+            "mcp__slate__slate_hardware(*)",
+            "mcp__slate__slate_benchmark(*)",
+            "mcp__slate__slate_gpu(*)",
+            "mcp__slate__slate_spec_kit(*)",
+            "mcp__slate__slate_schematic(*)"
+        ]
+    },
+
+    "behavior": {
+        "profile": "slate-operator"
+    }
+}

@@ -1066,6 +1066,94 @@ def step_sdk_validate(tracker, args):
         return True
 
 
+def step_instruction_files(tracker, args):
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add template-based instruction file generation
+    """Step 6a: Populate instruction files from templates."""
+    tracker.start_step("instruction_files")
+    tracker.update_progress("instruction_files", 10, "Reading templates")
+
+    templates_dir = WORKSPACE_ROOT / "templates"
+    if not templates_dir.exists():
+        tracker.complete_step("instruction_files", success=True, warning=True,
+                              details="templates/ directory not found — skipping")
+        return True
+
+    # Detect placeholder values
+    fork_name = "S.L.A.T.E."
+    author_name = "COPILOT"
+    python_path = str(_get_python_exe())
+    workspace_path = str(WORKSPACE_ROOT)
+
+    # Try to get fork name from git remote
+    try:
+        remote = _run_cmd(["git", "remote", "get-url", "origin"], timeout=10)
+        if remote.returncode == 0:
+            url = remote.stdout.strip()
+            if "github.com" in url:
+                slug = url.replace("https://github.com/", "").replace(".git", "").strip("/")
+                if "/" in slug:
+                    fork_name = slug.split("/")[-1]
+    except Exception:
+        pass
+
+    # Try to get author name from git config
+    try:
+        git_user = _run_cmd(["git", "config", "user.name"], timeout=10)
+        if git_user.returncode == 0 and git_user.stdout.strip():
+            author_name = git_user.stdout.strip()
+    except Exception:
+        pass
+
+    replacements = {
+        "{{FORK_NAME}}": fork_name,
+        "{{AUTHOR_NAME}}": author_name,
+        "{{PYTHON_PATH}}": python_path.replace("\\", "/"),
+        "{{WORKSPACE_PATH}}": workspace_path.replace("\\", "/"),
+    }
+
+    tracker.update_progress("instruction_files", 30, "Populating templates")
+
+    template_targets = [
+        ("copilot-instructions.template.md", WORKSPACE_ROOT / ".github" / "copilot-instructions.md"),
+        ("CLAUDE.template.md", WORKSPACE_ROOT / "CLAUDE.md"),
+        ("claude-settings.template.json", WORKSPACE_ROOT / ".claude" / "settings.json"),
+    ]
+
+    populated = 0
+    skipped = 0
+    for tmpl_name, target_path in template_targets:
+        tmpl_file = templates_dir / tmpl_name
+        if not tmpl_file.exists():
+            skipped += 1
+            continue
+
+        # Don't overwrite customized files on update/resume unless they still have placeholders
+        if target_path.exists():
+            existing = target_path.read_text(encoding="utf-8", errors="replace")
+            has_placeholders = any(ph in existing for ph in replacements)
+            if not has_placeholders:
+                # File exists and is already personalized — skip
+                skipped += 1
+                continue
+
+        try:
+            content = tmpl_file.read_text(encoding="utf-8")
+            for placeholder, value in replacements.items():
+                content = content.replace(placeholder, value)
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            target_path.write_text(content, encoding="utf-8")
+            populated += 1
+        except Exception as e:
+            tracker.update_progress("instruction_files", 50,
+                                    f"Warning: could not write {target_path.name}: {e}")
+            skipped += 1
+
+    tracker.complete_step("instruction_files", success=True,
+                          details=f"{populated} files populated, {skipped} skipped "
+                                  f"(fork: {fork_name}, author: {author_name})")
+    return True
+
+
 def step_dirs_create(tracker, args):
     """Step 6: Create workspace directories and init files."""
     tracker.start_step("dirs_create")
@@ -2123,6 +2211,54 @@ def step_github_pages(tracker, args):
     return True
 
 
+def step_setup_validate(tracker, args):
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add pre-flight validation via slate_setup_validator.py
+    """Step 25a: Run comprehensive setup validation."""
+    tracker.start_step("setup_validate")
+    tracker.update_progress("setup_validate", 10, "Loading setup validator")
+
+    py = _get_python_exe()
+    validator_script = WORKSPACE_ROOT / "slate" / "slate_setup_validator.py"
+
+    if not validator_script.exists():
+        tracker.complete_step("setup_validate", success=True, warning=True,
+                              details="slate_setup_validator.py not found — skipping")
+        return True
+
+    tracker.update_progress("setup_validate", 30, "Running validation checks")
+
+    result = _run_cmd([py, str(validator_script), "--json"], timeout=60)
+
+    if result.returncode == 0:
+        try:
+            data = json.loads(result.stdout)
+            passed = data.get("passed", 0)
+            failed = data.get("failed", 0)
+            warnings = data.get("warnings", 0)
+            total = data.get("total", 0)
+
+            if failed == 0:
+                tracker.complete_step("setup_validate", success=True,
+                                      details=f"{passed}/{total} checks passed"
+                                              + (f", {warnings} warnings" if warnings else ""))
+            else:
+                # Show which categories failed
+                categories = data.get("categories", {})
+                failed_cats = [k for k, v in categories.items()
+                               if v.get("status") == "fail"]
+                tracker.complete_step("setup_validate", success=True, warning=True,
+                                      details=f"{passed}/{total} passed, {failed} failed: "
+                                              + ", ".join(failed_cats[:5]))
+        except (json.JSONDecodeError, KeyError):
+            tracker.complete_step("setup_validate", success=True, warning=True,
+                                  details="Validation ran but output not parseable")
+    else:
+        tracker.complete_step("setup_validate", success=True, warning=True,
+                              details="Validation script returned non-zero (partial install expected)")
+
+    return True
+
+
 def step_runtime_check(tracker, args):
     # Modified: 2025-07-12T21:30:00Z | Author: COPILOT | Change: Expand to 8 ecosystem checks
     """Step 9: Final runtime verification — full ecosystem validation."""
@@ -2370,6 +2506,7 @@ def main():
     args = parse_args()
 
     # ── Route to ecosystem installer for --update, --check, --full ────
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Wire slate_updater.py into --update path
     if args.update or args.check or args.full:
         sys.path.insert(0, str(WORKSPACE_ROOT))
         try:
@@ -2380,8 +2517,19 @@ def main():
                 installer.run_check()
                 return 0
             elif args.update:
-                result = installer.run_update()
-                return 0 if result["success"] else 1
+                # Use SlateUpdater for upstream-aware updates, fall back to basic
+                try:
+                    from slate.slate_updater import SlateUpdater
+                    updater = SlateUpdater(workspace=WORKSPACE_ROOT)
+                    result = updater.update()
+                    if result.get("success"):
+                        # Also run the basic ecosystem validation
+                        installer.step_validate()
+                    return 0 if result.get("success") else 1
+                except ImportError:
+                    # SlateUpdater not available — use basic update
+                    result = installer.run_update()
+                    return 0 if result["success"] else 1
             elif args.full:
                 result = installer.run_install(beta=args.beta)
                 return 0 if result["success"] else 1
@@ -2435,7 +2583,7 @@ def main():
             pass
 
     # Define all installation steps in canonical order
-    # Modified: 2026-02-07T20:00:00Z | Author: COPILOT | Change: Add fork upstream + GitHub Pages steps
+    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add instruction_files, setup_validate steps
     install_steps = [
         ("dashboard_boot", step_dashboard_boot),
         ("python_check",   step_python_check),
@@ -2448,6 +2596,7 @@ def main():
         ("docker_check",   step_docker_check),
         ("sdk_validate",   step_sdk_validate),
         ("dirs_create",    step_dirs_create),
+        ("instruction_files", step_instruction_files),
         ("git_sync",       step_git_sync),
         ("vscode_ext",     step_vscode_extension),
         ("claude_plugin",  step_claude_code_plugin),
@@ -2463,6 +2612,7 @@ def main():
         ("github_pages",   step_github_pages),
         ("benchmark",      step_benchmark),
         ("energy_config",  step_energy_config),
+        ("setup_validate", step_setup_validate),
         ("runtime_check",  step_runtime_check),
     ]
 

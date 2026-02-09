@@ -217,7 +217,11 @@
                 "decelerate": "cubic-bezier(0, 0, 0.2, 1)",
                 "accelerate": "cubic-bezier(0.4, 0, 1, 1)",
                 "spring": "cubic-bezier(0.34, 1.56, 0.64, 1)",
-                "expo-out": "cubic-bezier(0.16, 1, 0.3, 1)"
+                "expo-out": "cubic-bezier(0.16, 1, 0.3, 1)",
+                "elastic": "cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+                "smooth-out": "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                "snap": "cubic-bezier(0.55, 0, 0.1, 1)",
+                "bounce": "cubic-bezier(0.34, 1.56, 0.64, 1)"
             },
             "duration": {
                 "instant": "50ms",
@@ -225,13 +229,79 @@
                 "normal": "250ms",
                 "slow": "400ms",
                 "glacial": "600ms",
-                "ambient": "3000ms"
+                "ambient": "3000ms",
+                "reveal": "800ms",
+                "morph": "1200ms"
             },
             "stagger": {
                 "fast": "30ms",
                 "normal": "50ms",
-                "slow": "80ms"
+                "slow": "80ms",
+                "dramatic": "120ms"
             }
+        },
+        "interaction": {
+            "_comment": "Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add awwwards-inspired interaction tokens",
+            "tilt": {
+                "max-angle": "12deg",
+                "perspective": "1000px",
+                "scale-hover": "1.02",
+                "transition": "400ms cubic-bezier(0.03, 0.98, 0.52, 0.99)"
+            },
+            "magnetic": {
+                "radius": "120px",
+                "strength": "0.35",
+                "return-speed": "600ms"
+            },
+            "ripple": {
+                "color": "rgba(184, 115, 51, 0.25)",
+                "duration": "600ms",
+                "scale": "4"
+            },
+            "cursor": {
+                "lerp-factor": "0.1",
+                "size-default": "20px",
+                "size-hover": "60px",
+                "blend-mode": "difference"
+            }
+        },
+        "texture": {
+            "_comment": "Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add texture tokens for grain overlay, noise, and depth",
+            "grain": {
+                "opacity": "0.035",
+                "blend": "overlay",
+                "size": "200px"
+            },
+            "noise": {
+                "frequency": "0.65",
+                "octaves": "4"
+            },
+            "slate-stone": {
+                "surface-roughness": "0.7",
+                "edge-chisel": "1px",
+                "stratification-layers": "5",
+                "base-hue": "220",
+                "base-saturation": "8%",
+                "base-lightness-range": ["12%", "22%"]
+            }
+        },
+        "fluid-type": {
+            "_comment": "Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add fluid typography tokens using clamp()",
+            "display": "clamp(2.5rem, 5vw + 1rem, 5rem)",
+            "heading-1": "clamp(2rem, 4vw + 0.5rem, 3.5rem)",
+            "heading-2": "clamp(1.5rem, 3vw + 0.5rem, 2.5rem)",
+            "heading-3": "clamp(1.25rem, 2vw + 0.5rem, 1.75rem)",
+            "body-large": "clamp(1rem, 1.2vw + 0.5rem, 1.25rem)",
+            "body": "clamp(0.875rem, 1vw + 0.25rem, 1rem)",
+            "caption": "clamp(0.75rem, 0.8vw + 0.25rem, 0.875rem)"
+        },
+        "scroll": {
+            "_comment": "Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add scroll-linked animation tokens",
+            "parallax-factor-slow": "0.05",
+            "parallax-factor-medium": "0.15",
+            "parallax-factor-fast": "0.3",
+            "reveal-threshold": "0.12",
+            "reveal-offset": "-80px"
         }
     }
 }

@@ -32,7 +32,7 @@
 </p>
 
 <p align="center">
-  Works with GitHub Copilot, VS Code, Claude Code, AI Toolkit, and PyTorch
+  Works with GitHub Copilot, VS Code, Claude Code, Antigravity (Gemini), AI Toolkit, and PyTorch
 </p>
 
 <p align="center">
@@ -45,7 +45,7 @@
 
 > ⚠️ **WARNING: AI HOBBYIST PROJECT — EXPERIMENTAL SOFTWARE**
 >
-> This project is **entirely created and managed by AI** (GitHub Copilot, Claude Code) through **vibe coding**. It is an AI hobbyist experiment with a production-ready aim — but it is **not production-ready**. Not yet suitable for critical systems. Use at your own risk.
+> This project is **entirely created and managed by AI** (GitHub Copilot, Claude Code & Antigravity) through **vibe coding**. It is an AI hobbyist experiment with a production-ready aim — but it is **not production-ready**. Not yet suitable for critical systems. Use at your own risk.
 >
 > **Quick Install**:
 > ```bash
@@ -599,33 +599,58 @@ python slate/slate_multi_runner.py --dispatch "task_type=inference"
 
 ## Docker Deployment
 
-SLATE provides GPU and CPU Docker variants.
+SLATE provides GPU and CPU Docker variants, published to GitHub Container Registry.
 
 ### Docker Images
 
+<!-- Modified: 2026-02-09T16:01:00-05:00 | Author: Gemini (Antigravity) | Change: Add GHCR stable image -->
+
 | Image | Base | Size | Use Case |
 |-------|------|------|----------|
-| `slate:latest` | CUDA 12.4 | ~8GB | GPU inference |
-| `slate:cpu` | Python 3.11-slim | ~500MB | CPU-only deployment |
+| `ghcr.io/synchronizedlivingarchitecture/slate:stable` | CUDA 12.8 | ~8GB | **Stable release** — GPU inference |
+| `ghcr.io/synchronizedlivingarchitecture/slate:latest-gpu` | CUDA 12.8 | ~8GB | Latest GPU build |
+| `ghcr.io/synchronizedlivingarchitecture/slate:latest-cpu` | Python 3.11-slim | ~500MB | CPU-only deployment |
+| `slate:local` | CUDA 12.8 | ~8GB | Local build |
 
 ### Quick Start with Docker
 
 ```bash
-# GPU version with Ollama sidecar
-docker-compose up -d
+# Option 1: Pull stable image from GHCR (recommended)
+docker pull ghcr.io/synchronizedlivingarchitecture/slate:stable
+docker compose up -d
 
-# CPU-only version
-docker build -f Dockerfile.cpu -t slate:cpu .
-docker run -p 8080:8080 slate:cpu
+# Option 2: Build locally
+docker compose build
+docker compose up -d
+
+# Option 3: CPU-only
+docker compose --profile cpu up -d
 ```
 
 ### Docker Compose Services
 
 ```yaml
 services:
-  slate:           # Main SLATE container (GPU)
-  slate-ollama:    # Ollama sidecar for LLM inference
+  slate:           # Main SLATE container (GPU) — Dashboard + Orchestrator
+  ollama:          # Ollama sidecar for LLM inference
+  chromadb:        # Vector store for RAG memory
+  grafana:         # Monitoring dashboard
+  prometheus:      # Metrics collector (optional)
 ```
+
+### Ports
+
+| Port | Service | Description |
+|------|---------|-------------|
+| `8080` | Dashboard | Main UI + API |
+| `8081` | Agent Router | Task routing |
+| `8082` | Autonomous Loop | Self-healing tasks |
+| `8083` | Copilot Bridge | VS Code ↔ K8s |
+| `8084` | Workflow Manager | Task lifecycle |
+| `9090` | Prometheus | Metrics |
+| `11434` | Ollama | LLM inference |
+| `8000` | ChromaDB | Vector store |
+| `3000` | Grafana | Monitoring |
 
 ## Local AI Providers
 
@@ -813,14 +838,15 @@ SLATE won't run your GPU into the ground:
 
 | Integration | Type | Status | Port/Protocol |
 |:------------|:-----|:-------|:--------------|
+| **Antigravity** | Primary Architect (Gemini) | **Active** | Tier 4 ARCHITECT |
+| **Claude Code** | Terminal Agent (Anthropic) | **Active** | 12 MCP Tools |
+| **GitHub Copilot** | IDE Agent (VSCode) | **Active** | @slate Participant |
 | **Ollama** | AI Backend | Verified | `:11434` |
 | **Foundry Local** | AI Backend | Verified | `:5272` |
-| **VS Code** | IDE Extension | Active | @slate |
-| **Claude Code** | MCP Server + Unified Backend | Active | 41 Tools, 12 MCP |
+| **VS Code** | IDE Extension | Active | SLATE Copilot |
 | **Unified AI Backend** | Inference Router | Active | 3 Providers |
-| **GitHub Copilot** | Participant | Active | @slate |
 | **GitHub Actions** | Runner | Self-hosted | GPU Labels |
-| **Docker** | Container | Release Image | GPU/CPU |
+| **Docker (GHCR)** | Container | **Stable Image** | GPU/CPU |
 | **Kubernetes** | Orchestration | Local Cloud | 7 Deployments, 9 Pods |
 | **Helm** | Package Manager | v3.17+ | Chart v1.0.0 |
 | **ChromaDB** | Vector Store | Local | RAG Memory |
@@ -868,6 +894,7 @@ SLATE development follows a specification-driven approach. Each major feature st
 | 022 | Brand Identity System | Specified | Unified visual identity across all SLATE surfaces |
 | 023 | Avatar System | Specified | Living orrery avatar with state-reactive D3.js + TRELLIS.2 3D |
 | 024 | TRELLIS.2 3D Integration | Specified | Microsoft 4B image-to-3D model as K8s microservice |
+| 025 | User Permissions & Onboarding | **Implementing** | Permission gate, token counter, energy scheduler, benchmark suite |
 
 ### Spec Lifecycle
 
@@ -1022,16 +1049,17 @@ SLATE was developed and tested on the following hardware (not provided to users)
 | Component | Specification |
 |-----------|---------------|
 | **GPU** | Dual NVIDIA RTX 5070 Ti (32GB VRAM total) |
-| **CPU** | 24 threads |
-| **RAM** | 32GB+ |
+| **CPU** | AMD Ryzen 9 — 24 threads |
+| **RAM** | 64 GB DDR5 |
 | **Storage** | NVMe SSD |
 | **OS** | Windows 11 |
+| **Benchmark** | 86.1/100 — Workstation Tier |
 
-This represents the upper end of SLATE's capabilities. SLATE scales down to work on much more modest hardware - see [System Requirements](#system-requirements).
+This represents the upper end of SLATE's capabilities. SLATE scales down to work on much more modest hardware — see [System Requirements](#system-requirements).
 
 ## License
 
-S.L.A.T.E. is **experimental software** — an AI hobbyist project entirely created and managed by AI through vibe coding. Use at your own risk. The author is not liable for any damages arising from use of this software.
+S.L.A.T.E. is **experimental software** — an AI hobbyist project entirely created and managed by AI (GitHub Copilot, Claude Code & Antigravity) through vibe coding. Use at your own risk. The author is not liable for any damages arising from use of this software.
 
 See the [LICENSE](LICENSE) file for complete terms and conditions.
 

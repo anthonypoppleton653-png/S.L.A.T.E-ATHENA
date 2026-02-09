@@ -142,7 +142,8 @@ spec:
             - name: SLATE_DOCKER
               value: "1"
             - name: OLLAMA_HOST
-              value: ollama-svc:11434
+              # Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Route to host GPU Ollama
+              value: host.docker.internal:11434
             - name: CHROMADB_HOST
               value: chromadb-svc:8000
             - name: PYTHONPATH
@@ -176,6 +177,14 @@ spec:
               mountPath: /tmp
             - name: slate-data
               mountPath: /slate/.slate_index
+          # Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Add startupProbe for resilient service init
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 24
           # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Use HTTP probes for real agent router
           livenessProbe:
             httpGet:
@@ -283,11 +292,12 @@ spec:
               import urllib.request, time, sys
               for i in range(60):
                   try:
-                      urllib.request.urlopen('http://ollama-svc:11434/api/tags', timeout=5)
-                      print('Ollama is ready')
+                      # Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Route to host GPU Ollama
+                      urllib.request.urlopen('http://host.docker.internal:11434/api/tags', timeout=5)
+                      print('Ollama (host GPU) is ready')
                       sys.exit(0)
                   except Exception:
-                      print(f'Waiting for Ollama... ({i+1}/60)')
+                      print(f'Waiting for Ollama (host GPU)... ({i+1}/60)')
                       time.sleep(5)
               print('Ollama not ready after 5 minutes')
               sys.exit(1)
@@ -361,7 +371,8 @@ spec:
             - name: SLATE_DOCKER
               value: "1"
             - name: OLLAMA_HOST
-              value: ollama-svc:11434
+              # Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Route to host GPU Ollama
+              value: host.docker.internal:11434
             - name: CHROMADB_HOST
               value: chromadb-svc:8000
             - name: PYTHONPATH
@@ -403,6 +414,14 @@ spec:
               mountPath: /slate/.slate_index
             - name: slate-memory
               mountPath: /slate/slate_memory
+          # Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Add startupProbe for resilient service init with Ollama dependency
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 30
           # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Use HTTP probes for real autonomous loop
           livenessProbe:
             httpGet:
@@ -694,7 +713,8 @@ spec:
             - name: SLATE_DOCKER
               value: "1"
             - name: OLLAMA_HOST
-              value: ollama-svc:11434
+              # Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Route to host GPU Ollama
+              value: host.docker.internal:11434
             - name: CHROMADB_HOST
               value: chromadb-svc:8000
             - name: PYTHONPATH
@@ -721,6 +741,14 @@ spec:
               readOnly: true
             - name: tmp
               mountPath: /tmp
+          # Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Add startupProbe for bridge initialization
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 8083
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12
           livenessProbe:
             httpGet:
               path: /api/health
@@ -822,7 +850,8 @@ spec:
             - name: SLATE_DOCKER
               value: "1"
             - name: OLLAMA_HOST
-              value: ollama-svc:11434
+              # Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Route to host GPU Ollama
+              value: host.docker.internal:11434
             - name: CHROMADB_HOST
               value: chromadb-svc:8000
             - name: PYTHONPATH
@@ -857,6 +886,14 @@ spec:
               mountPath: /tmp
             - name: slate-data
               mountPath: /slate/.slate_index
+          # Modified: 2026-02-12T00:00:00Z | Author: COPILOT | Change: Add startupProbe for workflow manager
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 8084
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12
           # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Use HTTP probes for real workflow service
           livenessProbe:
             httpGet:

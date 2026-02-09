@@ -196,8 +196,11 @@ class InstallTracker:
                     "Running CPU, memory, disk, and GPU benchmarks", order=24),
         InstallStep("energy_config", "Energy Configuration",
                     "Configuring energy-aware scheduling and provider settings", order=25),
+        # Modified: 2026-02-09T22:00:00Z | Author: COPILOT | Change: Add setup_validate step from upstream, bump runtime_check to 27
+        InstallStep("setup_validate", "Setup Validation",
+                    "Running comprehensive setup validation checks", order=26),
         InstallStep("runtime_check", "Runtime Verification",
-                    "Final verification of all integrations", order=26),
+                    "Final verification of all integrations", order=27),
     ]
 
     def __init__(self):

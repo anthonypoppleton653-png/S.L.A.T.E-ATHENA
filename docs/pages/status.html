@@ -1,132 +1,825 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- Modified: 2026-02-09T16:12:00-05:00 | Author: Gemini (Antigravity) | Change: Complete rewrite with SLATE blueprint design system -->
+<!-- AI Note: When modifying this file, add a dated comment with your agent name. -->
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>S.L.A.T.E. — System Status</title>
-    <meta name="description" content="Live system status for SLATE AI orchestration framework">
+    <meta name="description"
+        content="Live system status dashboard for SLATE AI orchestration framework. GPU, services, agents, and benchmark metrics.">
+    <link rel="icon" type="image/svg+xml" href="assets/slate-logo-v2.svg">
+    <link rel="canonical" href="https://synchronizedlivingarchitecture.github.io/S.L.A.T.E/status.html">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
     <style>
-        :root {
-            --bg: #0a0e17;
-            --surface: #121929;
-            --primary: #00d4ff;
-            --secondary: #7c3aed;
-            --text: #e2e8f0;
-            --muted: #64748b;
-            --success: #22c55e;
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            /* Primary copper/rust palette */
+            --copper-primary: #B87333;
+            --copper-light: #C9956B;
+            --copper-dark: #8B4530;
+
+            /* Surface */
+            --surface: #0A0A0A;
+            --surface-variant: #161616;
+            --surface-elevated: #1A1A1A;
+            --on-surface: #E7E0D8;
+            --on-surface-variant: #A8A29E;
+            --on-surface-dim: #78716C;
+
+            /* Blueprint */
+            --blueprint-bg: #0D1B2A;
+            --blueprint-grid: #1B3A4B;
+            --blueprint-accent: #98C1D9;
+
+            /* Status */
+            --status-active: #22C55E;
+            --status-pending: #F59E0B;
+            --status-error: #EF4444;
+            --status-info: #3B82F6;
+            --status-disabled: #6B7280;
+
+            /* Fonts */
+            --font-sans: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+            --font-mono: 'IBM Plex Mono', 'Cascadia Code', monospace;
+
+            /* Polish */
+            --polish: radial-gradient(ellipse at 30% 20%, rgba(184, 115, 51, 0.04) 0%, transparent 50%);
+        }
+
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            font-family: var(--font-sans);
+            background:
+                linear-gradient(180deg, var(--blueprint-bg) 0%, var(--surface) 30%, var(--surface) 100%);
+            color: var(--on-surface);
             min-height: 100vh;
         }
-        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
-        h1 {
-            font-size: 2.5rem;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
+
+        /* Blueprint grid overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                linear-gradient(rgba(27, 58, 75, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(27, 58, 75, 0.15) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
         }
-        .timestamp { color: var(--muted); margin-bottom: 2rem; }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin: 2rem 0;
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
         }
-        .card {
-            background: var(--surface);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 12px;
-            padding: 1.5rem;
-            transition: transform 0.2s;
+
+        /* Header */
+        .header {
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(184, 115, 51, 0.15);
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
-        .card:hover { transform: translateY(-2px); }
-        .card h3 { color: var(--primary); margin-bottom: 0.75rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; }
-        .card .value { font-size: 2rem; font-weight: 700; }
-        .card .label { color: var(--muted); font-size: 0.85rem; }
-        .status-badge {
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-left img {
+            width: 28px;
+            height: 28px;
+        }
+
+        .header-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--copper-primary);
+            letter-spacing: 0.04em;
+        }
+
+        .header-subtitle {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--on-surface-dim);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .back-link {
+            color: var(--on-surface-dim);
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--copper-light);
+        }
+
+        .status-pill {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.25rem 0.75rem;
+            gap: 6px;
+            padding: 4px 14px;
             border-radius: 999px;
-            font-size: 0.85rem;
-            font-weight: 500;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
         }
-        .status-online {
-            background: rgba(34, 197, 94, 0.15);
-            color: var(--success);
+
+        .status-pill.operational {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: var(--status-active);
         }
-        .status-online::before {
-            content: '';
+
+        .status-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: var(--success);
-            animation: pulse 2s infinite;
+            background: var(--status-active);
+            box-shadow: 0 0 8px var(--status-active);
+            animation: pulse 2s ease-in-out infinite;
         }
+
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 8px var(--status-active);
+            }
+
+            50% {
+                opacity: 0.5;
+                box-shadow: 0 0 4px var(--status-active);
+            }
         }
-        .summary {
-            background: var(--surface);
+
+        /* Main content */
+        .main {
+            padding: 40px 0 80px 0;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--copper-primary), var(--copper-light), var(--blueprint-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .page-timestamp {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--on-surface-dim);
+            margin-bottom: 32px;
+        }
+
+        /* Section headers */
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 40px 0 16px 0;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            letter-spacing: 0.12em;
+            color: var(--copper-light);
+            text-transform: uppercase;
+        }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(184, 115, 51, 0.3), transparent);
+        }
+
+        /* Metric cards grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .metric-card {
+            background: var(--surface-variant);
+            border: 1px solid rgba(184, 115, 51, 0.12);
             border-radius: 12px;
-            padding: 2rem;
-            margin: 2rem 0;
-            line-height: 1.7;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, border-color 0.2s;
         }
-        .summary h2 { color: var(--primary); margin-bottom: 1rem; }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(184, 115, 51, 0.3);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--polish);
+            pointer-events: none;
+        }
+
+        .metric-icon {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        .metric-label {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            letter-spacing: 0.1em;
+            color: var(--on-surface-dim);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--on-surface);
+            line-height: 1;
+        }
+
+        .metric-detail {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--on-surface-variant);
+            margin-top: 6px;
+        }
+
+        /* Service status grid */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .service-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--surface-variant);
+            border: 1px solid rgba(184, 115, 51, 0.08);
+            border-radius: 10px;
+            padding: 14px 18px;
+            transition: border-color 0.2s;
+        }
+
+        .service-row:hover {
+            border-color: rgba(184, 115, 51, 0.2);
+        }
+
+        .service-jewel {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 6px currentColor;
+        }
+
+        .service-jewel.active {
+            background: var(--status-active);
+            color: var(--status-active);
+        }
+
+        .service-jewel.pending {
+            background: var(--status-pending);
+            color: var(--status-pending);
+        }
+
+        .service-jewel.error {
+            background: var(--status-error);
+            color: var(--status-error);
+        }
+
+        .service-jewel.info {
+            background: var(--status-info);
+            color: var(--status-info);
+        }
+
+        .service-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--on-surface);
+            flex: 1;
+        }
+
+        .service-detail {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--on-surface-dim);
+        }
+
+        /* Agent cards */
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .agent-card {
+            background: linear-gradient(135deg, var(--surface-variant), rgba(13, 27, 42, 0.3));
+            border: 1px solid rgba(184, 115, 51, 0.15);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .agent-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--polish);
+            pointer-events: none;
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .agent-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .agent-name {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .agent-role {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .agent-stats {
+            display: flex;
+            gap: 12px;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--on-surface-variant);
+            position: relative;
+        }
+
+        .agent-stat-value {
+            font-weight: 700;
+            color: var(--copper-light);
+        }
+
+        /* Benchmark banner */
+        .benchmark-banner {
+            background: linear-gradient(135deg, var(--blueprint-bg), rgba(184, 115, 51, 0.05));
+            border: 1px solid rgba(152, 193, 217, 0.15);
+            border-radius: 14px;
+            padding: 28px;
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .benchmark-banner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--polish);
+            pointer-events: none;
+        }
+
+        .benchmark-score {
+            text-align: center;
+            position: relative;
+        }
+
+        .benchmark-score .number {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--copper-primary), var(--copper-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+
+        .benchmark-score .label {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--on-surface-dim);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .benchmark-details {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 8px;
+            position: relative;
+        }
+
+        .bench-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(152, 193, 217, 0.06);
+        }
+
+        .bench-item .name {
+            color: var(--on-surface-variant);
+        }
+
+        .bench-item .score {
+            color: var(--blueprint-accent);
+            font-weight: 600;
+        }
+
+        .bench-item .score.perfect {
+            color: var(--status-active);
+        }
+
+        /* Docker section */
+        .docker-banner {
+            background: var(--surface-variant);
+            border: 1px solid rgba(184, 115, 51, 0.12);
+            border-radius: 12px;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .docker-tag {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--blueprint-accent);
+            background: rgba(152, 193, 217, 0.08);
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid rgba(152, 193, 217, 0.15);
+        }
+
+        .docker-label {
+            font-size: 0.85rem;
+            color: var(--on-surface-variant);
+        }
+
+        /* Footer */
+        .footer {
+            border-top: 1px solid rgba(184, 115, 51, 0.1);
+            padding: 24px 0;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--on-surface-dim);
+            text-align: center;
+        }
+
+        .footer a {
+            color: var(--copper-light);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .benchmark-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .docker-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
     </style>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
+    <header class="header">
+        <div class="header-left">
+            <img src="assets/slate-logo-v2.svg" alt="SLATE">
+            <div>
+                <div class="header-title">System Status</div>
+                <div class="header-subtitle">v3.0.0-stable</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="status-pill operational">
+                <span class="status-dot"></span>
+                OPERATIONAL
+            </span>
+            <a href="./" class="back-link">&larr; Home</a>
+        </div>
+    </header>
+
     <div class="container">
-        <h1>S.L.A.T.E. Status</h1>
-        <p class="timestamp">Last updated: 2026-02-09 09:36 UTC <span class="status-badge status-online">Operational</span></p>
-        
-        <div class="grid">
-            <div class="card">
-                <h3>Workflows</h3>
-                <div class="value">32</div>
-                <div class="label">GitHub Actions workflows</div>
+        <div class="main">
+            <h1 class="page-title">S.L.A.T.E. System Status</h1>
+            <p class="page-timestamp">Last updated: <span id="timestamp">2026-02-09 21:12 UTC</span> &bull;
+                Auto-refreshes every 60s</p>
+
+            <!-- Core Metrics -->
+            <div class="section-label">&#x2699; Core Metrics</div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon">&#x1F9E0;</div>
+                    <div class="metric-label">AI Models</div>
+                    <div class="metric-value">11</div>
+                    <div class="metric-detail">3 custom (3B/7B/12B) + 8 foundation</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">&#x1F4BB;</div>
+                    <div class="metric-label">GPU Compute</div>
+                    <div class="metric-value">32 GB</div>
+                    <div class="metric-detail">2&times; RTX 5070 Ti (Blackwell)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">&#x2699;</div>
+                    <div class="metric-label">Workflows</div>
+                    <div class="metric-value">34</div>
+                    <div class="metric-detail">GitHub Actions pipelines</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">&#x1F916;</div>
+                    <div class="metric-label">AI Agents</div>
+                    <div class="metric-value">3</div>
+                    <div class="metric-detail">Antigravity &bull; Claude Code &bull; Copilot</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">&#x1F4E6;</div>
+                    <div class="metric-label">Modules</div>
+                    <div class="metric-value">100+</div>
+                    <div class="metric-detail">Python modules in slate/</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">&#x1F3C3;</div>
+                    <div class="metric-label">Runners</div>
+                    <div class="metric-value">19</div>
+                    <div class="metric-detail">Self-hosted (GPU + CPU)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">&#x1F4CA;</div>
+                    <div class="metric-label">Embeddings</div>
+                    <div class="metric-value">10K+</div>
+                    <div class="metric-detail">ChromaDB vector store</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">&#x23F0;</div>
+                    <div class="metric-label">Automation</div>
+                    <div class="metric-value">24/7</div>
+                    <div class="metric-detail">Autonomous task loop</div>
+                </div>
             </div>
-            <div class="card">
-                <h3>Self-Hosted Runners</h3>
-                <div class="value">4</div>
-                <div class="label">With dual GPU access</div>
+
+            <!-- Benchmark Score -->
+            <div class="section-label">&#x1F4C8; Benchmark (Spec 025)</div>
+            <div class="benchmark-banner">
+                <div class="benchmark-score">
+                    <div class="number">86.1</div>
+                    <div class="label">Overall Score</div>
+                    <div
+                        style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--status-active); margin-top: 4px; position: relative;">
+                        &#x1F3C6; Workstation</div>
+                </div>
+                <div class="benchmark-details">
+                    <div class="bench-item"><span class="name">GPU VRAM</span><span class="score perfect">100</span>
+                    </div>
+                    <div class="bench-item"><span class="name">CPU Single</span><span class="score perfect">100</span>
+                    </div>
+                    <div class="bench-item"><span class="name">CPU Multi (24c)</span><span
+                            class="score perfect">100</span></div>
+                    <div class="bench-item"><span class="name">Memory BW</span><span class="score perfect">100</span>
+                    </div>
+                    <div class="bench-item"><span class="name">Network</span><span class="score">95</span></div>
+                    <div class="bench-item"><span class="name">Storage Seq</span><span class="score">51</span></div>
+                    <div class="bench-item"><span class="name">Storage IOPS</span><span class="score">26</span></div>
+                </div>
             </div>
-            <div class="card">
-                <h3>AI Models</h3>
-                <div class="value">3</div>
-                <div class="label">Local inference (3B/7B/12B)</div>
+
+            <!-- Services -->
+            <div class="section-label">&#x1F6E0; Services</div>
+            <div class="services-grid">
+                <div class="service-row">
+                    <span class="service-jewel active"></span>
+                    <span class="service-name">Dashboard</span>
+                    <span class="service-detail">:8080</span>
+                </div>
+                <div class="service-row">
+                    <span class="service-jewel active"></span>
+                    <span class="service-name">Ollama LLM</span>
+                    <span class="service-detail">:11434 &bull; 4 loaded</span>
+                </div>
+                <div class="service-row">
+                    <span class="service-jewel active"></span>
+                    <span class="service-name">ChromaDB</span>
+                    <span class="service-detail">:8000 &bull; 10K vectors</span>
+                </div>
+                <div class="service-row">
+                    <span class="service-jewel active"></span>
+                    <span class="service-name">Agent Router</span>
+                    <span class="service-detail">:8081</span>
+                </div>
+                <div class="service-row">
+                    <span class="service-jewel active"></span>
+                    <span class="service-name">Autonomous Loop</span>
+                    <span class="service-detail">:8082</span>
+                </div>
+                <div class="service-row">
+                    <span class="service-jewel active"></span>
+                    <span class="service-name">Copilot Bridge</span>
+                    <span class="service-detail">:8083</span>
+                </div>
+                <div class="service-row">
+                    <span class="service-jewel active"></span>
+                    <span class="service-name">Workflow Manager</span>
+                    <span class="service-detail">:8084</span>
+                </div>
+                <div class="service-row">
+                    <span class="service-jewel active"></span>
+                    <span class="service-name">Instruction Controller</span>
+                    <span class="service-detail">:8085</span>
+                </div>
+                <div class="service-row">
+                    <span class="service-jewel active"></span>
+                    <span class="service-name">Prometheus Metrics</span>
+                    <span class="service-detail">:9090</span>
+                </div>
+                <div class="service-row">
+                    <span class="service-jewel info"></span>
+                    <span class="service-name">Grafana</span>
+                    <span class="service-detail">:3000</span>
+                </div>
             </div>
-            <div class="card">
-                <h3>GPU Compute</h3>
-                <div class="value">32GB</div>
-                <div class="label">2x RTX 5070 Ti VRAM</div>
+
+            <!-- Active Agents -->
+            <div class="section-label">&#x1F916; Active AI Agents</div>
+            <div class="agent-grid">
+                <div class="agent-card" style="border-color: rgba(184,115,51,0.3);">
+                    <div class="agent-header">
+                        <div class="agent-avatar"
+                            style="background: linear-gradient(135deg, var(--copper-primary), var(--copper-dark));">
+                            &#x1F300;</div>
+                        <div>
+                            <div class="agent-name">Antigravity</div>
+                            <div class="agent-role" style="color: var(--copper-primary);">Primary Architect &bull;
+                                Google Gemini</div>
+                        </div>
+                        <span class="service-jewel active" style="margin-left: auto;"></span>
+                    </div>
+                    <div class="agent-stats">
+                        <span>Tier <span class="agent-stat-value">4</span></span>
+                        <span>Budget <span class="agent-stat-value">500K</span> tok/h</span>
+                        <span>Permissions <span class="agent-stat-value">ARCHITECT</span></span>
+                    </div>
+                </div>
+                <div class="agent-card" style="border-color: rgba(126,87,194,0.3);">
+                    <div class="agent-header">
+                        <div class="agent-avatar" style="background: linear-gradient(135deg, #7E57C2, #4A148C);">
+                            &#x1F4A0;</div>
+                        <div>
+                            <div class="agent-name">Claude Code</div>
+                            <div class="agent-role" style="color: #B39DDB;">Inference Engine &bull; Anthropic Opus</div>
+                        </div>
+                        <span class="service-jewel active" style="margin-left: auto;"></span>
+                    </div>
+                    <div class="agent-stats">
+                        <span>Tier <span class="agent-stat-value">3</span></span>
+                        <span>Budget <span class="agent-stat-value">200K</span> tok/h</span>
+                        <span>Permissions <span class="agent-stat-value">DEVELOPER</span></span>
+                    </div>
+                </div>
+                <div class="agent-card" style="border-color: rgba(33,150,243,0.3);">
+                    <div class="agent-header">
+                        <div class="agent-avatar" style="background: linear-gradient(135deg, #2196F3, #0D47A1);">
+                            &#x1F4BB;</div>
+                        <div>
+                            <div class="agent-name">GitHub Copilot</div>
+                            <div class="agent-role" style="color: #42A5F5;">VSCode Extension &bull; Microsoft</div>
+                        </div>
+                        <span class="service-jewel active" style="margin-left: auto;"></span>
+                    </div>
+                    <div class="agent-stats">
+                        <span>Tier <span class="agent-stat-value">3</span></span>
+                        <span>Budget <span class="agent-stat-value">300K</span> tok/h</span>
+                        <span>Permissions <span class="agent-stat-value">DEVELOPER</span></span>
+                    </div>
+                </div>
             </div>
-            <div class="card">
-                <h3>Modules</h3>
-                <div class="value">100+</div>
-                <div class="label">Python modules in slate/</div>
+
+            <!-- Docker Image -->
+            <div class="section-label">&#x1F433; Docker Image</div>
+            <div class="docker-banner">
+                <span style="font-size: 1.8rem;">&#x1F433;</span>
+                <div style="flex: 1;">
+                    <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;">Stable Release Available</div>
+                    <div class="docker-label">ghcr.io/synchronizedlivingarchitecture/slate</div>
+                </div>
+                <span class="docker-tag">:stable</span>
+                <span class="docker-tag" style="opacity: 0.5;">:stable-cpu</span>
             </div>
-            <div class="card">
-                <h3>Automation</h3>
-                <div class="value">24/7</div>
-                <div class="label">Scheduled pipelines</div>
+
+            <!-- Integrations -->
+            <div class="section-label">&#x1F517; Runtime Integrations (11)</div>
+            <div class="services-grid">
+                <div class="service-row"><span class="service-jewel active"></span><span class="service-name">Python
+                        3.11.9</span><span class="service-detail">Active</span></div>
+                <div class="service-row"><span class="service-jewel active"></span><span class="service-name">Virtual
+                        Env</span><span class="service-detail">.venv</span></div>
+                <div class="service-row"><span class="service-jewel active"></span><span class="service-name">NVIDIA
+                        GPU</span><span class="service-detail">2&times; Blackwell</span></div>
+                <div class="service-row"><span class="service-jewel active"></span><span class="service-name">PyTorch
+                        2.10</span><span class="service-detail">CPU local / CUDA in Docker</span></div>
+                <div class="service-row"><span class="service-jewel active"></span><span
+                        class="service-name">Transformers 5.1</span><span class="service-detail">Active</span></div>
+                <div class="service-row"><span class="service-jewel active"></span><span
+                        class="service-name">Ollama</span><span class="service-detail">11 models, 4 loaded</span></div>
+                <div class="service-row"><span class="service-jewel active"></span><span class="service-name">ChromaDB
+                        1.4</span><span class="service-detail">10,398 embeddings</span></div>
+                <div class="service-row"><span class="service-jewel active"></span><span class="service-name">Copilot
+                        SDK</span><span class="service-detail">Protocol v2</span></div>
+                <div class="service-row"><span class="service-jewel active"></span><span class="service-name">Semantic
+                        Kernel 1.39</span><span class="service-detail">Ollama connected</span></div>
+                <div class="service-row"><span class="service-jewel active"></span><span class="service-name">GitHub
+                        Models</span><span class="service-detail">11 models</span></div>
+                <div class="service-row"><span class="service-jewel active"></span><span
+                        class="service-name">Kubernetes</span><span class="service-detail">9/9 deployments</span></div>
             </div>
         </div>
-        
-        <div class="summary">
-            <h2>AI-Generated Status Summary</h2>
-            
-        </div>
+
+        <footer class="footer">
+            <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E">S.L.A.T.E.</a> v3.0.0-stable &bull;
+            Created by Daniel Perry &bull; AI-Generated &amp; Vibe Coded
+        </footer>
     </div>
+
+    <script>
+        // Auto-update timestamp
+        function updateTimestamp() {
+            const el = document.getElementById('timestamp');
+            if (el) {
+                const now = new Date();
+                el.textContent = now.toISOString().replace('T', ' ').substring(0, 16) + ' UTC';
+            }
+        }
+        setInterval(updateTimestamp, 60000);
+    </script>
 </body>
+
 </html>

@@ -1,4 +1,5 @@
 # SLATE Discord Bot — Docker Build Exclusions
+# Modified: 2026-02-09T22:00:00Z | Author: Claude Opus 4.6 | Change: Update for full bot module set
 # CRITICAL: Ensure NO secrets enter the build context
 
 # Secrets and credentials
@@ -44,13 +45,19 @@ vendor/
 # Test data
 tests/
 *.test.*
+test_*.txt
 
 # Build artifacts
 dist/
 build/
 *.egg-info/
 
-# SLATE state (runtime, not build)
+# Documentation (not needed in bot container)
+docs/
+specs/
+*.md
+
+# SLATE state (runtime, not build-time)
 .slate_orchestrator_state.json
 .slate_copilot_bridge.json
 .slate_changes/
@@ -59,3 +66,20 @@ build/
 .slate_prompts/
 .slate_index/
 current_tasks.json
+
+# Large SLATE modules not used by Discord bot
+agents/
+slate_core/
+slate_web/
+models/
+plugins/
+helm/
+k8s/
+grafana_provisioning/
+templates/
+
+# Docker files (prevent recursive context)
+docker/
+Dockerfile
+Dockerfile.*
+docker-compose.yml

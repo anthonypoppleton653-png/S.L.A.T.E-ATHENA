@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="iconBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0D1B2A"/>
+      <stop offset="100%" style="stop-color:#1A1816"/>
+    </linearGradient>
+    <radialGradient id="iconGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#B85A3C;stop-opacity:0.2"/>
+      <stop offset="100%" style="stop-color:#B85A3C;stop-opacity:0"/>
+    </radialGradient>
+    <pattern id="iconGrid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#1B3A4B" stroke-width="0.5" opacity="0.3"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <circle cx="256" cy="256" r="256" fill="url(#iconBg)"/>
+
+  <!-- Grid -->
+  <circle cx="256" cy="256" r="256" fill="url(#iconGrid)"/>
+
+  <!-- Glow -->
+  <circle cx="256" cy="256" r="200" fill="url(#iconGlow)"/>
+
+  <!-- Outer hexagon -->
+  <polygon points="256,80 384,144 384,272 256,336 128,272 128,144"
+           fill="none" stroke="#30363d" stroke-width="3"/>
+
+  <!-- Inner hexagon -->
+  <polygon points="256,105 365,158 365,262 256,314 147,262 147,158"
+           fill="#0D1B2A" stroke="#B85A3C" stroke-width="2" opacity="0.8"/>
+
+  <!-- S.L.A.T.E. text -->
+  <text x="256" y="210" text-anchor="middle"
+        font-family="Consolas, 'Courier New', monospace"
+        font-size="42" font-weight="bold" fill="#E8E2DE" letter-spacing="4">
+    S.L.A.T.E.
+  </text>
+
+  <!-- Underline -->
+  <line x1="155" y1="225" x2="357" y2="225" stroke="#B85A3C" stroke-width="2" opacity="0.6"/>
+
+  <!-- Subtitle lines -->
+  <text x="256" y="252" text-anchor="middle"
+        font-family="Consolas, monospace"
+        font-size="12" fill="#7D7873" letter-spacing="2">
+    SYNCHRONIZED LIVING
+  </text>
+  <text x="256" y="270" text-anchor="middle"
+        font-family="Consolas, monospace"
+        font-size="12" fill="#7D7873" letter-spacing="2">
+    ARCHITECTURE
+  </text>
+
+  <!-- Hex vertex dots -->
+  <g fill="#B85A3C" opacity="0.7">
+    <circle cx="256" cy="80" r="4"/>
+    <circle cx="384" cy="144" r="4"/>
+    <circle cx="384" cy="272" r="4"/>
+    <circle cx="256" cy="336" r="4"/>
+    <circle cx="128" cy="272" r="4"/>
+    <circle cx="128" cy="144" r="4"/>
+  </g>
+
+  <!-- Status indicator -->
+  <circle cx="380" cy="100" r="12" fill="#0D1B2A" stroke="#238636" stroke-width="2"/>
+  <circle cx="380" cy="100" r="6" fill="#4CAF50"/>
+
+  <!-- Bottom text -->
+  <text x="256" y="390" text-anchor="middle"
+        font-family="'Segoe UI', sans-serif"
+        font-size="14" fill="#484f58" letter-spacing="1">
+    Community
+  </text>
+</svg>

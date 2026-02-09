@@ -1687,6 +1687,21 @@ class SlateInstaller:
         _print_step("ℹ", f"Optional: {optional_count}/4 (PyTorch, Ollama, Docker, Extension)")
         print()
 
+        # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Run setup validator during --check
+        try:
+            from slate.slate_setup_validator import SlateSetupValidator
+            validator = SlateSetupValidator(workspace=self.workspace)
+            vresult = validator.validate_all()
+            passed = vresult.get("passed", 0)
+            failed = vresult.get("failed", 0)
+            total = vresult.get("total", 0)
+            _print_step("✓" if failed == 0 else "⚠",
+                        f"Setup validation: {passed}/{total} checks passed"
+                        + (f", {failed} failed" if failed else ""))
+        except ImportError:
+            pass  # Validator not available yet
+        print()
+
         return deps
 
 
