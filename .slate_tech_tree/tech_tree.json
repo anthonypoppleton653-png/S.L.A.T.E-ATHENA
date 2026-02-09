@@ -52,9 +52,12 @@
     {
       "id": "tech-tree-viz",
       "name": "Tech Tree Visualization",
-      "status": "in_progress",
+      "status": "complete",
       "phase": 1,
-      "description": "D3.js force-directed tech tree"
+      "description": "D3.js force-directed tech tree on GitHub Pages",
+      "paths": [
+        "docs/pages/tech-tree.html"
+      ]
     },
     {
       "id": "docker-infra",
