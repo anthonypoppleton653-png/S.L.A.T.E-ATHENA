@@ -63,13 +63,14 @@ AGENT_PATTERNS = {
 class UnifiedAutonomousLoop:
     """Adaptive autonomous agent loop for SLATE."""
 
-    # Modified: 2026-02-07T06:00:00Z | Author: COPILOT | Change: autonomous loop with SLATE models
+    # Modified: 2026-02-09T11:35:00Z | Author: COPILOT | Change: Add session-level completed_ids to prevent ephemeral task re-execution
     def __init__(self):
         self.workspace = WORKSPACE_ROOT
         self.state = self._load_state()
         self.ml = None  # Lazy-loaded ML orchestrator
         self._slate_models_checked = False
         self._github_models = None  # Lazy-loaded GitHub Models client
+        self.completed_ids: set[str] = set()  # Session-level tracking for ephemeral tasks
         LOG_DIR.mkdir(parents=True, exist_ok=True)
 
     def _get_ml(self):
@@ -212,9 +213,14 @@ class UnifiedAutonomousLoop:
         unique = []
         for task in tasks:
             key = task.get("title", "")[:50].lower()
-            if key not in seen_titles:
-                seen_titles.add(key)
-                unique.append(task)
+            task_id = task.get("id", "")
+            # Modified: 2026-02-09T11:35:00Z | Author: COPILOT | Change: Filter out session-completed ephemeral tasks
+            if key in seen_titles:
+                continue
+            if task_id and task_id in self.completed_ids:
+                continue
+            seen_titles.add(key)
+            unique.append(task)
 
         # Modified: 2026-02-08T21:45:00Z | Author: COPILOT | Change: Sort discovered tasks by priority so critical/high always surface first
         priority_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
@@ -385,6 +391,7 @@ class UnifiedAutonomousLoop:
                     pass
         return tasks[:10]  # Cap at 10 to avoid noise
 
+    # Modified: 2026-02-09T11:35:00Z | Author: COPILOT | Change: Fix coverage discovery to check test content and avoid re-execution loop
     def _discover_from_coverage(self) -> list[dict]:
         """Find files without tests."""
         tasks = []
@@ -405,16 +412,22 @@ class UnifiedAutonomousLoop:
             if py_file.name.startswith("_"):
                 continue
             module = py_file.stem
-            if module not in tested_modules:
-                tasks.append({
-                    "id": f"coverage_{module}",
-                    "title": f"Add tests for slate/{module}.py",
-                    "description": f"No test file found for slate/{module}.py",
-                    "priority": "low",
-                    "source": "coverage_gap",
-                    "file_paths": f"slate/{module}.py",
-                    "status": "pending",
-                })
+            if module in tested_modules:
+                continue
+            # Skip if already completed in this session
+            task_id = f"coverage_{module}"
+            if task_id in self.completed_ids:
+                continue
+            tasks.append({
+                "id": task_id,
+                "title": f"Add tests for slate/{module}.py",
+                "description": f"No test file found for slate/{module}.py. Create tests/test_{module}.py with unit tests.",
+                "priority": "low",
+                "source": "coverage_gap",
+                "file_paths": f"slate/{module}.py",
+                "status": "pending",
+                "test_target": f"tests/test_{module}.py",
+            })
         return tasks[:5]
 
     # Modified: 2026-02-09T04:00:00Z | Author: COPILOT | Change: Add K8s pod health discovery source
@@ -438,8 +451,12 @@ class UnifiedAutonomousLoop:
                         name, phase = parts[0], parts[1]
                         restarts = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 0
                         if phase not in ("Running", "Succeeded"):
+                            task_id = f"k8s_pod_{name}"
+                            # Modified: 2026-02-09T11:35:00Z | Author: COPILOT | Change: Skip K8s tasks already completed this session
+                            if task_id in self.completed_ids:
+                                continue
                             tasks.append({
-                                "id": f"k8s_pod_{name}",
+                                "id": task_id,
                                 "title": f"Fix K8s pod {name} (status: {phase})",
                                 "description": f"Pod {name} in slate namespace is {phase} with {restarts} restarts",
                                 "priority": "high",
@@ -447,8 +464,11 @@ class UnifiedAutonomousLoop:
                                 "status": "pending",
                             })
                         elif restarts > 5:
+                            task_id = f"k8s_restart_{name}"
+                            if task_id in self.completed_ids:
+                                continue
                             tasks.append({
-                                "id": f"k8s_restart_{name}",
+                                "id": task_id,
                                 "title": f"Investigate K8s pod {name} ({restarts} restarts)",
                                 "description": f"Pod {name} is Running but has {restarts} container restarts",
                                 "priority": "medium",
@@ -472,8 +492,11 @@ class UnifiedAutonomousLoop:
                         name = parts[0]
                         failed = int(parts[2]) if parts[2].isdigit() else 0
                         if failed > 0:
+                            task_id = f"k8s_job_{name}"
+                            if task_id in self.completed_ids:
+                                continue
                             tasks.append({
-                                "id": f"k8s_job_{name}",
+                                "id": task_id,
                                 "title": f"Fix failed K8s job {name}",
                                 "description": f"Job {name} has {failed} failure(s) in slate namespace",
                                 "priority": "medium",
@@ -593,11 +616,15 @@ class UnifiedAutonomousLoop:
             if result.get("success"):
                 self._update_task_status(task_id, "completed")
                 self.state["tasks_completed"] += 1
+                # Modified: 2026-02-09T11:35:00Z | Author: COPILOT | Change: Track completed ephemeral tasks in session set
+                self.completed_ids.add(task_id)
                 self._log(f"  Completed: {title}")
             else:
                 self._update_task_status(task_id, "failed",
                                          error=result.get("error", "Unknown error"))
                 self.state["tasks_failed"] += 1
+                # Modified: 2026-02-09T11:35:00Z | Author: COPILOT | Change: Track failed ephemeral tasks too to avoid re-execution
+                self.completed_ids.add(task_id)
                 self._log(f"  Failed: {title} - {result.get('error', '')}", "ERROR")
 
             # Record in history
@@ -625,11 +652,12 @@ class UnifiedAutonomousLoop:
 
     def _execute_code_task(self, task: dict, agent: str) -> dict:
         """Execute a coding/testing task using SLATE ML inference with real output."""
-        # Modified: 2026-02-09T02:00:00Z | Author: COPILOT | Change: Use _infer_with_fallback for Ollama+GitHub Models
+        # Modified: 2026-02-09T11:35:00Z | Author: COPILOT | Change: Fix test generation to write to tests/ dir, not source file
         start = time.time()
         title = task.get("title", "")
         desc = task.get("description", "")
         file_paths = task.get("file_paths", "")
+        test_target = task.get("test_target", "")  # Where to write tests (if coverage task)
 
         try:
             # Read relevant files for context
@@ -647,15 +675,36 @@ class UnifiedAutonomousLoop:
                         except Exception:
                             pass
 
+            # For coverage/test tasks, redirect output to test file instead of source
+            is_test_task = bool(test_target) or task.get("source") == "coverage_gap"
+            if is_test_task and test_target:
+                # Override target_files to write to the test file
+                target_files = [test_target]
+                # Ensure tests directory exists
+                test_path = self.workspace / test_target
+                test_path.parent.mkdir(parents=True, exist_ok=True)
+                if not test_path.exists():
+                    test_path.write_text("", encoding="utf-8")
+
             # Generate solution using SLATE model with fallback
             task_type = "code_generation" if agent == "ALPHA" else "code_review"
-            system_prompt = (
-                "You are SLATE-CODER, an autonomous coding agent for the S.L.A.T.E. framework. "
-                "Analyze the task and provide a concrete implementation. "
-                "If code changes are needed, output the COMPLETE modified code for the file. "
-                "Include the Modified comment at the top. "
-                "Be precise, follow Python 3.11+ conventions, use type hints."
-            )
+            if is_test_task:
+                system_prompt = (
+                    "You are SLATE-CODER, an autonomous testing agent for the S.L.A.T.E. framework. "
+                    "Write a COMPLETE test file with unit tests for the given module. "
+                    "Use pytest conventions. Import the module under test. "
+                    "Include at least 3 test functions covering key functionality. "
+                    "Output ONLY the test file code in a python code block. "
+                    "Include the Modified comment at the top."
+                )
+            else:
+                system_prompt = (
+                    "You are SLATE-CODER, an autonomous coding agent for the S.L.A.T.E. framework. "
+                    "Analyze the task and provide a concrete implementation. "
+                    "If code changes are needed, output the COMPLETE modified code for the file. "
+                    "Include the Modified comment at the top. "
+                    "Be precise, follow Python 3.11+ conventions, use type hints."
+                )
             prompt = f"Task: {title}\nDescription: {desc}\n"
             if context:
                 prompt += f"\nRelevant code:\n{context[:6000]}"
@@ -823,16 +872,23 @@ class UnifiedAutonomousLoop:
             return {"success": False, "error": str(e), "duration_s": round(time.time() - start, 1)}
 
     # Modified: 2026-02-07T08:00:00Z | Author: COPILOT | Change: code change application
+    # Modified: 2026-02-09T11:35:00Z | Author: COPILOT | Change: Allow creating new test files and add safety for source files
     def _apply_code_changes(self, response: str, target_files: list[str]) -> list[str]:
         """Extract and apply code changes from inference response to files.
 
         Safety rules:
-        - Only writes to files that already exist in the workspace
+        - ActionGuard.validate_file_write() MUST approve every file before writing
+        - For test files (tests/test_*.py): creates the file if it doesn't exist
+        - For source files: only writes to files that already exist
         - Only writes Python files (.py)
         - Skips if response doesn't contain code blocks
-        - Creates backup before overwriting
+        - Creates backup before overwriting existing files
         - Validates basic syntax before writing
+        - BLOCKS writes to production files (slate/, agents/, configs, workflows, K8s)
         """
+        # Modified: 2026-02-09T12:00:00Z | Author: COPILOT | Change: Add ActionGuard.validate_file_write gate to prevent AI overwriting production
+        from slate.action_guard import get_guard
+        guard = get_guard()
         applied = []
 
         # Extract code blocks from markdown-formatted response
@@ -844,7 +900,10 @@ class UnifiedAutonomousLoop:
             if not fp.endswith(".py"):
                 continue
             full_path = self.workspace / fp
-            if not full_path.exists():
+            is_test_file = fp.startswith("tests/") and Path(fp).name.startswith("test_")
+
+            # For non-test files, only write to existing files
+            if not is_test_file and not full_path.exists():
                 continue
             if i >= len(code_blocks):
                 break
@@ -866,20 +925,31 @@ class UnifiedAutonomousLoop:
                 self._log(f"  Skipping {fp}: blocked pattern detected", "WARN")
                 continue
 
-            # Create backup
-            backup_dir = self.workspace / "slate_logs" / "backups"
-            backup_dir.mkdir(parents=True, exist_ok=True)
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            backup_path = backup_dir / f"{Path(fp).stem}_{ts}.py.bak"
-            try:
-                backup_path.write_text(full_path.read_text(encoding="utf-8"), encoding="utf-8")
-            except Exception:
-                pass
+            # CRITICAL: ActionGuard file write protection — blocks production files
+            write_check = guard.validate_file_write(fp)
+            if not write_check.allowed:
+                self._log(f"  BLOCKED write to {fp}: {write_check.reason}", "WARN")
+                continue
 
-            # Write the updated code
+            # Create backup for existing files
+            if full_path.exists():
+                backup_dir = self.workspace / "slate_logs" / "backups"
+                backup_dir.mkdir(parents=True, exist_ok=True)
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup_path = backup_dir / f"{Path(fp).stem}_{ts}.py.bak"
+                try:
+                    backup_path.write_text(full_path.read_text(encoding="utf-8"), encoding="utf-8")
+                except Exception:
+                    pass
+
+            # Ensure parent directory exists for new test files
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Write the code
             try:
                 full_path.write_text(code, encoding="utf-8")
-                applied.append(f"Updated {fp} ({len(code)} chars, backup: {backup_path.name})")
+                action = "Created" if is_test_file and not full_path.exists() else "Updated"
+                applied.append(f"{action} {fp} ({len(code)} chars)")
                 self._log(f"  Wrote {len(code)} chars to {fp}")
             except Exception as e:
                 self._log(f"  Failed to write {fp}: {e}", "ERROR")
