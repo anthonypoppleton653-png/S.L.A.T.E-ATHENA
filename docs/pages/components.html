@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Watchmaker component showcase for SLATE. Complete UI component library including vendor SDK integration, multi-runner status, GPU workbench, K8s deployment, autonomous loop, custom models, and Claude Code integration.">
+    <meta name="description"
+        content="Watchmaker component showcase for SLATE. Complete UI component library including vendor SDK integration, multi-runner status, GPU workbench, K8s deployment, autonomous loop, custom models, and Claude Code integration.">
     <meta name="robots" content="index, follow">
-    <title>SLATE Watchmaker Component Showcase</title>
+    <title>SLATE Watchmaker Components — v3.0.0</title>
     <link rel="icon" type="image/svg+xml" href="assets/slate-logo-v2.svg">
     <link rel="stylesheet" href="css/watchmaker.css">
-    <!-- Modified: 2026-02-08T12:00:00Z | Author: Claude Opus 4.5 | Change: Add comprehensive component showcase with 7 new sections -->
+    <!-- Modified: 2026-02-09T16:12:00-05:00 | Author: Gemini (Antigravity) | Change: v3.0.0-stable, add status/brand nav links -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
 
@@ -50,11 +52,11 @@
             font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
             background:
                 /* Major grid (64px) */
-                linear-gradient(90deg, rgba(184,115,51,0.03) 1px, transparent 1px),
-                linear-gradient(rgba(184,115,51,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(184, 115, 51, 0.03) 1px, transparent 1px),
+                linear-gradient(rgba(184, 115, 51, 0.03) 1px, transparent 1px),
                 /* Minor grid (16px) */
-                linear-gradient(90deg, rgba(184,115,51,0.015) 1px, transparent 1px),
-                linear-gradient(rgba(184,115,51,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(184, 115, 51, 0.015) 1px, transparent 1px),
+                linear-gradient(rgba(184, 115, 51, 0.015) 1px, transparent 1px),
                 radial-gradient(circle at 20% 10%, #1B2838 0%, #0A0A0A 40%, #050505 100%);
             background-size: 64px 64px, 64px 64px, 16px 16px, 16px 16px, 100% 100%;
             color: var(--slate-on-surface);
@@ -261,7 +263,7 @@
             font-size: 1.2rem;
         }
 
-        .showcase-section > p {
+        .showcase-section>p {
             margin: 0 0 16px 0;
             color: var(--slate-on-surface-variant);
             font-size: 0.9rem;
@@ -369,11 +371,25 @@
             flex-shrink: 0;
         }
 
-        .sdk-icon.openai { background: linear-gradient(135deg, #10A37F, #1A7F5A); }
-        .sdk-icon.autogen { background: linear-gradient(135deg, #4A90D9, #2E5A87); }
-        .sdk-icon.semantic { background: linear-gradient(135deg, #5C2D91, #3A1B5C); }
-        .sdk-icon.copilot { background: linear-gradient(135deg, #238636, #156A26); }
-        .sdk-icon.claude { background: linear-gradient(135deg, #D4A054, #B87333); }
+        .sdk-icon.openai {
+            background: linear-gradient(135deg, #10A37F, #1A7F5A);
+        }
+
+        .sdk-icon.autogen {
+            background: linear-gradient(135deg, #4A90D9, #2E5A87);
+        }
+
+        .sdk-icon.semantic {
+            background: linear-gradient(135deg, #5C2D91, #3A1B5C);
+        }
+
+        .sdk-icon.copilot {
+            background: linear-gradient(135deg, #238636, #156A26);
+        }
+
+        .sdk-icon.claude {
+            background: linear-gradient(135deg, #D4A054, #B87333);
+        }
 
         .sdk-info {
             flex: 1;
@@ -501,9 +517,17 @@
             transition: width 0.3s;
         }
 
-        .gpu-bar-fill.low { background: var(--status-active); }
-        .gpu-bar-fill.medium { background: var(--status-pending); }
-        .gpu-bar-fill.high { background: var(--status-error); }
+        .gpu-bar-fill.low {
+            background: var(--status-active);
+        }
+
+        .gpu-bar-fill.medium {
+            background: var(--status-pending);
+        }
+
+        .gpu-bar-fill.high {
+            background: var(--status-error);
+        }
 
         /* K8s Deployment */
         .k8s-container {
@@ -580,8 +604,13 @@
         }
 
         @keyframes loop-rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .loop-stage {
@@ -595,10 +624,29 @@
             white-space: nowrap;
         }
 
-        .loop-stage.top { top: -15px; left: 50%; transform: translateX(-50%); }
-        .loop-stage.right { right: -40px; top: 50%; transform: translateY(-50%); }
-        .loop-stage.bottom { bottom: -15px; left: 50%; transform: translateX(-50%); }
-        .loop-stage.left { left: -40px; top: 50%; transform: translateY(-50%); }
+        .loop-stage.top {
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .loop-stage.right {
+            right: -40px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .loop-stage.bottom {
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .loop-stage.left {
+            left: -40px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
 
         .loop-center {
             position: absolute;
@@ -658,7 +706,7 @@
         }
 
         .model-chip.selected .model-type {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             color: white;
         }
 
@@ -781,8 +829,15 @@
 
         /* Animations */
         @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 8px rgba(184, 115, 51, 0.3); }
-            50% { box-shadow: 0 0 16px rgba(184, 115, 51, 0.6); }
+
+            0%,
+            100% {
+                box-shadow: 0 0 8px rgba(184, 115, 51, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 16px rgba(184, 115, 51, 0.6);
+            }
         }
 
         .pulse-glow {
@@ -810,6 +865,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="page-shell">
         <div class="top-bar">
@@ -819,17 +875,22 @@
             </div>
             <div class="nav-links">
                 <a class="link-chip" href="index.html">Home</a>
+                <a class="link-chip" href="status.html">Status</a>
+                <a class="link-chip" href="brand.html">Brand</a>
                 <a class="link-chip" href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E">GitHub</a>
             </div>
         </div>
 
         <div class="warning-banner" role="alert">
-            <strong>WARNING:</strong> EXPERIMENTAL AI hobbyist project. Entirely created and managed by AI via vibe coding. Production-ready aim - not for critical systems.
+            <strong>WARNING:</strong> EXPERIMENTAL AI hobbyist project. Entirely created and managed by AI via vibe
+            coding. Production-ready aim - not for critical systems.
         </div>
 
         <div class="hero">
             <h1>Watchmaker Component Showcase</h1>
-            <p>Complete reference implementation for SLATE UI components. Includes core watchmaker primitives, vendor SDK integration, multi-runner status, GPU workbench widgets, K8s deployment visualization, autonomous loop, custom models selector, and Claude Code integration status.</p>
+            <p>Complete reference implementation for SLATE UI components. Includes core watchmaker primitives, vendor
+                SDK integration, multi-runner status, GPU workbench widgets, K8s deployment visualization, autonomous
+                loop, custom models selector, and Claude Code integration status.</p>
         </div>
 
         <!-- Table of Contents -->
@@ -860,23 +921,32 @@
                 <h3><span class="icon">&#x2699;</span> Gear System</h3>
                 <p>Animated SVG gears with slow, medium, and reverse rotation speeds.</p>
                 <div class="component-row">
-                    <svg class="gear gear-spin-slow" viewBox="0 0 100 100" width="70" height="70" xmlns="http://www.w3.org/2000/svg">
+                    <svg class="gear gear-spin-slow" viewBox="0 0 100 100" width="70" height="70"
+                        xmlns="http://www.w3.org/2000/svg">
                         <g style="transform-origin:50% 50%">
-                            <circle cx="50" cy="50" r="28" fill="none" stroke="#B85A3C" stroke-width="3"/>
-                            <path d="M50,8 L54,18 L46,18Z M92,50 L82,54 L82,46Z M50,92 L46,82 L54,82Z M8,50 L18,46 L18,54Z M79,21 L72,29 L73,27Z M79,79 L72,72 L27,73Z M21,79 L29,72 L27,73Z M21,21 L29,29 L27,27Z" fill="#B85A3C"/>
-                            <circle cx="50" cy="50" r="10" fill="#B85A3C" opacity="0.3"/>
+                            <circle cx="50" cy="50" r="28" fill="none" stroke="#B85A3C" stroke-width="3" />
+                            <path
+                                d="M50,8 L54,18 L46,18Z M92,50 L82,54 L82,46Z M50,92 L46,82 L54,82Z M8,50 L18,46 L18,54Z M79,21 L72,29 L73,27Z M79,79 L72,72 L27,73Z M21,79 L29,72 L27,73Z M21,21 L29,29 L27,27Z"
+                                fill="#B85A3C" />
+                            <circle cx="50" cy="50" r="10" fill="#B85A3C" opacity="0.3" />
                         </g>
                     </svg>
-                    <svg class="gear gear-spin-medium" viewBox="0 0 100 100" width="60" height="60" xmlns="http://www.w3.org/2000/svg">
+                    <svg class="gear gear-spin-medium" viewBox="0 0 100 100" width="60" height="60"
+                        xmlns="http://www.w3.org/2000/svg">
                         <g style="transform-origin:50% 50%">
-                            <circle cx="50" cy="50" r="24" fill="none" stroke="#98C1D9" stroke-width="2"/>
-                            <path d="M50,10 L53,20 L47,20Z M90,50 L80,53 L80,47Z M50,90 L47,80 L53,80Z M10,50 L20,47 L20,53Z M78,22 L72,28Z M78,78 L72,72Z M22,78 L28,72Z M22,22 L28,28Z" fill="#98C1D9"/>
+                            <circle cx="50" cy="50" r="24" fill="none" stroke="#98C1D9" stroke-width="2" />
+                            <path
+                                d="M50,10 L53,20 L47,20Z M90,50 L80,53 L80,47Z M50,90 L47,80 L53,80Z M10,50 L20,47 L20,53Z M78,22 L72,28Z M78,78 L72,72Z M22,78 L28,72Z M22,22 L28,28Z"
+                                fill="#98C1D9" />
                         </g>
                     </svg>
-                    <svg class="gear gear-spin-reverse" viewBox="0 0 100 100" width="54" height="54" xmlns="http://www.w3.org/2000/svg">
+                    <svg class="gear gear-spin-reverse" viewBox="0 0 100 100" width="54" height="54"
+                        xmlns="http://www.w3.org/2000/svg">
                         <g style="transform-origin:50% 50%">
-                            <circle cx="50" cy="50" r="20" fill="none" stroke="#B87333" stroke-width="2.5"/>
-                            <path d="M50,14 L53,24 L47,24Z M86,50 L76,53 L76,47Z M50,86 L47,76 L53,76Z M14,50 L24,47 L24,53Z M74,26 L68,32Z M74,74 L68,68Z M26,74 L32,68Z M26,26 L32,32Z" fill="#B87333"/>
+                            <circle cx="50" cy="50" r="20" fill="none" stroke="#B87333" stroke-width="2.5" />
+                            <path
+                                d="M50,14 L53,24 L47,24Z M86,50 L76,53 L76,47Z M50,86 L47,76 L53,76Z M14,50 L24,47 L24,53Z M74,26 L68,32Z M74,74 L68,68Z M26,74 L32,68Z M26,26 L32,32Z"
+                                fill="#B87333" />
                         </g>
                     </svg>
                 </div>
@@ -922,13 +992,16 @@
                 <div class="watchmaker-card active">
                     <div class="watchmaker-card-header">
                         <svg class="gear" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
-                            <path d="M12 1v3m0 16v3M1 12h3m16 0h3M4.22 4.22l2.12 2.12m11.3 11.3l2.12 2.12M4.22 19.78l2.12-2.12m11.3-11.3l2.12-2.12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2" />
+                            <path
+                                d="M12 1v3m0 16v3M1 12h3m16 0h3M4.22 4.22l2.12 2.12m11.3 11.3l2.12 2.12M4.22 19.78l2.12-2.12m11.3-11.3l2.12-2.12"
+                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                         </svg>
                         <div class="watchmaker-card-title">Command Core</div>
                         <span class="status-jewel active"></span>
                     </div>
-                    <div style="color: var(--slate-on-surface-variant); font-size: 0.85rem;">Use cards for key system surfaces and controls.</div>
+                    <div style="color: var(--slate-on-surface-variant); font-size: 0.85rem;">Use cards for key system
+                        surfaces and controls.</div>
                 </div>
                 <div class="code-label">Classes: .watchmaker-card .watchmaker-card-header .watchmaker-card-title</div>
             </section>
@@ -990,35 +1063,45 @@
                             <div class="sdk-icon openai">&#x1F4AC;</div>
                             <div class="sdk-info">
                                 <div class="sdk-name">OpenAI Agents</div>
-                                <div class="sdk-status"><span class="status-jewel active" style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span> Connected v1.2.0</div>
+                                <div class="sdk-status"><span class="status-jewel active"
+                                        style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span>
+                                    Connected v1.2.0</div>
                             </div>
                         </div>
                         <div class="sdk-card">
                             <div class="sdk-icon autogen">&#x1F465;</div>
                             <div class="sdk-info">
                                 <div class="sdk-name">AutoGen</div>
-                                <div class="sdk-status"><span class="status-jewel active" style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span> Connected v0.4.0</div>
+                                <div class="sdk-status"><span class="status-jewel active"
+                                        style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span>
+                                    Connected v0.4.0</div>
                             </div>
                         </div>
                         <div class="sdk-card">
                             <div class="sdk-icon semantic">&#x2699;</div>
                             <div class="sdk-info">
                                 <div class="sdk-name">Semantic Kernel</div>
-                                <div class="sdk-status"><span class="status-jewel active" style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span> Connected v1.29.0</div>
+                                <div class="sdk-status"><span class="status-jewel active"
+                                        style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span>
+                                    Connected v1.29.0</div>
                             </div>
                         </div>
                         <div class="sdk-card">
                             <div class="sdk-icon copilot">&#x1F4BB;</div>
                             <div class="sdk-info">
                                 <div class="sdk-name">GitHub Copilot</div>
-                                <div class="sdk-status"><span class="status-jewel pending" style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span> Syncing</div>
+                                <div class="sdk-status"><span class="status-jewel pending"
+                                        style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span>
+                                    Syncing</div>
                             </div>
                         </div>
                         <div class="sdk-card">
                             <div class="sdk-icon claude">&#x1F4A0;</div>
                             <div class="sdk-info">
                                 <div class="sdk-name">Claude Agent SDK</div>
-                                <div class="sdk-status"><span class="status-jewel active" style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span> Active</div>
+                                <div class="sdk-status"><span class="status-jewel active"
+                                        style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span>
+                                    Active</div>
                             </div>
                         </div>
                     </div>
@@ -1035,28 +1118,36 @@
                             <span>OpenAI Agents</span>
                             <span style="color:var(--copper-light)">34%</span>
                         </div>
-                        <div class="progress-bar"><div class="progress-fill" style="width:34%"></div></div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width:34%"></div>
+                        </div>
                     </div>
                     <div style="margin-bottom:16px">
                         <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:0.8rem">
                             <span>AutoGen</span>
                             <span style="color:var(--copper-light)">28%</span>
                         </div>
-                        <div class="progress-bar"><div class="progress-fill" style="width:28%"></div></div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width:28%"></div>
+                        </div>
                     </div>
                     <div style="margin-bottom:16px">
                         <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:0.8rem">
                             <span>Semantic Kernel</span>
                             <span style="color:var(--copper-light)">22%</span>
                         </div>
-                        <div class="progress-bar"><div class="progress-fill" style="width:22%"></div></div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width:22%"></div>
+                        </div>
                     </div>
                     <div>
                         <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:0.8rem">
                             <span>Claude Agent</span>
                             <span style="color:var(--copper-light)">16%</span>
                         </div>
-                        <div class="progress-bar"><div class="progress-fill" style="width:16%"></div></div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width:16%"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="code-label">Component: SDK Router Distribution Widget</div>
@@ -1105,83 +1196,103 @@
                     <div class="runner-grid">
                         <div class="runner-card active">
                             <div class="runner-id">R-01</div>
-                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                            <div class="runner-status"><span class="status-jewel active"
+                                    style="width:6px;height:6px"></span> Idle</div>
                         </div>
                         <div class="runner-card busy">
                             <div class="runner-id">R-02</div>
-                            <div class="runner-status"><span class="status-jewel pending" style="width:6px;height:6px"></span> Running</div>
+                            <div class="runner-status"><span class="status-jewel pending"
+                                    style="width:6px;height:6px"></span> Running</div>
                         </div>
                         <div class="runner-card busy">
                             <div class="runner-id">R-03</div>
-                            <div class="runner-status"><span class="status-jewel pending" style="width:6px;height:6px"></span> Running</div>
+                            <div class="runner-status"><span class="status-jewel pending"
+                                    style="width:6px;height:6px"></span> Running</div>
                         </div>
                         <div class="runner-card active">
                             <div class="runner-id">R-04</div>
-                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                            <div class="runner-status"><span class="status-jewel active"
+                                    style="width:6px;height:6px"></span> Idle</div>
                         </div>
                         <div class="runner-card active">
                             <div class="runner-id">R-05</div>
-                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                            <div class="runner-status"><span class="status-jewel active"
+                                    style="width:6px;height:6px"></span> Idle</div>
                         </div>
                         <div class="runner-card busy">
                             <div class="runner-id">R-06</div>
-                            <div class="runner-status"><span class="status-jewel pending" style="width:6px;height:6px"></span> Running</div>
+                            <div class="runner-status"><span class="status-jewel pending"
+                                    style="width:6px;height:6px"></span> Running</div>
                         </div>
                         <div class="runner-card active">
                             <div class="runner-id">R-07</div>
-                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                            <div class="runner-status"><span class="status-jewel active"
+                                    style="width:6px;height:6px"></span> Idle</div>
                         </div>
                         <div class="runner-card offline">
                             <div class="runner-id">R-08</div>
-                            <div class="runner-status"><span class="status-jewel inactive" style="width:6px;height:6px"></span> Offline</div>
+                            <div class="runner-status"><span class="status-jewel inactive"
+                                    style="width:6px;height:6px"></span> Offline</div>
                         </div>
                         <div class="runner-card active">
                             <div class="runner-id">R-09</div>
-                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                            <div class="runner-status"><span class="status-jewel active"
+                                    style="width:6px;height:6px"></span> Idle</div>
                         </div>
                         <div class="runner-card active">
                             <div class="runner-id">R-10</div>
-                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                            <div class="runner-status"><span class="status-jewel active"
+                                    style="width:6px;height:6px"></span> Idle</div>
                         </div>
                         <div class="runner-card busy">
                             <div class="runner-id">R-11</div>
-                            <div class="runner-status"><span class="status-jewel pending" style="width:6px;height:6px"></span> Running</div>
+                            <div class="runner-status"><span class="status-jewel pending"
+                                    style="width:6px;height:6px"></span> Running</div>
                         </div>
                         <div class="runner-card active">
                             <div class="runner-id">R-12</div>
-                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                            <div class="runner-status"><span class="status-jewel active"
+                                    style="width:6px;height:6px"></span> Idle</div>
                         </div>
                         <div class="runner-card active">
                             <div class="runner-id">R-13</div>
-                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                            <div class="runner-status"><span class="status-jewel active"
+                                    style="width:6px;height:6px"></span> Idle</div>
                         </div>
                         <div class="runner-card busy">
                             <div class="runner-id">R-14</div>
-                            <div class="runner-status"><span class="status-jewel pending" style="width:6px;height:6px"></span> Running</div>
+                            <div class="runner-status"><span class="status-jewel pending"
+                                    style="width:6px;height:6px"></span> Running</div>
                         </div>
                         <div class="runner-card active">
                             <div class="runner-id">R-15</div>
-                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                            <div class="runner-status"><span class="status-jewel active"
+                                    style="width:6px;height:6px"></span> Idle</div>
                         </div>
                         <div class="runner-card active">
                             <div class="runner-id">R-16</div>
-                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                            <div class="runner-status"><span class="status-jewel active"
+                                    style="width:6px;height:6px"></span> Idle</div>
                         </div>
                         <div class="runner-card active">
                             <div class="runner-id">R-17</div>
-                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                            <div class="runner-status"><span class="status-jewel active"
+                                    style="width:6px;height:6px"></span> Idle</div>
                         </div>
                         <div class="runner-card busy">
                             <div class="runner-id">R-18</div>
-                            <div class="runner-status"><span class="status-jewel pending" style="width:6px;height:6px"></span> Running</div>
+                            <div class="runner-status"><span class="status-jewel pending"
+                                    style="width:6px;height:6px"></span> Running</div>
                         </div>
                         <div class="runner-card active">
                             <div class="runner-id">R-19</div>
-                            <div class="runner-status"><span class="status-jewel active" style="width:6px;height:6px"></span> Idle</div>
+                            <div class="runner-status"><span class="status-jewel active"
+                                    style="width:6px;height:6px"></span> Idle</div>
                         </div>
                     </div>
                 </div>
-                <div class="code-label">Components: .runner-grid .runner-card .runner-id .runner-status (states: .active .busy .offline)</div>
+                <div class="code-label">Components: .runner-grid .runner-card .runner-id .runner-status (states: .active
+                    .busy .offline)</div>
             </section>
 
             <section class="showcase-section">
@@ -1232,7 +1343,9 @@
                         <div>Duration: <span style="color:var(--copper-light)">4m 32s</span></div>
                         <div>GPU: <span style="color:var(--copper-light)">GPU-0 (RTX 5070 Ti)</span></div>
                     </div>
-                    <div class="progress-bar"><div class="progress-fill" style="width:68%"></div></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:68%"></div>
+                    </div>
                     <div class="code-label" style="border:none;padding:0;margin-top:4px">68% complete</div>
                 </div>
                 <div class="code-label">Component: Runner Details Expanded Card</div>
@@ -1261,17 +1374,23 @@
                             <span class="gpu-metric-label">Memory</span>
                             <span class="gpu-metric-value">8.2 / 16 GB</span>
                         </div>
-                        <div class="gpu-bar"><div class="gpu-bar-fill medium" style="width:51%"></div></div>
+                        <div class="gpu-bar">
+                            <div class="gpu-bar-fill medium" style="width:51%"></div>
+                        </div>
                         <div class="gpu-metric">
                             <span class="gpu-metric-label">Utilization</span>
                             <span class="gpu-metric-value">67%</span>
                         </div>
-                        <div class="gpu-bar"><div class="gpu-bar-fill medium" style="width:67%"></div></div>
+                        <div class="gpu-bar">
+                            <div class="gpu-bar-fill medium" style="width:67%"></div>
+                        </div>
                         <div class="gpu-metric">
                             <span class="gpu-metric-label">Temperature</span>
                             <span class="gpu-metric-value">62C</span>
                         </div>
-                        <div class="gpu-bar"><div class="gpu-bar-fill low" style="width:42%"></div></div>
+                        <div class="gpu-bar">
+                            <div class="gpu-bar-fill low" style="width:42%"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="code-label">Components: .gpu-card .gpu-header .gpu-metrics .gpu-bar</div>
@@ -1290,17 +1409,23 @@
                             <span class="gpu-metric-label">Memory</span>
                             <span class="gpu-metric-value">4.1 / 16 GB</span>
                         </div>
-                        <div class="gpu-bar"><div class="gpu-bar-fill low" style="width:26%"></div></div>
+                        <div class="gpu-bar">
+                            <div class="gpu-bar-fill low" style="width:26%"></div>
+                        </div>
                         <div class="gpu-metric">
                             <span class="gpu-metric-label">Utilization</span>
                             <span class="gpu-metric-value">23%</span>
                         </div>
-                        <div class="gpu-bar"><div class="gpu-bar-fill low" style="width:23%"></div></div>
+                        <div class="gpu-bar">
+                            <div class="gpu-bar-fill low" style="width:23%"></div>
+                        </div>
                         <div class="gpu-metric">
                             <span class="gpu-metric-label">Temperature</span>
                             <span class="gpu-metric-value">48C</span>
                         </div>
-                        <div class="gpu-bar"><div class="gpu-bar-fill low" style="width:32%"></div></div>
+                        <div class="gpu-bar">
+                            <div class="gpu-bar-fill low" style="width:32%"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="code-label">State: Secondary GPU (lower load)</div>
@@ -1316,11 +1441,15 @@
                             <div class="metric-value">67%</div>
                         </div>
                         <svg width="60" height="40" viewBox="0 0 60 40">
-                            <path d="M5 20 L25 20 L35 10 L55 10" stroke="var(--status-pending)" stroke-width="2" fill="none" stroke-dasharray="4 2">
-                                <animate attributeName="stroke-dashoffset" from="12" to="0" dur="1s" repeatCount="indefinite"/>
+                            <path d="M5 20 L25 20 L35 10 L55 10" stroke="var(--status-pending)" stroke-width="2"
+                                fill="none" stroke-dasharray="4 2">
+                                <animate attributeName="stroke-dashoffset" from="12" to="0" dur="1s"
+                                    repeatCount="indefinite" />
                             </path>
-                            <path d="M5 20 L25 20 L35 30 L55 30" stroke="var(--status-active)" stroke-width="2" fill="none" stroke-dasharray="4 2">
-                                <animate attributeName="stroke-dashoffset" from="12" to="0" dur="1s" repeatCount="indefinite"/>
+                            <path d="M5 20 L25 20 L35 30 L55 30" stroke="var(--status-active)" stroke-width="2"
+                                fill="none" stroke-dasharray="4 2">
+                                <animate attributeName="stroke-dashoffset" from="12" to="0" dur="1s"
+                                    repeatCount="indefinite" />
                             </path>
                         </svg>
                         <div style="flex:1;text-align:center">
@@ -1329,7 +1458,8 @@
                         </div>
                     </div>
                     <div style="text-align:center;font-size:0.8rem;color:var(--slate-on-surface-variant)">
-                        <span class="status-jewel active" style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span>
+                        <span class="status-jewel active"
+                            style="width:8px;height:8px;margin-right:4px;vertical-align:middle"></span>
                         Load Balancing Active
                     </div>
                 </div>
@@ -1441,21 +1571,27 @@
                             <span>CPU Usage</span>
                             <span style="color:var(--copper-light)">3.4 / 8 cores</span>
                         </div>
-                        <div class="progress-bar"><div class="progress-fill" style="width:42%"></div></div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width:42%"></div>
+                        </div>
                     </div>
                     <div style="margin-bottom:12px">
                         <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
                             <span>Memory Usage</span>
                             <span style="color:var(--copper-light)">11.5 / 32 GB</span>
                         </div>
-                        <div class="progress-bar"><div class="progress-fill" style="width:36%"></div></div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width:36%"></div>
+                        </div>
                     </div>
                     <div>
                         <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
                             <span>GPU Allocation</span>
                             <span style="color:var(--copper-light)">2 / 2 devices</span>
                         </div>
-                        <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width:100%"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="code-label">Component: K8s Cluster Metrics</div>
@@ -1497,7 +1633,8 @@
                         <div class="balance-wheel"></div>
                         <div>
                             <div style="font-weight:600;margin-bottom:4px">Loop Active</div>
-                            <div style="font-size:0.8rem;color:var(--slate-on-surface-variant)">Cycle #1,247 | 4.2s avg</div>
+                            <div style="font-size:0.8rem;color:var(--slate-on-surface-variant)">Cycle #1,247 | 4.2s avg
+                            </div>
                         </div>
                     </div>
                     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
@@ -1616,15 +1753,18 @@
                 <h3><span class="icon">&#x1F3AF;</span> Task Routing</h3>
                 <p>Optimal model selection for different task types.</p>
                 <div class="demo-box" style="font-size:0.8rem">
-                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                    <div
+                        style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--slate-outline-variant)">
                         <span>Code Generation</span>
                         <span style="color:var(--copper-light)">codellama</span>
                     </div>
-                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                    <div
+                        style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--slate-outline-variant)">
                         <span>Documentation</span>
                         <span style="color:var(--copper-light)">mistral-nemo</span>
                     </div>
-                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--slate-outline-variant)">
+                    <div
+                        style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--slate-outline-variant)">
                         <span>Analysis</span>
                         <span style="color:var(--copper-light)">llama3.2</span>
                     </div>
@@ -1717,7 +1857,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="code-label">Components: .claude-status .claude-card .claude-card-header .claude-card-icon .claude-card-title .claude-card-metric</div>
+                <div class="code-label">Components: .claude-status .claude-card .claude-card-header .claude-card-icon
+                    .claude-card-title .claude-card-metric</div>
             </section>
 
             <section class="showcase-section">
@@ -1754,19 +1895,23 @@
                 <div class="demo-box" style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem">
                     <div style="padding:6px 0;border-bottom:1px solid var(--slate-outline-variant)">
                         <span class="status-jewel active" style="width:6px;height:6px;margin-right:6px"></span>
-                        <span style="color:var(--slate-on-surface-variant)">[14:45:02]</span> PreToolUse:Bash <span style="color:var(--status-active)">ALLOW</span>
+                        <span style="color:var(--slate-on-surface-variant)">[14:45:02]</span> PreToolUse:Bash <span
+                            style="color:var(--status-active)">ALLOW</span>
                     </div>
                     <div style="padding:6px 0;border-bottom:1px solid var(--slate-outline-variant)">
                         <span class="status-jewel active" style="width:6px;height:6px;margin-right:6px"></span>
-                        <span style="color:var(--slate-on-surface-variant)">[14:44:58]</span> PreToolUse:Edit <span style="color:var(--status-active)">ALLOW</span>
+                        <span style="color:var(--slate-on-surface-variant)">[14:44:58]</span> PreToolUse:Edit <span
+                            style="color:var(--status-active)">ALLOW</span>
                     </div>
                     <div style="padding:6px 0;border-bottom:1px solid var(--slate-outline-variant)">
                         <span class="status-jewel error" style="width:6px;height:6px;margin-right:6px"></span>
-                        <span style="color:var(--slate-on-surface-variant)">[14:42:31]</span> PreToolUse:Bash <span style="color:var(--status-error)">DENY</span>
+                        <span style="color:var(--slate-on-surface-variant)">[14:42:31]</span> PreToolUse:Bash <span
+                            style="color:var(--status-error)">DENY</span>
                     </div>
                     <div style="padding:6px 0">
                         <span class="status-jewel active" style="width:6px;height:6px;margin-right:6px"></span>
-                        <span style="color:var(--slate-on-surface-variant)">[14:41:15]</span> PreToolUse:Read <span style="color:var(--status-active)">ALLOW</span>
+                        <span style="color:var(--slate-on-surface-variant)">[14:41:15]</span> PreToolUse:Read <span
+                            style="color:var(--status-active)">ALLOW</span>
                     </div>
                 </div>
                 <div class="code-label">Component: Hook Activity Log</div>
@@ -1775,9 +1920,10 @@
 
         <footer>
             <p>
-                SLATE Watchmaker Component Showcase v4.0<br>
+                SLATE Watchmaker Component Showcase — v3.0.0-stable<br>
                 <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E">GitHub</a> |
                 <a href="https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E/wiki">Documentation</a> |
+                <a href="status.html">Status</a> |
                 <a href="index.html">Home</a>
             </p>
             <p style="margin-top:12px;color:var(--status-error)">
@@ -1786,4 +1932,5 @@
         </footer>
     </div>
 </body>
+
 </html>

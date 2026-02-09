@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S.L.A.T.E. Project Report Brochure - Ultimate Edition v4.0</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <title>S.L.A.T.E. Project Report Brochure - v3.0.0-stable</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --copper: #B85A3C;
             --copper-dark: #9E4D30;
-            --copper-glow: rgba(184,90,60,0.35);
+            --copper-glow: rgba(184, 90, 60, 0.35);
             --bg-deep: #0A0A0A;
             --bg-card: #141414;
             --bg-card-alt: #1A1A1A;
@@ -22,9 +25,25 @@
             --amber: #FFC107;
             --blue: #42A5F5;
         }
-        * { box-sizing: border-box; }
-        body { font-family: 'Roboto', sans-serif; background-color: var(--bg-deep); color: var(--text); margin: 0; padding: 20px; line-height: 1.7; }
-        .container { max-width: 1600px; margin: auto; position: relative; }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.7;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: auto;
+            position: relative;
+        }
 
         /* Header */
         header {
@@ -32,21 +51,37 @@
             padding: 60px 40px;
             text-align: center;
             border-radius: 20px;
-            box-shadow: 0 12px 40px rgba(184,90,60,0.3);
+            box-shadow: 0 12px 40px rgba(184, 90, 60, 0.3);
             position: relative;
             overflow: hidden;
         }
+
         header::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.03) 20px, rgba(255,255,255,0.03) 40px);
+            background: repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255, 255, 255, 0.03) 20px, rgba(255, 255, 255, 0.03) 40px);
         }
-        header h1 { color: #FFF; font-size: 2.6em; font-weight: 700; margin: 0 0 10px; position: relative; text-shadow: 2px 2px 8px rgba(0,0,0,0.5); }
-        header .subtitle { color: rgba(255,255,255,0.9); font-size: 1.1em; margin: 5px 0; position: relative; }
+
+        header h1 {
+            color: #FFF;
+            font-size: 2.6em;
+            font-weight: 700;
+            margin: 0 0 10px;
+            position: relative;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        header .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1em;
+            margin: 5px 0;
+            position: relative;
+        }
+
         header .version-badge {
             display: inline-block;
-            background: rgba(0,0,0,0.3);
+            background: rgba(0, 0, 0, 0.3);
             padding: 6px 18px;
             border-radius: 20px;
             font-family: 'JetBrains Mono', monospace;
@@ -62,49 +97,170 @@
             padding: 40px;
             background-color: var(--bg-card);
             border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             border: 1px solid var(--border);
             position: relative;
         }
+
         section::before {
             content: '';
             position: absolute;
-            top: 0; left: 0;
+            top: 0;
+            left: 0;
             width: 4px;
             height: 100%;
             background: var(--copper);
             border-radius: 16px 0 0 16px;
         }
 
-        h1 { color: #FFF; }
-        h2 { color: var(--copper); font-size: 1.8em; margin: 0 0 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
-        h3 { color: var(--copper); font-size: 1.25em; margin: 25px 0 12px; }
-        h4 { color: var(--text-dim); font-size: 1em; text-transform: uppercase; letter-spacing: 1px; margin: 20px 0 10px; }
+        h1 {
+            color: #FFF;
+        }
 
-        ul { list-style-type: none; padding-left: 0; }
-        ul li { padding: 6px 0 6px 24px; position: relative; }
-        ul li::before { content: '\25B8'; position: absolute; left: 0; color: var(--copper); font-size: 0.9em; }
+        h2 {
+            color: var(--copper);
+            font-size: 1.8em;
+            margin: 0 0 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+        }
 
-        code { background-color: var(--bg-code); padding: 3px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.88em; color: var(--copper); }
-        pre { background-color: var(--bg-code); padding: 20px; border-radius: 10px; overflow-x: auto; border: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.85em; line-height: 1.5; }
-        pre code { background: none; padding: 0; color: var(--text); }
+        h3 {
+            color: var(--copper);
+            font-size: 1.25em;
+            margin: 25px 0 12px;
+        }
+
+        h4 {
+            color: var(--text-dim);
+            font-size: 1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 20px 0 10px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        ul li {
+            padding: 6px 0 6px 24px;
+            position: relative;
+        }
+
+        ul li::before {
+            content: '\25B8';
+            position: absolute;
+            left: 0;
+            color: var(--copper);
+            font-size: 0.9em;
+        }
+
+        code {
+            background-color: var(--bg-code);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.88em;
+            color: var(--copper);
+        }
+
+        pre {
+            background-color: var(--bg-code);
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--text);
+        }
 
         /* Tables */
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th, td { border: 1px solid var(--border); padding: 12px 16px; text-align: left; }
-        th { background: linear-gradient(135deg, var(--copper), var(--copper-dark)); color: #FFF; font-weight: 500; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.5px; }
-        td { font-size: 0.95em; }
-        tr:nth-child(even) { background-color: rgba(255,255,255,0.02); }
-        tr:hover { background-color: rgba(184,90,60,0.08); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+
+        th {
+            background: linear-gradient(135deg, var(--copper), var(--copper-dark));
+            color: #FFF;
+            font-weight: 500;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            font-size: 0.95em;
+        }
+
+        tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        tr:hover {
+            background-color: rgba(184, 90, 60, 0.08);
+        }
 
         /* Status indicators */
-        .status-ok { color: var(--green); font-weight: 600; }
-        .status-warn { color: var(--amber); font-weight: 600; }
-        .status-err { color: var(--red); font-weight: 600; }
-        .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.78em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .badge-ok { background: rgba(76,175,80,0.15); color: var(--green); border: 1px solid rgba(76,175,80,0.3); }
-        .badge-new { background: rgba(66,165,245,0.15); color: var(--blue); border: 1px solid rgba(66,165,245,0.3); }
-        .badge-done { background: rgba(184,90,60,0.15); color: var(--copper); border: 1px solid rgba(184,90,60,0.3); }
+        .status-ok {
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        .status-warn {
+            color: var(--amber);
+            font-weight: 600;
+        }
+
+        .status-err {
+            color: var(--red);
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.78em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-ok {
+            background: rgba(76, 175, 80, 0.15);
+            color: var(--green);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .badge-new {
+            background: rgba(66, 165, 245, 0.15);
+            color: var(--blue);
+            border: 1px solid rgba(66, 165, 245, 0.3);
+        }
+
+        .badge-done {
+            background: rgba(184, 90, 60, 0.15);
+            color: var(--copper);
+            border: 1px solid rgba(184, 90, 60, 0.3);
+        }
 
         /* Schematic blocks */
         .schematic {
@@ -115,6 +271,7 @@
             border-radius: 12px;
             position: relative;
         }
+
         .schematic::after {
             content: 'SCHEMATIC';
             position: absolute;
@@ -129,7 +286,13 @@
         }
 
         /* Metric cards */
-        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 20px 0; }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
         .metric-card {
             background: var(--bg-card-alt);
             border: 1px solid var(--border);
@@ -137,8 +300,21 @@
             padding: 20px;
             text-align: center;
         }
-        .metric-card .value { font-size: 2.2em; font-weight: 700; color: var(--copper); font-family: 'JetBrains Mono', monospace; }
-        .metric-card .label { font-size: 0.85em; color: var(--text-dim); margin-top: 6px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .metric-card .value {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: var(--copper);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .metric-card .label {
+            font-size: 0.85em;
+            color: var(--text-dim);
+            margin-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
         /* Architecture diagram */
         .arch-diagram {
@@ -155,7 +331,13 @@
         }
 
         /* Nav */
-        nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+        nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 20px 0;
+        }
+
         nav a {
             background: var(--bg-card-alt);
             color: var(--text);
@@ -166,7 +348,11 @@
             border: 1px solid var(--border);
             transition: all 0.2s;
         }
-        nav a:hover { border-color: var(--copper); color: var(--copper); }
+
+        nav a:hover {
+            border-color: var(--copper);
+            color: var(--copper);
+        }
 
         /* Footer */
         footer {
@@ -178,16 +364,29 @@
             border: 1px solid var(--border);
             color: var(--text-dim);
         }
-        footer .gen-date { font-family: 'JetBrains Mono', monospace; color: var(--copper); }
+
+        footer .gen-date {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--copper);
+        }
 
         /* Responsive */
         @media (max-width: 768px) {
-            header h1 { font-size: 1.8em; }
-            section { padding: 24px; }
-            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            section {
+                padding: 24px;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
 
@@ -196,7 +395,8 @@
             <h1>S.L.A.T.E. Project Report</h1>
             <p class="subtitle">Synchronized Living Architecture for Transformation and Evolution</p>
             <p class="subtitle">Comprehensive Live System Analysis &mdash; February 2026</p>
-            <span class="version-badge">v2.4.0 &bull; 11/11 Integrations &bull; 9/9 K8s Deploys &bull; Dual RTX 5070 Ti</span>
+            <span class="version-badge">v3.0.0-stable &bull; 11/11 Integrations &bull; 9/9 K8s Deploys &bull; Dual RTX
+                5070 Ti</span>
         </header>
 
         <!-- ==================== NAV ==================== -->
@@ -221,7 +421,8 @@
         <!-- ==================== LIVE STATUS ==================== -->
         <section id="live-status">
             <h2>Live System Status</h2>
-            <p>Real-time snapshot captured from <code>slate_status.py</code> and <code>slate_runtime.py</code> on February 9, 2026.</p>
+            <p>Real-time snapshot captured from <code>slate_status.py</code> and <code>slate_runtime.py</code> on
+                February 9, 2026.</p>
 
             <div class="metrics-grid">
                 <div class="metric-card">
@@ -260,18 +461,66 @@
 
             <h3>Integration Health</h3>
             <table>
-                <tr><th>Integration</th><th>Status</th><th>Version / Detail</th></tr>
-                <tr><td>Python 3.11+</td><td class="status-ok">&#10004; OK</td><td>3.11.9</td></tr>
-                <tr><td>Virtual Environment</td><td class="status-ok">&#10004; OK</td><td>.venv active</td></tr>
-                <tr><td>NVIDIA GPU</td><td class="status-ok">&#10004; OK</td><td>2&times; RTX 5070 Ti (16,303 MiB each)</td></tr>
-                <tr><td>PyTorch</td><td class="status-ok">&#10004; OK</td><td>2.10.0+cpu (GPU via Docker/K8s)</td></tr>
-                <tr><td>Transformers</td><td class="status-ok">&#10004; OK</td><td>HuggingFace Transformers</td></tr>
-                <tr><td>Ollama</td><td class="status-ok">&#10004; OK</td><td>11 models loaded</td></tr>
-                <tr><td>ChromaDB</td><td class="status-ok">&#10004; OK</td><td>v1.0.21</td></tr>
-                <tr><td>Copilot SDK</td><td class="status-ok">&#10004; OK</td><td>Protocol v2</td></tr>
-                <tr><td>Semantic Kernel</td><td class="status-ok">&#10004; OK</td><td>v1.39.3 (Ollama connected)</td></tr>
-                <tr><td>GitHub Models</td><td class="status-ok">&#10004; OK</td><td>11 models, 18 API calls</td></tr>
-                <tr><td>Kubernetes</td><td class="status-ok">&#10004; OK</td><td>9/9 deployments ready (12 pods)</td></tr>
+                <tr>
+                    <th>Integration</th>
+                    <th>Status</th>
+                    <th>Version / Detail</th>
+                </tr>
+                <tr>
+                    <td>Python 3.11+</td>
+                    <td class="status-ok">&#10004; OK</td>
+                    <td>3.11.9</td>
+                </tr>
+                <tr>
+                    <td>Virtual Environment</td>
+                    <td class="status-ok">&#10004; OK</td>
+                    <td>.venv active</td>
+                </tr>
+                <tr>
+                    <td>NVIDIA GPU</td>
+                    <td class="status-ok">&#10004; OK</td>
+                    <td>2&times; RTX 5070 Ti (16,303 MiB each)</td>
+                </tr>
+                <tr>
+                    <td>PyTorch</td>
+                    <td class="status-ok">&#10004; OK</td>
+                    <td>2.10.0+cpu (GPU via Docker/K8s)</td>
+                </tr>
+                <tr>
+                    <td>Transformers</td>
+                    <td class="status-ok">&#10004; OK</td>
+                    <td>HuggingFace Transformers</td>
+                </tr>
+                <tr>
+                    <td>Ollama</td>
+                    <td class="status-ok">&#10004; OK</td>
+                    <td>11 models loaded</td>
+                </tr>
+                <tr>
+                    <td>ChromaDB</td>
+                    <td class="status-ok">&#10004; OK</td>
+                    <td>v1.0.21</td>
+                </tr>
+                <tr>
+                    <td>Copilot SDK</td>
+                    <td class="status-ok">&#10004; OK</td>
+                    <td>Protocol v2</td>
+                </tr>
+                <tr>
+                    <td>Semantic Kernel</td>
+                    <td class="status-ok">&#10004; OK</td>
+                    <td>v1.39.3 (Ollama connected)</td>
+                </tr>
+                <tr>
+                    <td>GitHub Models</td>
+                    <td class="status-ok">&#10004; OK</td>
+                    <td>11 models, 18 API calls</td>
+                </tr>
+                <tr>
+                    <td>Kubernetes</td>
+                    <td class="status-ok">&#10004; OK</td>
+                    <td>9/9 deployments ready (12 pods)</td>
+                </tr>
             </table>
         </section>
 
@@ -279,20 +528,20 @@
         <section id="architecture">
             <h2>System Architecture</h2>
             <div class="arch-diagram">
-&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
-&#9474;                           S.L.A.T.E. v2.4.0                           &#9474;
-&#9474;           Synchronized Living Architecture for Transformation          &#9474;
-&#9500;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9508;
-&#9474;  VS Code Layer   &#9474;  K8s Cluster     &#9474;  GPU Layer       &#9474;  GitHub Layer   &#9474;
-&#9474;  @slate ext v5.1  &#9474;  9 deployments    &#9474;  2x RTX 5070 Ti  &#9474;  Actions Runner &#9474;
-&#9474;  30 LM Tools      &#9474;  12 pods          &#9474;  32 GB VRAM      &#9474;  30+ workflows  &#9474;
-&#9474;  Copilot SDK      &#9474;  Copilot Bridge   &#9474;  Ollama 11 mdls  &#9474;  CI/CD/Security &#9474;
-&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+                &#9474; S.L.A.T.E. v3.0.0-stable &#9474;
+                &#9474; Synchronized Living Architecture for Transformation &#9474;
+                &#9500;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9508;
+                &#9474; VS Code Layer &#9474; K8s Cluster &#9474; GPU Layer &#9474; GitHub Layer &#9474;
+                &#9474; @slate ext v5.1 &#9474; 9 deployments &#9474; 2x RTX 5070 Ti &#9474; Actions Runner &#9474;
+                &#9474; 30 LM Tools &#9474; 12 pods &#9474; 32 GB VRAM &#9474; 30+ workflows &#9474;
+                &#9474; Copilot SDK &#9474; Copilot Bridge &#9474; Ollama 11 mdls &#9474; CI/CD/Security &#9474;
+                &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
             </div>
 
             <div class="schematic">
                 <h3>Data Flow</h3>
-<pre style="border:none; background:none; padding:0; margin:0;">
+                <pre style="border:none; background:none; padding:0; margin:0;">
 User &rarr; VS Code (@slate) &rarr; K8s Copilot Bridge (:8083) &rarr; SLATE Core
                                          &#8595;
                               Dashboard (:8080)  |  Agent Router (:8081)
@@ -312,17 +561,73 @@ User &rarr; VS Code (@slate) &rarr; K8s Copilot Bridge (:8083) &rarr; SLATE Core
             <h2>Report Spec (GitHub Spec-Kit)</h2>
             <p>Hierarchical specs: DRAFT &rarr; SPECIFIED &rarr; PLANNED &rarr; IMPLEMENTING &rarr; COMPLETED.</p>
             <table>
-                <tr><th>Spec ID</th><th>Description</th><th>Sub-Specs</th><th>Status</th></tr>
-                <tr><td>REP-001</td><td>Report Structure</td><td>Overview, Codebase, SDK, Patterns, Math, GUI, Integrations, Communication, Workflows, Research</td><td><span class="badge badge-done">Completed</span></td></tr>
-                <tr><td>REP-002</td><td>Design Patterns</td><td>Observer, Factory, Singleton, Decorator, Strategy, Chain of Responsibility, Facade, Builder</td><td><span class="badge badge-done">Completed</span></td></tr>
-                <tr><td>REP-003</td><td>Math / ML Analysis</td><td>Loss functions, Adam optimizer, clustering, severity scoring</td><td><span class="badge badge-done">Completed</span></td></tr>
-                <tr><td>REP-004</td><td>GUI Specs</td><td>Blueprint theme, M3 Material, schematic SDK, Golden Ratio layouts</td><td><span class="badge badge-done">Completed</span></td></tr>
-                <tr><td>REP-005</td><td>Communication Patterns</td><td>Prompt engineering, feedback loops, structured outputs</td><td><span class="badge badge-done">Completed</span></td></tr>
-                <tr><td>REP-006</td><td>Git File Production</td><td>Automated report.md generation, CI artifacts</td><td><span class="badge badge-done">Completed</span></td></tr>
-                <tr><td>REP-007</td><td>GitHub Actions Workflows</td><td>30+ YAML workflows, CI/CD, security scans, K8s deploy</td><td><span class="badge badge-new">New &mdash; Completed</span></td></tr>
-                <tr><td>REP-008</td><td>2026 Research Integration</td><td>Docker multi-stage, GHA autoscaling, CoT prompting</td><td><span class="badge badge-new">New &mdash; Completed</span></td></tr>
-                <tr><td>REP-009</td><td>Live System Telemetry</td><td>Real-time status, integration health, K8s pod metrics</td><td><span class="badge badge-new">New &mdash; Completed</span></td></tr>
-                <tr><td>REP-010</td><td>Agent System Analysis</td><td>6 agents, routing, autonomous loops, bridge architecture</td><td><span class="badge badge-new">New &mdash; Completed</span></td></tr>
+                <tr>
+                    <th>Spec ID</th>
+                    <th>Description</th>
+                    <th>Sub-Specs</th>
+                    <th>Status</th>
+                </tr>
+                <tr>
+                    <td>REP-001</td>
+                    <td>Report Structure</td>
+                    <td>Overview, Codebase, SDK, Patterns, Math, GUI, Integrations, Communication, Workflows, Research
+                    </td>
+                    <td><span class="badge badge-done">Completed</span></td>
+                </tr>
+                <tr>
+                    <td>REP-002</td>
+                    <td>Design Patterns</td>
+                    <td>Observer, Factory, Singleton, Decorator, Strategy, Chain of Responsibility, Facade, Builder</td>
+                    <td><span class="badge badge-done">Completed</span></td>
+                </tr>
+                <tr>
+                    <td>REP-003</td>
+                    <td>Math / ML Analysis</td>
+                    <td>Loss functions, Adam optimizer, clustering, severity scoring</td>
+                    <td><span class="badge badge-done">Completed</span></td>
+                </tr>
+                <tr>
+                    <td>REP-004</td>
+                    <td>GUI Specs</td>
+                    <td>Blueprint theme, M3 Material, schematic SDK, Golden Ratio layouts</td>
+                    <td><span class="badge badge-done">Completed</span></td>
+                </tr>
+                <tr>
+                    <td>REP-005</td>
+                    <td>Communication Patterns</td>
+                    <td>Prompt engineering, feedback loops, structured outputs</td>
+                    <td><span class="badge badge-done">Completed</span></td>
+                </tr>
+                <tr>
+                    <td>REP-006</td>
+                    <td>Git File Production</td>
+                    <td>Automated report.md generation, CI artifacts</td>
+                    <td><span class="badge badge-done">Completed</span></td>
+                </tr>
+                <tr>
+                    <td>REP-007</td>
+                    <td>GitHub Actions Workflows</td>
+                    <td>30+ YAML workflows, CI/CD, security scans, K8s deploy</td>
+                    <td><span class="badge badge-new">New &mdash; Completed</span></td>
+                </tr>
+                <tr>
+                    <td>REP-008</td>
+                    <td>2026 Research Integration</td>
+                    <td>Docker multi-stage, GHA autoscaling, CoT prompting</td>
+                    <td><span class="badge badge-new">New &mdash; Completed</span></td>
+                </tr>
+                <tr>
+                    <td>REP-009</td>
+                    <td>Live System Telemetry</td>
+                    <td>Real-time status, integration health, K8s pod metrics</td>
+                    <td><span class="badge badge-new">New &mdash; Completed</span></td>
+                </tr>
+                <tr>
+                    <td>REP-010</td>
+                    <td>Agent System Analysis</td>
+                    <td>6 agents, routing, autonomous loops, bridge architecture</td>
+                    <td><span class="badge badge-new">New &mdash; Completed</span></td>
+                </tr>
             </table>
         </section>
 
@@ -359,18 +664,67 @@ User &rarr; VS Code (@slate) &rarr; K8s Copilot Bridge (:8083) &rarr; SLATE Core
 
             <h3>Directory Tree</h3>
             <table>
-                <tr><th>Directory</th><th>Purpose</th><th>Key Files</th></tr>
-                <tr><td><code>slate/</code></td><td>Core SDK (95+ Python modules)</td><td>slate_status, slate_runtime, slate_orchestrator, ml_orchestrator, action_guard, adaptive_instructions, slate_k8s_deploy</td></tr>
-                <tr><td><code>agents/</code></td><td>API servers &amp; agent modules</td><td>runner_api, slate_dashboard_server, install_api</td></tr>
-                <tr><td><code>plugins/slate-copilot/</code></td><td>@slate VS Code extension (v5.1.0)</td><td>15 TypeScript sources, 30 LM tools</td></tr>
-                <tr><td><code>k8s/</code></td><td>Kubernetes manifests</td><td>21 YAML manifests + Kustomize overlays</td></tr>
-                <tr><td><code>helm/</code></td><td>Helm chart deployment</td><td>Chart.yaml, values.yaml, templates/</td></tr>
-                <tr><td><code>tests/</code></td><td>Test suite</td><td>63+ test files, full module coverage</td></tr>
-                <tr><td><code>models/</code></td><td>Ollama Modelfiles</td><td>slate-coder (12B), slate-fast (3B), slate-planner (7B)</td></tr>
-                <tr><td><code>.github/workflows/</code></td><td>CI/CD pipelines</td><td>30+ workflow YAML definitions</td></tr>
-                <tr><td><code>vendor/</code></td><td>Vendored dependencies</td><td>copilot-sdk, openai-agents-python, spec-kit, semantic-kernel</td></tr>
-                <tr><td><code>skills/</code></td><td>Copilot Chat skill definitions</td><td>status, runner, orchestrator, workflow, help</td></tr>
-                <tr><td><code>slate_core/</code></td><td>Plugin &amp; agent registry</td><td>Agent loading, plugin lifecycle</td></tr>
+                <tr>
+                    <th>Directory</th>
+                    <th>Purpose</th>
+                    <th>Key Files</th>
+                </tr>
+                <tr>
+                    <td><code>slate/</code></td>
+                    <td>Core SDK (95+ Python modules)</td>
+                    <td>slate_status, slate_runtime, slate_orchestrator, ml_orchestrator, action_guard,
+                        adaptive_instructions, slate_k8s_deploy</td>
+                </tr>
+                <tr>
+                    <td><code>agents/</code></td>
+                    <td>API servers &amp; agent modules</td>
+                    <td>runner_api, slate_dashboard_server, install_api</td>
+                </tr>
+                <tr>
+                    <td><code>plugins/slate-copilot/</code></td>
+                    <td>@slate VS Code extension (v5.1.0)</td>
+                    <td>15 TypeScript sources, 30 LM tools</td>
+                </tr>
+                <tr>
+                    <td><code>k8s/</code></td>
+                    <td>Kubernetes manifests</td>
+                    <td>21 YAML manifests + Kustomize overlays</td>
+                </tr>
+                <tr>
+                    <td><code>helm/</code></td>
+                    <td>Helm chart deployment</td>
+                    <td>Chart.yaml, values.yaml, templates/</td>
+                </tr>
+                <tr>
+                    <td><code>tests/</code></td>
+                    <td>Test suite</td>
+                    <td>63+ test files, full module coverage</td>
+                </tr>
+                <tr>
+                    <td><code>models/</code></td>
+                    <td>Ollama Modelfiles</td>
+                    <td>slate-coder (12B), slate-fast (3B), slate-planner (7B)</td>
+                </tr>
+                <tr>
+                    <td><code>.github/workflows/</code></td>
+                    <td>CI/CD pipelines</td>
+                    <td>30+ workflow YAML definitions</td>
+                </tr>
+                <tr>
+                    <td><code>vendor/</code></td>
+                    <td>Vendored dependencies</td>
+                    <td>copilot-sdk, openai-agents-python, spec-kit, semantic-kernel</td>
+                </tr>
+                <tr>
+                    <td><code>skills/</code></td>
+                    <td>Copilot Chat skill definitions</td>
+                    <td>status, runner, orchestrator, workflow, help</td>
+                </tr>
+                <tr>
+                    <td><code>slate_core/</code></td>
+                    <td>Plugin &amp; agent registry</td>
+                    <td>Agent loading, plugin lifecycle</td>
+                </tr>
             </table>
         </section>
 
@@ -378,22 +732,74 @@ User &rarr; VS Code (@slate) &rarr; K8s Copilot Bridge (:8083) &rarr; SLATE Core
         <section id="hardware">
             <h2>Hardware Profile</h2>
             <table>
-                <tr><th>Component</th><th>Specification</th><th>Status</th></tr>
-                <tr><td>GPU 0</td><td>NVIDIA GeForce RTX 5070 Ti (Blackwell, compute 12.0)</td><td class="status-ok">16,303 MiB VRAM</td></tr>
-                <tr><td>GPU 1</td><td>NVIDIA GeForce RTX 5070 Ti (Blackwell, compute 12.0)</td><td class="status-ok">16,303 MiB VRAM</td></tr>
-                <tr><td>CPU</td><td>24 cores</td><td class="status-ok">4.4% utilization</td></tr>
-                <tr><td>RAM</td><td>63.3 GB total</td><td class="status-ok">22.3 GB free</td></tr>
-                <tr><td>Disk</td><td>1,863 GB total</td><td class="status-ok">412.7 GB free</td></tr>
-                <tr><td>Platform</td><td>Windows, x64</td><td class="status-ok">Python 3.11.9</td></tr>
+                <tr>
+                    <th>Component</th>
+                    <th>Specification</th>
+                    <th>Status</th>
+                </tr>
+                <tr>
+                    <td>GPU 0</td>
+                    <td>NVIDIA GeForce RTX 5070 Ti (Blackwell, compute 12.0)</td>
+                    <td class="status-ok">16,303 MiB VRAM</td>
+                </tr>
+                <tr>
+                    <td>GPU 1</td>
+                    <td>NVIDIA GeForce RTX 5070 Ti (Blackwell, compute 12.0)</td>
+                    <td class="status-ok">16,303 MiB VRAM</td>
+                </tr>
+                <tr>
+                    <td>CPU</td>
+                    <td>24 cores</td>
+                    <td class="status-ok">4.4% utilization</td>
+                </tr>
+                <tr>
+                    <td>RAM</td>
+                    <td>63.3 GB total</td>
+                    <td class="status-ok">22.3 GB free</td>
+                </tr>
+                <tr>
+                    <td>Disk</td>
+                    <td>1,863 GB total</td>
+                    <td class="status-ok">412.7 GB free</td>
+                </tr>
+                <tr>
+                    <td>Platform</td>
+                    <td>Windows, x64</td>
+                    <td class="status-ok">Python 3.11.9</td>
+                </tr>
             </table>
 
             <h3>GPU Model Assignment</h3>
             <div class="schematic">
                 <table>
-                    <tr><th>Model</th><th>Parameters</th><th>Base</th><th>GPU</th><th>Throughput</th></tr>
-                    <tr><td>slate-coder</td><td>12B</td><td>mistral-nemo</td><td>GPU 0</td><td>~91 tok/s</td></tr>
-                    <tr><td>slate-planner</td><td>7B</td><td>mistral</td><td>GPU 0</td><td>~154 tok/s</td></tr>
-                    <tr><td>slate-fast</td><td>3B</td><td>llama3.2</td><td>GPU 1</td><td>~308 tok/s</td></tr>
+                    <tr>
+                        <th>Model</th>
+                        <th>Parameters</th>
+                        <th>Base</th>
+                        <th>GPU</th>
+                        <th>Throughput</th>
+                    </tr>
+                    <tr>
+                        <td>slate-coder</td>
+                        <td>12B</td>
+                        <td>mistral-nemo</td>
+                        <td>GPU 0</td>
+                        <td>~91 tok/s</td>
+                    </tr>
+                    <tr>
+                        <td>slate-planner</td>
+                        <td>7B</td>
+                        <td>mistral</td>
+                        <td>GPU 0</td>
+                        <td>~154 tok/s</td>
+                    </tr>
+                    <tr>
+                        <td>slate-fast</td>
+                        <td>3B</td>
+                        <td>llama3.2</td>
+                        <td>GPU 1</td>
+                        <td>~308 tok/s</td>
+                    </tr>
                 </table>
             </div>
         </section>
@@ -404,18 +810,78 @@ User &rarr; VS Code (@slate) &rarr; K8s Copilot Bridge (:8083) &rarr; SLATE Core
 
             <h3>Core Runtime (11/11 Active)</h3>
             <table>
-                <tr><th>Layer</th><th>Technology</th><th>Version</th><th>Role</th></tr>
-                <tr><td>Language</td><td>Python</td><td>3.11.9</td><td>Core runtime, all SDK modules</td></tr>
-                <tr><td>ML Framework</td><td>PyTorch</td><td>2.10.0</td><td>Tensor ops, CUDA graphs, model inference</td></tr>
-                <tr><td>NLP</td><td>HuggingFace Transformers</td><td>latest</td><td>Tokenization, embeddings, model loading</td></tr>
-                <tr><td>Local LLM</td><td>Ollama</td><td>11 models</td><td>Local inference, dual-GPU routing</td></tr>
-                <tr><td>Vector Store</td><td>ChromaDB</td><td>1.0.21</td><td>Codebase embeddings, semantic search</td></tr>
-                <tr><td>AI Orchestration</td><td>Semantic Kernel</td><td>1.39.3</td><td>Plugin orchestration, Ollama integration</td></tr>
-                <tr><td>Cloud AI</td><td>GitHub Models</td><td>11 models</td><td>Cloud inference fallback, 18 API calls</td></tr>
-                <tr><td>Copilot</td><td>Copilot SDK</td><td>Protocol v2</td><td>VS Code integration, tool definitions</td></tr>
-                <tr><td>Container</td><td>Docker</td><td>Multi-stage</td><td>CUDA 12.8 release image</td></tr>
-                <tr><td>Orchestration</td><td>Kubernetes</td><td>9 deploys</td><td>Local cloud, 12 pods, HPAs</td></tr>
-                <tr><td>CI/CD</td><td>GitHub Actions</td><td>Self-hosted</td><td>30+ workflows, GPU-enabled runner</td></tr>
+                <tr>
+                    <th>Layer</th>
+                    <th>Technology</th>
+                    <th>Version</th>
+                    <th>Role</th>
+                </tr>
+                <tr>
+                    <td>Language</td>
+                    <td>Python</td>
+                    <td>3.11.9</td>
+                    <td>Core runtime, all SDK modules</td>
+                </tr>
+                <tr>
+                    <td>ML Framework</td>
+                    <td>PyTorch</td>
+                    <td>2.10.0</td>
+                    <td>Tensor ops, CUDA graphs, model inference</td>
+                </tr>
+                <tr>
+                    <td>NLP</td>
+                    <td>HuggingFace Transformers</td>
+                    <td>latest</td>
+                    <td>Tokenization, embeddings, model loading</td>
+                </tr>
+                <tr>
+                    <td>Local LLM</td>
+                    <td>Ollama</td>
+                    <td>11 models</td>
+                    <td>Local inference, dual-GPU routing</td>
+                </tr>
+                <tr>
+                    <td>Vector Store</td>
+                    <td>ChromaDB</td>
+                    <td>1.0.21</td>
+                    <td>Codebase embeddings, semantic search</td>
+                </tr>
+                <tr>
+                    <td>AI Orchestration</td>
+                    <td>Semantic Kernel</td>
+                    <td>1.39.3</td>
+                    <td>Plugin orchestration, Ollama integration</td>
+                </tr>
+                <tr>
+                    <td>Cloud AI</td>
+                    <td>GitHub Models</td>
+                    <td>11 models</td>
+                    <td>Cloud inference fallback, 18 API calls</td>
+                </tr>
+                <tr>
+                    <td>Copilot</td>
+                    <td>Copilot SDK</td>
+                    <td>Protocol v2</td>
+                    <td>VS Code integration, tool definitions</td>
+                </tr>
+                <tr>
+                    <td>Container</td>
+                    <td>Docker</td>
+                    <td>Multi-stage</td>
+                    <td>CUDA 12.8 release image</td>
+                </tr>
+                <tr>
+                    <td>Orchestration</td>
+                    <td>Kubernetes</td>
+                    <td>9 deploys</td>
+                    <td>Local cloud, 12 pods, HPAs</td>
+                </tr>
+                <tr>
+                    <td>CI/CD</td>
+                    <td>GitHub Actions</td>
+                    <td>Self-hosted</td>
+                    <td>30+ workflows, GPU-enabled runner</td>
+                </tr>
             </table>
         </section>
 
@@ -426,34 +892,116 @@ User &rarr; VS Code (@slate) &rarr; K8s Copilot Bridge (:8083) &rarr; SLATE Core
 
             <h3>Service Map</h3>
             <table>
-                <tr><th>Service</th><th>Port</th><th>Purpose</th></tr>
-                <tr><td>Dashboard</td><td>8080</td><td>FastAPI dashboard &amp; management UI</td></tr>
-                <tr><td>Agent Router</td><td>8081</td><td>Task classification &amp; dispatch to agents</td></tr>
-                <tr><td>Autonomous Loop</td><td>8082</td><td>Self-healing autonomous task execution</td></tr>
-                <tr><td>Copilot Bridge</td><td>8083</td><td>Extension &harr; K8s command execution</td></tr>
-                <tr><td>Workflow Manager</td><td>8084</td><td>Task lifecycle management</td></tr>
-                <tr><td>Instruction Controller</td><td>8085</td><td>Adaptive instruction API</td></tr>
-                <tr><td>Prometheus Metrics</td><td>9090</td><td>Observability &amp; monitoring</td></tr>
-                <tr><td>Ollama</td><td>11434</td><td>LLM inference (dual-GPU)</td></tr>
-                <tr><td>ChromaDB</td><td>8000</td><td>Vector store for embeddings</td></tr>
+                <tr>
+                    <th>Service</th>
+                    <th>Port</th>
+                    <th>Purpose</th>
+                </tr>
+                <tr>
+                    <td>Dashboard</td>
+                    <td>8080</td>
+                    <td>FastAPI dashboard &amp; management UI</td>
+                </tr>
+                <tr>
+                    <td>Agent Router</td>
+                    <td>8081</td>
+                    <td>Task classification &amp; dispatch to agents</td>
+                </tr>
+                <tr>
+                    <td>Autonomous Loop</td>
+                    <td>8082</td>
+                    <td>Self-healing autonomous task execution</td>
+                </tr>
+                <tr>
+                    <td>Copilot Bridge</td>
+                    <td>8083</td>
+                    <td>Extension &harr; K8s command execution</td>
+                </tr>
+                <tr>
+                    <td>Workflow Manager</td>
+                    <td>8084</td>
+                    <td>Task lifecycle management</td>
+                </tr>
+                <tr>
+                    <td>Instruction Controller</td>
+                    <td>8085</td>
+                    <td>Adaptive instruction API</td>
+                </tr>
+                <tr>
+                    <td>Prometheus Metrics</td>
+                    <td>9090</td>
+                    <td>Observability &amp; monitoring</td>
+                </tr>
+                <tr>
+                    <td>Ollama</td>
+                    <td>11434</td>
+                    <td>LLM inference (dual-GPU)</td>
+                </tr>
+                <tr>
+                    <td>ChromaDB</td>
+                    <td>8000</td>
+                    <td>Vector store for embeddings</td>
+                </tr>
             </table>
 
             <h3>K8s Manifests (21 files)</h3>
             <table>
-                <tr><th>Manifest</th><th>Purpose</th></tr>
-                <tr><td>namespace.yaml</td><td>Namespace isolation (<code>slate</code>)</td></tr>
-                <tr><td>rbac.yaml</td><td>Service accounts, roles, bindings</td></tr>
-                <tr><td>network-policy.yaml</td><td>Pod-to-pod network restrictions</td></tr>
-                <tr><td>deployments.yaml</td><td>Core service deployments</td></tr>
-                <tr><td>storage.yaml</td><td>PVCs for models, data, ChromaDB</td></tr>
-                <tr><td>hpa-monitoring.yaml</td><td>Horizontal Pod Autoscalers</td></tr>
-                <tr><td>pdb.yaml</td><td>Pod Disruption Budgets</td></tr>
-                <tr><td>ml-pipeline.yaml</td><td>ML training &amp; indexing CronJobs</td></tr>
-                <tr><td>agentic-system.yaml</td><td>Autonomous agent deployments</td></tr>
-                <tr><td>instruction-controller.yaml</td><td>Adaptive instruction controller</td></tr>
-                <tr><td>ingress-gpu.yaml</td><td>GPU-aware ingress routing</td></tr>
-                <tr><td>nvidia-device-plugin.yaml</td><td>NVIDIA device plugin DaemonSet</td></tr>
-                <tr><td>runners.yaml / runners-arc.yaml</td><td>GitHub Actions runner controllers</td></tr>
+                <tr>
+                    <th>Manifest</th>
+                    <th>Purpose</th>
+                </tr>
+                <tr>
+                    <td>namespace.yaml</td>
+                    <td>Namespace isolation (<code>slate</code>)</td>
+                </tr>
+                <tr>
+                    <td>rbac.yaml</td>
+                    <td>Service accounts, roles, bindings</td>
+                </tr>
+                <tr>
+                    <td>network-policy.yaml</td>
+                    <td>Pod-to-pod network restrictions</td>
+                </tr>
+                <tr>
+                    <td>deployments.yaml</td>
+                    <td>Core service deployments</td>
+                </tr>
+                <tr>
+                    <td>storage.yaml</td>
+                    <td>PVCs for models, data, ChromaDB</td>
+                </tr>
+                <tr>
+                    <td>hpa-monitoring.yaml</td>
+                    <td>Horizontal Pod Autoscalers</td>
+                </tr>
+                <tr>
+                    <td>pdb.yaml</td>
+                    <td>Pod Disruption Budgets</td>
+                </tr>
+                <tr>
+                    <td>ml-pipeline.yaml</td>
+                    <td>ML training &amp; indexing CronJobs</td>
+                </tr>
+                <tr>
+                    <td>agentic-system.yaml</td>
+                    <td>Autonomous agent deployments</td>
+                </tr>
+                <tr>
+                    <td>instruction-controller.yaml</td>
+                    <td>Adaptive instruction controller</td>
+                </tr>
+                <tr>
+                    <td>ingress-gpu.yaml</td>
+                    <td>GPU-aware ingress routing</td>
+                </tr>
+                <tr>
+                    <td>nvidia-device-plugin.yaml</td>
+                    <td>NVIDIA device plugin DaemonSet</td>
+                </tr>
+                <tr>
+                    <td>runners.yaml / runners-arc.yaml</td>
+                    <td>GitHub Actions runner controllers</td>
+                </tr>
             </table>
         </section>
 
@@ -464,29 +1012,91 @@ User &rarr; VS Code (@slate) &rarr; K8s Copilot Bridge (:8083) &rarr; SLATE Core
             <h3>@slate VS Code Extension (v5.1.0)</h3>
             <p>Container-first architecture: K8s primary, Docker secondary, no local fallback.</p>
             <table>
-                <tr><th>Source File</th><th>Purpose</th></tr>
-                <tr><td>extension.ts</td><td>Entry point &mdash; activates runtime backend + adapter</td></tr>
-                <tr><td>slateRuntimeBackend.ts</td><td>K8s/Docker command execution engine</td></tr>
-                <tr><td>slateRuntimeAdapter.ts</td><td>Service URLs, port-forwarding, health monitoring</td></tr>
-                <tr><td>slateParticipant.ts</td><td>@slate chat participant (SYSTEM_PROMPT, commands)</td></tr>
-                <tr><td>tools.ts</td><td>30 LanguageModelTool implementations</td></tr>
-                <tr><td>slateAgentSdkHooks.ts</td><td>Copilot SDK hooks (ActionGuard integration)</td></tr>
-                <tr><td>slateDiagnostics.ts</td><td>Security scan &rarr; Problems panel</td></tr>
-                <tr><td>slateTestController.ts</td><td>SLATE tests &rarr; Test Explorer</td></tr>
-                <tr><td>slateTaskProvider.ts</td><td>Dynamic SLATE tasks &rarr; Run Task</td></tr>
-                <tr><td>slateCodeLens.ts</td><td>Inline actions on Python/YAML files</td></tr>
-                <tr><td>slateGitHubIntegration.ts</td><td>CI monitor, PR manager, issue tracker</td></tr>
-                <tr><td>slateSchematicBackground.ts</td><td>Evolving SLATE visual background</td></tr>
-                <tr><td>slateUnifiedDashboardView.ts</td><td>Guided setup + dashboard webview</td></tr>
+                <tr>
+                    <th>Source File</th>
+                    <th>Purpose</th>
+                </tr>
+                <tr>
+                    <td>extension.ts</td>
+                    <td>Entry point &mdash; activates runtime backend + adapter</td>
+                </tr>
+                <tr>
+                    <td>slateRuntimeBackend.ts</td>
+                    <td>K8s/Docker command execution engine</td>
+                </tr>
+                <tr>
+                    <td>slateRuntimeAdapter.ts</td>
+                    <td>Service URLs, port-forwarding, health monitoring</td>
+                </tr>
+                <tr>
+                    <td>slateParticipant.ts</td>
+                    <td>@slate chat participant (SYSTEM_PROMPT, commands)</td>
+                </tr>
+                <tr>
+                    <td>tools.ts</td>
+                    <td>30 LanguageModelTool implementations</td>
+                </tr>
+                <tr>
+                    <td>slateAgentSdkHooks.ts</td>
+                    <td>Copilot SDK hooks (ActionGuard integration)</td>
+                </tr>
+                <tr>
+                    <td>slateDiagnostics.ts</td>
+                    <td>Security scan &rarr; Problems panel</td>
+                </tr>
+                <tr>
+                    <td>slateTestController.ts</td>
+                    <td>SLATE tests &rarr; Test Explorer</td>
+                </tr>
+                <tr>
+                    <td>slateTaskProvider.ts</td>
+                    <td>Dynamic SLATE tasks &rarr; Run Task</td>
+                </tr>
+                <tr>
+                    <td>slateCodeLens.ts</td>
+                    <td>Inline actions on Python/YAML files</td>
+                </tr>
+                <tr>
+                    <td>slateGitHubIntegration.ts</td>
+                    <td>CI monitor, PR manager, issue tracker</td>
+                </tr>
+                <tr>
+                    <td>slateSchematicBackground.ts</td>
+                    <td>Evolving SLATE visual background</td>
+                </tr>
+                <tr>
+                    <td>slateUnifiedDashboardView.ts</td>
+                    <td>Guided setup + dashboard webview</td>
+                </tr>
             </table>
 
             <h3>Vendored SDKs</h3>
             <table>
-                <tr><th>SDK</th><th>Source</th><th>Purpose</th></tr>
-                <tr><td>Copilot SDK</td><td>github/copilot-sdk</td><td>JSON-RPC connection, tool definitions, Zod schemas</td></tr>
-                <tr><td>OpenAI Agents</td><td>openai/openai-agents-python</td><td>Agent framework, tool calling</td></tr>
-                <tr><td>Spec-Kit</td><td>github/spec-kit</td><td>Hierarchical spec processing, wiki generation</td></tr>
-                <tr><td>Semantic Kernel</td><td>microsoft/semantic-kernel</td><td>AI orchestration, Ollama/HuggingFace/Chroma plugins</td></tr>
+                <tr>
+                    <th>SDK</th>
+                    <th>Source</th>
+                    <th>Purpose</th>
+                </tr>
+                <tr>
+                    <td>Copilot SDK</td>
+                    <td>github/copilot-sdk</td>
+                    <td>JSON-RPC connection, tool definitions, Zod schemas</td>
+                </tr>
+                <tr>
+                    <td>OpenAI Agents</td>
+                    <td>openai/openai-agents-python</td>
+                    <td>Agent framework, tool calling</td>
+                </tr>
+                <tr>
+                    <td>Spec-Kit</td>
+                    <td>github/spec-kit</td>
+                    <td>Hierarchical spec processing, wiki generation</td>
+                </tr>
+                <tr>
+                    <td>Semantic Kernel</td>
+                    <td>microsoft/semantic-kernel</td>
+                    <td>AI orchestration, Ollama/HuggingFace/Chroma plugins</td>
+                </tr>
             </table>
         </section>
 
@@ -495,37 +1105,161 @@ User &rarr; VS Code (@slate) &rarr; K8s Copilot Bridge (:8083) &rarr; SLATE Core
             <h2>GitHub Actions Workflows (30+)</h2>
             <p>All workflows run on <code>runs-on: [self-hosted, slate]</code> with GPU access.</p>
             <table>
-                <tr><th>Workflow</th><th>File</th><th>Purpose</th></tr>
-                <tr><td>CI</td><td>ci.yml</td><td>Lint, tests, SDK validation, security</td></tr>
-                <tr><td>CD</td><td>cd.yml</td><td>Build &amp; deploy artifacts</td></tr>
-                <tr><td>Integration Tests</td><td>slate.yml</td><td>Full SLATE integration test suite</td></tr>
-                <tr><td>Agentic AI</td><td>agentic.yml</td><td>GPU inference, autonomous agent loop, benchmarks</td></tr>
-                <tr><td>Kubernetes</td><td>k8s.yml</td><td>K8s deployment, health checks, teardown</td></tr>
-                <tr><td>Docker</td><td>docker.yml</td><td>Container builds, GPU checks, compose</td></tr>
-                <tr><td>CodeQL</td><td>codeql.yml</td><td>Security analysis &amp; vulnerability scanning</td></tr>
-                <tr><td>PR</td><td>pr.yml</td><td>Pull request validation checks</td></tr>
-                <tr><td>Nightly</td><td>nightly.yml</td><td>Nightly health checks &amp; benchmarks</td></tr>
-                <tr><td>Release</td><td>release.yml</td><td>Release management &amp; versioning</td></tr>
-                <tr><td>Stable Release</td><td>stable-release.yml</td><td>Stable channel releases</td></tr>
-                <tr><td>Deploy</td><td>deploy.yml</td><td>Deployment orchestration</td></tr>
-                <tr><td>Docs</td><td>docs.yml</td><td>Documentation validation</td></tr>
-                <tr><td>Pages</td><td>pages.yml</td><td>GitHub Pages deployment</td></tr>
-                <tr><td>Fork Validation</td><td>fork-validation.yml</td><td>Fork security gate</td></tr>
-                <tr><td>Fork Sync</td><td>fork-sync.yml</td><td>Upstream fork synchronization</td></tr>
-                <tr><td>Fork Intelligence</td><td>fork-intelligence.yml</td><td>Fork analysis &amp; contribution tracking</td></tr>
-                <tr><td>Contributor PR</td><td>contributor-pr.yml</td><td>External contributor pull requests</td></tr>
-                <tr><td>Multi-Runner</td><td>multi-runner.yml</td><td>Multi-runner parallelism testing</td></tr>
-                <tr><td>AI Training</td><td>ai-training.yml</td><td>AI model training pipeline</td></tr>
-                <tr><td>AI Maintenance</td><td>ai-maintenance.yml</td><td>AI system maintenance tasks</td></tr>
-                <tr><td>Instructions</td><td>instructions.yml</td><td>Adaptive instruction sync to K8s ConfigMap</td></tr>
-                <tr><td>Service Management</td><td>service-management.yml</td><td>Service lifecycle orchestration</td></tr>
-                <tr><td>Label Sync</td><td>label-sync.yml</td><td>GitHub label synchronization</td></tr>
-                <tr><td>Project Automation</td><td>project-automation.yml</td><td>GitHub Projects V2 automation</td></tr>
-                <tr><td>Discussion Automation</td><td>discussion-automation.yml</td><td>Discussion management</td></tr>
-                <tr><td>Dependency Update</td><td>dependency-update.yml</td><td>Automated dependency updates</td></tr>
-                <tr><td>Git Intelligence</td><td>git-intelligence.yml</td><td>Git analysis &amp; intelligence</td></tr>
-                <tr><td>Stale</td><td>stale.yml</td><td>Stale issue/PR management</td></tr>
-                <tr><td>Copilot SDK Sync</td><td>sync-copilot-sdk.yml</td><td>Vendored SDK synchronization</td></tr>
+                <tr>
+                    <th>Workflow</th>
+                    <th>File</th>
+                    <th>Purpose</th>
+                </tr>
+                <tr>
+                    <td>CI</td>
+                    <td>ci.yml</td>
+                    <td>Lint, tests, SDK validation, security</td>
+                </tr>
+                <tr>
+                    <td>CD</td>
+                    <td>cd.yml</td>
+                    <td>Build &amp; deploy artifacts</td>
+                </tr>
+                <tr>
+                    <td>Integration Tests</td>
+                    <td>slate.yml</td>
+                    <td>Full SLATE integration test suite</td>
+                </tr>
+                <tr>
+                    <td>Agentic AI</td>
+                    <td>agentic.yml</td>
+                    <td>GPU inference, autonomous agent loop, benchmarks</td>
+                </tr>
+                <tr>
+                    <td>Kubernetes</td>
+                    <td>k8s.yml</td>
+                    <td>K8s deployment, health checks, teardown</td>
+                </tr>
+                <tr>
+                    <td>Docker</td>
+                    <td>docker.yml</td>
+                    <td>Container builds, GPU checks, compose</td>
+                </tr>
+                <tr>
+                    <td>CodeQL</td>
+                    <td>codeql.yml</td>
+                    <td>Security analysis &amp; vulnerability scanning</td>
+                </tr>
+                <tr>
+                    <td>PR</td>
+                    <td>pr.yml</td>
+                    <td>Pull request validation checks</td>
+                </tr>
+                <tr>
+                    <td>Nightly</td>
+                    <td>nightly.yml</td>
+                    <td>Nightly health checks &amp; benchmarks</td>
+                </tr>
+                <tr>
+                    <td>Release</td>
+                    <td>release.yml</td>
+                    <td>Release management &amp; versioning</td>
+                </tr>
+                <tr>
+                    <td>Stable Release</td>
+                    <td>stable-release.yml</td>
+                    <td>Stable channel releases</td>
+                </tr>
+                <tr>
+                    <td>Deploy</td>
+                    <td>deploy.yml</td>
+                    <td>Deployment orchestration</td>
+                </tr>
+                <tr>
+                    <td>Docs</td>
+                    <td>docs.yml</td>
+                    <td>Documentation validation</td>
+                </tr>
+                <tr>
+                    <td>Pages</td>
+                    <td>pages.yml</td>
+                    <td>GitHub Pages deployment</td>
+                </tr>
+                <tr>
+                    <td>Fork Validation</td>
+                    <td>fork-validation.yml</td>
+                    <td>Fork security gate</td>
+                </tr>
+                <tr>
+                    <td>Fork Sync</td>
+                    <td>fork-sync.yml</td>
+                    <td>Upstream fork synchronization</td>
+                </tr>
+                <tr>
+                    <td>Fork Intelligence</td>
+                    <td>fork-intelligence.yml</td>
+                    <td>Fork analysis &amp; contribution tracking</td>
+                </tr>
+                <tr>
+                    <td>Contributor PR</td>
+                    <td>contributor-pr.yml</td>
+                    <td>External contributor pull requests</td>
+                </tr>
+                <tr>
+                    <td>Multi-Runner</td>
+                    <td>multi-runner.yml</td>
+                    <td>Multi-runner parallelism testing</td>
+                </tr>
+                <tr>
+                    <td>AI Training</td>
+                    <td>ai-training.yml</td>
+                    <td>AI model training pipeline</td>
+                </tr>
+                <tr>
+                    <td>AI Maintenance</td>
+                    <td>ai-maintenance.yml</td>
+                    <td>AI system maintenance tasks</td>
+                </tr>
+                <tr>
+                    <td>Instructions</td>
+                    <td>instructions.yml</td>
+                    <td>Adaptive instruction sync to K8s ConfigMap</td>
+                </tr>
+                <tr>
+                    <td>Service Management</td>
+                    <td>service-management.yml</td>
+                    <td>Service lifecycle orchestration</td>
+                </tr>
+                <tr>
+                    <td>Label Sync</td>
+                    <td>label-sync.yml</td>
+                    <td>GitHub label synchronization</td>
+                </tr>
+                <tr>
+                    <td>Project Automation</td>
+                    <td>project-automation.yml</td>
+                    <td>GitHub Projects V2 automation</td>
+                </tr>
+                <tr>
+                    <td>Discussion Automation</td>
+                    <td>discussion-automation.yml</td>
+                    <td>Discussion management</td>
+                </tr>
+                <tr>
+                    <td>Dependency Update</td>
+                    <td>dependency-update.yml</td>
+                    <td>Automated dependency updates</td>
+                </tr>
+                <tr>
+                    <td>Git Intelligence</td>
+                    <td>git-intelligence.yml</td>
+                    <td>Git analysis &amp; intelligence</td>
+                </tr>
+                <tr>
+                    <td>Stale</td>
+                    <td>stale.yml</td>
+                    <td>Stale issue/PR management</td>
+                </tr>
+                <tr>
+                    <td>Copilot SDK Sync</td>
+                    <td>sync-copilot-sdk.yml</td>
+                    <td>Vendored SDK synchronization</td>
+                </tr>
             </table>
 
             <h3>Example: CI/CD Pipeline</h3>
@@ -561,22 +1295,67 @@ timeout-minutes: 15</code></pre>
         <section id="patterns">
             <h2>Design Patterns</h2>
             <table>
-                <tr><th>Pattern</th><th>Implementation</th><th>Where Used</th></tr>
-                <tr><td>Observer</td><td>Event monitoring, file watchers, service health</td><td>slate_watcher.py, slate_service_watchdog.py</td></tr>
-                <tr><td>Factory</td><td>Runner creation, agent instantiation</td><td>slate_runner_manager.py, module_registry.py</td></tr>
-                <tr><td>Singleton</td><td>AI backend instance, GPU manager</td><td>slate_gpu_manager.py, slate_ai_orchestrator.py</td></tr>
-                <tr><td>Decorator</td><td>Security wrappers (ActionGuard), PII scanning</td><td>action_guard.py, pii_scanner.py</td></tr>
-                <tr><td>Strategy</td><td>ML model selection, runtime backend switching</td><td>ml_orchestrator.py, slateRuntimeBackend.ts</td></tr>
-                <tr><td>Chain of Responsibility</td><td>Task routing through agent pipeline</td><td>slate_unified_autonomous.py, integrated_autonomous_loop.py</td></tr>
-                <tr><td>Facade</td><td>Unified AI interface hiding Ollama/SK/GitHub Models</td><td>slate_ai_orchestrator.py, vendor_integration.py</td></tr>
-                <tr><td>Builder</td><td>Configuration assembly, Dockerfile multi-stage</td><td>Dockerfile, slate_orchestrator.py</td></tr>
-                <tr><td>Adapter</td><td>Runtime backend abstraction (K8s/Docker/Local)</td><td>slateRuntimeAdapter.ts</td></tr>
-                <tr><td>Bridge</td><td>Copilot &harr; Autonomous loop communication</td><td>copilot_agent_bridge.py, slate_agentBridge</td></tr>
+                <tr>
+                    <th>Pattern</th>
+                    <th>Implementation</th>
+                    <th>Where Used</th>
+                </tr>
+                <tr>
+                    <td>Observer</td>
+                    <td>Event monitoring, file watchers, service health</td>
+                    <td>slate_watcher.py, slate_service_watchdog.py</td>
+                </tr>
+                <tr>
+                    <td>Factory</td>
+                    <td>Runner creation, agent instantiation</td>
+                    <td>slate_runner_manager.py, module_registry.py</td>
+                </tr>
+                <tr>
+                    <td>Singleton</td>
+                    <td>AI backend instance, GPU manager</td>
+                    <td>slate_gpu_manager.py, slate_ai_orchestrator.py</td>
+                </tr>
+                <tr>
+                    <td>Decorator</td>
+                    <td>Security wrappers (ActionGuard), PII scanning</td>
+                    <td>action_guard.py, pii_scanner.py</td>
+                </tr>
+                <tr>
+                    <td>Strategy</td>
+                    <td>ML model selection, runtime backend switching</td>
+                    <td>ml_orchestrator.py, slateRuntimeBackend.ts</td>
+                </tr>
+                <tr>
+                    <td>Chain of Responsibility</td>
+                    <td>Task routing through agent pipeline</td>
+                    <td>slate_unified_autonomous.py, integrated_autonomous_loop.py</td>
+                </tr>
+                <tr>
+                    <td>Facade</td>
+                    <td>Unified AI interface hiding Ollama/SK/GitHub Models</td>
+                    <td>slate_ai_orchestrator.py, vendor_integration.py</td>
+                </tr>
+                <tr>
+                    <td>Builder</td>
+                    <td>Configuration assembly, Dockerfile multi-stage</td>
+                    <td>Dockerfile, slate_orchestrator.py</td>
+                </tr>
+                <tr>
+                    <td>Adapter</td>
+                    <td>Runtime backend abstraction (K8s/Docker/Local)</td>
+                    <td>slateRuntimeAdapter.ts</td>
+                </tr>
+                <tr>
+                    <td>Bridge</td>
+                    <td>Copilot &harr; Autonomous loop communication</td>
+                    <td>copilot_agent_bridge.py, slate_agentBridge</td>
+                </tr>
             </table>
 
             <h3>Architectural Principles</h3>
             <ul>
-                <li><strong>Local-First</strong>: All operations bind to 127.0.0.1 &mdash; zero external network exposure</li>
+                <li><strong>Local-First</strong>: All operations bind to 127.0.0.1 &mdash; zero external network
+                    exposure</li>
                 <li><strong>Hardware-Aware</strong>: Dual-GPU load balancing with model-to-GPU affinity</li>
                 <li><strong>Container-First</strong>: K8s primary, Docker secondary, no local fallback in extension</li>
                 <li><strong>Self-Healing</strong>: Autonomous loops detect and recover from failures</li>
@@ -587,24 +1366,48 @@ timeout-minutes: 15</code></pre>
         <!-- ==================== MATH ==================== -->
         <section id="math-analysis">
             <h2>ML &amp; Mathematical Analysis</h2>
-            <p>PyTorch 2.10.0 for tensor operations. CUDA Graphs for GPU optimization. 3 custom SLATE models via Ollama.</p>
+            <p>PyTorch 2.10.0 for tensor operations. CUDA Graphs for GPU optimization. 3 custom SLATE models via Ollama.
+            </p>
 
             <div class="schematic">
                 <h3>ML Equations</h3>
                 <p><strong>Cross-Entropy Loss:</strong> L = -&sum; y<sub>i</sub> log(p<sub>i</sub>)</p>
-                <p><strong>Adam Optimizer:</strong> m<sub>t</sub> = &beta;<sub>1</sub> m<sub>t-1</sub> + (1-&beta;<sub>1</sub>) g<sub>t</sub></p>
-                <p><strong>Bias Correction:</strong> m&#770;<sub>t</sub> = m<sub>t</sub> / (1 - &beta;<sub>1</sub><sup>t</sup>)</p>
-                <p><strong>Parameter Update:</strong> &theta;<sub>t</sub> = &theta;<sub>t-1</sub> - &eta; &middot; m&#770;<sub>t</sub> / (&radic;v&#770;<sub>t</sub> + &epsilon;)</p>
+                <p><strong>Adam Optimizer:</strong> m<sub>t</sub> = &beta;<sub>1</sub> m<sub>t-1</sub> +
+                    (1-&beta;<sub>1</sub>) g<sub>t</sub></p>
+                <p><strong>Bias Correction:</strong> m&#770;<sub>t</sub> = m<sub>t</sub> / (1 -
+                    &beta;<sub>1</sub><sup>t</sup>)</p>
+                <p><strong>Parameter Update:</strong> &theta;<sub>t</sub> = &theta;<sub>t-1</sub> - &eta; &middot;
+                    m&#770;<sub>t</sub> / (&radic;v&#770;<sub>t</sub> + &epsilon;)</p>
                 <p><strong>Cosine Similarity (Embeddings):</strong> sim(A,B) = (A &middot; B) / (|A| &middot; |B|)</p>
                 <p><strong>Inference Throughput:</strong> T = tokens / (latency_ms / 1000)</p>
             </div>
 
             <h3>Inference Performance</h3>
             <table>
-                <tr><th>Model</th><th>Params</th><th>Throughput</th><th>Use Case</th></tr>
-                <tr><td>slate-coder</td><td>12B</td><td>~91 tok/s</td><td>Code generation, completion, review</td></tr>
-                <tr><td>slate-planner</td><td>7B</td><td>~154 tok/s</td><td>Planning, analysis, task decomposition</td></tr>
-                <tr><td>slate-fast</td><td>3B</td><td>~308 tok/s</td><td>Classification, summarization, routing</td></tr>
+                <tr>
+                    <th>Model</th>
+                    <th>Params</th>
+                    <th>Throughput</th>
+                    <th>Use Case</th>
+                </tr>
+                <tr>
+                    <td>slate-coder</td>
+                    <td>12B</td>
+                    <td>~91 tok/s</td>
+                    <td>Code generation, completion, review</td>
+                </tr>
+                <tr>
+                    <td>slate-planner</td>
+                    <td>7B</td>
+                    <td>~154 tok/s</td>
+                    <td>Planning, analysis, task decomposition</td>
+                </tr>
+                <tr>
+                    <td>slate-fast</td>
+                    <td>3B</td>
+                    <td>~308 tok/s</td>
+                    <td>Classification, summarization, routing</td>
+                </tr>
             </table>
         </section>
 
@@ -614,18 +1417,53 @@ timeout-minutes: 15</code></pre>
             <p>6 specialized agents routed by task pattern from <code>slate.config.yaml</code>.</p>
 
             <table>
-                <tr><th>Agent</th><th>Role</th><th>Task Patterns</th><th>GPU</th></tr>
-                <tr><td>ALPHA</td><td>Coding</td><td>implement, code, build, fix</td><td class="status-ok">Yes</td></tr>
-                <tr><td>BETA</td><td>Testing</td><td>test, validate, verify, coverage</td><td class="status-ok">Yes</td></tr>
-                <tr><td>GAMMA</td><td>Planning</td><td>analyze, plan, research, document</td><td>No</td></tr>
-                <tr><td>DELTA</td><td>External Bridge</td><td>claude, mcp, sdk, integration</td><td>No</td></tr>
-                <tr><td>COPILOT_CHAT</td><td>Chat Participant</td><td>diagnose, investigate, troubleshoot, explain</td><td>No</td></tr>
-                <tr><td>COPILOT</td><td>Full Orchestration</td><td>complex, multi-step</td><td class="status-ok">Yes</td></tr>
+                <tr>
+                    <th>Agent</th>
+                    <th>Role</th>
+                    <th>Task Patterns</th>
+                    <th>GPU</th>
+                </tr>
+                <tr>
+                    <td>ALPHA</td>
+                    <td>Coding</td>
+                    <td>implement, code, build, fix</td>
+                    <td class="status-ok">Yes</td>
+                </tr>
+                <tr>
+                    <td>BETA</td>
+                    <td>Testing</td>
+                    <td>test, validate, verify, coverage</td>
+                    <td class="status-ok">Yes</td>
+                </tr>
+                <tr>
+                    <td>GAMMA</td>
+                    <td>Planning</td>
+                    <td>analyze, plan, research, document</td>
+                    <td>No</td>
+                </tr>
+                <tr>
+                    <td>DELTA</td>
+                    <td>External Bridge</td>
+                    <td>claude, mcp, sdk, integration</td>
+                    <td>No</td>
+                </tr>
+                <tr>
+                    <td>COPILOT_CHAT</td>
+                    <td>Chat Participant</td>
+                    <td>diagnose, investigate, troubleshoot, explain</td>
+                    <td>No</td>
+                </tr>
+                <tr>
+                    <td>COPILOT</td>
+                    <td>Full Orchestration</td>
+                    <td>complex, multi-step</td>
+                    <td class="status-ok">Yes</td>
+                </tr>
             </table>
 
             <h3>Autonomous Loop Architecture</h3>
             <div class="schematic">
-<pre style="border:none; background:none; padding:0; margin:0;">
+                <pre style="border:none; background:none; padding:0; margin:0;">
 Integrated Autonomous Loop (Brain)
     &#8595;
 Task Discovery &rarr; Classification &rarr; Agent Routing
@@ -644,18 +1482,48 @@ Execution &rarr; Verification &rarr; Results &rarr; Workflow Update
             <h2>Security Architecture</h2>
 
             <table>
-                <tr><th>Guard</th><th>Purpose</th><th>Blocked Patterns</th></tr>
-                <tr><td>ActionGuard</td><td>Command validation</td><td><code>rm -rf</code>, <code>format</code>, <code>del /s</code>, <code>0.0.0.0</code>, <code>eval()</code>, <code>exec()</code></td></tr>
-                <tr><td>SDK Source Guard</td><td>Trusted publishers only</td><td>Unknown PyPI packages blocked (allow: Microsoft, NVIDIA, Meta, Google, HuggingFace)</td></tr>
-                <tr><td>PII Scanner</td><td>Pre-GitHub sync</td><td>API keys, tokens, credentials, personal info</td></tr>
-                <tr><td>K8s RBAC</td><td>Minimal permissions</td><td>Service accounts scoped to namespace</td></tr>
-                <tr><td>Network Policy</td><td>Pod isolation</td><td>Only allowed pod-to-pod communication</td></tr>
-                <tr><td>Copilot SDK Hooks</td><td>Tool call validation</td><td>PreToolUse validates via ActionGuard before execution</td></tr>
+                <tr>
+                    <th>Guard</th>
+                    <th>Purpose</th>
+                    <th>Blocked Patterns</th>
+                </tr>
+                <tr>
+                    <td>ActionGuard</td>
+                    <td>Command validation</td>
+                    <td><code>rm -rf</code>, <code>format</code>, <code>del /s</code>, <code>0.0.0.0</code>,
+                        <code>eval()</code>, <code>exec()</code></td>
+                </tr>
+                <tr>
+                    <td>SDK Source Guard</td>
+                    <td>Trusted publishers only</td>
+                    <td>Unknown PyPI packages blocked (allow: Microsoft, NVIDIA, Meta, Google, HuggingFace)</td>
+                </tr>
+                <tr>
+                    <td>PII Scanner</td>
+                    <td>Pre-GitHub sync</td>
+                    <td>API keys, tokens, credentials, personal info</td>
+                </tr>
+                <tr>
+                    <td>K8s RBAC</td>
+                    <td>Minimal permissions</td>
+                    <td>Service accounts scoped to namespace</td>
+                </tr>
+                <tr>
+                    <td>Network Policy</td>
+                    <td>Pod isolation</td>
+                    <td>Only allowed pod-to-pod communication</td>
+                </tr>
+                <tr>
+                    <td>Copilot SDK Hooks</td>
+                    <td>Tool call validation</td>
+                    <td>PreToolUse validates via ActionGuard before execution</td>
+                </tr>
             </table>
 
             <h3>Security Principles</h3>
             <ul>
-                <li><strong>Local-Only</strong>: All bindings to <code>127.0.0.1</code> &mdash; never <code>0.0.0.0</code></li>
+                <li><strong>Local-Only</strong>: All bindings to <code>127.0.0.1</code> &mdash; never
+                    <code>0.0.0.0</code></li>
                 <li><strong>No External Telemetry</strong>: ChromaDB telemetry disabled</li>
                 <li><strong>Protected Files</strong>: Fork security gate blocks workflow / CODEOWNERS modifications</li>
                 <li><strong>Credential Isolation</strong>: Git credential manager, no stored tokens</li>
@@ -670,17 +1538,39 @@ Execution &rarr; Verification &rarr; Results &rarr; Workflow Update
 
             <h3>Design System</h3>
             <table>
-                <tr><th>Element</th><th>Spec</th></tr>
-                <tr><td>Primary Color</td><td>#B85A3C (Copper)</td></tr>
-                <tr><td>Background</td><td>#0A0A0A &rarr; #1E1E1E gradient</td></tr>
-                <tr><td>Typography</td><td>Roboto (UI), JetBrains Mono (code)</td></tr>
-                <tr><td>Border Radius</td><td>12-16px (cards), 8px (buttons)</td></tr>
-                <tr><td>Layout</td><td>Golden Ratio (1.618) spacing system</td></tr>
-                <tr><td>Theme</td><td>Schematic/Blueprint with geometric overlays</td></tr>
+                <tr>
+                    <th>Element</th>
+                    <th>Spec</th>
+                </tr>
+                <tr>
+                    <td>Primary Color</td>
+                    <td>#B85A3C (Copper)</td>
+                </tr>
+                <tr>
+                    <td>Background</td>
+                    <td>#0A0A0A &rarr; #1E1E1E gradient</td>
+                </tr>
+                <tr>
+                    <td>Typography</td>
+                    <td>Roboto (UI), JetBrains Mono (code)</td>
+                </tr>
+                <tr>
+                    <td>Border Radius</td>
+                    <td>12-16px (cards), 8px (buttons)</td>
+                </tr>
+                <tr>
+                    <td>Layout</td>
+                    <td>Golden Ratio (1.618) spacing system</td>
+                </tr>
+                <tr>
+                    <td>Theme</td>
+                    <td>Schematic/Blueprint with geometric overlays</td>
+                </tr>
             </table>
 
             <h3>Schematic SDK</h3>
-            <p>Circuit-based visualization system for system topology, data flow, and agent routing. Located in <code>slate/schematic_sdk/</code>.</p>
+            <p>Circuit-based visualization system for system topology, data flow, and agent routing. Located in
+                <code>slate/schematic_sdk/</code>.</p>
         </section>
 
         <!-- ==================== RESEARCH ==================== -->
@@ -730,11 +1620,12 @@ Execution &rarr; Verification &rarr; Results &rarr; Workflow Update
         <!-- ==================== COMMUNICATION ==================== -->
         <section id="communication">
             <h2>Communication &amp; Coordination</h2>
-            <p>Multi-participant chaining: <code>@slate</code> for system ops, <code>@vscode</code> for editor ops. Structured prompt patterns with feedback loops.</p>
+            <p>Multi-participant chaining: <code>@slate</code> for system ops, <code>@vscode</code> for editor ops.
+                Structured prompt patterns with feedback loops.</p>
 
             <h3>Escalation Order</h3>
             <div class="schematic">
-<pre style="border:none; background:none; padding:0; margin:0;">
+                <pre style="border:none; background:none; padding:0; margin:0;">
 1. Participant Tool   (e.g., slate_workflow, slate_specKit)
 2. Participant Command (e.g., @slate /status)
 3. Subagent Delegation (runSubagent with 'slate')
@@ -745,21 +1636,43 @@ Execution &rarr; Verification &rarr; Results &rarr; Workflow Update
 
             <h3>Bridge Communication</h3>
             <table>
-                <tr><th>Channel</th><th>Direction</th><th>Format</th></tr>
-                <tr><td>Copilot Bridge</td><td>Extension &harr; K8s</td><td>HTTP POST JSON (port 8083)</td></tr>
-                <tr><td>Agent Bridge</td><td>Autonomous &harr; Chat</td><td>.slate_copilot_bridge.json</td></tr>
-                <tr><td>Workflow Status</td><td>All Agents &rarr; Central</td><td>current_tasks.json</td></tr>
-                <tr><td>GitHub API</td><td>Runner &harr; GitHub</td><td>REST API (credential manager)</td></tr>
+                <tr>
+                    <th>Channel</th>
+                    <th>Direction</th>
+                    <th>Format</th>
+                </tr>
+                <tr>
+                    <td>Copilot Bridge</td>
+                    <td>Extension &harr; K8s</td>
+                    <td>HTTP POST JSON (port 8083)</td>
+                </tr>
+                <tr>
+                    <td>Agent Bridge</td>
+                    <td>Autonomous &harr; Chat</td>
+                    <td>.slate_copilot_bridge.json</td>
+                </tr>
+                <tr>
+                    <td>Workflow Status</td>
+                    <td>All Agents &rarr; Central</td>
+                    <td>current_tasks.json</td>
+                </tr>
+                <tr>
+                    <td>GitHub API</td>
+                    <td>Runner &harr; GitHub</td>
+                    <td>REST API (credential manager)</td>
+                </tr>
             </table>
         </section>
 
         <!-- ==================== FOOTER ==================== -->
         <footer>
-            <p><strong>S.L.A.T.E. Project Report v4.0</strong> &mdash; Enhanced with Live System Telemetry</p>
-            <p>Generated: <span class="gen-date">2026-02-09</span> | Version: 2.4.0 | Integrations: 11/11 | K8s: 9/9 | GPUs: 2&times; RTX 5070 Ti</p>
+            <p><strong>S.L.A.T.E. Project Report v3.0.0-stable</strong> &mdash; Enhanced with Live System Telemetry</p>
+            <p>Generated: <span class="gen-date">2026-02-09</span> | Version: 3.0.0-stable | Integrations: 11/11 | K8s:
+                9/9 | GPUs: 2&times; RTX 5070 Ti</p>
             <p>Repository: SynchronizedLivingArchitecture/S.L.A.T.E</p>
         </footer>
 
     </div>
 </body>
+
 </html>
