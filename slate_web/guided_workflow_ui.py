@@ -75,7 +75,7 @@ def get_guided_workflow_css() -> str:
             content: '';
             width: 8px;
             height: 8px;
-            background: var(--sl-copper);
+            background: var(--sl-accent);
             border-radius: 50%;
             animation: pulse-copper 2s infinite;
         }
@@ -115,7 +115,7 @@ def get_guided_workflow_css() -> str:
         }
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, var(--sl-copper), var(--sl-copper-light));
+            background: linear-gradient(90deg, var(--sl-accent), var(--sl-accent-light));
             border-radius: 2px;
             transition: width 0.5s ease;
         }
@@ -162,12 +162,12 @@ def get_guided_workflow_css() -> str:
             overflow: hidden;
         }
         .guide-card:hover {
-            border-color: var(--sl-copper);
+            border-color: var(--sl-accent);
             background: var(--sl-bg-hover);
             transform: translateY(-2px);
         }
         .guide-card.selected {
-            border-color: var(--sl-copper);
+            border-color: var(--sl-accent);
             background: rgba(184, 115, 51, 0.1);
         }
         .guide-card.selected::after {
@@ -175,7 +175,7 @@ def get_guided_workflow_css() -> str:
             position: absolute;
             top: var(--sl-space-2);
             right: var(--sl-space-2);
-            background: var(--sl-copper);
+            background: var(--sl-accent);
             color: white;
             width: 20px;
             height: 20px;
@@ -271,7 +271,7 @@ def get_guided_workflow_css() -> str:
             transition: all 0.3s;
         }
         .stage-icon.pending { border-color: var(--sl-text-disabled); opacity: 0.5; }
-        .stage-icon.active { border-color: var(--sl-copper); animation: pulse-border 1.5s infinite; }
+        .stage-icon.active { border-color: var(--sl-accent); animation: pulse-border 1.5s infinite; }
         .stage-icon.complete { border-color: var(--sl-success); background: rgba(74, 124, 89, 0.2); }
         @keyframes pulse-border {
             0%, 100% { box-shadow: 0 0 0 0 rgba(184, 115, 51, 0.4); }
@@ -294,7 +294,7 @@ def get_guided_workflow_css() -> str:
             left: 0;
             top: 0;
             height: 100%;
-            background: var(--sl-copper);
+            background: var(--sl-accent);
             animation: flow 1s linear infinite;
             width: 50%;
         }
@@ -317,7 +317,7 @@ def get_guided_workflow_css() -> str:
         .narration-icon {
             width: 32px;
             height: 32px;
-            background: var(--sl-copper);
+            background: var(--sl-accent);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -359,12 +359,12 @@ def get_guided_workflow_css() -> str:
             color: var(--sl-text-primary);
         }
         .guide-btn-primary {
-            background: var(--sl-copper);
+            background: var(--sl-accent);
             color: white;
-            border-color: var(--sl-copper);
+            border-color: var(--sl-accent);
         }
         .guide-btn-primary:hover {
-            background: var(--sl-copper-dark);
+            background: var(--sl-accent-dark);
         }
         .guide-btn:disabled {
             opacity: 0.5;
@@ -379,7 +379,7 @@ def get_guided_workflow_css() -> str:
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--sl-copper), var(--sl-copper-dark));
+            background: linear-gradient(135deg, var(--sl-accent), var(--sl-accent-dark));
             border: none;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(184, 115, 51, 0.4);

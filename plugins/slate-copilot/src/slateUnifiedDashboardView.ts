@@ -1,29 +1,25 @@
 // Modified: 2026-02-10T08:00:00Z | Author: COPILOT | Change: v5.3.0 — Auto-start SLATE systems, split dashboard (upper command center + lower control board), Copilot SDK integration, local inference backing
+// Modified: 2026-02-11T12:00:00Z | Author: COPILOT | Change: ATHENA Greek Design System restyle — Midnight Navy, Tyrian Purple, Olympus Gold, Parchment
+// Modified: 2026-02-12T04:00:00Z | Author: COPILOT | Change: Rebrand to ATHENA control panel, update base URL to 8080, new viewType
 /**
- * SLATE Unified Dashboard View — v5.3.0
- * =====================================
- * Single integrated webview that combines:
+ * ATHENA Control Panel — v5.4.0
+ * =============================
+ * Activity bar webview that provides system control, onboarding, and quick actions.
+ * The live dashboard is now in the bottom panel (athenaBottomPanel.ts).
+ *
+ * This panel handles:
  * - Generative onboarding (system-adaptive, tailored to user hardware)
- * - Prompt ingestion (configure @slate preferences during onboarding)
- * - Systems check (post-onboarding, replaces guided setup view)
+ * - Systems check (post-onboarding health monitoring)
  * - Guided operations panel (buttons > prompts paradigm)
  * - Control board (service status, dev cycle, learning mode)
- * - Dashboard link (opens K8s/Docker-served FastAPI backend in browser)
+ * - Quick commands for SLATE operations
  *
- * Runtime: Dashboard is served by Kubernetes (kubectl port-forward) or
- * Docker Compose (WSL relay), NOT a standalone local Python process.
- * See slateRuntimeAdapter.ts for runtime detection and management.
+ * Runtime: Control commands execute via Kubernetes or Docker backend.
+ * Dashboard: Live dashboard at http://127.0.0.1:8080 shown in bottom panel.
  *
- * Design System: SLATE Watchmaker + Golden Ratio (spec-014)
+ * Design System: ATHENA Greek — Olympus Gold, Aegean Blue, Midnight Deep
  * Engineering Drawing: spec-013
  * Generative UI: spec-010
- * Version-based re-onboarding on any version change
- *
- * Golden Ratio (φ = 1.618) governs:
- * - Typography scale: 8, 11, 13, 16, 21, 34
- * - Spacing: Fibonacci sequence (1,2,3,5,8,13,21,34,55,89)
- * - Layout proportions: 61.8% / 38.2%
- * - Animation timing: φ-derived durations
  */
 
 import * as vscode from 'vscode';
@@ -44,7 +40,11 @@ function DASHBOARD_URL_DYNAMIC(): string { return getDashboardUrl(); }
 /** Get the current Ollama URL (dynamic — from runtime adapter) */
 function OLLAMA_URL_DYNAMIC(): string { return getOllamaUrl(); }
 
-const EXTENSION_VERSION = '5.3.0';
+// Modified: 2026-02-12T04:00:00Z | Author: COPILOT | Change: Update ATHENA base URL to 8080 (was 8092)
+/** ATHENA control board server — telemetry APIs for GPU, Ollama, resources, tasks, runner */
+const ATHENA_BASE_URL = 'http://127.0.0.1:8080';
+
+const EXTENSION_VERSION = '5.4.0';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -88,73 +88,73 @@ interface SystemProfile {
 const PHI = 1.6180339887;
 
 const SLATE_TOKENS = {
-	// ── Surfaces — true black foundation (watchmaker case) ──
-	bgRoot: '#050505',
-	bgSurface: '#0a0a0a',
-	bgSurfaceVariant: '#111111',
-	bgContainer: '#111110',
-	bgContainerHigh: '#171717',
-	bgContainerHighest: '#222222',
+	// ── Surfaces — Midnight Navy foundation (ATHENA Greek) ──
+	bgRoot: '#0C1219',
+	bgSurface: '#111922',
+	bgSurfaceVariant: '#141C28',
+	bgContainer: '#141C28',
+	bgContainerHigh: '#1B2838',
+	bgContainerHighest: '#243342',
 
-	// ── Primary — green (dashboard accent) ──
-	primary: '#4ade80',
-	primaryLight: '#86efac',
-	primaryDark: '#22c55e',
-	primaryContainer: 'rgba(74,222,128,0.12)',
-	onPrimary: '#0a0a0a',
-	onPrimaryContainer: '#052e16',
+	// ── Primary — Tyrian Purple (ATHENA accent) ──
+	primary: '#8E44AD',
+	primaryLight: '#C768A2',
+	primaryDark: '#6C3483',
+	primaryContainer: 'rgba(142,68,173,0.12)',
+	onPrimary: '#0C1219',
+	onPrimaryContainer: '#2C1549',
 
-	// ── Accent — green (dashboard-aligned) ──
-	accent: '#4ade80',
-	accentLight: '#86efac',
-	accentDark: '#22c55e',
-	accentGlow: 'rgba(74,222,128,0.15)',
-	accentContainer: 'rgba(74,222,128,0.12)',
+	// ── Accent — Tyrian Purple (ATHENA primary accent) ──
+	accent: '#8E44AD',
+	accentLight: '#C768A2',
+	accentDark: '#6C3483',
+	accentGlow: 'rgba(142,68,173,0.15)',
+	accentContainer: 'rgba(142,68,173,0.12)',
 
-	// ── Text — clean white hierarchy ──
-	textPrimary: '#ffffff',
-	textSecondary: '#a3a3a3',
-	textTertiary: '#525252',
-	textDisabled: '#333333',
-	onSurface: '#E8E2DE',
-	onSurfaceVariant: '#CAC4BF',
+	// ── Text — Parchment hierarchy (ATHENA Greek) ──
+	textPrimary: '#E8E0D0',
+	textSecondary: '#8395A7',
+	textTertiary: '#546E7A',
+	textDisabled: '#37474F',
+	onSurface: '#E8E0D0',
+	onSurfaceVariant: '#8395A7',
 
 	// ── Borders / Outlines ──
-	border: 'rgba(255,255,255,0.08)',
-	borderVariant: 'rgba(255,255,255,0.12)',
-	borderFocus: '#4ade80',
-	outline: '#525252',
-	outlineVariant: '#333333',
+	border: 'rgba(46,64,83,0.3)',
+	borderVariant: 'rgba(46,64,83,0.4)',
+	borderFocus: '#8E44AD',
+	outline: '#546E7A',
+	outlineVariant: '#37474F',
 
-	// ── Semantic (unified — Spec 014) ──
-	success: '#22C55E',
-	successContainer: 'rgba(34,197,94,0.12)',
-	warning: '#eab308',
-	warningContainer: 'rgba(234,179,8,0.12)',
-	error: '#ef4444',
-	errorContainer: 'rgba(239,68,68,0.12)',
-	info: '#3b82f6',
-	infoContainer: 'rgba(59,130,246,0.12)',
+	// ── Semantic (ATHENA Greek-inspired) ──
+	success: '#27AE60',
+	successContainer: 'rgba(39,174,96,0.12)',
+	warning: '#F39C12',
+	warningContainer: 'rgba(243,156,18,0.12)',
+	error: '#C0392B',
+	errorContainer: 'rgba(192,57,43,0.12)',
+	info: '#2980B9',
+	infoContainer: 'rgba(41,128,185,0.12)',
 
 	// ── Engineering Traces (ISO 128 / IEC 60617) ──
-	traceSignal: '#4ade80',
-	traceData: '#3b82f6',
-	tracePower: '#ef4444',
-	traceControl: '#eab308',
-	traceGround: '#525252',
+	traceSignal: '#8E44AD',
+	traceData: '#2980B9',
+	tracePower: '#C0392B',
+	traceControl: '#D4AC0D',
+	traceGround: '#546E7A',
 
 	// ── Blueprint ──
-	blueprintBg: '#0D1B2A',
-	blueprintGrid: '#1B3A4B',
-	blueprintAccent: '#98C1D9',
-	blueprintNode: '#E0FBFC',
+	blueprintBg: '#0C1219',
+	blueprintGrid: '#1B2838',
+	blueprintAccent: '#8E44AD',
+	blueprintNode: '#E8E0D0',
 
-	// ── Component Fills (IEC 60617 conventions) ──
-	fillService: '#1a1510',
-	fillDatabase: '#101520',
-	fillGpu: '#15120a',
-	fillAi: '#0a1515',
-	fillExternal: '#151015',
+	// ── Component Fills (ATHENA deep tones) ──
+	fillService: '#1B1A28',
+	fillDatabase: '#141C28',
+	fillGpu: '#1E1528',
+	fillAi: '#141928',
+	fillExternal: '#1B1528',
 
 	// ── Typography — φ-derived scale (Golden Ratio) ──
 	// Base: 8px → 8, 11, 13, 16, 21, 34
@@ -240,22 +240,22 @@ const SLATE_TOKENS = {
 	radiusXl: '21px',
 	radiusFull: '9999px',
 
-	// ── Dev cycle stage colors ──
-	stagePlan: '#3b82f6',
-	stageCode: '#4ade80',
-	stageTest: '#eab308',
-	stageDeploy: '#22c55e',
-	stageFeedback: '#a78bfa',
+	// ── Dev cycle stage colors (ATHENA Greek) ──
+	stagePlan: '#2980B9',
+	stageCode: '#8E44AD',
+	stageTest: '#F39C12',
+	stageDeploy: '#27AE60',
+	stageFeedback: '#D4AC0D',
 
-	// ── Watchmaker craft ──
-	gearColor: '#4ade80',
-	jewelGreen: '#22c55e',
-	jewelAmber: '#f59e0b',
-	jewelRed: '#ef4444',
-	jewelBlue: '#3b82f6',
-	mainspring: '#86efac',
-	polishReflection: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 50%)',
-	caseTexture: 'linear-gradient(180deg, #141210 0%, #0a0a0a 100%)',
+	// ── ATHENA craft (Greek-inspired accents) ──
+	gearColor: '#8E44AD',
+	jewelGreen: '#27AE60',
+	jewelAmber: '#D4AC0D',
+	jewelRed: '#C0392B',
+	jewelBlue: '#2980B9',
+	mainspring: '#C768A2',
+	polishReflection: 'linear-gradient(135deg, rgba(232,224,208,0.04) 0%, transparent 50%)',
+	caseTexture: 'linear-gradient(180deg, #0C1219 0%, #080E15 100%)',
 };
 
 // ── Guided Install Steps ────────────────────────────────────────────────────
@@ -370,10 +370,12 @@ const STATIC_NARRATIONS: Record<string, string> = {
 	'complete': "Excellent! Your SLATE system is fully operational. You now have a local-first AI development environment with guided operations at your fingertips. The onboarding view will now transform into your Systems Check dashboard.",
 };
 
-// ── Unified Dashboard View Provider ─────────────────────────────────────────
+// ── ATHENA Control Panel Provider ───────────────────────────────────────────
+// Modified: 2026-02-12T04:00:00Z | Author: COPILOT | Change: Rename to AthenaControlPanelProvider, update viewType
 
 export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProvider {
-	public static readonly viewType = 'slate.unifiedDashboard';
+	// Modified: 2026-02-12T04:00:00Z | Author: COPILOT | Change: Update viewType to athena.controlPanel
+	public static readonly viewType = 'athena.controlPanel';
 
 	private _view?: vscode.WebviewView;
 	private _statusInterval?: NodeJS.Timeout;
@@ -484,6 +486,11 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 						await this._autoStartSystems();
 						break;
 
+					// ── ATHENA Telemetry (v5.3.0) ──
+					case 'fetchAthenaData':
+						await this._fetchAthenaData();
+						break;
+
 					// ── Dashboard iframe ──
 					case 'openExternal':
 						void vscode.env.openExternal(vscode.Uri.parse(DASHBOARD_URL_DYNAMIC()));
@@ -502,6 +509,7 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 			if (this._shouldShowDashboard()) {
 				this._refreshStatus();
 				this._fetchInteractiveStatus();
+				this._fetchAthenaData();
 			}
 		}, 30000);
 
@@ -515,6 +523,7 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 		if (showDashboard) {
 			this._refreshStatus();
 			this._fetchInteractiveStatus();
+			this._fetchAthenaData();
 		}
 	}
 
@@ -1159,6 +1168,39 @@ Keep responses concise (under 200 words).`;
 		}
 	}
 
+	// Modified: 2026-02-11T02:20:00Z | Author: COPILOT | Change: Add ATHENA telemetry fetcher for live control board panels
+	/**
+	 * Fetch live telemetry from the ATHENA control board server (port 8092)
+	 * and push data to the webview for GPU, Ollama, resources, tasks, and runner panels.
+	 * Each endpoint is fetched independently so partial failures don't block others.
+	 */
+	private async _fetchAthenaData(): Promise<void> {
+		const endpoints: Array<{ path: string; msgType: string }> = [
+			{ path: '/api/gpu', msgType: 'athenaGpuData' },
+			{ path: '/api/ollama', msgType: 'athenaOllamaData' },
+			{ path: '/api/system/resources', msgType: 'athenaResourceData' },
+			{ path: '/api/tasks', msgType: 'athenaTaskData' },
+			{ path: '/api/runner', msgType: 'athenaRunnerData' },
+		];
+
+		const fetchOne = async (ep: { path: string; msgType: string }) => {
+			try {
+				const controller = new AbortController();
+				const timer = setTimeout(() => controller.abort(), 5000);
+				const resp = await fetch(`${ATHENA_BASE_URL}${ep.path}`, { signal: controller.signal });
+				clearTimeout(timer);
+				if (resp.ok) {
+					const data = await resp.json();
+					this._sendToWebview({ type: ep.msgType, data });
+				}
+			} catch {
+				// ATHENA endpoint unavailable — silent fail, panels show placeholder
+			}
+		};
+
+		await Promise.allSettled(endpoints.map(fetchOne));
+	}
+
 	// ── Webview Communication ───────────────────────────────────────────────
 
 	private _sendToWebview(message: any): void {
@@ -1299,7 +1341,7 @@ Keep responses concise (under 200 words).`;
 			display:flex; flex-direction:column;
 			align-items:center; justify-content:center;
 			min-height:100vh; padding:32px 20px; text-align:center;
-			background: radial-gradient(ellipse at 50% 30%, rgba(184,90,60,0.06) 0%, transparent 60%), var(--sl-bg-root);
+			background: radial-gradient(ellipse at 50% 30%, rgba(142,68,173,0.06) 0%, transparent 60%), var(--sl-bg-root);
 		}
 		.hero.hidden { display:none; }
 
@@ -1320,7 +1362,7 @@ Keep responses concise (under 200 words).`;
 
 		.update-banner {
 			display:none; background:var(--sl-info-container);
-			border:1px solid rgba(33,150,243,0.3); border-radius:var(--sl-radius-sm);
+			border:1px solid rgba(41,128,185,0.3); border-radius:var(--sl-radius-sm);
 			padding:10px 16px; margin-bottom:16px;
 			font-size:var(--sl-body-small); color:var(--sl-info);
 			text-align:center; max-width:280px;
@@ -1354,11 +1396,11 @@ Keep responses concise (under 200 words).`;
 			padding:10px 20px; font-size:var(--sl-body-small);
 			background:var(--sl-primary-container);
 			color:var(--sl-primary-light);
-			border:1px solid rgba(184,90,60,0.3);
+			border:1px solid rgba(142,68,173,0.3);
 			border-radius:var(--sl-radius-xl); cursor:pointer;
 			transition:all 0.2s; font-family:var(--sl-font-display);
 		}
-		.cta-theme:hover { background:rgba(184,90,60,0.2); border-color:var(--sl-primary); }
+		.cta-theme:hover { background:rgba(142,68,173,0.2); border-color:var(--sl-primary); }
 
 		.features { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:20px; width:100%; max-width:280px; }
 		.feature-card {
@@ -1655,7 +1697,7 @@ Keep responses concise (under 200 words).`;
 		.vitals-bar {
 			display: flex; align-items: center; justify-content: space-between;
 			padding: 8px 14px; gap: 4px;
-			background: rgba(184,115,51,0.05);
+			background: rgba(142,68,173,0.05);
 			border-bottom: 1px solid var(--sl-border);
 		}
 		.vital-item {
@@ -1760,17 +1802,153 @@ Keep responses concise (under 200 words).`;
 			display: flex; align-items: center; justify-content: space-between;
 			padding: 6px 14px; gap: 8px;
 			background: var(--sl-info-container);
-			border-bottom: 1px solid rgba(33,150,243,0.2);
+			border-bottom: 1px solid rgba(41,128,185,0.2);
 			font-size: 11px; color: var(--sl-info);
 		}
 		.autostart-banner.hidden { display: none; }
 		.autostart-btn {
-			padding: 3px 10px; background: rgba(33,150,243,0.2);
-			border: 1px solid rgba(33,150,243,0.3); border-radius: var(--sl-radius-sm);
+			padding: 3px 10px; background: rgba(41,128,185,0.2);
+			border: 1px solid rgba(41,128,185,0.3); border-radius: var(--sl-radius-sm);
 			color: var(--sl-info); cursor: pointer; font-size: 10px;
 			transition: all 0.15s;
 		}
-		.autostart-btn:hover { background: rgba(33,150,243,0.3); }
+		.autostart-btn:hover { background: rgba(41,128,185,0.3); }
+
+		/* ═══ Fullscreen / Maximize Section ═══ */
+		/* Modified: 2026-02-11T02:00:00Z | Author: COPILOT | Change: Add collapsible fullscreen mode for all sections */
+		.section-header {
+			position: relative;
+		}
+		.section-maximize-btn {
+			position: absolute; right: 28px; top: 50%; transform: translateY(-50%);
+			background: none; border: none; color: var(--sl-text-tertiary);
+			cursor: pointer; font-size: 13px; padding: 2px 4px; line-height: 1;
+			opacity: 0; transition: opacity 0.15s, color 0.15s;
+			font-family: var(--sl-font-mono);
+		}
+		.section-header:hover .section-maximize-btn { opacity: 0.7; }
+		.section-maximize-btn:hover { opacity: 1 !important; color: var(--sl-accent-light); }
+		.view-dashboard.has-fullscreen .section:not(.fullscreen) { display: none !important; }
+		.view-dashboard.has-fullscreen .dash-header,
+		.view-dashboard.has-fullscreen .command-center,
+		.view-dashboard.has-fullscreen .autostart-banner,
+		.view-dashboard.has-fullscreen .control-board-header,
+		.view-dashboard.has-fullscreen .primary-actions,
+		.view-dashboard.has-fullscreen .watchmaker-bar,
+		.view-dashboard.has-fullscreen .dash-footer,
+		.view-dashboard.has-fullscreen .cb-divider { display: none !important; }
+		.section.fullscreen {
+			flex: 1; display: flex; flex-direction: column; min-height: 0;
+		}
+		.section.fullscreen .section-body {
+			display: block !important; flex: 1; overflow-y: auto; min-height: 0;
+		}
+		.section.fullscreen .section-header {
+			background: var(--sl-bg-surface-variant);
+			border-bottom: 2px solid var(--sl-accent);
+			position: sticky; top: 0; z-index: 10;
+		}
+		.section.fullscreen .section-maximize-btn { opacity: 1; color: var(--sl-accent-light); }
+
+		/* ═══ Control Board Panels (ATHENA) ═══ */
+		/* Modified: 2026-02-11T02:00:00Z | Author: COPILOT | Change: Add embedded ATHENA control board panel styles */
+		.cb-divider {
+			padding: 8px 14px; display: flex; align-items: center; gap: 6px;
+			border-top: 1px solid var(--sl-border); margin-top: 4px;
+		}
+		.cb-divider-title {
+			font-family: var(--sl-font-display); font-size: 10px;
+			font-weight: 600; color: var(--sl-accent);
+			letter-spacing: 1.5px; text-transform: uppercase;
+		}
+		.cb-divider-line { flex: 1; height: 1px; background: linear-gradient(to right, var(--sl-accent), transparent); }
+
+		/* GPU Panel */
+		.gpu-cards { display: flex; flex-direction: column; gap: 6px; padding: 4px 0; }
+		.gpu-card {
+			display: flex; align-items: center; gap: 8px;
+			padding: 8px 10px; background: var(--sl-bg-surface-variant);
+			border-radius: var(--sl-radius-md); border: 1px solid var(--sl-border);
+		}
+		.gpu-card-icon { font-size: 18px; }
+		.gpu-card-info { flex: 1; min-width: 0; }
+		.gpu-card-name { font-size: 11px; font-weight: 600; color: var(--sl-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+		.gpu-card-detail { font-size: 9px; color: var(--sl-text-tertiary); font-family: var(--sl-font-mono); }
+		.gpu-temp { font-size: 12px; font-weight: 700; font-family: var(--sl-font-mono); }
+		.gpu-temp.cool { color: var(--sl-success); }
+		.gpu-temp.warm { color: var(--sl-warning); }
+		.gpu-temp.hot { color: var(--sl-error); }
+
+		/* Progress bars (shared) */
+		.progress-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+		.progress-label { font-size: 10px; color: var(--sl-text-secondary); width: 50px; text-align: right; font-family: var(--sl-font-mono); }
+		.progress-bar-track { flex: 1; height: 6px; background: var(--sl-bg-surface-variant); border-radius: 3px; overflow: hidden; }
+		.progress-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+		.progress-bar-fill.low { background: var(--sl-success); }
+		.progress-bar-fill.mid { background: var(--sl-warning); }
+		.progress-bar-fill.high { background: var(--sl-error); }
+		.progress-value { font-size: 10px; color: var(--sl-text-tertiary); font-family: var(--sl-font-mono); width: 36px; }
+
+		/* Ollama Models Panel */
+		.model-list { display: flex; flex-direction: column; gap: 3px; padding: 4px 0; }
+		.model-row {
+			display: flex; align-items: center; gap: 6px;
+			padding: 5px 8px; background: var(--sl-bg-surface-variant);
+			border-radius: var(--sl-radius-sm); font-size: 10px;
+		}
+		.model-name { flex: 1; font-family: var(--sl-font-mono); color: var(--sl-text-primary); font-weight: 600; }
+		.model-name.slate-model { color: var(--sl-accent-light); }
+		.model-size { color: var(--sl-text-tertiary); font-family: var(--sl-font-mono); font-size: 9px; }
+		.model-badge {
+			padding: 1px 5px; border-radius: var(--sl-radius-full); font-size: 8px;
+			background: var(--sl-accent-container); color: var(--sl-accent-light);
+		}
+
+		/* Task Queue Panel */
+		.task-summary { display: flex; gap: 6px; margin-bottom: 6px; }
+		.task-stat {
+			flex: 1; text-align: center; padding: 6px 4px;
+			background: var(--sl-bg-surface-variant); border-radius: var(--sl-radius-sm);
+		}
+		.task-stat-value { font-size: 16px; font-weight: 700; font-family: var(--sl-font-mono); color: var(--sl-text-primary); }
+		.task-stat-label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--sl-text-tertiary); }
+		.task-stat.pending .task-stat-value { color: var(--sl-warning); }
+		.task-stat.active .task-stat-value { color: var(--sl-info); }
+		.task-stat.done .task-stat-value { color: var(--sl-success); }
+		.task-list-mini { display: flex; flex-direction: column; gap: 2px; max-height: 120px; overflow-y: auto; }
+		.task-row-mini {
+			display: flex; align-items: center; gap: 6px;
+			padding: 3px 6px; font-size: 10px; border-radius: var(--sl-radius-xs);
+		}
+		.task-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+		.task-dot.pending { background: var(--sl-warning); }
+		.task-dot.in_progress { background: var(--sl-info); }
+		.task-dot.completed { background: var(--sl-success); }
+		.task-title-mini { flex: 1; color: var(--sl-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--sl-font-mono); }
+
+		/* Runner Panel */
+		.runner-card {
+			display: flex; align-items: center; gap: 10px;
+			padding: 10px; background: var(--sl-bg-surface-variant);
+			border-radius: var(--sl-radius-md); border: 1px solid var(--sl-border);
+		}
+		.runner-icon { font-size: 22px; }
+		.runner-info { flex: 1; }
+		.runner-name { font-size: 12px; font-weight: 600; color: var(--sl-text-primary); }
+		.runner-detail { font-size: 9px; color: var(--sl-text-tertiary); font-family: var(--sl-font-mono); }
+		.runner-status-badge {
+			padding: 3px 8px; border-radius: var(--sl-radius-full); font-size: 10px; font-weight: 600;
+		}
+		.runner-status-badge.online { background: rgba(39,174,96,0.15); color: var(--sl-success); }
+		.runner-status-badge.offline { background: rgba(192,57,43,0.15); color: var(--sl-error); }
+
+		/* Loading placeholder */
+		.panel-loading {
+			text-align: center; padding: 12px; color: var(--sl-text-disabled);
+			font-size: 11px; font-family: var(--sl-font-mono);
+		}
+		.panel-loading::after { content: '...'; animation: pulse 1.5s infinite; }
+		@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 	</style>
 </head>
 <body>
@@ -1905,6 +2083,7 @@ Keep responses concise (under 200 words).`;
 		<div class="section" id="sectionHealth">
 			<div class="section-header" data-section="sectionHealth">
 				<div class="section-header-left"><span class="section-icon">&#x2695;</span><span class="section-title">Health</span><span class="section-badge" id="healthBadge">\\u2014</span></div>
+				<button class="section-maximize-btn" data-maximize="sectionHealth" title="Expand fullscreen">&#x26F6;</button>
 				<span class="section-chevron">&#x25BC;</span>
 			</div>
 			<div class="section-body">
@@ -1925,6 +2104,7 @@ Keep responses concise (under 200 words).`;
 		<div class="section" id="sectionServices">
 			<div class="section-header" data-section="sectionServices">
 				<div class="section-header-left"><span class="section-icon">&#x2699;</span><span class="section-title">Services</span></div>
+				<button class="section-maximize-btn" data-maximize="sectionServices" title="Expand fullscreen">&#x26F6;</button>
 				<span class="section-chevron">&#x25BC;</span>
 			</div>
 			<div class="section-body">
@@ -1967,6 +2147,7 @@ Keep responses concise (under 200 words).`;
 		<div class="section collapsed" id="sectionDevCycle">
 			<div class="section-header" data-section="sectionDevCycle">
 				<div class="section-header-left"><span class="section-icon">&#x21BA;</span><span class="section-title">Dev Cycle</span><span class="dev-cycle-stage" id="currentStage">CODE</span></div>
+				<button class="section-maximize-btn" data-maximize="sectionDevCycle" title="Expand fullscreen">&#x26F6;</button>
 				<span class="section-chevron">&#x25BC;</span>
 			</div>
 			<div class="section-body">
@@ -2004,6 +2185,7 @@ Keep responses concise (under 200 words).`;
 		<div class="section" id="sectionOps">
 			<div class="section-header" data-section="sectionOps">
 				<div class="section-header-left"><span class="section-icon">&#x2726;</span><span class="section-title">Operations</span></div>
+				<button class="section-maximize-btn" data-maximize="sectionOps" title="Expand fullscreen">&#x26F6;</button>
 				<span class="section-chevron">&#x25BC;</span>
 			</div>
 			<div class="section-body">
@@ -2065,6 +2247,7 @@ Keep responses concise (under 200 words).`;
 		<div class="section collapsed" id="sectionActions">
 			<div class="section-header" data-section="sectionActions">
 				<div class="section-header-left"><span class="section-icon">&#x26A1;</span><span class="section-title">Quick Actions</span></div>
+				<button class="section-maximize-btn" data-maximize="sectionActions" title="Expand fullscreen">&#x26F6;</button>
 				<span class="section-chevron">&#x25BC;</span>
 			</div>
 			<div class="section-body">
@@ -2075,6 +2258,93 @@ Keep responses concise (under 200 words).`;
 					<button class="action-btn" data-action="models" title="Model status"><span class="action-icon">&#x1F9E0;</span><span class="action-label">Models</span></button>
 					<button class="action-btn" data-action="gpu" title="GPU status"><span class="action-icon">&#x2756;</span><span class="action-label">GPU Mgr</span></button>
 					<button class="action-btn" data-action="rerun" title="Re-run guided setup"><span class="action-icon">&#x2726;</span><span class="action-label">Setup</span></button>
+				</div>
+			</div>
+		</div>
+
+		<!-- ═══════════════════════════════════════════════════════════════════
+		     ATHENA CONTROL BOARD PANELS (Live System Telemetry)
+		     Modified: 2026-02-11T02:00:00Z | Author: COPILOT | Change: Embed ATHENA control board panels with live API polling
+		     ═══════════════════════════════════════════════════════════════════ -->
+		<div class="cb-divider">
+			<span class="cb-divider-title">&#x1F3DB; Athena Telemetry</span>
+			<div class="cb-divider-line"></div>
+		</div>
+
+		<!-- Section: GPU Status (live from ATHENA /api/gpu) -->
+		<div class="section collapsed" id="sectionGPU">
+			<div class="section-header" data-section="sectionGPU">
+				<div class="section-header-left"><span class="section-icon">&#x2756;</span><span class="section-title">GPU Status</span><span class="section-badge" id="gpuBadge">--</span></div>
+				<button class="section-maximize-btn" data-maximize="sectionGPU" title="Expand fullscreen">&#x26F6;</button>
+				<span class="section-chevron">&#x25BC;</span>
+			</div>
+			<div class="section-body">
+				<div class="gpu-cards" id="gpuCards"><div class="panel-loading">Loading GPU data</div></div>
+			</div>
+		</div>
+
+		<!-- Section: Ollama Models (live from ATHENA /api/ollama) -->
+		<div class="section collapsed" id="sectionOllamaModels">
+			<div class="section-header" data-section="sectionOllamaModels">
+				<div class="section-header-left"><span class="section-icon">&#x1F9E0;</span><span class="section-title">Ollama Models</span><span class="section-badge" id="ollamaBadge">--</span></div>
+				<button class="section-maximize-btn" data-maximize="sectionOllamaModels" title="Expand fullscreen">&#x26F6;</button>
+				<span class="section-chevron">&#x25BC;</span>
+			</div>
+			<div class="section-body">
+				<div class="model-list" id="modelList"><div class="panel-loading">Loading models</div></div>
+			</div>
+		</div>
+
+		<!-- Section: System Resources (live from ATHENA /api/system/resources) -->
+		<div class="section collapsed" id="sectionResources">
+			<div class="section-header" data-section="sectionResources">
+				<div class="section-header-left"><span class="section-icon">&#x1F4CA;</span><span class="section-title">Resources</span></div>
+				<button class="section-maximize-btn" data-maximize="sectionResources" title="Expand fullscreen">&#x26F6;</button>
+				<span class="section-chevron">&#x25BC;</span>
+			</div>
+			<div class="section-body">
+				<div id="resourceBars">
+					<div class="progress-row"><span class="progress-label">CPU</span><div class="progress-bar-track"><div class="progress-bar-fill low" id="cpuBar" style="width:0%"></div></div><span class="progress-value" id="cpuVal">--%</span></div>
+					<div class="progress-row"><span class="progress-label">RAM</span><div class="progress-bar-track"><div class="progress-bar-fill low" id="ramBar" style="width:0%"></div></div><span class="progress-value" id="ramVal">--%</span></div>
+					<div class="progress-row"><span class="progress-label">Disk</span><div class="progress-bar-track"><div class="progress-bar-fill low" id="diskBar" style="width:0%"></div></div><span class="progress-value" id="diskVal">--%</span></div>
+					<div class="progress-row"><span class="progress-label">VRAM 0</span><div class="progress-bar-track"><div class="progress-bar-fill low" id="vram0Bar" style="width:0%"></div></div><span class="progress-value" id="vram0Val">--%</span></div>
+					<div class="progress-row"><span class="progress-label">VRAM 1</span><div class="progress-bar-track"><div class="progress-bar-fill low" id="vram1Bar" style="width:0%"></div></div><span class="progress-value" id="vram1Val">--%</span></div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Section: Task Queue (live from ATHENA /api/tasks) -->
+		<div class="section collapsed" id="sectionTasks">
+			<div class="section-header" data-section="sectionTasks">
+				<div class="section-header-left"><span class="section-icon">&#x1F4CB;</span><span class="section-title">Task Queue</span><span class="section-badge" id="taskBadge">--</span></div>
+				<button class="section-maximize-btn" data-maximize="sectionTasks" title="Expand fullscreen">&#x26F6;</button>
+				<span class="section-chevron">&#x25BC;</span>
+			</div>
+			<div class="section-body">
+				<div class="task-summary" id="taskSummary">
+					<div class="task-stat pending"><div class="task-stat-value" id="taskPending">0</div><div class="task-stat-label">Pending</div></div>
+					<div class="task-stat active"><div class="task-stat-value" id="taskActive">0</div><div class="task-stat-label">Active</div></div>
+					<div class="task-stat done"><div class="task-stat-value" id="taskDone">0</div><div class="task-stat-label">Done</div></div>
+				</div>
+				<div class="task-list-mini" id="taskListMini"><div class="panel-loading">Loading tasks</div></div>
+			</div>
+		</div>
+
+		<!-- Section: GitHub Runner (live from ATHENA /api/runner) -->
+		<div class="section collapsed" id="sectionRunner">
+			<div class="section-header" data-section="sectionRunner">
+				<div class="section-header-left"><span class="section-icon">&#x25B6;</span><span class="section-title">GitHub Runner</span></div>
+				<button class="section-maximize-btn" data-maximize="sectionRunner" title="Expand fullscreen">&#x26F6;</button>
+				<span class="section-chevron">&#x25BC;</span>
+			</div>
+			<div class="section-body">
+				<div class="runner-card" id="runnerCard">
+					<span class="runner-icon">&#x1F3C3;</span>
+					<div class="runner-info">
+						<div class="runner-name" id="runnerName">slate-runner</div>
+						<div class="runner-detail" id="runnerDetail">Checking...</div>
+					</div>
+					<span class="runner-status-badge offline" id="runnerBadge">Offline</span>
 				</div>
 			</div>
 		</div>
@@ -2096,9 +2366,51 @@ Keep responses concise (under 200 words).`;
 
 		/* ── Collapsible sections ── */
 		document.querySelectorAll('.section-header').forEach(function(hdr) {
-			hdr.addEventListener('click', function() {
+			hdr.addEventListener('click', function(e) {
+				/* Don't collapse when clicking the maximize button */
+				if (e.target && e.target.closest && e.target.closest('.section-maximize-btn')) return;
 				var sec = document.getElementById(hdr.dataset.section);
-				if (sec) sec.classList.toggle('collapsed');
+				if (sec) {
+					/* If fullscreen, exit fullscreen instead of collapsing */
+					if (sec.classList.contains('fullscreen')) {
+						sec.classList.remove('fullscreen');
+						document.querySelector('.view-dashboard').classList.remove('has-fullscreen');
+						return;
+					}
+					sec.classList.toggle('collapsed');
+				}
+			});
+		});
+
+		/* ── Fullscreen / Maximize toggle ── */
+		/* Modified: 2026-02-11T02:00:00Z | Author: COPILOT | Change: Add fullscreen toggle for all sections */
+		document.querySelectorAll('.section-maximize-btn').forEach(function(btn) {
+			btn.addEventListener('click', function(e) {
+				e.stopPropagation();
+				var sectionId = btn.dataset.maximize;
+				var sec = document.getElementById(sectionId);
+				var dash = document.querySelector('.view-dashboard');
+				if (!sec || !dash) return;
+
+				if (sec.classList.contains('fullscreen')) {
+					/* Exit fullscreen */
+					sec.classList.remove('fullscreen');
+					dash.classList.remove('has-fullscreen');
+					btn.innerHTML = '&#x26F6;';
+					btn.title = 'Expand fullscreen';
+				} else {
+					/* Enter fullscreen — collapse all others, expand this one */
+					document.querySelectorAll('.section.fullscreen').forEach(function(s) {
+						s.classList.remove('fullscreen');
+						var b = s.querySelector('.section-maximize-btn');
+						if (b) { b.innerHTML = '&#x26F6;'; b.title = 'Expand fullscreen'; }
+					});
+					sec.classList.remove('collapsed');
+					sec.classList.add('fullscreen');
+					dash.classList.add('has-fullscreen');
+					btn.innerHTML = '&#x2716;';
+					btn.title = 'Exit fullscreen';
+				}
 			});
 		});
 
@@ -2519,11 +2831,156 @@ Keep responses concise (under 200 words).`;
 					case 'vitalsUpdate':
 						updateVitals(m.data);
 						break;
+
+					/* ═══ ATHENA Control Board Panel Updates ═══ */
+					/* Modified: 2026-02-11T02:00:00Z | Author: COPILOT | Change: Add handlers for ATHENA telemetry panel data */
+					case 'athenaGpuData':
+						updateGpuPanel(m.data);
+						break;
+					case 'athenaOllamaData':
+						updateOllamaPanel(m.data);
+						break;
+					case 'athenaResourceData':
+						updateResourcePanel(m.data);
+						break;
+					case 'athenaTaskData':
+						updateTaskPanel(m.data);
+						break;
+					case 'athenaRunnerData':
+						updateRunnerPanel(m.data);
+						break;
 				}
 			} catch(err) {
 				console.error('[SLATE] Message error:', err);
 			}
 		});
+
+		/* ═══════════════════════════════════════════════════════════════════
+		   ATHENA CONTROL BOARD — Panel Updaters + Auto-Polling
+		   Modified: 2026-02-11T02:00:00Z | Author: COPILOT | Change: Add live ATHENA telemetry panel updaters
+		   ═══════════════════════════════════════════════════════════════════ */
+
+		/* ── GPU Panel Updater ── */
+		function updateGpuPanel(data) {
+			var container = document.getElementById('gpuCards');
+			var badge = document.getElementById('gpuBadge');
+			if (!container || !data) return;
+			if (data.gpus && data.gpus.length > 0) {
+				if (badge) badge.textContent = data.gpus.length + 'x';
+				container.innerHTML = data.gpus.map(function(gpu) {
+					var usedPct = gpu.memory_total > 0 ? Math.round((gpu.memory_used / gpu.memory_total) * 100) : 0;
+					var tempClass = gpu.temperature < 60 ? 'cool' : gpu.temperature < 80 ? 'warm' : 'hot';
+					var name = (gpu.name || 'GPU ' + gpu.index).replace('NVIDIA GeForce ', '');
+					return '<div class="gpu-card">' +
+						'<span class="gpu-card-icon">&#x2756;</span>' +
+						'<div class="gpu-card-info">' +
+							'<div class="gpu-card-name">' + name + '</div>' +
+							'<div class="gpu-card-detail">VRAM: ' + Math.round(gpu.memory_used) + '/' + Math.round(gpu.memory_total) + ' MB (' + usedPct + '%)</div>' +
+						'</div>' +
+						'<span class="gpu-temp ' + tempClass + '">' + (gpu.temperature || '--') + '\\u00B0</span>' +
+					'</div>';
+				}).join('');
+				data.gpus.forEach(function(gpu, i) {
+					var pct = gpu.memory_total > 0 ? Math.round((gpu.memory_used / gpu.memory_total) * 100) : 0;
+					updateProgressBar('vram' + i, pct);
+				});
+			} else {
+				container.innerHTML = '<div class="panel-loading" style="animation:none">No GPUs detected</div>';
+				if (badge) badge.textContent = '0';
+			}
+		}
+
+		/* ── Ollama Models Panel Updater ── */
+		function updateOllamaPanel(data) {
+			var container = document.getElementById('modelList');
+			var badge = document.getElementById('ollamaBadge');
+			if (!container || !data) return;
+			if (data.available && data.models && data.models.length > 0) {
+				if (badge) badge.textContent = data.count || data.models.length;
+				var slateModels = data.models.filter(function(m) { return m.name && m.name.indexOf('slate') >= 0; });
+				var otherModels = data.models.filter(function(m) { return !m.name || m.name.indexOf('slate') < 0; });
+				var allSorted = slateModels.concat(otherModels);
+				container.innerHTML = allSorted.map(function(model) {
+					var isSlate = model.name && model.name.indexOf('slate') >= 0;
+					var sizeStr = model.size ? (model.size / 1e9).toFixed(1) + 'GB' : '';
+					return '<div class="model-row">' +
+						'<span class="model-name' + (isSlate ? ' slate-model' : '') + '">' + (model.name || 'unknown') + '</span>' +
+						(isSlate ? '<span class="model-badge">SLATE</span>' : '') +
+						'<span class="model-size">' + sizeStr + '</span>' +
+					'</div>';
+				}).join('');
+			} else {
+				container.innerHTML = '<div class="panel-loading" style="animation:none">Ollama offline</div>';
+				if (badge) badge.textContent = '--';
+			}
+		}
+
+		/* ── Resources Panel Updater ── */
+		function updateProgressBar(prefix, pct) {
+			var bar = document.getElementById(prefix + 'Bar');
+			var val = document.getElementById(prefix + 'Val');
+			if (bar) {
+				bar.style.width = pct + '%';
+				bar.className = 'progress-bar-fill ' + (pct < 60 ? 'low' : pct < 85 ? 'mid' : 'high');
+			}
+			if (val) val.textContent = pct + '%';
+		}
+		function updateResourcePanel(data) {
+			if (!data) return;
+			if (data.cpu) updateProgressBar('cpu', Math.round(data.cpu.percent || 0));
+			if (data.memory) updateProgressBar('ram', Math.round(data.memory.percent || 0));
+			if (data.disk) updateProgressBar('disk', Math.round(data.disk.percent || 0));
+		}
+
+		/* ── Task Queue Panel Updater ── */
+		function updateTaskPanel(data) {
+			if (!data) return;
+			var summary = data.summary || {};
+			var pe = document.getElementById('taskPending'); if (pe) pe.textContent = summary.pending || 0;
+			var ae = document.getElementById('taskActive'); if (ae) ae.textContent = summary.in_progress || 0;
+			var dne = document.getElementById('taskDone'); if (dne) dne.textContent = summary.completed || 0;
+			var badge = document.getElementById('taskBadge'); if (badge) badge.textContent = summary.total || 0;
+			var list = document.getElementById('taskListMini');
+			if (list && data.tasks && data.tasks.length > 0) {
+				var recent = data.tasks.slice(0, 8);
+				list.innerHTML = recent.map(function(t) {
+					var status = t.status || 'pending';
+					return '<div class="task-row-mini">' +
+						'<div class="task-dot ' + status + '"></div>' +
+						'<span class="task-title-mini">' + (t.title || t.id || 'Task') + '</span>' +
+					'</div>';
+				}).join('');
+			} else if (list) {
+				list.innerHTML = '<div style="text-align:center;padding:8px;color:var(--sl-text-disabled);font-size:10px;">No tasks in queue</div>';
+			}
+		}
+
+		/* ── Runner Panel Updater ── */
+		function updateRunnerPanel(data) {
+			if (!data) return;
+			var name = document.getElementById('runnerName');
+			var detail = document.getElementById('runnerDetail');
+			var badge = document.getElementById('runnerBadge');
+			if (name) name.textContent = data.name || 'slate-runner';
+			if (detail) detail.textContent = data.running ? 'self-hosted, Windows, X64, slate, gpu' : (data.path || 'Not detected');
+			if (badge) {
+				if (data.running) {
+					badge.textContent = 'Online';
+					badge.className = 'runner-status-badge online';
+				} else if (data.installed) {
+					badge.textContent = 'Installed';
+					badge.className = 'runner-status-badge offline';
+				} else {
+					badge.textContent = 'Offline';
+					badge.className = 'runner-status-badge offline';
+				}
+			}
+		}
+
+		/* ── Request ATHENA telemetry on dashboard load ── */
+		if (${onboardingComplete}) {
+			vscode.postMessage({ type: 'fetchAthenaData' });
+		}
 	</script>
 </body>
 </html>`;

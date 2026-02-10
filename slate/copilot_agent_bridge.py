@@ -34,10 +34,14 @@ Usage:
 
 import argparse
 import json
+import subprocess
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Modified: 2026-02-10T08:00:00Z | Author: COPILOT | Change: Add subprocess import + _NO_WINDOW to suppress console popups on Windows
+_NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
 # Modified: 2026-02-07T12:00:00Z | Author: COPILOT | Change: workspace setup
 WORKSPACE_ROOT = Path(__file__).parent.parent
@@ -252,13 +256,14 @@ class CopilotAgentBridge:
         print(f"  Last Updated:    {s.get('last_updated', 'N/A')}")
 
         # Modified: 2026-02-09T05:30:00Z | Author: COPILOT | Change: Add K8s copilot-bridge pod awareness
+        # Modified: 2026-02-10T08:00:00Z | Author: COPILOT | Change: Add creationflags to suppress console window on Windows
         try:
-            import subprocess as _sp
-            r = _sp.run(["kubectl", "get", "pods", "-n", "slate",
+            r = subprocess.run(["kubectl", "get", "pods", "-n", "slate",
                          "-l", "app.kubernetes.io/component=copilot-bridge",
                          "--field-selector=status.phase=Running",
                          "-o", "jsonpath={.items[*].metadata.name}"],
-                        capture_output=True, text=True, timeout=10)
+                        capture_output=True, text=True, timeout=10,
+                        creationflags=_NO_WINDOW)
             if r.returncode == 0 and r.stdout.strip():
                 print(f"\n  K8s Bridge Pod:  {r.stdout.strip()}")
         except Exception:

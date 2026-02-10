@@ -118,7 +118,7 @@ def get_control_panel_css() -> str:
             transition: all 0.2s;
         }
         .cp-sequence-card:hover {
-            border-color: var(--sl-copper);
+            border-color: var(--sl-accent);
             transform: translateY(-2px);
         }
         .cp-sequence-name {
@@ -134,13 +134,13 @@ def get_control_panel_css() -> str:
         }
         .cp-sequence-meta {
             font-size: 0.7rem;
-            color: var(--sl-copper);
+            color: var(--sl-accent);
         }
 
         /* Active Sequence Display */
         .cp-active-sequence {
             background: linear-gradient(135deg, rgba(184, 115, 51, 0.1) 0%, rgba(184, 115, 51, 0.02) 100%);
-            border: 1px solid var(--sl-copper);
+            border: 1px solid var(--sl-accent);
             border-radius: 12px;
             padding: 24px;
             margin-bottom: 32px;
@@ -158,7 +158,7 @@ def get_control_panel_css() -> str:
         .cp-seq-title {
             font-size: 1.1rem;
             font-weight: 600;
-            color: var(--sl-copper);
+            color: var(--sl-accent);
         }
         .cp-seq-cancel {
             background: transparent;
@@ -184,7 +184,7 @@ def get_control_panel_css() -> str:
         }
         .cp-seq-progress-fill {
             height: 100%;
-            background: var(--sl-copper);
+            background: var(--sl-accent);
             border-radius: 3px;
             transition: width 0.3s;
         }
@@ -206,7 +206,7 @@ def get_control_panel_css() -> str:
             gap: 12px;
         }
         .cp-seq-run {
-            background: var(--sl-copper);
+            background: var(--sl-accent);
             border: none;
             color: white;
             padding: 10px 24px;
@@ -284,7 +284,7 @@ def get_control_panel_css() -> str:
         }
         .cp-action.running {
             background: rgba(184, 115, 51, 0.1);
-            border-color: var(--sl-copper);
+            border-color: var(--sl-accent);
         }
         .cp-action.success {
             background: rgba(74, 173, 128, 0.1);
@@ -338,7 +338,7 @@ def get_control_panel_css() -> str:
         }
         .cp-action.success .cp-action-status { color: #4ade80; }
         .cp-action.error .cp-action-status { color: #ef4444; }
-        .cp-action.running .cp-action-status { color: var(--sl-copper); }
+        .cp-action.running .cp-action-status { color: var(--sl-accent); }
 
         /* Output Panel */
         .cp-output {
@@ -387,7 +387,7 @@ def get_control_panel_css() -> str:
         }
         .cp-output-content .success { color: #4ade80; }
         .cp-output-content .error { color: #ef4444; }
-        .cp-output-content .info { color: var(--sl-copper); }
+        .cp-output-content .info { color: var(--sl-accent); }
 
         /* Control Panel FAB */
         .cp-fab {
@@ -397,7 +397,7 @@ def get_control_panel_css() -> str:
             width: 56px;
             height: 56px;
             border-radius: 14px;
-            background: linear-gradient(135deg, var(--sl-copper), #8B5A2B);
+            background: linear-gradient(135deg, var(--sl-accent), #6C3483);
             border: none;
             cursor: pointer;
             box-shadow: 0 6px 20px rgba(184, 115, 51, 0.4);

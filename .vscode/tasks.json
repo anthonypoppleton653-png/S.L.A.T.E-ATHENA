@@ -863,6 +863,18 @@
 			"isBackground": false,
 			"problemMatcher": [],
 			"detail": "View logs for a SLATE K8s component"
+		},
+		{
+			"label": "SLATE: Open YouTube",
+			"type": "process",
+			"command": "cmd",
+			"args": ["/c", "start", "https://www.youtube.com"],
+			"presentation": {
+				"reveal": "never",
+				"panel": "shared"
+			},
+			"problemMatcher": [],
+			"detail": "Quick-launch YouTube in default browser"
 		}
 	],
 	"inputs": [

@@ -1,38 +1,82 @@
 <!DOCTYPE html>
+<!-- Modified: 2026-02-10T14:00:00Z | Author: COPILOT | Change: Complete UI overhaul - Athena theme with gold/blue, voice activation -->
 <html lang="en" data-theme="athena">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SLATE-ATHENA</title>
     <link rel="stylesheet" href="/static/css/main.css">
+    <!-- Google Fonts: Cinzel (Greek-inspired display), Inter (UI) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <!-- D3.js for force-directed graph -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🦉</text></svg>">
+    <!-- Azure Cognitive Services Speech SDK -->
+    <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='%23E8C547'/><stop offset='100%' stop-color='%23C9A227'/></linearGradient></defs><path d='M16 2 L4 10 L4 22 L16 30 L28 22 L28 10 Z' fill='none' stroke='url(%23g)' stroke-width='2'/><circle cx='16' cy='14' r='6' fill='none' stroke='%233498DB' stroke-width='1.5'/></svg>">
 </head>
 <body>
 
 <!-- ─── Header ─────────────────────────────────────────────────────────── -->
 <header class="athena-header">
     <div class="header-left">
-        <svg class="owl-icon" viewBox="0 0 48 48" width="36" height="36">
-            <circle cx="24" cy="20" r="16" fill="none" stroke="var(--tyrian)" stroke-width="1.5"/>
-            <circle cx="18" cy="17" r="4" fill="var(--tyrian-light)" opacity="0.8"/>
-            <circle cx="30" cy="17" r="4" fill="var(--tyrian-light)" opacity="0.8"/>
-            <circle cx="18" cy="17" r="2" fill="var(--olympus-gold)"/>
-            <circle cx="30" cy="17" r="2" fill="var(--olympus-gold)"/>
-            <path d="M20 24 Q24 28 28 24" fill="none" stroke="var(--olympus-gold)" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M14 8 Q18 4 24 6 Q30 4 34 8" fill="none" stroke="var(--tyrian)" stroke-width="1.2"/>
-            <path d="M8 20 L14 16 M40 20 L34 16" stroke="var(--tyrian-light)" stroke-width="1" opacity="0.5"/>
+        <!-- Athena Helmet/Shield Logo -->
+        <svg class="athena-logo" viewBox="0 0 56 56" width="48" height="48">
+            <defs>
+                <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#E8C547"/>
+                    <stop offset="50%" stop-color="#C9A227"/>
+                    <stop offset="100%" stop-color="#B8860B"/>
+                </linearGradient>
+                <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#5DADE2"/>
+                    <stop offset="100%" stop-color="#3498DB"/>
+                </linearGradient>
+                <filter id="glow">
+                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+                    <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+            </defs>
+            <!-- Outer hexagonal shield -->
+            <path d="M28 4 L48 16 L48 40 L28 52 L8 40 L8 16 Z" 
+                  fill="none" stroke="url(#goldGrad)" stroke-width="2" filter="url(#glow)"/>
+            <!-- Inner shield -->
+            <path d="M28 10 L42 19 L42 37 L28 46 L14 37 L14 19 Z" 
+                  fill="rgba(201, 162, 39, 0.08)" stroke="url(#goldGrad)" stroke-width="1" opacity="0.6"/>
+            <!-- Athena owl eyes -->
+            <circle cx="22" cy="25" r="5" fill="none" stroke="url(#blueGrad)" stroke-width="1.5"/>
+            <circle cx="34" cy="25" r="5" fill="none" stroke="url(#blueGrad)" stroke-width="1.5"/>
+            <circle cx="22" cy="25" r="2" fill="#3498DB"/>
+            <circle cx="34" cy="25" r="2" fill="#3498DB"/>
+            <!-- Owl beak -->
+            <path d="M25 32 L28 36 L31 32" fill="none" stroke="url(#goldGrad)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Crown feathers -->
+            <path d="M18 14 Q22 10 28 12 Q34 10 38 14" fill="none" stroke="url(#goldGrad)" stroke-width="1.2" opacity="0.8"/>
+            <!-- Wing hints -->
+            <path d="M10 28 L16 24" stroke="url(#blueGrad)" stroke-width="1" opacity="0.5"/>
+            <path d="M46 28 L40 24" stroke="url(#blueGrad)" stroke-width="1" opacity="0.5"/>
         </svg>
         <div class="header-title">
             <h1>SLATE-ATHENA</h1>
-            <span class="subtitle">Agentic Control Board</span>
+            <span class="subtitle">Intelligent Control System</span>
         </div>
     </div>
+    <div class="header-center">
+        <!-- Voice Activation Button (Jarvis-style) -->
+        <button class="voice-btn" id="voiceBtn" title="Voice Command (Press and hold, or click to toggle)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+        </button>
+    </div>
     <div class="header-right">
-        <span class="status-indicator" id="wsStatus" title="WebSocket">
+        <span class="status-indicator" id="wsStatus" title="WebSocket Connection">
             <span class="status-dot disconnected"></span>
-            <span class="status-label">Offline</span>
+            <span class="ws-label">Offline</span>
         </span>
         <span class="header-time" id="headerTime"></span>
     </div>
@@ -48,7 +92,7 @@
     <section class="panel graph-panel">
         <div class="panel-header">
             <h2>⏣ System Topology</h2>
-            <button class="btn-icon" id="refreshGraph" title="Refresh">⟳</button>
+            <button class="btn-icon btn-refresh" data-target="graph" title="Refresh">⟳</button>
         </div>
         <div class="panel-body">
             <div id="systemGraph" class="graph-container"></div>
@@ -63,7 +107,7 @@
             <div class="panel-header">
                 <h2>⬡ GPU Status</h2>
             </div>
-            <div class="panel-body" id="gpuPanel">
+            <div class="panel-body" id="gpuBody">
                 <div class="loading-placeholder">Fetching GPU data...</div>
             </div>
         </section>
@@ -74,7 +118,7 @@
                 <h2>◈ Ollama Models</h2>
                 <span class="badge" id="ollamaCount">0</span>
             </div>
-            <div class="panel-body" id="ollamaPanel">
+            <div class="panel-body" id="ollamaBody">
                 <div class="loading-placeholder">Checking Ollama...</div>
             </div>
         </section>
@@ -84,7 +128,7 @@
             <div class="panel-header">
                 <h2>◉ Services</h2>
             </div>
-            <div class="panel-body" id="servicesPanel">
+            <div class="panel-body" id="servicesBody">
                 <div class="loading-placeholder">Scanning services...</div>
             </div>
         </section>
@@ -95,7 +139,7 @@
                 <h2>☰ Task Queue</h2>
                 <span class="badge" id="taskCount">0</span>
             </div>
-            <div class="panel-body scrollable" id="tasksPanel">
+            <div class="panel-body scrollable" id="tasksBody">
                 <div class="loading-placeholder">Loading tasks...</div>
             </div>
         </section>
@@ -105,7 +149,7 @@
             <div class="panel-header">
                 <h2>▦ Resources</h2>
             </div>
-            <div class="panel-body" id="resourcesPanel">
+            <div class="panel-body" id="resourcesBody">
                 <div class="loading-placeholder">Measuring...</div>
             </div>
         </section>
@@ -115,7 +159,7 @@
             <div class="panel-header">
                 <h2>⚙ GitHub Runner</h2>
             </div>
-            <div class="panel-body" id="runnerPanel">
+            <div class="panel-body" id="runnerBody">
                 <div class="loading-placeholder">Checking runner...</div>
             </div>
         </section>
@@ -128,13 +172,22 @@
     <div class="meander-border thin"></div>
     <div class="footer-content">
         <span>S.L.A.T.E. v3.0.0 — Synchronized Living Architecture for Transformation & Evolution</span>
-        <span class="footer-right">ATHENA Control Board · 127.0.0.1</span>
+        <span class="footer-right">ATHENA Intelligent Control · 127.0.0.1</span>
     </div>
 </footer>
+
+<!-- ─── Voice Status Overlay (Jarvis-style) ────────────────────────────── -->
+<div class="voice-status" id="voiceStatus">
+    <div class="voice-waveform">
+        <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <span class="voice-text" id="voiceText">Listening...</span>
+</div>
 
 <!-- ─── Scripts ────────────────────────────────────────────────────────── -->
 <script src="/static/js/graph.js"></script>
 <script src="/static/js/main.js"></script>
+<script src="/static/js/voice.js"></script>
 
 </body>
 </html>

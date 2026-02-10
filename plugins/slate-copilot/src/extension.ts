@@ -1,12 +1,14 @@
 // Modified: 2026-02-10T08:00:00Z | Author: COPILOT | Change: v5.3.0 — Add auto-start SLATE systems on VS Code open, Copilot SDK dashboard integration
 // Modified: 2026-02-10T02:00:00Z | Author: COPILOT | Change: Replace static DASHBOARD_URL with K8s/Docker runtime adapter — dashboard served by K8s or Docker, not hardcoded local
 // Modified: 2026-02-08T22:00:00Z | Author: COPILOT | Change: Add K8s/Docker runtime backend — hybrid execution engine, deprecate local-only execution
+// Modified: 2026-02-12T04:00:00Z | Author: COPILOT | Change: Add ATHENA bottom panel + rebrand to ATHENA control panel
 import * as vscode from 'vscode';
 import * as http from 'http';
 import { exec as cpExec, spawn } from 'child_process';
 import { registerSlateParticipant } from './slateParticipant';
 import { registerSlateTools } from './tools';
 import { SlateUnifiedDashboardViewProvider } from './slateUnifiedDashboardView';
+import { AthenaBottomPanelProvider } from './athenaBottomPanel';
 import { registerServiceMonitor } from './slateServiceMonitor';
 import { registerAgentSdkHooks } from './slateAgentSdkHooks';
 import {
@@ -115,8 +117,9 @@ export function activate(context: vscode.ExtensionContext) {
 	const serviceMonitor = registerServiceMonitor(context);
 	slateRuntimeAdapter = serviceMonitor.runtimeAdapter;
 
-	// Register the unified dashboard (combines guided setup, control board, and dashboard)
-	// Dashboard URL is now dynamic — provided by the runtime adapter
+	// ─── ATHENA Control Panel (Activity Bar) ───────────────────────────────
+	// Modified: 2026-02-12T04:00:00Z | Author: COPILOT | Change: Rebrand to ATHENA control panel
+	// Combines guided setup, control board, and quick actions
 	const unifiedDashboardProvider = new SlateUnifiedDashboardViewProvider(context.extensionUri, context);
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(
@@ -124,6 +127,25 @@ export function activate(context: vscode.ExtensionContext) {
 			unifiedDashboardProvider,
 			{ webviewOptions: { retainContextWhenHidden: true } }
 		)
+	);
+
+	// ─── ATHENA Bottom Panel (Dashboard iframe) ────────────────────────────
+	// Modified: 2026-02-12T04:00:00Z | Author: COPILOT | Change: Add bottom panel for live dashboard
+	// Shows the FastAPI dashboard at http://127.0.0.1:8080 in an iframe
+	const athenaBottomPanelProvider = new AthenaBottomPanelProvider(context.extensionUri, context);
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider(
+			AthenaBottomPanelProvider.viewType,
+			athenaBottomPanelProvider,
+			{ webviewOptions: { retainContextWhenHidden: true } }
+		)
+	);
+
+	// Refresh commands for both panels
+	context.subscriptions.push(
+		vscode.commands.registerCommand('athena.refreshDashboard', () => {
+			athenaBottomPanelProvider.refresh();
+		})
 	);
 
 	// Refresh command

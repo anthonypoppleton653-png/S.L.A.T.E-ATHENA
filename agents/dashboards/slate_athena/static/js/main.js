@@ -1,5 +1,5 @@
 /* SLATE-ATHENA — Dashboard Logic & WebSocket
- * Modified: 2026-02-10T01:30:00Z | Author: COPILOT | Change: Create main.js with WebSocket, API polling, panel rendering
+ * Modified: 2026-02-10T14:00:00Z | Author: COPILOT | Change: Export pollAll globally for voice.js integration
  *
  * Connects to /ws for real-time updates and polls REST endpoints
  * to populate the control board panels.
@@ -138,7 +138,7 @@
         const [gpu, ollama, services, tasks, resources, runner] = await Promise.all([
             fetchJSON('/api/gpu'),
             fetchJSON('/api/ollama'),
-            fetchJSON('/api/services'),
+            fetchJSON('/api/athena/services'),
             fetchJSON('/api/tasks'),
             fetchJSON('/api/system/resources'),
             fetchJSON('/api/runner'),
@@ -191,6 +191,9 @@
     function renderOllama(data) {
         if (!els.ollamaBody) return;
         const models = data.models || [];
+        // Update badge count
+        const badge = document.getElementById('ollamaCount');
+        if (badge) badge.textContent = models.length;
         if (models.length === 0) {
             els.ollamaBody.innerHTML = '<p class="loading-placeholder">No models loaded</p>';
             return;
@@ -198,7 +201,7 @@
         els.ollamaBody.innerHTML = models.map(m => {
             const name = escapeHtml(m.name || m.model || '?');
             const size = m.size ? formatBytes(m.size) : '';
-            const modified = m.modified_at ? new Date(m.modified_at).toLocaleDateString() : '';
+            const modified = (m.modified_at || m.modified) ? new Date(m.modified_at || m.modified).toLocaleDateString() : '';
             return `
                 <div class="model-item fade-in">
                     <span class="model-name">${name}</span>
@@ -340,6 +343,9 @@
             pollAll();
         }
     });
+
+    // ─── Global Exports (for voice.js integration) ───────────────────
+    window.pollAll = pollAll;
 
     // ─── Init ────────────────────────────────────────────────────────
     connectWS();

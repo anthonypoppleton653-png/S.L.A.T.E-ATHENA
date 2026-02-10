@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 # Modified: 2026-02-07T13:00:00Z | Author: COPILOT | Change: ProArt copper/B&W menu-driven dashboard redesign
-# Purpose: Generates the SLATE dashboard HTML template with ProArt-inspired design
+# Modified: 2026-02-11T06:00:00Z | Author: COPILOT | Change: ATHENA Greek palette restyling — Midnight Navy, Tyrian Purple, Olympus Gold
+# Purpose: Generates the SLATE dashboard HTML template with ATHENA Greek-inspired design
 """
 SLATE Dashboard Template Builder
 =================================
 Generates the complete DASHBOARD_HTML string for slate_dashboard_server.py
 
 Design principles:
-  1. ASUS ProArt Design Language: Copper accents, true black substrate, precision aesthetics
-  2. Anthropic geometric art: Crystalline tessellations, network constellations
+  1. ATHENA Greek Design Language: Tyrian Purple accents, Midnight Navy substrate, Olympus Gold
+  2. Watchmaker mechanism: Precision gears, engineering grid overlay, Fibonacci spacing
   3. Menu-driven guided UX: Assume user is NOT a systems engineer or AI expert
   4. Two control layers: Dashboard (background CLI) + SLATE Controls (local Copilot)
-  5. Data-dense editorial layout with warm-white typography on true-black surfaces
+  5. Data-dense editorial layout with parchment typography on deep navy surfaces
 
 The template is self-contained (inline CSS/JS, no external deps) for 127.0.0.1 serving.
 """
@@ -53,8 +54,8 @@ def build_template() -> str:
     <title>S.L.A.T.E.</title>
     <style>
         /* ═══════════════════════════════════════════════════════════════
-           SLATE Design System v4.0
-           ASUS ProArt + Anthropic Geometric + Menu-Driven UX
+           SLATE Design System v4.0 — ATHENA
+           Greek Engineering Aesthetic + Geometric + Menu-Driven UX
            ═══════════════════════════════════════════════════════════════ */
 
         :root {{
@@ -87,25 +88,22 @@ def build_template() -> str:
             inset: 0;
             background:
                 url("{constellation_uri}") center/cover no-repeat,
-                radial-gradient(ellipse at 20% 0%, rgba(184,115,51,0.04) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 100%, rgba(184,115,51,0.03) 0%, transparent 50%);
+                radial-gradient(ellipse at 20% 0%, rgba(142,68,173,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(212,172,13,0.04) 0%, transparent 50%);
             opacity: 0.6;
             pointer-events: none;
             z-index: 0;
         }}
 
-        /* Scanline overlay for depth */
+        /* Engineering grid overlay (ATHENA blueprint aesthetic) */
         body::after {{
             content: '';
             position: fixed;
             inset: 0;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 2px,
-                rgba(0,0,0,0.015) 2px,
-                rgba(0,0,0,0.015) 4px
-            );
+            background:
+                linear-gradient(rgba(46, 64, 83, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(46, 64, 83, 0.06) 1px, transparent 1px);
+            background-size: 24px 24px;
             pointer-events: none;
             z-index: 0;
         }}
@@ -285,8 +283,8 @@ def build_template() -> str:
             position: absolute;
             inset: 0;
             background:
-                linear-gradient(90deg, rgba(184,115,51,0.03) 1px, transparent 1px) 0 0 / 40px 40px,
-                linear-gradient(rgba(184,115,51,0.03) 1px, transparent 1px) 0 0 / 40px 40px;
+                linear-gradient(90deg, rgba(142,68,173,0.03) 1px, transparent 1px) 0 0 / 40px 40px,
+                linear-gradient(rgba(142,68,173,0.03) 1px, transparent 1px) 0 0 / 40px 40px;
             pointer-events: none;
         }}
 
@@ -396,7 +394,7 @@ def build_template() -> str:
             width: 100%;
             aspect-ratio: 16 / 10;
             background: var(--sl-surface-2, #1A1816);
-            border: 1px solid var(--sl-border, #2A2624);
+            border: 1px solid var(--sl-border, #1B2838);
             border-radius: var(--sl-radius-md, 8px);
             padding: 8px;
             overflow: hidden;
@@ -405,7 +403,7 @@ def build_template() -> str:
         }}
 
         .schematic-compact:hover {{
-            border-color: var(--sl-accent, #B85A3C);
+            border-color: var(--sl-accent, #8E44AD);
             box-shadow: 0 0 12px rgba(184, 90, 60, 0.15);
         }}
 
@@ -506,7 +504,7 @@ def build_template() -> str:
             max-width: 1400px;
             height: 80vh;
             background: var(--sl-surface-1, #0F0E0D);
-            border: 1px solid var(--sl-border, #2A2624);
+            border: 1px solid var(--sl-border, #1B2838);
             border-radius: var(--sl-radius-lg, 16px);
             display: flex;
             flex-direction: column;
@@ -628,7 +626,7 @@ def build_template() -> str:
             z-index: 4000;
             padding: 8px 12px;
             background: rgba(15, 14, 13, 0.95);
-            border: 1px solid var(--sl-border, #2A2624);
+            border: 1px solid var(--sl-border, #1B2838);
             border-radius: 6px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
             font-size: 11px;
@@ -647,7 +645,7 @@ def build_template() -> str:
 
         .schematic-tooltip-title {{
             font-weight: 600;
-            color: var(--sl-accent, #B85A3C);
+            color: var(--sl-accent, #8E44AD);
             margin-bottom: 4px;
         }}
 
@@ -657,7 +655,7 @@ def build_template() -> str:
             gap: 6px;
             margin-top: 6px;
             padding-top: 6px;
-            border-top: 1px solid var(--sl-border, #2A2624);
+            border-top: 1px solid var(--sl-border, #1B2838);
             font-family: 'Consolas', monospace;
             font-size: 10px;
         }}
@@ -692,7 +690,7 @@ def build_template() -> str:
             width: 32px;
             height: 32px;
             background: rgba(15, 14, 13, 0.85);
-            border: 1px solid var(--sl-border, #2A2624);
+            border: 1px solid var(--sl-border, #1B2838);
             border-radius: 6px;
             color: var(--sl-text-secondary, #CAC4BF);
             cursor: pointer;
@@ -705,12 +703,12 @@ def build_template() -> str:
 
         .schematic-zoom-btn:hover {{
             background: rgba(184, 90, 60, 0.2);
-            color: var(--sl-accent, #B85A3C);
+            color: var(--sl-accent, #8E44AD);
         }}
 
         /* Connection highlighting */
         .schematic-highlight-connections {{
-            --highlight-color: var(--sl-accent, #B85A3C);
+            --highlight-color: var(--sl-accent, #8E44AD);
         }}
 
         .schematic-connection {{
@@ -728,7 +726,7 @@ def build_template() -> str:
         }}
 
         .schematic-node.highlighted {{
-            filter: drop-shadow(0 0 8px var(--sl-accent, #B85A3C));
+            filter: drop-shadow(0 0 8px var(--sl-accent, #8E44AD));
             transform: scale(1.02);
         }}
 
@@ -872,7 +870,7 @@ def build_template() -> str:
 
         /* Data Flow Line */
         .data-flow-line {{
-            stroke: var(--sl-accent, #B85A3C);
+            stroke: var(--sl-accent, #8E44AD);
             stroke-width: 2;
             stroke-dasharray: 10 5;
             animation: flow-pulse 1.5s linear infinite;
@@ -904,7 +902,7 @@ def build_template() -> str:
         }}
         .health-ring-node:hover {{
             border-color: var(--sl-accent);
-            box-shadow: 0 0 12px rgba(184,90,60,0.15);
+            box-shadow: 0 0 12px rgba(142,68,173,0.15);
         }}
         .health-ring-node .hr-icon {{
             font-size: 1.4rem;
@@ -1021,7 +1019,7 @@ def build_template() -> str:
             height: 100%;
             border-radius: 4px;
             transition: width 0.5s ease;
-            background: linear-gradient(90deg, var(--sl-accent), rgba(184,90,60,0.7));
+            background: linear-gradient(90deg, var(--sl-accent), rgba(142,68,173,0.7));
         }}
         .gpu-meter-value {{
             font-size: 0.65rem;
@@ -1068,7 +1066,7 @@ def build_template() -> str:
             left: 0;
             top: 0;
             height: 100%;
-            background: linear-gradient(90deg, var(--sl-accent), rgba(184,90,60,0.4));
+            background: linear-gradient(90deg, var(--sl-accent), rgba(142,68,173,0.4));
             border-radius: 6px 0 0 6px;
             transition: width 0.5s ease;
         }}
@@ -1077,7 +1075,7 @@ def build_template() -> str:
             right: 0;
             top: 0;
             height: 100%;
-            background: linear-gradient(270deg, #98C1D9, rgba(152,193,217,0.4));
+            background: linear-gradient(270deg, #D4AC0D, rgba(212,172,13,0.4));
             border-radius: 0 6px 6px 0;
             transition: width 0.5s ease;
         }}
@@ -1105,7 +1103,7 @@ def build_template() -> str:
         }}
         .task-pipeline-stage.current {{
             border-color: var(--sl-accent);
-            box-shadow: 0 0 12px rgba(184,90,60,0.15);
+            box-shadow: 0 0 12px rgba(142,68,173,0.15);
         }}
         .task-pipeline-stage-name {{
             font-size: 0.7rem;
@@ -1204,9 +1202,9 @@ def build_template() -> str:
             stroke-dasharray: 4 8;
         }}
         @keyframes flow-pulse-glow {{
-            0% {{ stroke-dashoffset: 0; filter: drop-shadow(0 0 0px var(--sl-accent, #B85A3C)); }}
-            50% {{ filter: drop-shadow(0 0 4px var(--sl-accent, #B85A3C)); }}
-            100% {{ stroke-dashoffset: -15; filter: drop-shadow(0 0 0px var(--sl-accent, #B85A3C)); }}
+            0% {{ stroke-dashoffset: 0; filter: drop-shadow(0 0 0px var(--sl-accent, #8E44AD)); }}
+            50% {{ filter: drop-shadow(0 0 4px var(--sl-accent, #8E44AD)); }}
+            100% {{ stroke-dashoffset: -15; filter: drop-shadow(0 0 0px var(--sl-accent, #8E44AD)); }}
         }}
         .data-flow-line.flow-glow {{
             animation-name: flow-pulse-glow;
@@ -1466,8 +1464,8 @@ def build_template() -> str:
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(184,90,60,0.1);
-            border: 1px solid rgba(184,90,60,0.2);
+            background: rgba(142,68,173,0.1);
+            border: 1px solid rgba(142,68,173,0.2);
             border-radius: 8px;
             font-size: 1rem;
         }}
@@ -1496,7 +1494,7 @@ def build_template() -> str:
         }}
         .drilldown-trigger:hover {{
             transform: scale(1.02);
-            box-shadow: 0 0 0 2px var(--sl-accent), 0 4px 12px rgba(184,90,60,0.15);
+            box-shadow: 0 0 0 2px var(--sl-accent), 0 4px 12px rgba(142,68,173,0.15);
         }}
         .drilldown-trigger::after {{
             content: '\\279C';
@@ -1638,7 +1636,7 @@ def build_template() -> str:
             border: 1px solid var(--sl-accent-dim);
         }}
         .btn-tonal:hover {{
-            background: rgba(184,115,51,0.18);
+            background: rgba(142,68,173,0.18);
         }}
 
         .btn-outline {{
@@ -1649,7 +1647,7 @@ def build_template() -> str:
         .btn-outline:hover {{
             border-color: var(--sl-accent-dim);
             color: var(--sl-accent);
-            background: rgba(184,115,51,0.06);
+            background: rgba(142,68,173,0.06);
         }}
 
         .btn-ghost {{
@@ -1696,7 +1694,7 @@ def build_template() -> str:
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, rgba(184,115,51,0.05) 0%, transparent 60%);
+            background: linear-gradient(135deg, rgba(142,68,173,0.05) 0%, transparent 60%);
             opacity: 0;
             transition: opacity var(--sl-duration-medium);
         }}
@@ -2006,10 +2004,10 @@ def build_template() -> str:
             transition: transform 0.15s;
         }}
         .heatmap-day:hover {{ transform: scale(1.4); }}
-        .heatmap-day[data-level="1"] {{ background: rgba(184,115,51,0.2); }}
-        .heatmap-day[data-level="2"] {{ background: rgba(184,115,51,0.4); }}
-        .heatmap-day[data-level="3"] {{ background: rgba(184,115,51,0.6); }}
-        .heatmap-day[data-level="4"] {{ background: rgba(184,115,51,0.85); }}
+        .heatmap-day[data-level="1"] {{ background: rgba(142,68,173,0.2); }}
+        .heatmap-day[data-level="2"] {{ background: rgba(142,68,173,0.4); }}
+        .heatmap-day[data-level="3"] {{ background: rgba(142,68,173,0.6); }}
+        .heatmap-day[data-level="4"] {{ background: rgba(142,68,173,0.85); }}
 
         /* ─── GitHub Sections ──────────────────────────────────────── */
         .gh-grid {{
@@ -2242,8 +2240,8 @@ def build_template() -> str:
         .nav-sidebar {{
             width: 220px;
             min-height: 100vh;
-            background: #060606;
-            border-right: 1px solid rgba(255,255,255,0.06);
+            background: #0A1018;
+            border-right: 1px solid rgba(46,64,83,0.4);
             position: fixed;
             left: 0;
             top: 0;
@@ -2317,13 +2315,13 @@ def build_template() -> str:
 
         .nav-item:hover {{
             color: var(--sl-text-secondary);
-            background: rgba(255,255,255,0.02);
+            background: rgba(142,68,173,0.04);
         }}
 
         .nav-item.active {{
             color: var(--sl-accent);
             border-left-color: var(--sl-accent);
-            background: rgba(184,115,51,0.06);
+            background: rgba(142,68,173,0.08);
         }}
 
         .nav-item-icon {{
@@ -2469,37 +2467,37 @@ def build_template() -> str:
         <div class="gear-bg" id="gear-bg-container">
             <div class="gear-layer-1 gear-parallax-layer gear-parallax-far">
                 <svg class="gear-animated" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <g style="transform-origin:50% 50%"><circle cx="50" cy="50" r="28" fill="none" stroke="#B85A3C" stroke-width="3"/>
-                    <path d="M50,8 L54,18 L46,18Z M92,50 L82,54 L82,46Z M50,92 L46,82 L54,82Z M8,50 L18,46 L18,54Z M79,21 L72,29 L73,27Z M79,79 L72,72 L27,73Z M21,79 L29,72 L27,73Z M21,21 L29,29 L27,27Z" fill="#B85A3C"/>
-                    <circle cx="50" cy="50" r="10" fill="#B85A3C" opacity="0.3"/></g>
+                    <g style="transform-origin:50% 50%"><circle cx="50" cy="50" r="28" fill="none" stroke="#8E44AD" stroke-width="3"/>
+                    <path d="M50,8 L54,18 L46,18Z M92,50 L82,54 L82,46Z M50,92 L46,82 L54,82Z M8,50 L18,46 L18,54Z M79,21 L72,29 L73,27Z M79,79 L72,72 L27,73Z M21,79 L29,72 L27,73Z M21,21 L29,29 L27,27Z" fill="#8E44AD"/>
+                    <circle cx="50" cy="50" r="10" fill="#8E44AD" opacity="0.3"/></g>
                 </svg>
             </div>
             <div class="gear-layer-2 gear-parallax-layer gear-parallax-mid">
                 <svg class="gear-animated reverse" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <g style="transform-origin:50% 50%"><circle cx="50" cy="50" r="24" fill="none" stroke="#98C1D9" stroke-width="2"/>
-                    <path d="M50,10 L53,20 L47,20Z M90,50 L80,53 L80,47Z M50,90 L47,80 L53,80Z M10,50 L20,47 L20,53Z M78,22 L72,28Z M78,78 L72,72Z M22,78 L28,72Z M22,22 L28,28Z" fill="#98C1D9"/>
-                    <circle cx="50" cy="50" r="8" fill="#98C1D9" opacity="0.2"/></g>
+                    <g style="transform-origin:50% 50%"><circle cx="50" cy="50" r="24" fill="none" stroke="#D4AC0D" stroke-width="2"/>
+                    <path d="M50,10 L53,20 L47,20Z M90,50 L80,53 L80,47Z M50,90 L47,80 L53,80Z M10,50 L20,47 L20,53Z M78,22 L72,28Z M78,78 L72,72Z M22,78 L28,72Z M22,22 L28,28Z" fill="#D4AC0D"/>
+                    <circle cx="50" cy="50" r="8" fill="#D4AC0D" opacity="0.2"/></g>
                 </svg>
             </div>
             <div class="gear-layer-3 gear-parallax-layer gear-parallax-far">
                 <svg class="gear-animated" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="animation-duration:30s;">
-                    <g style="transform-origin:50% 50%"><circle cx="50" cy="50" r="32" fill="none" stroke="#B85A3C" stroke-width="2.5"/>
-                    <path d="M50,5 L55,17 L45,17Z M95,50 L83,55 L83,45Z M50,95 L45,83 L55,83Z M5,50 L17,45 L17,55Z M82,18 L73,26Z M82,82 L73,74Z M18,82 L26,74Z M18,18 L26,26Z M68,9 L64,20Z M91,32 L80,36Z M91,68 L80,64Z M68,91 L64,80Z M32,91 L36,80Z M9,68 L20,64Z M9,32 L20,36Z M32,9 L36,20Z" fill="#B85A3C" opacity="0.8"/>
-                    <circle cx="50" cy="50" r="14" fill="#B85A3C" opacity="0.15"/></g>
+                    <g style="transform-origin:50% 50%"><circle cx="50" cy="50" r="32" fill="none" stroke="#8E44AD" stroke-width="2.5"/>
+                    <path d="M50,5 L55,17 L45,17Z M95,50 L83,55 L83,45Z M50,95 L45,83 L55,83Z M5,50 L17,45 L17,55Z M82,18 L73,26Z M82,82 L73,74Z M18,82 L26,74Z M18,18 L26,26Z M68,9 L64,20Z M91,32 L80,36Z M91,68 L80,64Z M68,91 L64,80Z M32,91 L36,80Z M9,68 L20,64Z M9,32 L20,36Z M32,9 L36,20Z" fill="#8E44AD" opacity="0.8"/>
+                    <circle cx="50" cy="50" r="14" fill="#8E44AD" opacity="0.15"/></g>
                 </svg>
             </div>
             <div class="gear-layer-4 gear-parallax-layer gear-parallax-mid">
                 <svg class="gear-animated reverse" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="animation-duration:15s;">
-                    <g style="transform-origin:50% 50%"><circle cx="50" cy="50" r="22" fill="none" stroke="#98C1D9" stroke-width="2"/>
-                    <path d="M50,12 L53,22 L47,22Z M88,50 L78,53 L78,47Z M50,88 L47,78 L53,78Z M12,50 L22,47 L22,53Z" fill="#98C1D9" opacity="0.5"/>
-                    <circle cx="50" cy="50" r="7" fill="#98C1D9" opacity="0.15"/></g>
+                    <g style="transform-origin:50% 50%"><circle cx="50" cy="50" r="22" fill="none" stroke="#D4AC0D" stroke-width="2"/>
+                    <path d="M50,12 L53,22 L47,22Z M88,50 L78,53 L78,47Z M50,88 L47,78 L53,78Z M12,50 L22,47 L22,53Z" fill="#D4AC0D" opacity="0.5"/>
+                    <circle cx="50" cy="50" r="7" fill="#D4AC0D" opacity="0.15"/></g>
                 </svg>
             </div>
             <div class="gear-layer-5 gear-parallax-layer gear-parallax-near">
                 <svg class="gear-animated" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="animation-duration:12s;">
-                    <g style="transform-origin:50% 50%"><circle cx="50" cy="50" r="20" fill="none" stroke="#B85A3C" stroke-width="2.5"/>
-                    <path d="M50,14 L53,24 L47,24Z M86,50 L76,53 L76,47Z M50,86 L47,76 L53,76Z M14,50 L24,47 L24,53Z M74,26 L68,32Z M74,74 L68,68Z M26,74 L32,68Z M26,26 L32,32Z" fill="#B85A3C"/>
-                    <circle cx="50" cy="50" r="6" fill="#B85A3C" opacity="0.25"/></g>
+                    <g style="transform-origin:50% 50%"><circle cx="50" cy="50" r="20" fill="none" stroke="#8E44AD" stroke-width="2.5"/>
+                    <path d="M50,14 L53,24 L47,24Z M86,50 L76,53 L76,47Z M50,86 L47,76 L53,76Z M14,50 L24,47 L24,53Z M74,26 L68,32Z M74,74 L68,68Z M26,74 L32,68Z M26,26 L32,32Z" fill="#8E44AD"/>
+                    <circle cx="50" cy="50" r="6" fill="#8E44AD" opacity="0.25"/></g>
                 </svg>
             </div>
         </div>
@@ -2573,18 +2571,18 @@ def build_template() -> str:
                 <div class="schematic-compact" id="sidebar-schematic" onclick="openSchematicModal('system')" title="Click to expand system architecture">
                     <div id="sidebar-schematic-svg">
                         <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;opacity:0.6;">
-                            <rect x="5" y="10" width="30" height="20" rx="3" fill="none" stroke="#3A3634" stroke-width="1"/>
-                            <rect x="65" y="10" width="30" height="20" rx="3" fill="none" stroke="#3A3634" stroke-width="1"/>
-                            <rect x="125" y="10" width="30" height="20" rx="3" fill="none" stroke="#3A3634" stroke-width="1"/>
-                            <rect x="35" y="50" width="30" height="20" rx="3" fill="none" stroke="#3A3634" stroke-width="1"/>
-                            <rect x="95" y="50" width="30" height="20" rx="3" fill="none" stroke="#3A3634" stroke-width="1"/>
-                            <rect x="65" y="75" width="30" height="20" rx="3" fill="none" stroke="#3A3634" stroke-width="1"/>
-                            <line x1="35" y1="20" x2="65" y2="20" stroke="#2A2624" stroke-width="0.5"/>
-                            <line x1="95" y1="20" x2="125" y2="20" stroke="#2A2624" stroke-width="0.5"/>
-                            <line x1="50" y1="30" x2="50" y2="50" stroke="#2A2624" stroke-width="0.5"/>
-                            <line x1="110" y1="30" x2="110" y2="50" stroke="#2A2624" stroke-width="0.5"/>
-                            <line x1="65" y1="60" x2="80" y2="75" stroke="#2A2624" stroke-width="0.5"/>
-                            <line x1="95" y1="60" x2="80" y2="75" stroke="#2A2624" stroke-width="0.5"/>
+                            <rect x="5" y="10" width="30" height="20" rx="3" fill="none" stroke="#2E4053" stroke-width="1"/>
+                            <rect x="65" y="10" width="30" height="20" rx="3" fill="none" stroke="#2E4053" stroke-width="1"/>
+                            <rect x="125" y="10" width="30" height="20" rx="3" fill="none" stroke="#2E4053" stroke-width="1"/>
+                            <rect x="35" y="50" width="30" height="20" rx="3" fill="none" stroke="#2E4053" stroke-width="1"/>
+                            <rect x="95" y="50" width="30" height="20" rx="3" fill="none" stroke="#2E4053" stroke-width="1"/>
+                            <rect x="65" y="75" width="30" height="20" rx="3" fill="none" stroke="#2E4053" stroke-width="1"/>
+                            <line x1="35" y1="20" x2="65" y2="20" stroke="#1B2838" stroke-width="0.5"/>
+                            <line x1="95" y1="20" x2="125" y2="20" stroke="#1B2838" stroke-width="0.5"/>
+                            <line x1="50" y1="30" x2="50" y2="50" stroke="#1B2838" stroke-width="0.5"/>
+                            <line x1="110" y1="30" x2="110" y2="50" stroke="#1B2838" stroke-width="0.5"/>
+                            <line x1="65" y1="60" x2="80" y2="75" stroke="#1B2838" stroke-width="0.5"/>
+                            <line x1="95" y1="60" x2="80" y2="75" stroke="#1B2838" stroke-width="0.5"/>
                         </svg>
                     </div>
                     <div class="schematic-compact-label">
@@ -2866,20 +2864,20 @@ def build_template() -> str:
                         <div class="card-schematic" id="gpu-topology-schematic" onclick="openSchematicModal('inference')" title="GPU topology — click to expand">
                             <button class="cs-expand" aria-label="Expand schematic">&#x26F6;</button>
                             <svg viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
-                                <rect x="5" y="10" width="60" height="28" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <rect x="5" y="10" width="60" height="28" rx="4" fill="none" stroke="#2E4053" stroke-width="1"/>
                                 <text x="35" y="27" text-anchor="middle" fill="#666" font-size="8" font-family="Consolas, monospace">GPU 0</text>
-                                <rect x="120" y="10" width="60" height="28" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <rect x="120" y="10" width="60" height="28" rx="4" fill="none" stroke="#2E4053" stroke-width="1"/>
                                 <text x="150" y="27" text-anchor="middle" fill="#666" font-size="8" font-family="Consolas, monospace">GPU 1</text>
-                                <rect x="235" y="10" width="60" height="28" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <rect x="235" y="10" width="60" height="28" rx="4" fill="none" stroke="#2E4053" stroke-width="1"/>
                                 <text x="265" y="27" text-anchor="middle" fill="#666" font-size="8" font-family="Consolas, monospace">Ollama</text>
-                                <rect x="5" y="50" width="60" height="22" rx="4" fill="none" stroke="#2A2624" stroke-width="0.8"/>
+                                <rect x="5" y="50" width="60" height="22" rx="4" fill="none" stroke="#1B2838" stroke-width="0.8"/>
                                 <text x="35" y="64" text-anchor="middle" fill="#555" font-size="7" font-family="Consolas, monospace">16GB VRAM</text>
-                                <rect x="120" y="50" width="60" height="22" rx="4" fill="none" stroke="#2A2624" stroke-width="0.8"/>
+                                <rect x="120" y="50" width="60" height="22" rx="4" fill="none" stroke="#1B2838" stroke-width="0.8"/>
                                 <text x="150" y="64" text-anchor="middle" fill="#555" font-size="7" font-family="Consolas, monospace">16GB VRAM</text>
-                                <line x1="65" y1="24" x2="120" y2="24" stroke="#2A2624" stroke-width="0.8" stroke-dasharray="3,2"/>
-                                <line x1="180" y1="24" x2="235" y2="24" stroke="#2A2624" stroke-width="0.8" stroke-dasharray="3,2"/>
-                                <line x1="35" y1="38" x2="35" y2="50" stroke="#2A2624" stroke-width="0.5"/>
-                                <line x1="150" y1="38" x2="150" y2="50" stroke="#2A2624" stroke-width="0.5"/>
+                                <line x1="65" y1="24" x2="120" y2="24" stroke="#1B2838" stroke-width="0.8" stroke-dasharray="3,2"/>
+                                <line x1="180" y1="24" x2="235" y2="24" stroke="#1B2838" stroke-width="0.8" stroke-dasharray="3,2"/>
+                                <line x1="35" y1="38" x2="35" y2="50" stroke="#1B2838" stroke-width="0.5"/>
+                                <line x1="150" y1="38" x2="150" y2="50" stroke="#1B2838" stroke-width="0.5"/>
                             </svg>
                         </div>
                     </div>
@@ -3033,23 +3031,23 @@ def build_template() -> str:
                         <div class="card-schematic" id="agent-pipeline-schematic" onclick="openSchematicModal('system')" title="Agent pipeline — click to expand">
                             <button class="cs-expand" aria-label="Expand schematic">&#x26F6;</button>
                             <svg viewBox="0 0 400 60" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
-                                <rect x="5" y="15" width="50" height="30" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <rect x="5" y="15" width="50" height="30" rx="4" fill="none" stroke="#2E4053" stroke-width="1"/>
                                 <text x="30" y="34" text-anchor="middle" fill="#666" font-size="7" font-family="Consolas, monospace">ALPHA</text>
-                                <rect x="75" y="15" width="50" height="30" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <rect x="75" y="15" width="50" height="30" rx="4" fill="none" stroke="#2E4053" stroke-width="1"/>
                                 <text x="100" y="34" text-anchor="middle" fill="#666" font-size="7" font-family="Consolas, monospace">BETA</text>
-                                <rect x="145" y="15" width="50" height="30" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <rect x="145" y="15" width="50" height="30" rx="4" fill="none" stroke="#2E4053" stroke-width="1"/>
                                 <text x="170" y="34" text-anchor="middle" fill="#666" font-size="7" font-family="Consolas, monospace">GAMMA</text>
-                                <rect x="215" y="15" width="50" height="30" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <rect x="215" y="15" width="50" height="30" rx="4" fill="none" stroke="#2E4053" stroke-width="1"/>
                                 <text x="240" y="34" text-anchor="middle" fill="#666" font-size="7" font-family="Consolas, monospace">DELTA</text>
-                                <rect x="285" y="15" width="56" height="30" rx="4" fill="none" stroke="#3A3634" stroke-width="1"/>
+                                <rect x="285" y="15" width="56" height="30" rx="4" fill="none" stroke="#2E4053" stroke-width="1"/>
                                 <text x="313" y="34" text-anchor="middle" fill="#666" font-size="7" font-family="Consolas, monospace">COPILOT</text>
-                                <line x1="55" y1="30" x2="75" y2="30" stroke="#2A2624" stroke-width="0.8" stroke-dasharray="2,2"/>
-                                <line x1="125" y1="30" x2="145" y2="30" stroke="#2A2624" stroke-width="0.8" stroke-dasharray="2,2"/>
-                                <line x1="195" y1="30" x2="215" y2="30" stroke="#2A2624" stroke-width="0.8" stroke-dasharray="2,2"/>
-                                <line x1="265" y1="30" x2="285" y2="30" stroke="#2A2624" stroke-width="0.8" stroke-dasharray="2,2"/>
-                                <rect x="360" y="18" width="35" height="24" rx="3" fill="none" stroke="#B85A3C" stroke-width="1" opacity="0.6"/>
-                                <text x="378" y="34" text-anchor="middle" fill="#B85A3C" font-size="6" font-family="Consolas, monospace">ROUTER</text>
-                                <line x1="341" y1="30" x2="360" y2="30" stroke="#B85A3C" stroke-width="0.6" opacity="0.4"/>
+                                <line x1="55" y1="30" x2="75" y2="30" stroke="#1B2838" stroke-width="0.8" stroke-dasharray="2,2"/>
+                                <line x1="125" y1="30" x2="145" y2="30" stroke="#1B2838" stroke-width="0.8" stroke-dasharray="2,2"/>
+                                <line x1="195" y1="30" x2="215" y2="30" stroke="#1B2838" stroke-width="0.8" stroke-dasharray="2,2"/>
+                                <line x1="265" y1="30" x2="285" y2="30" stroke="#1B2838" stroke-width="0.8" stroke-dasharray="2,2"/>
+                                <rect x="360" y="18" width="35" height="24" rx="3" fill="none" stroke="#8E44AD" stroke-width="1" opacity="0.6"/>
+                                <text x="378" y="34" text-anchor="middle" fill="#8E44AD" font-size="6" font-family="Consolas, monospace">ROUTER</text>
+                                <line x1="341" y1="30" x2="360" y2="30" stroke="#8E44AD" stroke-width="0.6" opacity="0.4"/>
                             </svg>
                             <div class="schematic-status-overlay">
                                 <span class="schematic-status-chip"><span class="ssc-dot active"></span>ALPHA</span>
@@ -3189,8 +3187,8 @@ def build_template() -> str:
                             <div class="constellation-view" id="constellation-svg">
                                 <svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:400px;">
                                     <!-- Dashboard node (center top) -->
-                                    <rect x="345" y="30" width="110" height="40" rx="8" fill="rgba(184,90,60,0.1)" stroke="#B85A3C" stroke-width="1.5"/>
-                                    <text x="400" y="55" text-anchor="middle" fill="#B85A3C" font-size="12" font-family="Consolas,monospace" font-weight="600">Dashboard</text>
+                                    <rect x="345" y="30" width="110" height="40" rx="8" fill="rgba(142,68,173,0.1)" stroke="#8E44AD" stroke-width="1.5"/>
+                                    <text x="400" y="55" text-anchor="middle" fill="#8E44AD" font-size="12" font-family="Consolas,monospace" font-weight="600">Dashboard</text>
                                     <circle cx="360" cy="45" r="4" id="cst-dash-jewel" fill="#22C55E"/>
                                     <text x="400" y="25" text-anchor="middle" fill="#666" font-size="9" font-family="Consolas,monospace">:8080</text>
 
@@ -3201,19 +3199,19 @@ def build_template() -> str:
 
                                     <!-- Ollama node (left) -->
                                     <rect x="125" y="130" width="110" height="40" rx="8" fill="rgba(34,197,94,0.08)" stroke="#22C55E" stroke-width="1"/>
-                                    <text x="180" y="155" text-anchor="middle" fill="#98C1D9" font-size="12" font-family="Consolas,monospace">Ollama</text>
+                                    <text x="180" y="155" text-anchor="middle" fill="#D4AC0D" font-size="12" font-family="Consolas,monospace">Ollama</text>
                                     <circle cx="140" cy="145" r="4" id="cst-ollama-jewel" fill="#22C55E"/>
                                     <text x="180" y="125" text-anchor="middle" fill="#666" font-size="9" font-family="Consolas,monospace">:11434</text>
 
                                     <!-- ChromaDB node (center) -->
                                     <rect x="345" y="130" width="110" height="40" rx="8" fill="rgba(34,197,94,0.08)" stroke="#22C55E" stroke-width="1"/>
-                                    <text x="400" y="155" text-anchor="middle" fill="#98C1D9" font-size="12" font-family="Consolas,monospace">ChromaDB</text>
+                                    <text x="400" y="155" text-anchor="middle" fill="#D4AC0D" font-size="12" font-family="Consolas,monospace">ChromaDB</text>
                                     <circle cx="360" cy="145" r="4" id="cst-chroma-jewel" fill="#22C55E"/>
                                     <text x="400" y="125" text-anchor="middle" fill="#666" font-size="9" font-family="Consolas,monospace">:8000</text>
 
                                     <!-- MCP Server node (right) -->
                                     <rect x="565" y="130" width="110" height="40" rx="8" fill="rgba(34,197,94,0.08)" stroke="#22C55E" stroke-width="1"/>
-                                    <text x="620" y="155" text-anchor="middle" fill="#98C1D9" font-size="12" font-family="Consolas,monospace">MCP Server</text>
+                                    <text x="620" y="155" text-anchor="middle" fill="#D4AC0D" font-size="12" font-family="Consolas,monospace">MCP Server</text>
                                     <circle cx="580" cy="145" r="4" id="cst-mcp-jewel" fill="#6B7280"/>
                                     <text x="620" y="125" text-anchor="middle" fill="#666" font-size="9" font-family="Consolas,monospace">:stdio</text>
 
@@ -3223,26 +3221,26 @@ def build_template() -> str:
                                     <line x1="400" y1="170" x2="510" y2="240" class="data-flow-line" stroke-width="1"/>
 
                                     <!-- Foundry node -->
-                                    <rect x="125" y="240" width="110" height="40" rx="8" fill="rgba(152,193,217,0.08)" stroke="#98C1D9" stroke-width="1"/>
-                                    <text x="180" y="265" text-anchor="middle" fill="#98C1D9" font-size="12" font-family="Consolas,monospace">Foundry</text>
+                                    <rect x="125" y="240" width="110" height="40" rx="8" fill="rgba(212,172,13,0.08)" stroke="#D4AC0D" stroke-width="1"/>
+                                    <text x="180" y="265" text-anchor="middle" fill="#D4AC0D" font-size="12" font-family="Consolas,monospace">Foundry</text>
                                     <circle cx="140" cy="255" r="4" id="cst-foundry-jewel" fill="#6B7280"/>
                                     <text x="180" y="235" text-anchor="middle" fill="#666" font-size="9" font-family="Consolas,monospace">:5272</text>
 
                                     <!-- GPU Farm node -->
-                                    <rect x="235" y="240" width="110" height="40" rx="8" fill="rgba(184,90,60,0.1)" stroke="#B85A3C" stroke-width="1.5"/>
-                                    <text x="290" y="265" text-anchor="middle" fill="#B85A3C" font-size="12" font-family="Consolas,monospace" font-weight="600">GPU Farm</text>
+                                    <rect x="235" y="240" width="110" height="40" rx="8" fill="rgba(142,68,173,0.1)" stroke="#8E44AD" stroke-width="1.5"/>
+                                    <text x="290" y="265" text-anchor="middle" fill="#8E44AD" font-size="12" font-family="Consolas,monospace" font-weight="600">GPU Farm</text>
                                     <circle cx="250" cy="255" r="4" id="cst-gpu-jewel" fill="#22C55E"/>
                                     <text x="290" y="235" text-anchor="middle" fill="#666" font-size="9" font-family="Consolas,monospace">2x RTX 5070 Ti</text>
 
                                     <!-- Runner node -->
-                                    <rect x="455" y="240" width="110" height="40" rx="8" fill="rgba(152,193,217,0.08)" stroke="#98C1D9" stroke-width="1"/>
-                                    <text x="510" y="265" text-anchor="middle" fill="#98C1D9" font-size="12" font-family="Consolas,monospace">Runner</text>
+                                    <rect x="455" y="240" width="110" height="40" rx="8" fill="rgba(212,172,13,0.08)" stroke="#D4AC0D" stroke-width="1"/>
+                                    <text x="510" y="265" text-anchor="middle" fill="#D4AC0D" font-size="12" font-family="Consolas,monospace">Runner</text>
                                     <circle cx="470" cy="255" r="4" id="cst-runner-jewel" fill="#F59E0B"/>
                                     <text x="510" y="235" text-anchor="middle" fill="#666" font-size="9" font-family="Consolas,monospace">Actions</text>
 
                                     <!-- GPU interconnect -->
-                                    <line x1="290" y1="280" x2="290" y2="340" stroke="#B85A3C" stroke-width="1" stroke-dasharray="4,3"/>
-                                    <rect x="235" y="340" width="110" height="30" rx="6" fill="rgba(184,90,60,0.06)" stroke="#B85A3C" stroke-width="0.8"/>
+                                    <line x1="290" y1="280" x2="290" y2="340" stroke="#8E44AD" stroke-width="1" stroke-dasharray="4,3"/>
+                                    <rect x="235" y="340" width="110" height="30" rx="6" fill="rgba(142,68,173,0.06)" stroke="#8E44AD" stroke-width="0.8"/>
                                     <text x="290" y="360" text-anchor="middle" fill="#666" font-size="9" font-family="Consolas,monospace">32GB VRAM Total</text>
                                 </svg>
                             </div>

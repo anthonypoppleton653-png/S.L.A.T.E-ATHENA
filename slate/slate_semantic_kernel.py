@@ -205,8 +205,9 @@ async def _attach_chromadb_memory(kernel: Any) -> None:
 
     except ImportError:
         logger.warning("chromadb not installed — memory disabled")
-    except Exception as e:
-        logger.warning(f"ChromaDB connection failed: {e}")
+    except BaseException as e:
+        # Modified: 2026-02-10T01:22:00Z | Author: COPILOT | Change: Catch BaseException for Rust pyo3 panics from corrupted ChromaDB SQLite
+        logger.warning(f"ChromaDB connection failed (possible DB corruption): {e}")
 
 
 def _register_slate_plugins(kernel: Any) -> None:
@@ -327,7 +328,8 @@ def _register_slate_plugins(kernel: Any) -> None:
                         output_parts.append(f"--- {source} ---\n{doc[:500]}")
                     return "\n\n".join(output_parts)
                 return "No results found."
-            except Exception as e:
+            except BaseException as e:
+                # Modified: 2026-02-10T01:22:00Z | Author: COPILOT | Change: Catch BaseException for Rust pyo3 panics
                 return f"Search failed: {e}"
 
     # ── Agent Routing Plugin ──

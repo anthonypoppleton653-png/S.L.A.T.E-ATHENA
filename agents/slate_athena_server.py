@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """SLATE-ATHENA Dashboard Server — Greek-themed control board for SLATE.
-# Modified: 2026-02-10T01:30:00Z | Author: COPILOT | Change: Create SLATE-ATHENA dashboard server with Greek-themed dark UI
+# Modified: 2026-02-10T14:30:00Z | Author: COPILOT | Change: Set default port to 8080 for clean access
 
-Runs on port 8092 by default. Uses Jinja2 templates + static files for a clean,
+Runs on port 8080 by default. Uses Jinja2 templates + static files for a clean,
 modular architecture separate from the monolithic main dashboard.
 
 Architecture:
@@ -381,7 +381,7 @@ def _is_port_available(host: str, port: int) -> bool:
 
 def main():
     parser = argparse.ArgumentParser(description="SLATE-ATHENA Dashboard")
-    parser.add_argument("--port", type=int, default=8092)
+    parser.add_argument("--port", type=int, default=8080)
     parser.add_argument("--host", type=str, default=None)
     args = parser.parse_args()
 

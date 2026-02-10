@@ -33,6 +33,9 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Modified: 2026-02-10T08:00:00Z | Author: COPILOT | Change: Add _NO_WINDOW to suppress console popups on Windows
+_NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+
 # Modified: 2026-02-07T04:30:00Z | Author: COPILOT | Change: workspace setup
 WORKSPACE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(WORKSPACE_ROOT))
@@ -292,7 +295,8 @@ class UnifiedAutonomousLoop:
             result = subprocess.run(
                 [sys.executable, str(self.workspace / "slate" / "slate_project_board.py"), "--sync"],
                 capture_output=True, text=True, timeout=30, cwd=str(self.workspace),
-                encoding="utf-8", errors="replace"
+                encoding="utf-8", errors="replace",
+                creationflags=_NO_WINDOW,
             )
             if result.returncode != 0:
                 return []
@@ -326,6 +330,7 @@ class UnifiedAutonomousLoop:
                 ["git", "credential", "fill"],
                 input="protocol=https\nhost=github.com\n",
                 capture_output=True, text=True, timeout=10,
+                creationflags=_NO_WINDOW,
             )
             token = None
             for line in cred_result.stdout.splitlines():
@@ -462,7 +467,8 @@ class UnifiedAutonomousLoop:
                 ["kubectl", "get", "pods", "-n", "slate",
                  "-o", "jsonpath={range .items[*]}{.metadata.name}|{.status.phase}|{.status.containerStatuses[0].restartCount}\n{end}"],
                 capture_output=True, text=True, timeout=10,
-                encoding="utf-8", errors="replace"
+                encoding="utf-8", errors="replace",
+                creationflags=_NO_WINDOW,
             )
             if result.returncode == 0:
                 for line in result.stdout.strip().split("\n"):
@@ -503,7 +509,8 @@ class UnifiedAutonomousLoop:
                 ["kubectl", "get", "jobs", "-n", "slate",
                  "-o", "jsonpath={range .items[*]}{.metadata.name}|{.status.succeeded}|{.status.failed}\n{end}"],
                 capture_output=True, text=True, timeout=10,
-                encoding="utf-8", errors="replace"
+                encoding="utf-8", errors="replace",
+                creationflags=_NO_WINDOW,
             )
             if cj_result.returncode == 0:
                 for line in cj_result.stdout.strip().split("\n"):

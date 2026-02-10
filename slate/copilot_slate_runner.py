@@ -39,6 +39,9 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Modified: 2026-02-10T08:00:00Z | Author: COPILOT | Change: Add _NO_WINDOW to suppress console popups on Windows
+_NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+
 # Modified: 2026-02-07T04:30:00Z | Author: COPILOT | Change: workspace setup
 WORKSPACE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(WORKSPACE_ROOT))
@@ -319,7 +322,8 @@ class CopilotSlateRunner:
                 pid = int(PID_FILE.read_text(encoding="utf-8").strip())
                 if sys.platform == "win32":
                     subprocess.run(["taskkill", "/PID", str(pid), "/F"],
-                                   capture_output=True, timeout=10)
+                                   capture_output=True, timeout=10,
+                                   creationflags=_NO_WINDOW)
                 else:
                     os.kill(pid, signal.SIGTERM)
                 self._log(f"Sent stop signal to PID {pid}")
@@ -345,7 +349,8 @@ class CopilotSlateRunner:
                 pid = int(PID_FILE.read_text(encoding="utf-8").strip())
                 if sys.platform == "win32":
                     r = subprocess.run(["tasklist", "/FI", f"PID eq {pid}"],
-                                       capture_output=True, text=True, timeout=5)
+                                       capture_output=True, text=True, timeout=5,
+                                       creationflags=_NO_WINDOW)
                     is_alive = str(pid) in r.stdout
                 else:
                     os.kill(pid, 0)
@@ -408,16 +413,18 @@ class CopilotSlateRunner:
 
         # Modified: 2026-02-09T05:00:00Z | Author: COPILOT | Change: Add K8s deployment awareness
         try:
-            import subprocess as _sp
-            r = _sp.run(["kubectl", "get", "deployments", "-n", "slate",
+            # Modified: 2026-02-10T08:00:00Z | Author: COPILOT | Change: Use module-level subprocess + _NO_WINDOW
+            r = subprocess.run(["kubectl", "get", "deployments", "-n", "slate",
                          "-o", "jsonpath={.items[*].metadata.name}"],
-                        capture_output=True, text=True, timeout=10)
+                        capture_output=True, text=True, timeout=10,
+                        creationflags=_NO_WINDOW)
             if r.returncode == 0 and r.stdout.strip():
                 deploys = r.stdout.strip().split()
-                r2 = _sp.run(["kubectl", "get", "pods", "-n", "slate",
+                r2 = subprocess.run(["kubectl", "get", "pods", "-n", "slate",
                               "--field-selector=status.phase=Running",
                               "-o", "jsonpath={.items[*].metadata.name}"],
-                             capture_output=True, text=True, timeout=10)
+                             capture_output=True, text=True, timeout=10,
+                             creationflags=_NO_WINDOW)
                 pod_count = len(r2.stdout.strip().split()) if r2.returncode == 0 and r2.stdout.strip() else 0
                 print(f"\n  K8s:")
                 print(f"    Deployments: {len(deploys)}")

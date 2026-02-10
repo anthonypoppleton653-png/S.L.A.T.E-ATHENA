@@ -1,5 +1,5 @@
 /* SLATE-ATHENA — D3.js Force-Directed System Topology
- * Modified: 2026-02-10T01:30:00Z | Author: COPILOT | Change: Create D3.js force graph with Greek-themed node colors
+ * Modified: 2026-02-10T14:00:00Z | Author: COPILOT | Change: Update colors to gold/blue Athena theme
  *
  * Fetches /api/graph for { nodes, links } and renders an interactive
  * force-directed layout inside #systemGraph.
@@ -8,16 +8,16 @@
 (function () {
     'use strict';
 
-    // ─── Color palette by node group ────────────────────────────────
+    // ─── Color palette by node group (Athena Gold/Blue theme) ───────
     const GROUP_COLORS = {
-        core:     '#8E44AD',  // Tyrian Purple
-        ui:       '#C768A2',  // Tyrian Light
-        ai:       '#D4AC0D',  // Olympus Gold
-        data:     '#2980B9',  // Aegean Blue
-        ci:       '#27AE60',  // Olive Green
-        hardware: '#E67E22',  // Bronze
-        infra:    '#2E4053',  // Parthenon Stone
-        default:  '#546E7A',  // Dim gray
+        core:     '#C9A227',  // Olympus Gold - primary
+        ui:       '#E8C547',  // Gold Bright - UI elements
+        ai:       '#3498DB',  // Aegean Blue - AI/ML
+        data:     '#5DADE2',  // Aegean Light - data stores
+        ci:       '#27AE60',  // Olive Victory - CI/CD
+        hardware: '#CD7F32',  // Bronze Warm - hardware
+        infra:    '#1E2A3D',  // Temple Stone - infrastructure
+        default:  '#6B7280',  // Marble Gray
     };
 
     const container = document.getElementById('systemGraph');
@@ -50,14 +50,14 @@
             .attr('orient', 'auto')
             .append('path')
             .attr('d', 'M0,-5L10,0L0,5')
-            .attr('fill', '#2E4053');
+            .attr('fill', '#1E2A3D');
 
-        // Radial gradient for background glow
+        // Radial gradient for background glow (gold accent)
         const radGrad = defs.append('radialGradient')
             .attr('id', 'bgGlow')
             .attr('cx', '50%').attr('cy', '50%')
             .attr('r', '50%');
-        radGrad.append('stop').attr('offset', '0%').attr('stop-color', 'rgba(142,68,173,0.06)');
+        radGrad.append('stop').attr('offset', '0%').attr('stop-color', 'rgba(201, 162, 39, 0.06)');
         radGrad.append('stop').attr('offset', '100%').attr('stop-color', 'transparent');
 
         svg.append('rect')

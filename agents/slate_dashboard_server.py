@@ -8959,23 +8959,36 @@ DASHBOARD_HTML = """
 
 # Modified: 2026-02-07T10:30:00Z | Author: COPILOT | Change: Use new M3/Awwwards template builder
 # Modified: 2026-02-11T01:00:00Z | Author: COPILOT | Change: Replace old dashboard UI with ATHENA Greek-themed control board
+# Modified: 2026-02-11T06:30:00Z | Author: COPILOT | Change: Route restyled full dashboard at /, control board at /control
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
-    """Serve the SLATE-ATHENA control board (replaces old inline dashboard)."""
-    # Priority 1: ATHENA Jinja2 template (Greek-themed control board)
+    """Serve the SLATE full dashboard with ATHENA Greek styling."""
+    # Priority 1: slate_web template builder (ATHENA-restyled full dashboard)
+    try:
+        from slate_web.dashboard_template import get_full_template
+        return get_full_template()
+    except Exception as e:
+        print(f"[!] Full dashboard template error: {e}")
+    # Priority 2: ATHENA Jinja2 template (Greek-themed control board)
     if _athena_templates is not None:
         try:
             return _athena_templates.TemplateResponse("index.html", {"request": request})
         except Exception as e:
             print(f"[!] ATHENA template error: {e}")
-    # Priority 2: slate_web template builder (ProArt design)
-    try:
-        from slate_web.dashboard_template import get_full_template
-        return get_full_template()
-    except Exception:
-        pass
     # Priority 3: Legacy inline HTML
     return DASHBOARD_HTML
+
+
+@app.get("/control", response_class=HTMLResponse)
+async def control_board(request: Request):
+    """Serve the ATHENA 6-panel control board."""
+    if _athena_templates is not None:
+        try:
+            return _athena_templates.TemplateResponse("index.html", {"request": request})
+        except Exception as e:
+            print(f"[!] ATHENA control board error: {e}")
+            return HTMLResponse("<h1>Control board unavailable</h1>", status_code=500)
+    return HTMLResponse("<h1>ATHENA templates not loaded</h1>", status_code=503)
 
 # ─── ATHENA API Endpoints ─────────────────────────────────────────────────────
 # Modified: 2026-02-11T01:00:00Z | Author: COPILOT | Change: Add ATHENA-specific API endpoints for the new control board UI
@@ -9032,7 +9045,7 @@ async def api_ollama_athena():
         return JSONResponse(content={"available": False, "models": [], "count": 0})
 
 
-@app.get("/api/services")
+@app.get("/api/athena/services")
 async def api_services_athena():
     """Service reachability check for ATHENA control board."""
     import urllib.request

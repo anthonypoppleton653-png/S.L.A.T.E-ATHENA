@@ -73,7 +73,7 @@ def get_interactive_experience_css() -> str:
         }
         .exp-title .subtitle {
             font-size: 0.75rem;
-            color: var(--sl-copper);
+            color: var(--sl-accent);
             text-transform: uppercase;
             letter-spacing: 0.1em;
         }
@@ -91,7 +91,7 @@ def get_interactive_experience_css() -> str:
         .exp-close:hover {
             background: var(--sl-bg-hover);
             color: var(--sl-text-primary);
-            border-color: var(--sl-copper);
+            border-color: var(--sl-accent);
         }
 
         /* ─── Navigation Sidebar ──────────────────────────────────────── */
@@ -137,7 +137,7 @@ def get_interactive_experience_css() -> str:
         }
         .breadcrumb-item.current {
             background: rgba(184, 115, 51, 0.15);
-            color: var(--sl-copper);
+            color: var(--sl-accent);
         }
         .breadcrumb-item::before {
             content: '';
@@ -147,7 +147,7 @@ def get_interactive_experience_css() -> str:
             border-radius: 50%;
         }
         .breadcrumb-item.current::before {
-            background: var(--sl-copper);
+            background: var(--sl-accent);
         }
 
         .exp-zones {
@@ -178,7 +178,7 @@ def get_interactive_experience_css() -> str:
         }
         .zone-item.active {
             background: rgba(184, 115, 51, 0.1);
-            border-color: var(--sl-copper);
+            border-color: var(--sl-accent);
         }
         .zone-icon {
             width: 32px;
@@ -227,7 +227,7 @@ def get_interactive_experience_css() -> str:
             content: '';
             width: 4px;
             height: 28px;
-            background: var(--sl-copper);
+            background: var(--sl-accent);
             border-radius: 2px;
         }
         .narrative-text {
@@ -275,12 +275,12 @@ def get_interactive_experience_css() -> str:
             transition: background 0.3s;
         }
         .option-card:hover {
-            border-color: var(--sl-copper);
+            border-color: var(--sl-accent);
             transform: translateY(-4px);
             box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
         }
         .option-card:hover::before {
-            background: var(--sl-copper);
+            background: var(--sl-accent);
         }
 
         .option-card.risk-1::before { background: var(--sl-warning); }
@@ -377,7 +377,7 @@ def get_interactive_experience_css() -> str:
         }
         .option-expand:hover {
             background: var(--sl-bg-hover);
-            color: var(--sl-copper);
+            color: var(--sl-accent);
         }
 
         /* ─── Companion Panel ─────────────────────────────────────────── */
@@ -397,7 +397,7 @@ def get_interactive_experience_css() -> str:
             width: 80px;
             height: 80px;
             margin: 0 auto 12px;
-            background: linear-gradient(135deg, var(--sl-copper), #8B5A2B);
+            background: linear-gradient(135deg, var(--sl-accent), #6C3483);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -417,7 +417,7 @@ def get_interactive_experience_css() -> str:
         }
         .companion-title {
             font-size: 0.7rem;
-            color: var(--sl-copper);
+            color: var(--sl-accent);
         }
 
         .companion-dialogue {
@@ -451,7 +451,7 @@ def get_interactive_experience_css() -> str:
             line-height: 1.6;
         }
         .dialogue-text strong {
-            color: var(--sl-copper);
+            color: var(--sl-accent);
         }
 
         .companion-input {
@@ -471,7 +471,7 @@ def get_interactive_experience_css() -> str:
         }
         .companion-input input:focus {
             outline: none;
-            border-color: var(--sl-copper);
+            border-color: var(--sl-accent);
         }
 
         /* ─── Action Confirmation Modal ───────────────────────────────── */
@@ -504,7 +504,7 @@ def get_interactive_experience_css() -> str:
         .action-confirm-icon {
             width: 56px;
             height: 56px;
-            background: linear-gradient(135deg, var(--sl-copper), #8B5A2B);
+            background: linear-gradient(135deg, var(--sl-accent), #6C3483);
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -586,12 +586,12 @@ def get_interactive_experience_css() -> str:
             color: var(--sl-text-primary);
         }
         .action-btn-confirm {
-            background: var(--sl-copper);
-            border: 1px solid var(--sl-copper);
+            background: var(--sl-accent);
+            border: 1px solid var(--sl-accent);
             color: white;
         }
         .action-btn-confirm:hover {
-            background: var(--sl-copper-dark);
+            background: var(--sl-accent-dark);
         }
 
         /* ─── Learn More Modal ────────────────────────────────────────── */
@@ -702,7 +702,7 @@ def get_interactive_experience_css() -> str:
             width: 64px;
             height: 64px;
             border-radius: 16px;
-            background: linear-gradient(135deg, var(--sl-copper), #8B5A2B);
+            background: linear-gradient(135deg, var(--sl-accent), #6C3483);
             border: none;
             cursor: pointer;
             box-shadow: 0 8px 24px rgba(184, 115, 51, 0.4);

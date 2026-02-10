@@ -31,6 +31,9 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Modified: 2026-02-10T08:00:00Z | Author: COPILOT | Change: Add _NO_WINDOW to suppress console popups on Windows
+_NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+
 # Modified: 2026-02-07T04:30:00Z | Author: COPILOT | Change: workspace setup
 WORKSPACE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(WORKSPACE_ROOT))
@@ -150,6 +153,7 @@ class IntegratedAutonomousLoop:
                 ["nvidia-smi", "--query-gpu=name,memory.total,memory.used",
                  "--format=csv,noheader,nounits"],
                 capture_output=True, text=True, timeout=10,
+                creationflags=_NO_WINDOW,
             )
             if r.returncode == 0:
                 gpus = [line.strip() for line in r.stdout.strip().split("\n") if line.strip()]
@@ -166,7 +170,8 @@ class IntegratedAutonomousLoop:
                 ["kubectl", "get", "deployments", "-n", "slate",
                  "-o", "jsonpath={range .items[*]}{.status.readyReplicas}/{.status.replicas} {end}"],
                 capture_output=True, text=True, timeout=10,
-                encoding="utf-8", errors="replace"
+                encoding="utf-8", errors="replace",
+                creationflags=_NO_WINDOW,
             )
             if r.returncode == 0 and r.stdout.strip():
                 pairs = r.stdout.strip().split()
@@ -189,6 +194,7 @@ class IntegratedAutonomousLoop:
                 [PYTHON, str(script)] + args,
                 capture_output=True, text=True, timeout=30,
                 cwd=str(self.workspace), encoding="utf-8", errors="replace",
+                creationflags=_NO_WINDOW,
             )
             return {"healthy": r.returncode == 0, "output_lines": len(r.stdout.split("\n"))}
         except Exception as e:
@@ -214,7 +220,7 @@ class IntegratedAutonomousLoop:
                 subprocess.Popen(
                     ["ollama", "serve"],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                    creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+                    creationflags=_NO_WINDOW,
                 )
                 time.sleep(3)
                 fixes.append("Started Ollama serve")
@@ -229,6 +235,7 @@ class IntegratedAutonomousLoop:
                     [PYTHON, str(self.workspace / "slate" / "slate_orchestrator.py"), "start"],
                     capture_output=True, text=True, timeout=30,
                     cwd=str(self.workspace),
+                    creationflags=_NO_WINDOW,
                 )
                 fixes.append("Restarted orchestrator")
             except Exception as e:
@@ -485,6 +492,7 @@ class IntegratedAutonomousLoop:
                 [PYTHON, str(self.workspace / "slate" / "slate_project_board.py"), "--push"],
                 capture_output=True, text=True, timeout=30,
                 cwd=str(self.workspace), encoding="utf-8", errors="replace",
+                creationflags=_NO_WINDOW,
             )
         except Exception:
             pass  # Non-critical

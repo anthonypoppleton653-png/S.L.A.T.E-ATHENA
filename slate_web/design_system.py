@@ -83,54 +83,58 @@ class SlateDesignTokens:
 
     Color strategy (ASUS ProArt + Anthropic inspired):
     - Primary: True black (#0a0a0a) → professional-grade substrate
-    - Accent: Copper/bronze (#B87333) → ProArt precision engineering aesthetic
+    - Accent: Copper/bronze (#8E44AD) → ATHENA Greek engineering aesthetic
     - Secondary: Warm white (#F5F0EB) → clean readability on dark surfaces
     - Neutral: Cool charcoal grays → infrastructure depth
     - Semantic: Muted professional traffic-light system
     """
 
     # Modified: 2026-02-08T08:30:00Z | Author: Claude Opus 4.5 | Change: QT Capital fintech + 2026 glassmorphism
-    # SLATE Brand Colors — Premium Fintech (QT Capital + Dark Glassmorphism 2026)
+    # Modified: 2026-02-11T06:00:00Z | Author: COPILOT | Change: ATHENA Greek palette — Midnight Navy, Tyrian Purple, Olympus Gold, Parchment
+    # SLATE Brand Colors — ATHENA Greek Design System
     BRAND = {
-        "primary": "#000000",       # Pure black — premium fintech substrate
-        "accent": "#B87333",        # Copper — Watchmaker signature
-        "accent_light": "#D4956B",  # Light copper — hover states
-        "accent_dark": "#8B5E2B",   # Dark copper — pressed states
-        "secondary": "#3B82F6",     # Electric blue — tech/data
-        "tertiary": "#8B5CF6",      # Neon violet — premium highlights
-        "surface": "#0A0A0A",       # Near-black — card surfaces
-        "surface_elevated": "#111111",
-        "surface_highest": "#1A1A1A",
-        "neutral": "#222222",       # Charcoal — subtle elevation
-        "white": "#FAFAFA",         # Pure white — primary text
-        "white_dim": "#A1A1AA",     # Cool gray — secondary text
-        "white_muted": "#52525B",   # Dark gray — tertiary text
+        "primary": "#0C1219",       # Midnight Navy — deep Mediterranean substrate
+        "accent": "#8E44AD",        # Tyrian Purple — ancient dye, primary accent
+        "accent_light": "#C768A2",  # Tyrian Light — hover states
+        "accent_dark": "#6C3483",   # Dark Tyrian — pressed states
+        "secondary": "#D4AC0D",     # Olympus Gold — laurel/achievement accent
+        "tertiary": "#2980B9",      # Aegean Blue — data/informational
+        "surface": "#141C28",       # Aegean Deep — card surfaces
+        "surface_elevated": "#1B2838",
+        "surface_highest": "#243342",
+        "neutral": "#1B2838",       # Aegean Mid — subtle elevation
+        "white": "#E8E0D0",         # Parchment — primary text
+        "white_dim": "#8395A7",     # Column Gray — secondary text
+        "white_muted": "#546E7A",   # Text Dim — tertiary text
     }
 
-    # Semantic Colors — Vibrant fintech status (high contrast on black)
+    # Modified: 2026-02-11T06:00:00Z | Author: COPILOT | Change: ATHENA semantic colors — Olive, Amber, Crimson, Aegean
+    # Semantic Colors — ATHENA Greek-inspired status palette
     SEMANTIC = {
-        "success": "#22C55E",       # Vibrant green — active/success
-        "warning": "#F59E0B",       # Amber — pending/caution
-        "error": "#EF4444",         # Red — error/critical
-        "info": "#06B6D4",          # Cyan — informational
+        "success": "#27AE60",       # Olive Green — active/success
+        "warning": "#F39C12",       # Amber — pending/caution
+        "error": "#C0392B",         # Crimson — error/critical
+        "info": "#2980B9",          # Aegean Blue — informational
     }
 
-    # Glassmorphism tokens (2026 dark glass aesthetic)
+    # Modified: 2026-02-11T06:00:00Z | Author: COPILOT | Change: ATHENA glass — navy-tinted glassmorphism
+    # Glassmorphism tokens (ATHENA deep navy glass)
     GLASS = {
-        "bg": "rgba(0,0,0,0.6)",
-        "bg_elevated": "rgba(10,10,10,0.8)",
-        "border": "rgba(255,255,255,0.06)",
-        "border_hover": "rgba(255,255,255,0.12)",
+        "bg": "rgba(12,18,25,0.75)",
+        "bg_elevated": "rgba(20,28,40,0.85)",
+        "border": "rgba(46,64,83,0.3)",
+        "border_hover": "rgba(142,68,173,0.4)",
         "blur": "24px",
         "saturate": "1.2",
-        "shine": "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%)",
+        "shine": "linear-gradient(135deg, rgba(232,224,208,0.06) 0%, transparent 50%)",
     }
 
-    # Ambient gradients (floating light orbs)
+    # Modified: 2026-02-11T06:00:00Z | Author: COPILOT | Change: ATHENA ambient gradients — Tyrian Purple, Olympus Gold, Aegean Blue
+    # Ambient gradients (Greek atmospheric orbs)
     AMBIENT = {
-        "copper": "radial-gradient(ellipse 50% 50% at 50% 0%, rgba(184,115,51,0.15), transparent 70%)",
-        "blue": "radial-gradient(ellipse 40% 40% at 80% 80%, rgba(59,130,246,0.1), transparent 60%)",
-        "violet": "radial-gradient(ellipse 30% 30% at 20% 70%, rgba(139,92,246,0.08), transparent 50%)",
+        "tyrian": "radial-gradient(ellipse 50% 50% at 50% 0%, rgba(142,68,173,0.12), transparent 70%)",
+        "gold": "radial-gradient(ellipse 40% 40% at 80% 80%, rgba(212,172,13,0.08), transparent 60%)",
+        "aegean": "radial-gradient(ellipse 30% 30% at 20% 70%, rgba(41,128,185,0.06), transparent 50%)",
     }
 
     @classmethod
@@ -143,16 +147,16 @@ class SlateDesignTokens:
         if theme == "dark":
             return {
                 # ═══════════════════════════════════════════════════════════════
-                # SURFACES — Pure Black Foundation (QT Capital Fintech)
+                # SURFACES — Midnight Navy Foundation (ATHENA Greek)
                 # ═══════════════════════════════════════════════════════════════
-                "--sl-bg-root": "#000000",
-                "--sl-bg-surface": "#0A0A0A",
-                "--sl-bg-surface-dim": "#030303",
-                "--sl-bg-surface-bright": "#111111",
-                "--sl-bg-container": "#0A0A0A",
-                "--sl-bg-container-high": "#111111",
-                "--sl-bg-container-highest": "#1A1A1A",
-                "--sl-bg-inverse": "#FAFAFA",
+                "--sl-bg-root": "#0C1219",
+                "--sl-bg-surface": "#141C28",
+                "--sl-bg-surface-dim": "#080E14",
+                "--sl-bg-surface-bright": "#1B2838",
+                "--sl-bg-container": "#141C28",
+                "--sl-bg-container-high": "#1B2838",
+                "--sl-bg-container-highest": "#243342",
+                "--sl-bg-inverse": "#E8E0D0",
 
                 # ═══════════════════════════════════════════════════════════════
                 # ELEVATION — Dark Glass Shadows with Ambient Glow
@@ -165,49 +169,49 @@ class SlateDesignTokens:
                 "--sl-glass-elevation": "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
 
                 # ═══════════════════════════════════════════════════════════════
-                # TEXT — High Contrast White Hierarchy
+                # TEXT — Parchment Hierarchy (ATHENA Greek)
                 # ═══════════════════════════════════════════════════════════════
-                "--sl-text-primary": "#FAFAFA",
-                "--sl-text-secondary": "#A1A1AA",
-                "--sl-text-tertiary": "#71717A",
-                "--sl-text-disabled": "#3F3F46",
-                "--sl-text-on-primary": "#000000",
-                "--sl-text-on-accent": "#000000",
+                "--sl-text-primary": "#E8E0D0",
+                "--sl-text-secondary": "#8395A7",
+                "--sl-text-tertiary": "#546E7A",
+                "--sl-text-disabled": "#3A4855",
+                "--sl-text-on-primary": "#0C1219",
+                "--sl-text-on-accent": "#E8E0D0",
 
                 # ═══════════════════════════════════════════════════════════════
-                # PRIMARY ACCENT — Copper (Watchmaker Heritage)
+                # PRIMARY ACCENT — Tyrian Purple (Ancient Greek Dye)
                 # ═══════════════════════════════════════════════════════════════
-                "--sl-accent": "#B87333",
-                "--sl-accent-light": "#D4956B",
-                "--sl-accent-dark": "#8B5E2B",
-                "--sl-accent-container": "rgba(184,115,51,0.12)",
-                "--sl-accent-on-container": "#F5DCC8",
-                "--sl-accent-glow": "0 0 40px rgba(184,115,51,0.2)",
+                "--sl-accent": "#8E44AD",
+                "--sl-accent-light": "#C768A2",
+                "--sl-accent-dark": "#6C3483",
+                "--sl-accent-container": "rgba(142,68,173,0.15)",
+                "--sl-accent-on-container": "#D7B8E8",
+                "--sl-accent-glow": "0 0 40px rgba(142,68,173,0.25)",
 
                 # ═══════════════════════════════════════════════════════════════
-                # SECONDARY — Electric Blue (Tech/Data)
+                # SECONDARY — Olympus Gold (Laurel/Achievement)
                 # ═══════════════════════════════════════════════════════════════
-                "--sl-secondary": "#3B82F6",
-                "--sl-secondary-light": "#60A5FA",
-                "--sl-secondary-dark": "#2563EB",
-                "--sl-secondary-container": "rgba(59,130,246,0.12)",
-                "--sl-secondary-glow": "0 0 30px rgba(59,130,246,0.25)",
+                "--sl-secondary": "#D4AC0D",
+                "--sl-secondary-light": "#F1C40F",
+                "--sl-secondary-dark": "#B7950B",
+                "--sl-secondary-container": "rgba(212,172,13,0.12)",
+                "--sl-secondary-glow": "0 0 30px rgba(212,172,13,0.25)",
 
                 # ═══════════════════════════════════════════════════════════════
-                # TERTIARY — Neon Violet (Premium)
+                # TERTIARY — Aegean Blue (Data/Informational)
                 # ═══════════════════════════════════════════════════════════════
-                "--sl-tertiary": "#8B5CF6",
-                "--sl-tertiary-light": "#A78BFA",
-                "--sl-tertiary-dark": "#7C3AED",
-                "--sl-tertiary-container": "rgba(139,92,246,0.12)",
+                "--sl-tertiary": "#2980B9",
+                "--sl-tertiary-light": "#3498DB",
+                "--sl-tertiary-dark": "#1F628E",
+                "--sl-tertiary-container": "rgba(41,128,185,0.12)",
 
                 # ═══════════════════════════════════════════════════════════════
-                # BORDERS — Subtle Glass Edges
+                # BORDERS — Parthenon Stone Edges
                 # ═══════════════════════════════════════════════════════════════
-                "--sl-border": "rgba(255,255,255,0.06)",
-                "--sl-border-variant": "rgba(255,255,255,0.12)",
-                "--sl-border-focus": "#B87333",
-                "--sl-outline": "rgba(255,255,255,0.04)",
+                "--sl-border": "rgba(46,64,83,0.5)",
+                "--sl-border-variant": "rgba(46,64,83,0.7)",
+                "--sl-border-focus": "#8E44AD",
+                "--sl-outline": "rgba(46,64,83,0.3)",
 
                 # ═══════════════════════════════════════════════════════════════
                 # SEMANTIC STATUS — Vibrant Fintech
@@ -216,13 +220,13 @@ class SlateDesignTokens:
                 "--sl-warning": cls.SEMANTIC["warning"],
                 "--sl-error": cls.SEMANTIC["error"],
                 "--sl-info": cls.SEMANTIC["info"],
-                "--sl-success-container": "rgba(34,197,94,0.12)",
-                "--sl-warning-container": "rgba(245,158,11,0.12)",
-                "--sl-error-container": "rgba(239,68,68,0.12)",
-                "--sl-info-container": "rgba(6,182,212,0.12)",
-                "--sl-success-glow": "0 0 30px rgba(34,197,94,0.3)",
-                "--sl-warning-glow": "0 0 30px rgba(245,158,11,0.3)",
-                "--sl-error-glow": "0 0 30px rgba(239,68,68,0.3)",
+                "--sl-success-container": "rgba(39,174,96,0.12)",
+                "--sl-warning-container": "rgba(243,156,18,0.12)",
+                "--sl-error-container": "rgba(192,57,43,0.12)",
+                "--sl-info-container": "rgba(41,128,185,0.12)",
+                "--sl-success-glow": "0 0 30px rgba(39,174,96,0.3)",
+                "--sl-warning-glow": "0 0 30px rgba(243,156,18,0.3)",
+                "--sl-error-glow": "0 0 30px rgba(192,57,43,0.3)",
 
                 # ═══════════════════════════════════════════════════════════════
                 # GLASSMORPHISM — 2026 Dark Glass Aesthetic
@@ -236,17 +240,17 @@ class SlateDesignTokens:
                 "--sl-glass-shine": cls.GLASS["shine"],
 
                 # ═══════════════════════════════════════════════════════════════
-                # AMBIENT GRADIENTS — Floating Light Orbs
+                # AMBIENT GRADIENTS — Greek Atmospheric Orbs
                 # ═══════════════════════════════════════════════════════════════
-                "--sl-ambient-copper": cls.AMBIENT["copper"],
-                "--sl-ambient-blue": cls.AMBIENT["blue"],
-                "--sl-ambient-violet": cls.AMBIENT["violet"],
+                "--sl-ambient-tyrian": cls.AMBIENT["tyrian"],
+                "--sl-ambient-gold": cls.AMBIENT["gold"],
+                "--sl-ambient-aegean": cls.AMBIENT["aegean"],
 
                 # ═══════════════════════════════════════════════════════════════
-                # HOLOGRAPHIC — Premium Gradient Effects
+                # HOLOGRAPHIC — ATHENA Gradient Effects
                 # ═══════════════════════════════════════════════════════════════
-                "--sl-holo-gradient": "linear-gradient(135deg, #B87333, #3B82F6, #8B5CF6)",
-                "--sl-holo-text": "linear-gradient(90deg, #B87333 0%, #D4956B 25%, #3B82F6 50%, #8B5CF6 75%, #B87333 100%)",
+                "--sl-holo-gradient": "linear-gradient(135deg, #8E44AD, #D4AC0D, #2980B9)",
+                "--sl-holo-text": "linear-gradient(90deg, #C768A2 0%, #8E44AD 25%, #D4AC0D 50%, #2980B9 75%, #C768A2 100%)",
 
                 # ═══════════════════════════════════════════════════════════════
                 # TYPOGRAPHY — Premium Fonts
@@ -292,34 +296,34 @@ class SlateDesignTokens:
                 "--sl-duration-ambient": "20s",
             }
         else:
-            # Light theme variant (warm white + copper)
+            # Light theme variant (parchment + Tyrian Purple)
             return {
-                "--sl-bg-root": "#FAF8F5",
-                "--sl-bg-surface": "#F5F0EB",
-                "--sl-bg-surface-dim": "#EDE8E3",
-                "--sl-bg-surface-bright": "#FFFFFF",
-                "--sl-bg-container": "#F0ECE7",
-                "--sl-bg-container-high": "#F5F2EE",
-                "--sl-bg-container-highest": "#FFFFFF",
-                "--sl-bg-inverse": "#1a1a1a",
+                "--sl-bg-root": "#F5F0E8",
+                "--sl-bg-surface": "#EDE8E0",
+                "--sl-bg-surface-dim": "#E5E0D8",
+                "--sl-bg-surface-bright": "#FAFAF5",
+                "--sl-bg-container": "#E8E0D0",
+                "--sl-bg-container-high": "#F0ECE5",
+                "--sl-bg-container-highest": "#FAFAF5",
+                "--sl-bg-inverse": "#0C1219",
 
-                "--sl-text-primary": "#1C1917",
-                "--sl-text-secondary": "#44403C",
-                "--sl-text-tertiary": "#78716C",
-                "--sl-text-disabled": "#A8A29E",
-                "--sl-text-on-primary": "#FAF8F5",
+                "--sl-text-primary": "#0C1219",
+                "--sl-text-secondary": "#2E4053",
+                "--sl-text-tertiary": "#546E7A",
+                "--sl-text-disabled": "#8395A7",
+                "--sl-text-on-primary": "#E8E0D0",
                 "--sl-text-on-accent": "#FFFFFF",
 
-                "--sl-accent": "#8B5E2B",
-                "--sl-accent-dim": "#B87333",
-                "--sl-accent-light": "#C9956B",
-                "--sl-accent-container": "rgba(184,115,51,0.10)",
-                "--sl-accent-on-container": "#6B4226",
-                "--sl-accent-glow": "rgba(184,115,51,0.10)",
+                "--sl-accent": "#6C3483",
+                "--sl-accent-dim": "#8E44AD",
+                "--sl-accent-light": "#C768A2",
+                "--sl-accent-container": "rgba(142,68,173,0.10)",
+                "--sl-accent-on-container": "#4A235A",
+                "--sl-accent-glow": "rgba(142,68,173,0.10)",
 
                 "--sl-border": "rgba(0,0,0,0.08)",
                 "--sl-border-variant": "rgba(0,0,0,0.05)",
-                "--sl-border-focus": "#8B5E2B",
+                "--sl-border-focus": "#6C3483",
                 "--sl-outline": "rgba(0,0,0,0.06)",
 
                 "--sl-success": "#527A65",
@@ -328,7 +332,7 @@ class SlateDesignTokens:
                 "--sl-info": "#5A8599",
 
                 "--sl-glass-bg": "rgba(255, 255, 255, 0.80)",
-                "--sl-glass-border": "rgba(184,115,51,0.10)",
+                "--sl-glass-border": "rgba(142,68,173,0.10)",
                 "--sl-glass-blur": "20px",
                 "--sl-glass-saturate": "1.1",
 
@@ -400,14 +404,14 @@ class GeometricPatternGenerator:
                     opacity = max(0.02, 0.08 * (1 - dist/200))
                     lines_svg.append(
                         f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
-                        f'stroke="rgba(184,115,51,{opacity:.3f})" stroke-width="0.4"/>'
+                        f'stroke="rgba(142,68,173,{opacity:.3f})" stroke-width="0.4"/>'
                     )
 
         for x, y in points:
             r = rng.uniform(1, 2.5)
             opacity = rng.uniform(0.06, 0.25)
             dots_svg.append(
-                f'<circle cx="{x}" cy="{y}" r="{r}" fill="rgba(184,115,51,{opacity:.2f})"/>'
+                f'<circle cx="{x}" cy="{y}" r="{r}" fill="rgba(142,68,173,{opacity:.2f})"/>'
             )
 
         return (
@@ -435,7 +439,7 @@ class GeometricPatternGenerator:
                 opacity = 0.02 + 0.015 * math.sin(col * 0.3 + row * 0.5)
                 hexagons.append(
                     f'<polygon points="{" ".join(points)}" fill="none" '
-                    f'stroke="rgba(184,115,51,{opacity:.3f})" stroke-width="0.4"/>'
+                    f'stroke="rgba(142,68,173,{opacity:.3f})" stroke-width="0.4"/>'
                 )
         w = cols * size * 1.5
         h = rows * size * math.sqrt(3)
@@ -470,7 +474,7 @@ class GeometricPatternGenerator:
                         triangles.append(
                             f'<polygon points="{x1},{y1} {x2},{y2} {x3},{y3}" '
                             f'fill="rgba(184,{copper},51,{opacity:.3f})" '
-                            f'stroke="rgba(184,115,51,0.015)" stroke-width="0.4"/>'
+                            f'stroke="rgba(142,68,173,0.015)" stroke-width="0.4"/>'
                         )
                     if len(triangles) > 120:
                         break
@@ -567,8 +571,8 @@ class WatchmakerPatternGenerator:
 
             gears.append(f'''<g transform="translate({x:.0f},{y:.0f})" opacity="0.12">
     <animateTransform attributeName="transform" type="rotate" from="0 {center} {center}" to="{direction}360 {center} {center}" dur="{rotation_speed}s" repeatCount="indefinite" additive="sum"/>
-    <polygon points="{gear_path}" fill="none" stroke="rgba(184,115,51,0.8)" stroke-width="3"/>
-    <circle cx="{center}" cy="{center}" r="{size*0.15}" fill="rgba(184,115,51,0.6)"/>
+    <polygon points="{gear_path}" fill="none" stroke="rgba(142,68,173,0.8)" stroke-width="3"/>
+    <circle cx="{center}" cy="{center}" r="{size*0.15}" fill="rgba(142,68,173,0.6)"/>
 </g>''')
 
         return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" preserveAspectRatio="xMidYMid slice">
@@ -585,19 +589,19 @@ class WatchmakerPatternGenerator:
         for i in range(nodes):
             x = node_spacing * (i + 1)
             path_d += f" L {x},{height/2}"
-            nodes_svg.append(f'<circle cx="{x}" cy="{height/2}" r="6" fill="rgba(152,193,217,0.8)"/>')
+            nodes_svg.append(f'<circle cx="{x}" cy="{height/2}" r="6" fill="rgba(212,172,13,0.8)"/>')
 
         path_d += f" L {width},{height/2}"
 
         return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}">
   <defs>
     <linearGradient id="flowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="rgba(152,193,217,0)"/>
-      <stop offset="50%" stop-color="rgba(152,193,217,0.8)"/>
-      <stop offset="100%" stop-color="rgba(152,193,217,0)"/>
+      <stop offset="0%" stop-color="rgba(212,172,13,0)"/>
+      <stop offset="50%" stop-color="rgba(212,172,13,0.8)"/>
+      <stop offset="100%" stop-color="rgba(212,172,13,0)"/>
     </linearGradient>
   </defs>
-  <path d="{path_d}" fill="none" stroke="rgba(152,193,217,0.3)" stroke-width="2"/>
+  <path d="{path_d}" fill="none" stroke="rgba(212,172,13,0.3)" stroke-width="2"/>
   <path d="{path_d}" fill="none" stroke="url(#flowGrad)" stroke-width="2" stroke-dasharray="20 40">
     <animate attributeName="stroke-dashoffset" from="0" to="-60" dur="1.5s" repeatCount="indefinite"/>
   </path>
@@ -657,8 +661,8 @@ class SlateLogoGenerator:
           - "wordmark": Text only
         """
         half = size / 2
-        accent = "#B87333"     # Copper
-        accent_dim = "#8B5E2B"  # Dark copper
+        accent = "#8E44AD"     # Copper
+        accent_dim = "#6C3483"  # Dark Tyrian
 
         # Core hexagon shape
         hex_points = []

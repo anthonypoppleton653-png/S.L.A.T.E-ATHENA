@@ -1,19 +1,19 @@
 {
 	"name": "slate-copilot",
 	"publisher": "slate",
-	"displayName": "SLATE Copilot Agent",
-	"description": "The @slate chat participant for SLATE system management — runner, CI, GPU, orchestrator, benchmarks.",
+	"displayName": "ATHENA Control Panel",
+	"description": "The @slate chat participant + ATHENA dashboard integration — system control, runner, CI, GPU, orchestrator, benchmarks.",
 	"license": "EOSL-1.0",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/SynchronizedLivingArchitecture/S.L.A.T.E.git"
 	},
 	"slateMetadata": {
-		"modified": "2026-02-10T12:00:00Z",
+		"modified": "2026-02-12T04:00:00Z",
 		"author": "COPILOT",
-		"change": "v5.3.0 — Auto-start SLATE systems on VS Code open, split dashboard (upper command center + lower control board), AI command interface (Ollama + Copilot SDK), system vitals bar, quick command chips"
+		"change": "v5.4.0 — ATHENA rebrand, bottom panel dashboard iframe, Greek-themed control panel, owl activity bar icon"
 	},
-	"version": "5.3.0",
+	"version": "5.4.0",
 	"icon": "media/icon.png",
 	"engines": {
 		"vscode": "^1.95.0"
@@ -33,26 +33,48 @@
 				"label": "SLATE Dark",
 				"uiTheme": "vs-dark",
 				"path": "./themes/slate-dark-color-theme.json"
+			},
+			{
+				"label": "ATHENA Dark",
+				"uiTheme": "vs-dark",
+				"path": "./themes/athena-dark-color-theme.json"
 			}
 		],
 		"viewsContainers": {
 			"activitybar": [
 				{
-					"id": "slate-explorer",
-					"title": "SLATE",
-					"icon": "media/slate-activity-icon.svg"
+					"id": "athena-explorer",
+					"title": "ATHENA",
+					"icon": "media/athena-activity-icon.svg"
+				}
+			],
+			"panel": [
+				{
+					"id": "athena-dashboard-panel",
+					"title": "ATHENA Dashboard",
+					"icon": "media/athena-activity-icon.svg"
 				}
 			]
 		},
 		"views": {
-			"slate-explorer": [
+			"athena-explorer": [
 				{
 					"type": "webview",
-					"id": "slate.unifiedDashboard",
-					"name": "SLATE Dashboard",
-					"icon": "media/slate-activity-icon.svg",
+					"id": "athena.controlPanel",
+					"name": "ATHENA Control",
+					"icon": "media/athena-activity-icon.svg",
 					"visibility": "visible",
-					"contextualTitle": "SLATE — Dashboard & Control Board"
+					"contextualTitle": "ATHENA — System Control Panel"
+				}
+			],
+			"athena-dashboard-panel": [
+				{
+					"type": "webview",
+					"id": "athena.dashboardPanel",
+					"name": "Dashboard",
+					"icon": "media/athena-activity-icon.svg",
+					"visibility": "visible",
+					"contextualTitle": "ATHENA — Live System Dashboard"
 				}
 			]
 		},

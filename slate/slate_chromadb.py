@@ -112,7 +112,7 @@ class SlateChromaDB:
     @property
     def client(self):
         """Lazy-load ChromaDB client (persistent, in-process or HTTP for K8s)."""
-        # Modified: 2026-02-08T21:30:00Z | Author: COPILOT | Change: Support HTTP client for K8s, catch Rust panics
+        # Modified: 2026-02-10T01:20:00Z | Author: COPILOT | Change: Add BaseException handler for Rust panics from corrupted SQLite, auto-rebuild DB
         if self._client is None:
             import chromadb
 
@@ -128,13 +128,34 @@ class SlateChromaDB:
                 )
             else:
                 # Local mode — persistent in-process
-                self._client = chromadb.PersistentClient(
-                    path=str(self.db_path),
-                    settings=chromadb.Settings(
-                        anonymized_telemetry=False,
-                        allow_reset=True,
-                    ),
-                )
+                try:
+                    self._client = chromadb.PersistentClient(
+                        path=str(self.db_path),
+                        settings=chromadb.Settings(
+                            anonymized_telemetry=False,
+                            allow_reset=True,
+                        ),
+                    )
+                except BaseException as e:
+                    # Rust pyo3 panics (corrupted SQLite) raise BaseException, not Exception
+                    import shutil
+                    backup = self.db_path.parent / f"{self.db_path.name}_corrupt_{int(__import__('time').time())}"
+                    print(f"[!] ChromaDB database corrupted: {e}")
+                    print(f"[!] Backing up to {backup} and rebuilding...")
+                    try:
+                        shutil.copytree(str(self.db_path), str(backup))
+                    except Exception:
+                        pass
+                    shutil.rmtree(str(self.db_path), ignore_errors=True)
+                    self.db_path.mkdir(parents=True, exist_ok=True)
+                    self._client = chromadb.PersistentClient(
+                        path=str(self.db_path),
+                        settings=chromadb.Settings(
+                            anonymized_telemetry=False,
+                            allow_reset=True,
+                        ),
+                    )
+                    print("[+] ChromaDB database rebuilt successfully")
         return self._client
 
     @property
