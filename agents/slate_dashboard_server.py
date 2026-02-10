@@ -92,12 +92,20 @@ try:
     from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
     from fastapi.responses import HTMLResponse, JSONResponse
     from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.staticfiles import StaticFiles
     from starlette.middleware.base import BaseHTTPMiddleware
     from starlette.responses import Response
     import uvicorn
 except ImportError:
     print("[!] Missing dependencies. Run: pip install fastapi uvicorn websockets")
     sys.exit(1)
+
+# Modified: 2026-02-11T01:00:00Z | Author: COPILOT | Change: Add Jinja2 for ATHENA template rendering
+try:
+    from fastapi.templating import Jinja2Templates
+    _JINJA2_AVAILABLE = True
+except ImportError:
+    _JINJA2_AVAILABLE = False
 
 # ─── App Configuration ────────────────────────────────────────────────────────
 
@@ -147,6 +155,28 @@ class VSCodeCompatMiddleware:
 
 app.add_middleware(VSCodeCompatMiddleware)
 
+# ─── ATHENA UI Static Files & Templates ──────────────────────────────────────
+# Modified: 2026-02-11T01:00:00Z | Author: COPILOT | Change: Mount ATHENA static files and templates to replace old inline dashboard UI
+
+_ATHENA_DIR = WORKSPACE_ROOT / "agents" / "dashboards" / "slate_athena"
+_ATHENA_STATIC = _ATHENA_DIR / "static"
+_ATHENA_TEMPLATES = _ATHENA_DIR / "templates"
+_ATHENA_MOUNTED = False
+
+if _ATHENA_STATIC.is_dir():
+    app.mount("/static", StaticFiles(directory=str(_ATHENA_STATIC)), name="athena-static")
+    _ATHENA_MOUNTED = True
+    print("[+] ATHENA static files mounted at /static")
+else:
+    print(f"[-] ATHENA static dir not found: {_ATHENA_STATIC}")
+
+if _JINJA2_AVAILABLE and _ATHENA_TEMPLATES.is_dir():
+    _athena_templates = Jinja2Templates(directory=str(_ATHENA_TEMPLATES))
+    print("[+] ATHENA templates loaded")
+else:
+    _athena_templates = None
+    print("[-] ATHENA templates not available (Jinja2 or template dir missing)")
+
 # ─── Interactive Experience API Routers ──────────────────────────────────────
 # Modified: 2026-02-07T16:00:00Z | Author: COPILOT | Change: Add interactive learning, dev cycle, and feedback routers
 
@@ -194,6 +224,21 @@ except Exception as e:
     print(f"[-] Schematic API not available: {e}")
     import traceback
     traceback.print_exc()
+
+
+# Modified: 2026-02-10T14:00:00Z | Author: COPILOT | Change: Add WebRTC voice signaling router
+VOICE_API_AVAILABLE = False
+VOICE_API_ERROR = None
+
+try:
+    from slate.voice_signaling import create_voice_router
+    voice_router = create_voice_router()
+    app.include_router(voice_router)
+    VOICE_API_AVAILABLE = True
+    print("[+] Voice Chat Signaling API mounted")
+except Exception as e:
+    VOICE_API_ERROR = str(e)
+    print(f"[-] Voice signaling not available: {e}")
 
 
 @app.get("/api/debug/schematic-status")
@@ -254,10 +299,15 @@ def load_tasks() -> List[Dict[str, Any]]:
             pass
     return []
 
+# Modified: 2026-02-10T15:00:00Z | Author: COPILOT | Change: Add error handling to save_tasks to prevent unhandled I/O crashes
 def save_tasks(tasks: List[Dict[str, Any]]):
     """Save tasks to current_tasks.json."""
     task_file = WORKSPACE_ROOT / "current_tasks.json"
-    task_file.write_text(json.dumps(tasks, indent=2), encoding="utf-8")
+    try:
+        task_file.write_text(json.dumps(tasks, indent=2, default=str), encoding="utf-8")
+    except Exception as e:
+        logger.error(f"Failed to save tasks: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save tasks: {e}")
 
 # ─── Health & Status Endpoints ────────────────────────────────────────────────
 
@@ -777,6 +827,10 @@ async def api_docker_action(request: Request):
         action = data.get("action")
         if not container or action not in ["start", "stop", "restart"]:
             return JSONResponse(content={"success": False, "error": "Invalid request"})
+        # Modified: 2026-02-10T15:00:00Z | Author: COPILOT | Change: Sanitize container name to prevent command injection
+        import re
+        if not re.match(r'^[a-zA-Z0-9][a-zA-Z0-9_.-]*$', container):
+            return JSONResponse(content={"success": False, "error": "Invalid container name"})
         result = subprocess.run(
             ["docker", action, container],
             capture_output=True, text=True, timeout=30
@@ -1462,19 +1516,23 @@ async def api_task_activity():
 
 # ─── Task Management Endpoints ────────────────────────────────────────────────
 
+# Modified: 2026-02-10T15:00:00Z | Author: COPILOT | Change: Add try/except to api_tasks to prevent 500 on bad task data
 @app.get("/api/tasks")
 async def api_tasks():
     """Get all tasks."""
-    tasks = load_tasks()
+    try:
+        tasks = load_tasks()
 
-    # Calculate stats
-    stats = {"total": len(tasks), "pending": 0, "in_progress": 0, "completed": 0}
-    for t in tasks:
-        status = t.get("status", "pending")
-        if status in stats:
-            stats[status] += 1
+        # Calculate stats
+        stats = {"total": len(tasks), "pending": 0, "in_progress": 0, "completed": 0}
+        for t in tasks:
+            status = t.get("status", "pending")
+            if status in stats:
+                stats[status] += 1
 
-    return JSONResponse(content={"tasks": tasks, "stats": stats})
+        return JSONResponse(content={"tasks": tasks, "stats": stats})
+    except Exception as e:
+        return JSONResponse(content={"tasks": [], "stats": {}, "error": str(e)}, status_code=500)
 
 @app.post("/api/tasks")
 async def create_task(request: Request):
@@ -1525,19 +1583,28 @@ async def update_task(task_id: str, request: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+# Modified: 2026-02-10T15:00:00Z | Author: COPILOT | Change: Add try/except to delete_task for I/O and broadcast safety
 @app.delete("/api/tasks/{task_id}")
 async def delete_task(task_id: str):
     """Delete a task."""
-    tasks = load_tasks()
-    original_len = len(tasks)
-    tasks = [t for t in tasks if t.get("id") != task_id]
+    try:
+        tasks = load_tasks()
+        original_len = len(tasks)
+        tasks = [t for t in tasks if t.get("id") != task_id]
 
-    if len(tasks) == original_len:
-        raise HTTPException(status_code=404, detail="Task not found")
+        if len(tasks) == original_len:
+            raise HTTPException(status_code=404, detail="Task not found")
 
-    save_tasks(tasks)
-    await manager.broadcast({"type": "task_deleted", "task_id": task_id})
-    return JSONResponse(content={"deleted": task_id})
+        save_tasks(tasks)
+        try:
+            await manager.broadcast({"type": "task_deleted", "task_id": task_id})
+        except Exception:
+            pass  # Broadcast failure should not fail the delete
+        return JSONResponse(content={"deleted": task_id})
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ─── Workflow Dispatch ────────────────────────────────────────────────────────
 
@@ -1597,8 +1664,9 @@ def _run_slate_cmd(script: str, args: str = "", timeout: int = 60) -> Dict[str, 
         return {"success": False, "output": "", "error": str(e)}
 
 
+# Modified: 2026-02-10T15:00:00Z | Author: COPILOT | Change: Convert async→def to prevent event-loop blocking by subprocess.run
 @app.post("/api/slate/run-protocol")
-async def slate_run_protocol():
+def slate_run_protocol():
     """Run the guided SLATE protocol: status -> runtime -> workflow -> enforce."""
     steps = []
     for label, script, args in [
@@ -1610,12 +1678,12 @@ async def slate_run_protocol():
         result = _run_slate_cmd(script, args)
         steps.append({"step": label, **result})
     all_ok = all(s["success"] for s in steps)
-    await manager.broadcast({"type": "slate_protocol", "status": "ok" if all_ok else "error"})
     return JSONResponse(content={"success": all_ok, "steps": steps})
 
 
+# Modified: 2026-02-10T15:00:00Z | Author: COPILOT | Change: Convert async→def to prevent event-loop blocking by subprocess.run
 @app.post("/api/slate/update")
-async def slate_update():
+def slate_update():
     """Update from git and check forks."""
     steps = []
     # Git pull
@@ -1638,8 +1706,9 @@ async def slate_update():
     return JSONResponse(content={"success": all_ok, "steps": steps})
 
 
+# Modified: 2026-02-10T15:00:00Z | Author: COPILOT | Change: Convert async→def to prevent event-loop blocking by subprocess.run
 @app.post("/api/slate/debug")
-async def slate_debug():
+def slate_debug():
     """Run diagnostics across all systems."""
     steps = []
     for label, script, args in [
@@ -1655,8 +1724,9 @@ async def slate_debug():
     return JSONResponse(content={"success": len(errors) == 0, "steps": steps, "error_count": len(errors)})
 
 
+# Modified: 2026-02-10T15:00:00Z | Author: COPILOT | Change: Convert async→def to prevent event-loop blocking by subprocess.run
 @app.post("/api/slate/security")
-async def slate_security():
+def slate_security():
     """Run full security audit."""
     steps = []
     for label, script, args in [
@@ -1670,8 +1740,9 @@ async def slate_security():
     return JSONResponse(content={"success": all_ok, "steps": steps})
 
 
+# Modified: 2026-02-10T15:00:00Z | Author: COPILOT | Change: Convert async→def to prevent event-loop blocking by subprocess.run
 @app.post("/api/slate/deploy/{action}")
-async def slate_deploy(action: str):
+def slate_deploy(action: str):
     """Manage services: start, stop, or status."""
     if action not in ("start", "stop", "status"):
         raise HTTPException(status_code=400, detail="Invalid action. Use: start, stop, status")
@@ -1679,8 +1750,9 @@ async def slate_deploy(action: str):
     return JSONResponse(content=result)
 
 
+# Modified: 2026-02-10T15:00:00Z | Author: COPILOT | Change: Convert async→def to prevent event-loop blocking by subprocess.run
 @app.post("/api/slate/agents")
-async def slate_agents():
+def slate_agents():
     """Check agent system status."""
     steps = []
     for label, script, args in [
@@ -1693,8 +1765,9 @@ async def slate_agents():
     return JSONResponse(content={"steps": steps})
 
 
+# Modified: 2026-02-10T15:00:00Z | Author: COPILOT | Change: Convert async→def to prevent event-loop blocking by subprocess.run
 @app.post("/api/slate/gpu")
-async def slate_gpu():
+def slate_gpu():
     """GPU management status."""
     steps = []
     for label, script, args in [
@@ -1706,8 +1779,9 @@ async def slate_gpu():
     return JSONResponse(content={"steps": steps})
 
 
+# Modified: 2026-02-10T15:00:00Z | Author: COPILOT | Change: Convert async→def to prevent event-loop blocking by subprocess.run
 @app.post("/api/slate/benchmark")
-async def slate_benchmark():
+def slate_benchmark():
     """Run performance benchmarks."""
     result = _run_slate_cmd("slate/slate_benchmark.py", "", timeout=120)
     return JSONResponse(content=result)
@@ -1723,9 +1797,11 @@ async def slate_ai_recommend():
         from slate.slate_control_intelligence import get_intelligence
         intel = get_intelligence()
         # Collect system state
+        # Modified: 2026-02-10T15:00:00Z | Author: COPILOT | Change: Fix NameError — use load_tasks() instead of undefined 'tasks'
+        all_tasks = load_tasks()
         state = {
             "gpu_count": 2,
-            "pending_tasks": len([t for t in tasks if t.get("status") == "pending"]),
+            "pending_tasks": len([t for t in all_tasks if t.get("status") == "pending"]),
             "runner_online": True,
             "ollama_online": True,
         }
@@ -2841,9 +2917,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
         while True:
             # Keep connection alive and handle client messages
+            # Modified: 2026-02-10T15:00:00Z | Author: COPILOT | Change: Catch json.JSONDecodeError + broaden inner except to prevent WS handler crash
             try:
                 data = await asyncio.wait_for(websocket.receive_text(), timeout=30)
-                msg = json.loads(data)
+                try:
+                    msg = json.loads(data)
+                except json.JSONDecodeError:
+                    continue  # Skip malformed messages
                 msg_type = msg.get("type", "")
 
                 if msg_type == "ping":
@@ -2897,7 +2977,10 @@ async def websocket_endpoint(websocket: WebSocket):
 
                         await websocket.send_json(response)
                     except Exception as e:
-                        await websocket.send_json({"type": "error", "message": str(e)})
+                        try:
+                            await websocket.send_json({"type": "error", "message": str(e)})
+                        except Exception:
+                            pass
 
             except asyncio.TimeoutError:
                 # Send periodic status update (non-blocking)
@@ -2905,8 +2988,18 @@ async def websocket_endpoint(websocket: WebSocket):
                     status_data = await _get_status_async()
                     await websocket.send_json({"type": "status", "data": status_data})
                 except Exception:
-                    await websocket.send_json({"type": "ping"})
+                    try:
+                        await websocket.send_json({"type": "ping"})
+                    except Exception:
+                        break  # Connection is dead, exit loop
+            except Exception:
+                break  # Any other exception means connection is broken
     except WebSocketDisconnect:
+        pass  # Normal disconnect
+    except Exception:
+        pass  # Catch-all for unexpected errors
+    finally:
+        # Modified: 2026-02-10T15:00:00Z | Author: COPILOT | Change: Always clean up stale connections via finally block
         manager.disconnect(websocket)
 
 # ─── Dashboard HTML ───────────────────────────────────────────────────────────
@@ -5830,6 +5923,27 @@ DASHBOARD_HTML = """
             font-size: var(--font-sm);
             color: var(--text-muted);
         }
+
+        /* ── Voice Chat Widget ── */
+        #voice-chat-toggle{position:fixed;bottom:24px;right:24px;z-index:9999;width:52px;height:52px;border-radius:50%;background:var(--accent,#6366f1);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:transform .15s}
+        #voice-chat-toggle:hover{transform:scale(1.08)}
+        #voice-chat-toggle svg{width:24px;height:24px;fill:currentColor}
+        #voice-chat-panel{display:none;position:fixed;bottom:88px;right:24px;z-index:9998;width:340px;max-height:460px;background:var(--bg-card,#1e1e2e);border:1px solid var(--border,#333);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden;font-family:var(--font-family,system-ui);color:var(--text-primary,#e0e0e0)}
+        #voice-chat-panel.open{display:flex;flex-direction:column}
+        .vc-header{padding:14px 16px;border-bottom:1px solid var(--border,#333);display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:14px}
+        .vc-header button{background:none;border:none;color:var(--text-muted,#888);cursor:pointer;font-size:18px}
+        .vc-body{flex:1;overflow-y:auto;padding:12px 16px}
+        .vc-join-form input{width:100%;padding:8px 10px;margin-bottom:8px;border-radius:8px;border:1px solid var(--border,#444);background:var(--bg-base,#111);color:var(--text-primary,#e0e0e0);font-size:13px;box-sizing:border-box}
+        .vc-join-form button{width:100%;padding:9px;border-radius:8px;border:none;background:var(--accent,#6366f1);color:#fff;font-weight:600;cursor:pointer;font-size:13px}
+        .vc-peer{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px}
+        .vc-peer .dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}
+        .vc-peer .dot.muted{background:#ef4444}
+        .vc-controls{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border,#333)}
+        .vc-controls button{flex:1;padding:8px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer}
+        .vc-btn-mute{background:#334155;color:#e0e0e0}
+        .vc-btn-mute.active{background:#ef4444;color:#fff}
+        .vc-btn-leave{background:#7f1d1d;color:#fca5a5}
+        .vc-log{max-height:120px;overflow-y:auto;font-size:11px;color:var(--text-muted,#888);margin-top:8px;padding:6px;background:rgba(0,0,0,.2);border-radius:6px}
     </style>
 </head>
 <body>
@@ -7050,6 +7164,11 @@ DASHBOARD_HTML = """
     <div id="connection-status" class="disconnected" role="status" aria-live="polite">Connecting...</div>
 
     <script>
+        // Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add escapeHtml helper for XSS prevention
+        function escapeHtml(str) {
+            if (str == null) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
         let ws = null;
         let reconnectAttempts = 0;
 
@@ -7761,8 +7880,10 @@ DASHBOARD_HTML = """
                 reconnectAttempts = 0;
             };
 
+            // Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Wrap ws.onmessage JSON.parse in try/catch to prevent silent crashes
             ws.onmessage = (event) => {
-                const msg = JSON.parse(event.data);
+                let msg;
+                try { msg = JSON.parse(event.data); } catch(e) { console.warn('WS: bad JSON', e); return; }
                 if (msg.type === 'status') {
                     updateStatus(msg.data);
                 } else if (msg.type === 'task_created' || msg.type === 'task_updated' || msg.type === 'task_deleted') {
@@ -7820,22 +7941,28 @@ DASHBOARD_HTML = """
                 const data = await res.json();
                 const list = document.getElementById('task-list');
 
+                // Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Escape task IDs and titles to prevent XSS and broken onclick handlers
                 if (data.tasks && data.tasks.length > 0) {
-                    list.innerHTML = data.tasks.slice(0, 10).map(t => `
-                        <div class="task-item ${t.status || 'pending'}">
+                    list.innerHTML = data.tasks.slice(0, 10).map(t => {
+                        const safeId = escapeHtml(t.id);
+                        const safeTitle = escapeHtml(t.title || t.name || 'Untitled');
+                        const safeMeta = escapeHtml(t.assigned_to || 'auto');
+                        const safeStatus = escapeHtml(t.status || 'pending');
+                        return `
+                        <div class="task-item ${safeStatus}">
                             <div class="task-content">
-                                <div class="task-title">${t.title || t.name || 'Untitled'}</div>
-                                <div class="task-meta">${t.assigned_to || 'auto'} | ${t.status || 'pending'}</div>
+                                <div class="task-title">${safeTitle}</div>
+                                <div class="task-meta">${safeMeta} | ${safeStatus}</div>
                             </div>
                             <div class="task-item-actions">
-                                ${t.status !== 'completed' ? `<button class="task-action-btn" onclick="updateTaskStatus('${t.id}', '${t.status === 'pending' ? 'in-progress' : 'completed'}')" aria-label="Advance task status">${t.status === 'pending' ? '\u25B6' : '\u2713'}</button>` : ''}
-                                <button class="task-action-btn delete" onclick="deleteTask('${t.id}')" aria-label="Delete task">\u2715</button>
+                                ${t.status !== 'completed' ? `<button class="task-action-btn" onclick="updateTaskStatus('${safeId}', '${t.status === 'pending' ? 'in-progress' : 'completed'}')" aria-label="Advance task status">${t.status === 'pending' ? '\u25B6' : '\u2713'}</button>` : ''}
+                                <button class="task-action-btn delete" onclick="deleteTask('${safeId}')" aria-label="Delete task">\u2715</button>
                             </div>
                             <span class="badge ${t.status === 'completed' ? 'online' : t.status === 'in-progress' ? 'busy' : 'pending'}">
-                                ${t.status || 'pending'}
+                                ${safeStatus}
                             </span>
                         </div>
-                    `).join('');
+                    `}).join('');
                 } else {
                     list.innerHTML = '<div class="empty-state">No tasks in queue</div>';
                 }
@@ -8031,11 +8158,12 @@ DASHBOARD_HTML = """
                 const data = await res.json();
                 const list = document.getElementById('commit-list');
 
+                // Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Escape commit messages and authors to prevent XSS
                 if (data.commits && data.commits.length > 0) {
                     list.innerHTML = data.commits.slice(0, 5).map(c => `
                         <div class="commit-item">
-                            <div class="item-title">${c.sha?.substring(0, 7)} ${c.message?.split('\\n')[0]?.substring(0, 40)}</div>
-                            <div class="item-meta">${c.author || 'unknown'}</div>
+                            <div class="item-title">${escapeHtml(c.sha?.substring(0, 7))} ${escapeHtml(c.message?.split('\\n')[0]?.substring(0, 40))}</div>
+                            <div class="item-meta">${escapeHtml(c.author || 'unknown')}</div>
                         </div>
                     `).join('');
                 } else {
@@ -8132,27 +8260,34 @@ DASHBOARD_HTML = """
                 const res = await fetch('/api/system/resources');
                 const data = await res.json();
 
+                // Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Add null guards for cpu/memory/disk data
                 if (data.available) {
                     // CPU
-                    const cpuBar = document.getElementById('cpu-bar');
-                    const cpuVal = document.getElementById('cpu-value');
-                    cpuBar.style.width = `${data.cpu.percent}%`;
-                    cpuBar.classList.toggle('high', data.cpu.percent > 80);
-                    cpuVal.textContent = `${Math.round(data.cpu.percent)}%`;
+                    if (data.cpu) {
+                        const cpuBar = document.getElementById('cpu-bar');
+                        const cpuVal = document.getElementById('cpu-value');
+                        cpuBar.style.width = `${data.cpu.percent}%`;
+                        cpuBar.classList.toggle('high', data.cpu.percent > 80);
+                        cpuVal.textContent = `${Math.round(data.cpu.percent)}%`;
+                    }
 
                     // Memory
-                    const memBar = document.getElementById('memory-bar');
-                    const memVal = document.getElementById('memory-value');
-                    memBar.style.width = `${data.memory.percent}%`;
-                    memBar.classList.toggle('high', data.memory.percent > 80);
-                    memVal.textContent = `${Math.round(data.memory.percent)}%`;
+                    if (data.memory) {
+                        const memBar = document.getElementById('memory-bar');
+                        const memVal = document.getElementById('memory-value');
+                        memBar.style.width = `${data.memory.percent}%`;
+                        memBar.classList.toggle('high', data.memory.percent > 80);
+                        memVal.textContent = `${Math.round(data.memory.percent)}%`;
+                    }
 
                     // Disk
-                    const diskBar = document.getElementById('disk-bar');
-                    const diskVal = document.getElementById('disk-value');
-                    diskBar.style.width = `${data.disk.percent}%`;
-                    diskBar.classList.toggle('high', data.disk.percent > 80);
-                    diskVal.textContent = `${Math.round(data.disk.percent)}%`;
+                    if (data.disk) {
+                        const diskBar = document.getElementById('disk-bar');
+                        const diskVal = document.getElementById('disk-value');
+                        diskBar.style.width = `${data.disk.percent}%`;
+                        diskBar.classList.toggle('high', data.disk.percent > 80);
+                        diskVal.textContent = `${Math.round(data.disk.percent)}%`;
+                    }
                 }
             } catch (e) {
                 console.error('Failed to fetch resources:', e);
@@ -8383,14 +8518,16 @@ DASHBOARD_HTML = """
                 const pos = nodePositions[node.id];
                 if (!pos) return;
 
+                // Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Escape node.name and description in SVG attributes to prevent tech tree blank panel
                 const statusClass = node.status === 'complete' ? 'completed' : node.status;
-                const desc = (node.description || '').replace(/'/g, "\\\\'");
-                html += `<g class="tech-node ${statusClass}" onmouseenter="showTechTooltip(event, '${node.name}', '${node.status}', '${desc}', ${node.phase})" onmouseleave="hideTechTooltip()">`;
+                const desc = (node.description || '').replace(/'/g, "\\\\'").replace(/"/g, '&quot;');
+                const safeName = escapeHtml(node.name);
+                html += `<g class="tech-node ${statusClass}" onmouseenter="showTechTooltip(event, '${safeName}', '${node.status}', '${desc}', ${node.phase})" onmouseleave="hideTechTooltip()">`;
                 html += `<circle cx="${pos.x}" cy="${pos.y}" r="24"/>`;
 
                 const icon = node.status === 'complete' ? '\\u2713' : node.status === 'in_progress' ? '\\u25CB' : node.status === 'available' ? '\\u25CE' : '\\u25CF';
                 html += `<text x="${pos.x}" y="${pos.y + 5}" fill="var(--text-primary)" font-size="14" text-anchor="middle">${icon}</text>`;
-                html += `<text x="${pos.x}" y="${pos.y + 42}" fill="var(--text-secondary)" font-size="9" text-anchor="middle" font-weight="500">${node.name}</text>`;
+                html += `<text x="${pos.x}" y="${pos.y + 42}" fill="var(--text-secondary)" font-size="9" text-anchor="middle" font-weight="500">${safeName}</text>`;
                 html += '</g>';
             });
 
@@ -8654,30 +8791,313 @@ DASHBOARD_HTML = """
 
         // Hardware monitoring at higher frequency (every 5s)
         setInterval(refreshHardwareControl, 5000);
+
+        // ── Voice Chat Widget ──
+        (function(){
+            const WS_PROTO = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            let ws = null, localStream = null, myPeerId = null, roomId = null;
+            const peers = {};  // peerId -> {pc, audio, muted}
+            const ICE_SERVERS = [{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}];
+
+            const $toggle   = document.getElementById('voice-chat-toggle');
+            const $panel    = document.getElementById('voice-chat-panel');
+            const $joinForm = document.getElementById('vc-join-form');
+            const $roomView = document.getElementById('vc-room-view');
+            const $peerList = document.getElementById('vc-peer-list');
+            const $log      = document.getElementById('vc-log');
+            const $muteBtn  = document.getElementById('vc-mute-btn');
+            const $leaveBtn = document.getElementById('vc-leave-btn');
+            const $closeBtn = document.getElementById('vc-close-btn');
+            const $joinBtn  = document.getElementById('vc-join-btn');
+            const $roomInput = document.getElementById('vc-room-input');
+            const $nameInput = document.getElementById('vc-name-input');
+            const $roomLabel = document.getElementById('vc-room-label');
+
+            if(!$toggle) return; // widget elements not present
+
+            function log(msg){ if($log){ const d=document.createElement('div'); d.textContent='['+new Date().toLocaleTimeString()+'] '+msg; $log.appendChild(d); $log.scrollTop=$log.scrollHeight; }}
+
+            $toggle.onclick = () => { $panel.classList.toggle('open'); };
+            $closeBtn.onclick = () => { $panel.classList.remove('open'); };
+
+            function createPC(remotePeerId){
+                const pc = new RTCPeerConnection({iceServers: ICE_SERVERS});
+                pc.onicecandidate = e => {
+                    if(e.candidate && ws && ws.readyState === 1){
+                        ws.send(JSON.stringify({type:'ice-candidate', target: remotePeerId, candidate: e.candidate}));
+                    }
+                };
+                pc.ontrack = e => {
+                    log('Audio track from '+remotePeerId);
+                    const audio = new Audio(); audio.srcObject = e.streams[0]; audio.play().catch(()=>{});
+                    if(peers[remotePeerId]) peers[remotePeerId].audio = audio;
+                };
+                pc.onconnectionstatechange = () => log('Peer '+remotePeerId+': '+pc.connectionState);
+                if(localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+                peers[remotePeerId] = {pc, audio:null, muted:false, name: remotePeerId.slice(0,8)};
+                renderPeers();
+                return pc;
+            }
+
+            function renderPeers(){
+                if(!$peerList) return;
+                $peerList.innerHTML = '';
+                Object.entries(peers).forEach(([id,p])=>{
+                    const div = document.createElement('div'); div.className='vc-peer';
+                    div.innerHTML = '<span class="dot'+(p.muted?' muted':'')+'"></span><span>'+(p.name||id.slice(0,8))+'</span>';
+                    $peerList.appendChild(div);
+                });
+            }
+
+            async function joinRoom(){
+                roomId = ($roomInput && $roomInput.value.trim()) || 'general';
+                const displayName = ($nameInput && $nameInput.value.trim()) || 'User-'+Math.random().toString(36).slice(2,6);
+                try{
+                    localStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
+                } catch(err){ log('Mic error: '+err.message); return; }
+
+                const wsUrl = WS_PROTO+'//'+location.host+'/ws/voice/'+encodeURIComponent(roomId)+'?display_name='+encodeURIComponent(displayName);
+                ws = new WebSocket(wsUrl);
+                ws.onopen = () => { log('Connected to room: '+roomId); if($joinForm) $joinForm.style.display='none'; if($roomView) $roomView.style.display='block'; if($roomLabel) $roomLabel.textContent=roomId; var $ctrls=document.getElementById('vc-controls'); if($ctrls) $ctrls.style.display='flex'; };
+                ws.onclose = () => { log('Disconnected'); cleanup(); };
+                ws.onerror = e => { log('WS error'); };
+                ws.onmessage = async e => {
+                    const msg = JSON.parse(e.data);
+                    switch(msg.type){
+                        case 'peer-joined':{
+                            log(msg.display_name+' joined');
+                            if(msg.existing_peers) msg.existing_peers.forEach(ep=>{ if(!peers[ep.peer_id]) createPC(ep.peer_id).then=null; });
+                            break;
+                        }
+                        case 'new-peer':{
+                            log(msg.display_name+' joined');
+                            const pc = createPC(msg.peer_id);
+                            const offer = await pc.createOffer(); await pc.setLocalDescription(offer);
+                            ws.send(JSON.stringify({type:'offer',target:msg.peer_id,sdp:pc.localDescription}));
+                            break;
+                        }
+                        case 'offer':{
+                            const pc = peers[msg.from] ? peers[msg.from].pc : createPC(msg.from);
+                            await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+                            const answer = await pc.createAnswer(); await pc.setLocalDescription(answer);
+                            ws.send(JSON.stringify({type:'answer',target:msg.from,sdp:pc.localDescription}));
+                            break;
+                        }
+                        case 'answer':{
+                            if(peers[msg.from]) await peers[msg.from].pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+                            break;
+                        }
+                        case 'ice-candidate':{
+                            if(peers[msg.from] && msg.candidate) await peers[msg.from].pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(()=>{});
+                            break;
+                        }
+                        case 'peer-left':{
+                            log((msg.display_name||msg.peer_id)+' left');
+                            if(peers[msg.peer_id]){ peers[msg.peer_id].pc.close(); if(peers[msg.peer_id].audio) peers[msg.peer_id].audio.pause(); delete peers[msg.peer_id]; renderPeers(); }
+                            break;
+                        }
+                        case 'mute-toggle':{
+                            if(peers[msg.from]) { peers[msg.from].muted=msg.muted; renderPeers(); }
+                            break;
+                        }
+                    }
+                };
+                // Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Store keepalive interval ID and clear it on cleanup to prevent memory leak
+                // Keepalive
+                voiceKeepaliveId = setInterval(()=>{ if(ws && ws.readyState===1) ws.send(JSON.stringify({type:'ping'})); }, 25000);
+            }
+
+            var voiceKeepaliveId = null;
+            function cleanup(){
+                if(voiceKeepaliveId) { clearInterval(voiceKeepaliveId); voiceKeepaliveId=null; }
+                Object.values(peers).forEach(p=>{ p.pc.close(); if(p.audio) p.audio.pause(); });
+                for(const k in peers) delete peers[k];
+                if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream=null; }
+                if($joinForm) $joinForm.style.display='block';
+                if($roomView) $roomView.style.display='none';
+                var $ctrls=document.getElementById('vc-controls'); if($ctrls) $ctrls.style.display='none';
+                renderPeers();
+            }
+
+            if($joinBtn) $joinBtn.onclick = joinRoom;
+            if($leaveBtn) $leaveBtn.onclick = ()=>{ if(ws) ws.close(); cleanup(); };
+            if($muteBtn) $muteBtn.onclick = ()=>{
+                if(!localStream) return;
+                const track = localStream.getAudioTracks()[0]; if(!track) return;
+                track.enabled = !track.enabled;
+                $muteBtn.classList.toggle('active', !track.enabled);
+                $muteBtn.textContent = track.enabled ? 'Mute' : 'Unmute';
+                if(ws && ws.readyState===1) ws.send(JSON.stringify({type:'mute-toggle', muted:!track.enabled}));
+            };
+        })();
     </script>
+
+    <!-- Voice Chat Widget -->
+    <button id="voice-chat-toggle" title="Voice Chat"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></button>
+    <div id="voice-chat-panel">
+        <div class="vc-header"><span>Voice Chat</span><button id="vc-close-btn">&times;</button></div>
+        <div class="vc-body">
+            <div id="vc-join-form" class="vc-join-form">
+                <input id="vc-room-input" placeholder="Room name (default: general)" />
+                <input id="vc-name-input" placeholder="Display name" />
+                <button id="vc-join-btn">Join Voice</button>
+            </div>
+            <div id="vc-room-view" style="display:none">
+                <div style="font-size:12px;color:var(--text-muted,#888);margin-bottom:6px">Room: <strong id="vc-room-label"></strong></div>
+                <div id="vc-peer-list"></div>
+                <div id="vc-log" class="vc-log"></div>
+            </div>
+        </div>
+        <div class="vc-controls" id="vc-controls" style="display:none">
+            <button id="vc-mute-btn" class="vc-btn-mute">Mute</button>
+            <button id="vc-leave-btn" class="vc-btn-leave">Leave</button>
+        </div>
+    </div>
 </body>
 </html>
 """
 
 # Modified: 2026-02-07T10:30:00Z | Author: COPILOT | Change: Use new M3/Awwwards template builder
+# Modified: 2026-02-11T01:00:00Z | Author: COPILOT | Change: Replace old dashboard UI with ATHENA Greek-themed control board
 @app.get("/", response_class=HTMLResponse)
-async def dashboard():
-    """Serve the SLATE dashboard with M3/Awwwards design."""
+async def dashboard(request: Request):
+    """Serve the SLATE-ATHENA control board (replaces old inline dashboard)."""
+    # Priority 1: ATHENA Jinja2 template (Greek-themed control board)
+    if _athena_templates is not None:
+        try:
+            return _athena_templates.TemplateResponse("index.html", {"request": request})
+        except Exception as e:
+            print(f"[!] ATHENA template error: {e}")
+    # Priority 2: slate_web template builder (ProArt design)
     try:
         from slate_web.dashboard_template import get_full_template
         return get_full_template()
     except Exception:
-        # Fallback to legacy template if the new builder fails
-        return DASHBOARD_HTML
+        pass
+    # Priority 3: Legacy inline HTML
+    return DASHBOARD_HTML
+
+# ─── ATHENA API Endpoints ─────────────────────────────────────────────────────
+# Modified: 2026-02-11T01:00:00Z | Author: COPILOT | Change: Add ATHENA-specific API endpoints for the new control board UI
+
+@app.get("/api/gpu")
+async def api_gpu_athena():
+    """GPU info for ATHENA control board (thin alias of /api/system/gpu)."""
+    try:
+        result = subprocess.run(
+            ["nvidia-smi",
+             "--query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu,temperature.gpu",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=5
+        )
+        gpus = []
+        if result.returncode == 0 and result.stdout.strip():
+            for line in result.stdout.strip().splitlines():
+                parts = [p.strip() for p in line.split(",")]
+                if len(parts) >= 7:
+                    gpus.append({
+                        "index": int(parts[0]),
+                        "name": parts[1],
+                        "memory_total": int(parts[2]) if parts[2].isdigit() else 0,
+                        "memory_used": int(parts[3]) if parts[3].isdigit() else 0,
+                        "memory_free": int(parts[4]) if parts[4].isdigit() else 0,
+                        "utilization": int(parts[5]) if parts[5].isdigit() else 0,
+                        "temperature": int(parts[6]) if parts[6].isdigit() else 0,
+                    })
+        return JSONResponse(content={"gpus": gpus})
+    except Exception as e:
+        return JSONResponse(content={"gpus": [], "error": str(e)})
+
+
+@app.get("/api/ollama")
+async def api_ollama_athena():
+    """Ollama model list for ATHENA control board."""
+    import urllib.request
+    try:
+        req = urllib.request.Request(f"{OLLAMA_URL}/api/tags",
+                                     headers={"Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        models = []
+        for m in data.get("models", []):
+            models.append({
+                "name": m.get("name", "unknown"),
+                "size": m.get("size", 0),
+                "modified": m.get("modified_at", ""),
+                "family": m.get("details", {}).get("family", ""),
+                "parameters": m.get("details", {}).get("parameter_size", ""),
+            })
+        return JSONResponse(content={"available": True, "models": models, "count": len(models)})
+    except Exception:
+        return JSONResponse(content={"available": False, "models": [], "count": 0})
+
+
+@app.get("/api/services")
+async def api_services_athena():
+    """Service reachability check for ATHENA control board."""
+    import urllib.request
+    services = {}
+    checks = {
+        "ollama": f"{OLLAMA_URL}/api/tags",
+        "chromadb": f"{CHROMADB_URL}/api/v2/heartbeat",
+    }
+    for name, url in checks.items():
+        try:
+            req = urllib.request.Request(url, headers={"Accept": "application/json"})
+            with urllib.request.urlopen(req, timeout=2) as resp:
+                resp.read()
+            services[name] = {"status": "active", "url": url}
+        except Exception:
+            services[name] = {"status": "inactive", "url": url}
+    return JSONResponse(content={"services": services})
+
+
+@app.get("/api/graph")
+async def api_graph_athena():
+    """System topology graph data for ATHENA D3.js force layout."""
+    nodes = [
+        {"id": "core", "label": "SLATE Core", "group": "core", "size": 30},
+        {"id": "dashboard", "label": "Dashboard", "group": "ui", "size": 20},
+        {"id": "athena", "label": "ATHENA", "group": "ui", "size": 22},
+        {"id": "ollama", "label": "Ollama", "group": "ai", "size": 25},
+        {"id": "chromadb", "label": "ChromaDB", "group": "data", "size": 18},
+        {"id": "runner", "label": "GH Runner", "group": "ci", "size": 20},
+        {"id": "gpu0", "label": "GPU 0", "group": "hardware", "size": 22},
+        {"id": "gpu1", "label": "GPU 1", "group": "hardware", "size": 22},
+        {"id": "orchestrator", "label": "Orchestrator", "group": "core", "size": 20},
+        {"id": "workflow", "label": "Workflows", "group": "core", "size": 18},
+        {"id": "autonomous", "label": "Autonomous", "group": "ai", "size": 18},
+        {"id": "k8s", "label": "Kubernetes", "group": "infra", "size": 22},
+    ]
+    links = [
+        {"source": "core", "target": "dashboard", "type": "serves"},
+        {"source": "core", "target": "athena", "type": "serves"},
+        {"source": "core", "target": "orchestrator", "type": "manages"},
+        {"source": "orchestrator", "target": "runner", "type": "starts"},
+        {"source": "orchestrator", "target": "dashboard", "type": "starts"},
+        {"source": "orchestrator", "target": "workflow", "type": "monitors"},
+        {"source": "ollama", "target": "gpu0", "type": "uses"},
+        {"source": "ollama", "target": "gpu1", "type": "uses"},
+        {"source": "ollama", "target": "chromadb", "type": "RAG"},
+        {"source": "autonomous", "target": "ollama", "type": "infers"},
+        {"source": "autonomous", "target": "workflow", "type": "discovers"},
+        {"source": "runner", "target": "core", "type": "CI/CD"},
+        {"source": "k8s", "target": "core", "type": "deploys"},
+        {"source": "k8s", "target": "ollama", "type": "hosts"},
+        {"source": "k8s", "target": "chromadb", "type": "hosts"},
+    ]
+    return JSONResponse(content={"nodes": nodes, "links": links})
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 # Modified: 2026-02-08T06:00:00Z | Author: COPILOT | Change: Add port-in-use detection with fallback ports, graceful error handling
+# Modified: 2026-02-11T01:00:00Z | Author: COPILOT | Change: Add SO_REUSEADDR to prevent TIME_WAIT port drift
 def _is_port_available(host: str, port: int) -> bool:
-    """Check if a port is available for binding."""
+    """Check if a port is available for binding (ignores TIME_WAIT sockets)."""
     import socket
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind((host, port))
             return True
     except OSError:
@@ -8686,14 +9106,14 @@ def _is_port_available(host: str, port: int) -> bool:
 
 def _find_available_port(host: str = "127.0.0.1", preferred: int = 8080,
                           fallbacks: list = None) -> int:
-    # Modified: 2026-02-10T12:00:00Z | Author: COPILOT | Change: Extend fallback range beyond K8s service ports (8080-8085) to avoid conflicts when port-forwarding is active
+    # Modified: 2026-02-10T18:00:00Z | Author: COPILOT | Change: Extend fallback range to 8099 to avoid K8s port-forward conflicts on 8080-8090
     """Find an available port, trying preferred first then fallbacks.
     
-    K8s service port range is 8080-8085, so fallbacks extend to 8090
+    K8s service port range is 8080-8085, so fallbacks extend to 8099
     to avoid conflicts when K8s port-forwarding is active.
     """
     if fallbacks is None:
-        fallbacks = [8081, 8082, 8083, 8084, 8085, 8086, 8087, 8088, 8089, 8090]
+        fallbacks = list(range(8081, 8100))
 
     if _is_port_available(host, preferred):
         return preferred
@@ -8735,7 +9155,7 @@ def main():
     else:
         port = _find_available_port(host, preferred_port)
         if port == 0:
-            print("\n  [ERROR] No available ports found (tried 8080-8090).")
+            print("\n  [ERROR] No available ports found (tried 8080-8099).")
             print("  This may happen when K8s port-forwarding is active (ports 8080-8085).")
             print("  Free a port or specify one with --port <number>\n")
             sys.exit(1)
