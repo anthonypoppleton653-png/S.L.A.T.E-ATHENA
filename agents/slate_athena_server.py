@@ -368,8 +368,10 @@ async def on_startup():
 
 # ─── CLI ──────────────────────────────────────────────────────────────────────
 
+# Modified: 2026-02-10T01:45:00Z | Author: COPILOT | Change: Enable SO_REUSEADDR so TIME_WAIT sockets don't block port reuse
 def _is_port_available(host: str, port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             s.bind((host, port))
             return True
