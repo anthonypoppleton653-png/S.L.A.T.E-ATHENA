@@ -133,12 +133,17 @@ class SlateOrchestrator:
         if PID_FILE.exists():
             PID_FILE.unlink()
 
+    # Modified: 2026-02-10T08:15:00Z | Author: COPILOT | Change: Fix PID check for Docker restarts — verify process is actually the orchestrator
     def _check_existing(self) -> Optional[int]:
         """Check if orchestrator is already running."""
         if not PID_FILE.exists():
             return None
         try:
             pid = int(PID_FILE.read_text().strip())
+            if not pid or pid == os.getpid():
+                # Empty/zero PID or our own PID — stale
+                self._clear_pid()
+                return None
             # Check if process exists
             if os.name == "nt":
                 result = subprocess.run(
@@ -149,6 +154,15 @@ class SlateOrchestrator:
                     return pid
             else:
                 os.kill(pid, 0)  # Signal 0 = check if exists
+                # In Docker, PIDs get reused after restart — verify it's actually Python/orchestrator
+                try:
+                    cmdline = Path(f"/proc/{pid}/cmdline").read_bytes().decode("utf-8", errors="ignore")
+                    if "slate_orchestrator" not in cmdline and "python" not in cmdline:
+                        # PID exists but isn't our process — stale from container restart
+                        self._clear_pid()
+                        return None
+                except (FileNotFoundError, PermissionError):
+                    pass  # /proc not available — trust os.kill result
                 return pid
         except (ValueError, OSError, ProcessLookupError):
             self._clear_pid()

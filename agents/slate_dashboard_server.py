@@ -8707,13 +8707,22 @@ def _find_available_port(host: str = "127.0.0.1", preferred: int = 8080,
 
 def main():
     """Run the dashboard server."""
+    # Modified: 2026-02-09T23:35:00Z | Author: COPILOT | Change: Bind to 0.0.0.0 inside Docker so port mapping works
     import argparse
     parser = argparse.ArgumentParser(description="SLATE Dashboard Server")
     parser.add_argument("--port", type=int, default=8080, help="Port to bind to (default: 8080)")
+    parser.add_argument("--host", type=str, default=None, help="Host to bind to (default: auto-detect)")
     parser.add_argument("--no-fallback", action="store_true", help="Don't try fallback ports")
     args = parser.parse_args()
 
-    host = "127.0.0.1"
+    # In Docker/K8s, bind to 0.0.0.0 so port forwarding works.
+    # Locally, bind to 127.0.0.1 for security (SLATE rule: local only).
+    if args.host:
+        host = args.host
+    elif os.environ.get("SLATE_DOCKER") or os.environ.get("SLATE_K8S") or os.path.exists("/.dockerenv"):
+        host = "0.0.0.0"  # noqa: S104 — safe: docker-compose binds host-side to 127.0.0.1
+    else:
+        host = "127.0.0.1"
     preferred_port = args.port
 
     if args.no_fallback:
