@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="athena">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLATE-ATHENA</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <!-- D3.js for force-directed graph -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🦉</text></svg>">
+</head>
+<body>
+
+<!-- ─── Header ─────────────────────────────────────────────────────────── -->
+<header class="athena-header">
+    <div class="header-left">
+        <svg class="owl-icon" viewBox="0 0 48 48" width="36" height="36">
+            <circle cx="24" cy="20" r="16" fill="none" stroke="var(--tyrian)" stroke-width="1.5"/>
+            <circle cx="18" cy="17" r="4" fill="var(--tyrian-light)" opacity="0.8"/>
+            <circle cx="30" cy="17" r="4" fill="var(--tyrian-light)" opacity="0.8"/>
+            <circle cx="18" cy="17" r="2" fill="var(--olympus-gold)"/>
+            <circle cx="30" cy="17" r="2" fill="var(--olympus-gold)"/>
+            <path d="M20 24 Q24 28 28 24" fill="none" stroke="var(--olympus-gold)" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M14 8 Q18 4 24 6 Q30 4 34 8" fill="none" stroke="var(--tyrian)" stroke-width="1.2"/>
+            <path d="M8 20 L14 16 M40 20 L34 16" stroke="var(--tyrian-light)" stroke-width="1" opacity="0.5"/>
+        </svg>
+        <div class="header-title">
+            <h1>SLATE-ATHENA</h1>
+            <span class="subtitle">Agentic Control Board</span>
+        </div>
+    </div>
+    <div class="header-right">
+        <span class="status-indicator" id="wsStatus" title="WebSocket">
+            <span class="status-dot disconnected"></span>
+            <span class="status-label">Offline</span>
+        </span>
+        <span class="header-time" id="headerTime"></span>
+    </div>
+</header>
+
+<!-- ─── Greek Key Border ───────────────────────────────────────────────── -->
+<div class="meander-border"></div>
+
+<!-- ─── Main Layout ────────────────────────────────────────────────────── -->
+<main class="control-board">
+
+    <!-- ─── Left Column: System Graph ──────────────────────────────────── -->
+    <section class="panel graph-panel">
+        <div class="panel-header">
+            <h2>⏣ System Topology</h2>
+            <button class="btn-icon" id="refreshGraph" title="Refresh">⟳</button>
+        </div>
+        <div class="panel-body">
+            <div id="systemGraph" class="graph-container"></div>
+        </div>
+    </section>
+
+    <!-- ─── Right Column: Control Panels ───────────────────────────────── -->
+    <div class="control-panels">
+
+        <!-- GPU Panel -->
+        <section class="panel gpu-panel">
+            <div class="panel-header">
+                <h2>⬡ GPU Status</h2>
+            </div>
+            <div class="panel-body" id="gpuPanel">
+                <div class="loading-placeholder">Fetching GPU data...</div>
+            </div>
+        </section>
+
+        <!-- Ollama Panel -->
+        <section class="panel ollama-panel">
+            <div class="panel-header">
+                <h2>◈ Ollama Models</h2>
+                <span class="badge" id="ollamaCount">0</span>
+            </div>
+            <div class="panel-body" id="ollamaPanel">
+                <div class="loading-placeholder">Checking Ollama...</div>
+            </div>
+        </section>
+
+        <!-- Services Panel -->
+        <section class="panel services-panel">
+            <div class="panel-header">
+                <h2>◉ Services</h2>
+            </div>
+            <div class="panel-body" id="servicesPanel">
+                <div class="loading-placeholder">Scanning services...</div>
+            </div>
+        </section>
+
+        <!-- Tasks Panel -->
+        <section class="panel tasks-panel">
+            <div class="panel-header">
+                <h2>☰ Task Queue</h2>
+                <span class="badge" id="taskCount">0</span>
+            </div>
+            <div class="panel-body scrollable" id="tasksPanel">
+                <div class="loading-placeholder">Loading tasks...</div>
+            </div>
+        </section>
+
+        <!-- Resources Panel -->
+        <section class="panel resources-panel">
+            <div class="panel-header">
+                <h2>▦ Resources</h2>
+            </div>
+            <div class="panel-body" id="resourcesPanel">
+                <div class="loading-placeholder">Measuring...</div>
+            </div>
+        </section>
+
+        <!-- Runner Panel -->
+        <section class="panel runner-panel">
+            <div class="panel-header">
+                <h2>⚙ GitHub Runner</h2>
+            </div>
+            <div class="panel-body" id="runnerPanel">
+                <div class="loading-placeholder">Checking runner...</div>
+            </div>
+        </section>
+
+    </div>
+</main>
+
+<!-- ─── Footer ─────────────────────────────────────────────────────────── -->
+<footer class="athena-footer">
+    <div class="meander-border thin"></div>
+    <div class="footer-content">
+        <span>S.L.A.T.E. v3.0.0 — Synchronized Living Architecture for Transformation & Evolution</span>
+        <span class="footer-right">ATHENA Control Board · 127.0.0.1</span>
+    </div>
+</footer>
+
+<!-- ─── Scripts ────────────────────────────────────────────────────────── -->
+<script src="/static/js/graph.js"></script>
+<script src="/static/js/main.js"></script>
+
+</body>
+</html>
