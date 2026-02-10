@@ -63,6 +63,7 @@ services:
         condition: service_healthy
       chromadb:
         condition: service_started
+    # Modified: 2026-02-10T13:00:00Z | Author: COPILOT | Change: Benchmark-based limits for i7-14650HX/16GB/RTX4060 — peak 727MB, 2G = 2.8x headroom
     deploy:
       resources:
         reservations:
@@ -70,8 +71,9 @@ services:
             - driver: nvidia
               count: all
               capabilities: [ gpu ]
+          memory: 512M
         limits:
-          memory: 8G
+          memory: 2G
           cpus: "4.0"
     healthcheck:
       test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)" ]
@@ -125,9 +127,11 @@ services:
     environment:
       # 0.0.0.0 required inside Docker bridge for inter-container comms.
       # Host port binding is 127.0.0.1 — local-only policy enforced.
+      # Modified: 2026-02-10T13:00:00Z | Author: COPILOT | Change: Tune for 8GB VRAM — 2 parallel, 2 loaded max, 4G sys RAM cap (peak 3G), 8 CPU
       - OLLAMA_HOST=0.0.0.0
-      - OLLAMA_NUM_PARALLEL=4
-      - OLLAMA_MAX_LOADED_MODELS=3
+      - OLLAMA_NUM_PARALLEL=2
+      - OLLAMA_MAX_LOADED_MODELS=2
+      - OLLAMA_FLASH_ATTENTION=1
     deploy:
       resources:
         reservations:
@@ -135,8 +139,10 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [ gpu ]
+          memory: 1G
         limits:
-          memory: 16G
+          memory: 4G
+          cpus: "8.0"
     # Modified: 2026-02-09T22:45:00Z | Author: COPILOT | Change: Fix Ollama healthcheck (wget not available, use ollama list)
     healthcheck:
       test: [ "CMD", "ollama", "list" ]
@@ -159,10 +165,13 @@ services:
       - IS_PERSISTENT=TRUE
       - ANONYMIZED_TELEMETRY=FALSE
       - CHROMA_SERVER_AUTHN_PROVIDER=
+    # Modified: 2026-02-10T13:00:00Z | Author: COPILOT | Change: Benchmark-based limits — peak 95MB, 512M = 5x headroom
     deploy:
       resources:
+        reservations:
+          memory: 64M
         limits:
-          memory: 2G
+          memory: 512M
           cpus: "1.0"
     # Modified: 2026-02-09T22:45:00Z | Author: COPILOT | Change: Fix ChromaDB healthcheck (no wget/curl/python in container, use /bin/sh TCP check)
     healthcheck:
@@ -228,10 +237,13 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=slate
       - GF_ANALYTICS_REPORTING_ENABLED=false
       - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+    # Modified: 2026-02-10T13:00:00Z | Author: COPILOT | Change: Benchmark-based limits — peak 93MB, 256M = 2.7x headroom
     deploy:
       resources:
+        reservations:
+          memory: 64M
         limits:
-          memory: 512M
+          memory: 256M
           cpus: "0.5"
 
   # ─── Prometheus Metrics Collector ──────────────────────────────────────
@@ -251,10 +263,13 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.time=7d'
       - '--storage.tsdb.retention.size=1GB'
+    # Modified: 2026-02-10T13:00:00Z | Author: COPILOT | Change: Reduced from 1G — monitoring profile only, 512M sufficient
     deploy:
       resources:
+        reservations:
+          memory: 64M
         limits:
-          memory: 1G
+          memory: 512M
           cpus: "0.5"
 
 volumes:
