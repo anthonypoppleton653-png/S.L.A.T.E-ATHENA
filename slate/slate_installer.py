@@ -1349,8 +1349,9 @@ class SlateInstaller:
             checks.append(("slate_runtime.py", False))
 
         # 5. Dashboard importable
+        # Modified: 2026-02-11T03:30:00Z | Author: COPILOT | Change: Use Athena server as sole dashboard
         result = _run([str(self._python()), "-c",
-                       "from agents.slate_dashboard_server import app; print('ok')"],
+                       "from agents.slate_athena_server import app; print('ok')"],
                       timeout=15, cwd=str(self.workspace))
         checks.append(("Dashboard server", result.returncode == 0))
 

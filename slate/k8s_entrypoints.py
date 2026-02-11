@@ -423,7 +423,8 @@ def start_dashboard():
     port = int(os.environ.get("SLATE_DASHBOARD_PORT", "8080"))
     try:
         sys.path.insert(0, os.path.join(SLATE_DIR, ".."))
-        from agents.slate_dashboard_server import app
+        # Modified: 2026-02-11T03:30:00Z | Author: COPILOT | Change: Use Athena server as sole dashboard
+        from agents.slate_athena_server import app
         import uvicorn
         print(f"SLATE Dashboard v{VERSION} starting on 0.0.0.0:{port}")
         uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning", access_log=False)

@@ -180,7 +180,7 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('slate.showStatus', async () => {
 			const terminal = vscode.window.createTerminal('SLATE Status');
 			terminal.show();
-			terminal.sendText(`"${getSlateConfig().pythonPath}" slate/slate_status.py --quick`);
+			terminal.sendText(`& "${getSlateConfig().pythonPath}" slate/slate_status.py --quick`);
 		})
 	);
 

@@ -157,7 +157,8 @@ SLATE_MCP_SERVERS: dict[str, MCPServerConfig] = {
     "slate-dashboard": MCPLocalServerConfig(
         type="stdio",
         command=str(WORKSPACE_ROOT / ".venv" / "Scripts" / "python.exe"),
-        args=[str(WORKSPACE_ROOT / "agents" / "slate_dashboard_server.py")],
+        # Modified: 2026-02-11T03:30:00Z | Author: COPILOT | Change: Use Athena server as sole dashboard
+        args=[str(WORKSPACE_ROOT / "agents" / "slate_athena_server.py")],
         env={"SLATE_WORKSPACE": str(WORKSPACE_ROOT)},
         cwd=str(WORKSPACE_ROOT),
         tools=["*"],

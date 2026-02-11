@@ -83,7 +83,7 @@ class SlateDesignTokens:
 
     Color strategy (ASUS ProArt + Anthropic inspired):
     - Primary: True black (#0a0a0a) → professional-grade substrate
-    - Accent: Copper/bronze (#8E44AD) → ATHENA Greek engineering aesthetic
+    - Accent: Olympus Gold (#C9A227) → ATHENA Greek engineering aesthetic
     - Secondary: Warm white (#F5F0EB) → clean readability on dark surfaces
     - Neutral: Cool charcoal grays → infrastructure depth
     - Semantic: Muted professional traffic-light system
@@ -91,19 +91,20 @@ class SlateDesignTokens:
 
     # Modified: 2026-02-08T08:30:00Z | Author: Claude Opus 4.5 | Change: QT Capital fintech + 2026 glassmorphism
     # Modified: 2026-02-11T06:00:00Z | Author: COPILOT | Change: ATHENA Greek palette — Midnight Navy, Tyrian Purple, Olympus Gold, Parchment
-    # SLATE Brand Colors — ATHENA Greek Design System
+    # Modified: 2026-02-12T04:00:00Z | Author: COPILOT | Change: ATHENA Gold/Blue palette — #080B10 root, #C9A227 gold accent, #3498DB blue secondary
+    # SLATE Brand Colors — ATHENA Gold/Blue Design System
     BRAND = {
-        "primary": "#0C1219",       # Midnight Navy — deep Mediterranean substrate
-        "accent": "#8E44AD",        # Tyrian Purple — ancient dye, primary accent
-        "accent_light": "#C768A2",  # Tyrian Light — hover states
-        "accent_dark": "#6C3483",   # Dark Tyrian — pressed states
-        "secondary": "#D4AC0D",     # Olympus Gold — laurel/achievement accent
-        "tertiary": "#2980B9",      # Aegean Blue — data/informational
-        "surface": "#141C28",       # Aegean Deep — card surfaces
-        "surface_elevated": "#1B2838",
+        "primary": "#080B10",       # Midnight Deep — dark root substrate
+        "accent": "#C9A227",        # Olympus Gold — primary accent (laurel/achievement)
+        "accent_light": "#E8C547",  # Gold Light — hover states
+        "accent_dark": "#A68B1F",   # Dark Gold — pressed states
+        "secondary": "#3498DB",     # Aegean Blue — secondary accent (data/informational)
+        "tertiary": "#1ABC9C",      # Aegean Teal — tertiary accent
+        "surface": "#111922",       # Surface — card backgrounds
+        "surface_elevated": "#1A2533",
         "surface_highest": "#243342",
-        "neutral": "#1B2838",       # Aegean Mid — subtle elevation
-        "white": "#E8E0D0",         # Parchment — primary text
+        "neutral": "#1A2533",       # Neutral — subtle elevation
+        "white": "#F8F9FA",         # Bright White — primary text
         "white_dim": "#8395A7",     # Column Gray — secondary text
         "white_muted": "#546E7A",   # Text Dim — tertiary text
     }
@@ -118,23 +119,25 @@ class SlateDesignTokens:
     }
 
     # Modified: 2026-02-11T06:00:00Z | Author: COPILOT | Change: ATHENA glass — navy-tinted glassmorphism
+    # Modified: 2026-02-12T04:00:00Z | Author: COPILOT | Change: ATHENA Gold/Blue glass hover
     # Glassmorphism tokens (ATHENA deep navy glass)
     GLASS = {
-        "bg": "rgba(12,18,25,0.75)",
-        "bg_elevated": "rgba(20,28,40,0.85)",
+        "bg": "rgba(8,11,16,0.75)",
+        "bg_elevated": "rgba(17,25,34,0.85)",
         "border": "rgba(46,64,83,0.3)",
-        "border_hover": "rgba(142,68,173,0.4)",
+        "border_hover": "rgba(201,162,39,0.4)",
         "blur": "24px",
         "saturate": "1.2",
-        "shine": "linear-gradient(135deg, rgba(232,224,208,0.06) 0%, transparent 50%)",
+        "shine": "linear-gradient(135deg, rgba(248,249,250,0.06) 0%, transparent 50%)",
     }
 
     # Modified: 2026-02-11T06:00:00Z | Author: COPILOT | Change: ATHENA ambient gradients — Tyrian Purple, Olympus Gold, Aegean Blue
-    # Ambient gradients (Greek atmospheric orbs)
+    # Modified: 2026-02-12T04:00:00Z | Author: COPILOT | Change: ATHENA Gold/Blue ambient gradients
+    # Ambient gradients (Greek atmospheric orbs — gold primary)
     AMBIENT = {
-        "tyrian": "radial-gradient(ellipse 50% 50% at 50% 0%, rgba(142,68,173,0.12), transparent 70%)",
-        "gold": "radial-gradient(ellipse 40% 40% at 80% 80%, rgba(212,172,13,0.08), transparent 60%)",
-        "aegean": "radial-gradient(ellipse 30% 30% at 20% 70%, rgba(41,128,185,0.06), transparent 50%)",
+        "gold": "radial-gradient(ellipse 50% 50% at 50% 0%, rgba(201,162,39,0.12), transparent 70%)",
+        "gold_corner": "radial-gradient(ellipse 40% 40% at 80% 80%, rgba(201,162,39,0.08), transparent 60%)",
+        "aegean": "radial-gradient(ellipse 30% 30% at 20% 70%, rgba(52,152,219,0.06), transparent 50%)",
     }
 
     @classmethod
@@ -147,16 +150,16 @@ class SlateDesignTokens:
         if theme == "dark":
             return {
                 # ═══════════════════════════════════════════════════════════════
-                # SURFACES — Midnight Navy Foundation (ATHENA Greek)
+                # SURFACES — Midnight Deep Foundation (ATHENA Gold/Blue)
                 # ═══════════════════════════════════════════════════════════════
-                "--sl-bg-root": "#0C1219",
-                "--sl-bg-surface": "#141C28",
-                "--sl-bg-surface-dim": "#080E14",
-                "--sl-bg-surface-bright": "#1B2838",
-                "--sl-bg-container": "#141C28",
-                "--sl-bg-container-high": "#1B2838",
+                "--sl-bg-root": "#080B10",
+                "--sl-bg-surface": "#111922",
+                "--sl-bg-surface-dim": "#060810",
+                "--sl-bg-surface-bright": "#1A2533",
+                "--sl-bg-container": "#111922",
+                "--sl-bg-container-high": "#1A2533",
                 "--sl-bg-container-highest": "#243342",
-                "--sl-bg-inverse": "#E8E0D0",
+                "--sl-bg-inverse": "#F8F9FA",
 
                 # ═══════════════════════════════════════════════════════════════
                 # ELEVATION — Dark Glass Shadows with Ambient Glow
@@ -169,48 +172,48 @@ class SlateDesignTokens:
                 "--sl-glass-elevation": "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
 
                 # ═══════════════════════════════════════════════════════════════
-                # TEXT — Parchment Hierarchy (ATHENA Greek)
+                # TEXT — Bright White Hierarchy (ATHENA Gold/Blue)
                 # ═══════════════════════════════════════════════════════════════
-                "--sl-text-primary": "#E8E0D0",
+                "--sl-text-primary": "#F8F9FA",
                 "--sl-text-secondary": "#8395A7",
                 "--sl-text-tertiary": "#546E7A",
                 "--sl-text-disabled": "#3A4855",
-                "--sl-text-on-primary": "#0C1219",
-                "--sl-text-on-accent": "#E8E0D0",
+                "--sl-text-on-primary": "#080B10",
+                "--sl-text-on-accent": "#080B10",
 
                 # ═══════════════════════════════════════════════════════════════
-                # PRIMARY ACCENT — Tyrian Purple (Ancient Greek Dye)
+                # PRIMARY ACCENT — Olympus Gold (ATHENA Gold/Blue)
                 # ═══════════════════════════════════════════════════════════════
-                "--sl-accent": "#8E44AD",
-                "--sl-accent-light": "#C768A2",
-                "--sl-accent-dark": "#6C3483",
-                "--sl-accent-container": "rgba(142,68,173,0.15)",
-                "--sl-accent-on-container": "#D7B8E8",
-                "--sl-accent-glow": "0 0 40px rgba(142,68,173,0.25)",
+                "--sl-accent": "#C9A227",
+                "--sl-accent-light": "#E8C547",
+                "--sl-accent-dark": "#A68B1F",
+                "--sl-accent-container": "rgba(201,162,39,0.15)",
+                "--sl-accent-on-container": "#F0D86B",
+                "--sl-accent-glow": "0 0 40px rgba(201,162,39,0.25)",
 
                 # ═══════════════════════════════════════════════════════════════
-                # SECONDARY — Olympus Gold (Laurel/Achievement)
+                # SECONDARY — Aegean Blue (Data/Informational)
                 # ═══════════════════════════════════════════════════════════════
-                "--sl-secondary": "#D4AC0D",
-                "--sl-secondary-light": "#F1C40F",
-                "--sl-secondary-dark": "#B7950B",
-                "--sl-secondary-container": "rgba(212,172,13,0.12)",
-                "--sl-secondary-glow": "0 0 30px rgba(212,172,13,0.25)",
+                "--sl-secondary": "#3498DB",
+                "--sl-secondary-light": "#5DADE2",
+                "--sl-secondary-dark": "#2980B9",
+                "--sl-secondary-container": "rgba(52,152,219,0.12)",
+                "--sl-secondary-glow": "0 0 30px rgba(52,152,219,0.25)",
 
                 # ═══════════════════════════════════════════════════════════════
-                # TERTIARY — Aegean Blue (Data/Informational)
+                # TERTIARY — Teal Accent (Tertiary)
                 # ═══════════════════════════════════════════════════════════════
-                "--sl-tertiary": "#2980B9",
-                "--sl-tertiary-light": "#3498DB",
-                "--sl-tertiary-dark": "#1F628E",
-                "--sl-tertiary-container": "rgba(41,128,185,0.12)",
+                "--sl-tertiary": "#1ABC9C",
+                "--sl-tertiary-light": "#48C9B0",
+                "--sl-tertiary-dark": "#16A085",
+                "--sl-tertiary-container": "rgba(26,188,156,0.12)",
 
                 # ═══════════════════════════════════════════════════════════════
                 # BORDERS — Parthenon Stone Edges
                 # ═══════════════════════════════════════════════════════════════
                 "--sl-border": "rgba(46,64,83,0.5)",
                 "--sl-border-variant": "rgba(46,64,83,0.7)",
-                "--sl-border-focus": "#8E44AD",
+                "--sl-border-focus": "#C9A227",
                 "--sl-outline": "rgba(46,64,83,0.3)",
 
                 # ═══════════════════════════════════════════════════════════════
@@ -240,17 +243,17 @@ class SlateDesignTokens:
                 "--sl-glass-shine": cls.GLASS["shine"],
 
                 # ═══════════════════════════════════════════════════════════════
-                # AMBIENT GRADIENTS — Greek Atmospheric Orbs
+                # AMBIENT GRADIENTS — Greek Atmospheric Orbs (Gold Primary)
                 # ═══════════════════════════════════════════════════════════════
-                "--sl-ambient-tyrian": cls.AMBIENT["tyrian"],
                 "--sl-ambient-gold": cls.AMBIENT["gold"],
+                "--sl-ambient-gold-corner": cls.AMBIENT["gold_corner"],
                 "--sl-ambient-aegean": cls.AMBIENT["aegean"],
 
                 # ═══════════════════════════════════════════════════════════════
-                # HOLOGRAPHIC — ATHENA Gradient Effects
+                # HOLOGRAPHIC — ATHENA Gold/Blue Gradient Effects
                 # ═══════════════════════════════════════════════════════════════
-                "--sl-holo-gradient": "linear-gradient(135deg, #8E44AD, #D4AC0D, #2980B9)",
-                "--sl-holo-text": "linear-gradient(90deg, #C768A2 0%, #8E44AD 25%, #D4AC0D 50%, #2980B9 75%, #C768A2 100%)",
+                "--sl-holo-gradient": "linear-gradient(135deg, #C9A227, #3498DB, #1ABC9C)",
+                "--sl-holo-text": "linear-gradient(90deg, #E8C547 0%, #C9A227 25%, #3498DB 50%, #1ABC9C 75%, #E8C547 100%)",
 
                 # ═══════════════════════════════════════════════════════════════
                 # TYPOGRAPHY — Premium Fonts
@@ -296,43 +299,47 @@ class SlateDesignTokens:
                 "--sl-duration-ambient": "20s",
             }
         else:
-            # Light theme variant (parchment + Tyrian Purple)
+            # Light theme variant (ATHENA Gold/Blue on warm white)
             return {
-                "--sl-bg-root": "#F5F0E8",
-                "--sl-bg-surface": "#EDE8E0",
-                "--sl-bg-surface-dim": "#E5E0D8",
-                "--sl-bg-surface-bright": "#FAFAF5",
-                "--sl-bg-container": "#E8E0D0",
-                "--sl-bg-container-high": "#F0ECE5",
-                "--sl-bg-container-highest": "#FAFAF5",
-                "--sl-bg-inverse": "#0C1219",
+                "--sl-bg-root": "#F8F9FA",
+                "--sl-bg-surface": "#F0F2F5",
+                "--sl-bg-surface-dim": "#E8EAED",
+                "--sl-bg-surface-bright": "#FFFFFF",
+                "--sl-bg-container": "#F0F2F5",
+                "--sl-bg-container-high": "#F8F9FA",
+                "--sl-bg-container-highest": "#FFFFFF",
+                "--sl-bg-inverse": "#080B10",
 
-                "--sl-text-primary": "#0C1219",
+                "--sl-text-primary": "#080B10",
                 "--sl-text-secondary": "#2E4053",
                 "--sl-text-tertiary": "#546E7A",
                 "--sl-text-disabled": "#8395A7",
-                "--sl-text-on-primary": "#E8E0D0",
-                "--sl-text-on-accent": "#FFFFFF",
+                "--sl-text-on-primary": "#F8F9FA",
+                "--sl-text-on-accent": "#080B10",
 
-                "--sl-accent": "#6C3483",
-                "--sl-accent-dim": "#8E44AD",
-                "--sl-accent-light": "#C768A2",
-                "--sl-accent-container": "rgba(142,68,173,0.10)",
-                "--sl-accent-on-container": "#4A235A",
-                "--sl-accent-glow": "rgba(142,68,173,0.10)",
+                "--sl-accent": "#A68B1F",
+                "--sl-accent-dim": "#C9A227",
+                "--sl-accent-light": "#E8C547",
+                "--sl-accent-container": "rgba(201,162,39,0.12)",
+                "--sl-accent-on-container": "#7A6819",
+                "--sl-accent-glow": "rgba(201,162,39,0.15)",
 
-                "--sl-border": "rgba(0,0,0,0.08)",
-                "--sl-border-variant": "rgba(0,0,0,0.05)",
-                "--sl-border-focus": "#6C3483",
-                "--sl-outline": "rgba(0,0,0,0.06)",
+                "--sl-secondary": "#2980B9",
+                "--sl-secondary-light": "#3498DB",
+                "--sl-secondary-dark": "#1F618D",
 
-                "--sl-success": "#527A65",
-                "--sl-warning": "#A67C3D",
-                "--sl-error": "#9E5555",
-                "--sl-info": "#5A8599",
+                "--sl-border": "rgba(0,0,0,0.10)",
+                "--sl-border-variant": "rgba(0,0,0,0.06)",
+                "--sl-border-focus": "#C9A227",
+                "--sl-outline": "rgba(0,0,0,0.08)",
 
-                "--sl-glass-bg": "rgba(255, 255, 255, 0.80)",
-                "--sl-glass-border": "rgba(142,68,173,0.10)",
+                "--sl-success": "#27AE60",
+                "--sl-warning": "#F39C12",
+                "--sl-error": "#C0392B",
+                "--sl-info": "#2980B9",
+
+                "--sl-glass-bg": "rgba(255, 255, 255, 0.85)",
+                "--sl-glass-border": "rgba(201,162,39,0.15)",
                 "--sl-glass-blur": "20px",
                 "--sl-glass-saturate": "1.1",
 
@@ -661,8 +668,8 @@ class SlateLogoGenerator:
           - "wordmark": Text only
         """
         half = size / 2
-        accent = "#8E44AD"     # Copper
-        accent_dim = "#6C3483"  # Dark Tyrian
+        accent = "#C9A227"     # Olympus Gold
+        accent_dim = "#A68B1F"  # Dark Gold
 
         # Core hexagon shape
         hex_points = []

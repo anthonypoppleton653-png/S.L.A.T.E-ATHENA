@@ -26,7 +26,8 @@ Usage:
 
     registry = ModuleRegistry()
     registry.register("agents.runner_api")
-    registry.register("agents.slate_dashboard_server")
+    # Modified: 2026-02-11T03:30:00Z | Author: COPILOT | Change: Use Athena server as sole dashboard
+    registry.register("agents.slate_athena_server")
 
     # Reload a specific module
     result = registry.reload("agents.runner_api")

@@ -76,15 +76,18 @@ export class AthenaBottomPanelProvider implements vscode.WebviewViewProvider {
 	">
 	<title>ATHENA Dashboard</title>
 	<style>
-		/* ATHENA Greek Design Tokens */
+		/* Athena Gold/Blue Design Tokens — Modified: 2026-02-11T10:00:00Z | Author: COPILOT | Restore Athena theme */
 		:root {
-			--athena-midnight: #080B10;
-			--athena-surface: #0D1117;
+			--athena-root: #080B10;
+			--athena-surface: #0E1420;
 			--athena-gold: #C9A227;
-			--athena-gold-light: #E8D48A;
+			--athena-gold-bright: #E8C547;
 			--athena-blue: #3498DB;
-			--athena-text: #E8E0D0;
-			--athena-border: rgba(201, 162, 39, 0.2);
+			--athena-text: #F8F9FA;
+			--athena-text-secondary: #9CA3AF;
+			--athena-border: rgba(201, 162, 39, 0.15);
+			--athena-success: #27AE60;
+			--athena-error: #DC3545;
 		}
 
 		* {
@@ -97,7 +100,7 @@ export class AthenaBottomPanelProvider implements vscode.WebviewViewProvider {
 			height: 100%;
 			width: 100%;
 			overflow: hidden;
-			background: var(--athena-midnight);
+			background: var(--athena-root);
 			font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
 		}
 
@@ -161,14 +164,14 @@ export class AthenaBottomPanelProvider implements vscode.WebviewViewProvider {
 		}
 
 		.action-btn.primary {
-			background: linear-gradient(135deg, var(--athena-gold), #B8941E);
+			background: linear-gradient(135deg, var(--athena-gold), #9B7D1E);
 			border-color: var(--athena-gold);
-			color: var(--athena-midnight);
+			color: var(--athena-root);
 			font-weight: 500;
 		}
 
 		.action-btn.primary:hover {
-			background: linear-gradient(135deg, var(--athena-gold-light), var(--athena-gold));
+			background: linear-gradient(135deg, var(--athena-gold-bright), var(--athena-gold));
 			transform: translateY(-1px);
 		}
 
@@ -176,14 +179,14 @@ export class AthenaBottomPanelProvider implements vscode.WebviewViewProvider {
 			flex: 1;
 			width: 100%;
 			position: relative;
-			background: var(--athena-midnight);
+			background: var(--athena-root);
 		}
 
 		.dashboard-frame {
 			width: 100%;
 			height: 100%;
 			border: none;
-			background: var(--athena-midnight);
+			background: var(--athena-root);
 		}
 
 		.loading-overlay {
@@ -196,7 +199,7 @@ export class AthenaBottomPanelProvider implements vscode.WebviewViewProvider {
 			flex-direction: column;
 			align-items: center;
 			justify-content: center;
-			background: var(--athena-midnight);
+			background: var(--athena-root);
 			z-index: 10;
 			transition: opacity 0.3s ease;
 		}
@@ -269,13 +272,13 @@ export class AthenaBottomPanelProvider implements vscode.WebviewViewProvider {
 		}
 
 		.status-dot.connected {
-			background: #27AE60;
+			background: var(--athena-success);
 			box-shadow: 0 0 8px rgba(39, 174, 96, 0.5);
 		}
 
 		.status-dot.error {
-			background: #E74C3C;
-			box-shadow: 0 0 8px rgba(231, 76, 60, 0.5);
+			background: var(--athena-error);
+			box-shadow: 0 0 8px rgba(220, 53, 69, 0.5);
 		}
 	</style>
 </head>

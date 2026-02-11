@@ -43,7 +43,7 @@ export class SlateCodeLensProvider implements vscode.CodeLensProvider, vscode.Di
 				terminal.show();
 				const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '';
 				terminal.sendText(
-					`"${workspacePath}\\.venv\\Scripts\\python.exe" -m pytest "${filePath}" -v -k "${testName}"`
+					`& "${workspacePath}\\.venv\\Scripts\\python.exe" -m pytest "${filePath}" -v -k "${testName}"`
 				);
 			})
 		);
@@ -53,7 +53,7 @@ export class SlateCodeLensProvider implements vscode.CodeLensProvider, vscode.Di
 				const terminal = vscode.window.createTerminal('SLATE');
 				terminal.show();
 				const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '';
-				terminal.sendText(`"${workspacePath}\\.venv\\Scripts\\python.exe" ${module} --status`);
+				terminal.sendText(`& "${workspacePath}\\.venv\\Scripts\\python.exe" ${module} --status`);
 			})
 		);
 
@@ -63,7 +63,7 @@ export class SlateCodeLensProvider implements vscode.CodeLensProvider, vscode.Di
 				terminal.show();
 				const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '';
 				terminal.sendText(
-					`"${workspacePath}\\.venv\\Scripts\\python.exe" slate/action_guard.py --scan`
+					`& "${workspacePath}\\.venv\\Scripts\\python.exe" slate/action_guard.py --scan`
 				);
 			})
 		);
@@ -74,7 +74,7 @@ export class SlateCodeLensProvider implements vscode.CodeLensProvider, vscode.Di
 				terminal.show();
 				const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '';
 				terminal.sendText(
-					`"${workspacePath}\\.venv\\Scripts\\python.exe" slate/slate_runner_manager.py --dispatch "${workflow}"`
+					`& "${workspacePath}\\.venv\\Scripts\\python.exe" slate/slate_runner_manager.py --dispatch "${workflow}"`
 				);
 			})
 		);

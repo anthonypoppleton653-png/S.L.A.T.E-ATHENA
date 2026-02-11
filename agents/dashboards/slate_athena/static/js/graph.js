@@ -116,7 +116,7 @@
             .enter().append('circle')
             .attr('r', d => d.size || 10)
             .attr('fill', d => GROUP_COLORS[d.group] || GROUP_COLORS.default)
-            .attr('stroke', '#0C1219')
+            .attr('stroke', '#080B10')
             .attr('stroke-width', 2)
             .style('cursor', 'pointer')
             .call(drag(simulation));
@@ -133,7 +133,7 @@
             d3.select(this)
                 .transition().duration(200)
                 .attr('r', d.size || 10)
-                .attr('stroke', '#0C1219')
+                .attr('stroke', '#080B10')
                 .attr('stroke-width', 2);
             hideTooltip();
         });

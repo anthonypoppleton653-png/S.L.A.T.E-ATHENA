@@ -124,7 +124,8 @@ PROTECTED_PATHS: list[str] = [
     "slate/install_tracker.py",
     # ── Agents & APIs ───────────────────────────────────────────────────
     "agents/runner_api.py",
-    "agents/slate_dashboard_server.py",
+    # Modified: 2026-02-11T03:30:00Z | Author: COPILOT | Change: Replace old dashboard with Athena server
+    "agents/slate_athena_server.py",
     "agents/install_api.py",
     # ── Config & Infrastructure ─────────────────────────────────────────
     "pyproject.toml",
@@ -587,7 +588,7 @@ if __name__ == "__main__":
         ("slate/slate_status.py", False),
         ("slate/ml_orchestrator.py", False),
         ("agents/runner_api.py", False),
-        ("agents/slate_dashboard_server.py", False),
+        ("agents/slate_athena_server.py", False),
         # BLOCKED: config & infra files
         ("pyproject.toml", False),
         ("Dockerfile", False),

@@ -535,11 +535,13 @@ spec:
               from pathlib import Path
               from datetime import datetime, timezone
 
+              # Modified: 2026-02-11T18:00:00Z | Author: COPILOT | Change: Use /tmp for bridge files (writable), /workspace for code
               WORKSPACE = os.environ.get('SLATE_WORKSPACE', '/workspace')
               PYTHONPATH = os.environ.get('PYTHONPATH', '/slate:/workspace')
               VERSION = '5.1.0'
-              BRIDGE_QUEUE = Path(WORKSPACE) / '.slate_copilot_bridge.json'
-              BRIDGE_RESULTS = Path(WORKSPACE) / '.slate_copilot_bridge_results.json'
+              # Store queue files in /tmp (writable by non-root user)
+              BRIDGE_QUEUE = Path('/tmp') / '.slate_copilot_bridge.json'
+              BRIDGE_RESULTS = Path('/tmp') / '.slate_copilot_bridge_results.json'
 
               def ensure_files():
                   now = datetime.now(timezone.utc).isoformat()

@@ -240,8 +240,8 @@ class SlateOrchestrator:
 
         Handles port conflicts by killing stale processes before starting.
         """
-        # Modified: 2026-02-07T07:30:00Z | Author: COPILOT | Change: Handle port 8080 conflicts before starting dashboard
-        dashboard_script = self.workspace / "agents" / "slate_dashboard_server.py"
+        # Modified: 2026-02-11T03:30:00Z | Author: COPILOT | Change: Use Athena server as sole dashboard (old monolithic server deleted)
+        dashboard_script = self.workspace / "agents" / "slate_athena_server.py"
 
         if not dashboard_script.exists():
             print("  [!] Dashboard server not found")
@@ -287,30 +287,8 @@ class SlateOrchestrator:
             print(f"  [X] Dashboard failed: {e}")
             return False
 
-    # Modified: 2026-02-10T01:35:00Z | Author: COPILOT | Change: Add start_athena_dashboard method for Greek-themed ATHENA UI on port 8092
-    def start_athena_dashboard(self) -> bool:
-        """Start the SLATE-ATHENA dashboard (Greek-themed control board) on port 8092."""
-        athena_script = self.workspace / "agents" / "slate_athena_server.py"
-
-        if not athena_script.exists():
-            print("  [!] ATHENA dashboard not found")
-            return False
-
-        try:
-            python = self._get_python()
-            process = subprocess.Popen(
-                [python, str(athena_script), "--port", "8092"],
-                cwd=str(self.workspace),
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
-            )
-            self.processes["athena"] = process
-            print(f"  [OK] ATHENA dashboard started (PID {process.pid}) > http://127.0.0.1:8092")
-            return True
-        except Exception as e:
-            print(f"  [X] ATHENA dashboard failed: {e}")
-            return False
+    # DEPRECATED: 2026-02-11 | Reason: Athena server is now the sole dashboard via start_dashboard() on port 8080
+    # start_athena_dashboard removed — consolidated into start_dashboard()
 
     def start_workflow_monitor(self) -> bool:
         """Start the workflow monitor for task lifecycle management."""
@@ -448,8 +426,8 @@ class SlateOrchestrator:
         signal.signal(signal.SIGTERM, self._signal_handler)
 
         services_started = 0
-        # Modified: 2026-02-10T01:35:00Z | Author: COPILOT | Change: Add ATHENA dashboard to startup sequence (5 services in dev)
-        services_total = 5 if self.mode == "dev" else 4
+        # Modified: 2026-02-11T03:30:00Z | Author: COPILOT | Change: Remove separate ATHENA dashboard step (consolidated into start_dashboard)
+        services_total = 4 if self.mode == "dev" else 3
 
         # 1. Start GitHub Runner
         print(f"  [1/{services_total}] GitHub Runner...")
@@ -457,26 +435,20 @@ class SlateOrchestrator:
             services_started += 1
         time.sleep(1)
 
-        # 2. Start Dashboard
-        print(f"  [2/{services_total}] Dashboard Server...")
+        # 2. Start Dashboard (Athena)
+        print(f"  [2/{services_total}] ATHENA Dashboard...")
         if self.start_dashboard():
             services_started += 1
         time.sleep(0.5)
 
-        # 3. Start ATHENA Dashboard
-        print(f"  [3/{services_total}] ATHENA Dashboard...")
-        if self.start_athena_dashboard():
-            services_started += 1
-        time.sleep(0.5)
-
-        # 4. Start Workflow Monitor
-        print(f"  [4/{services_total}] Workflow Monitor...")
+        # 3. Start Workflow Monitor
+        print(f"  [3/{services_total}] Workflow Monitor...")
         if self.start_workflow_monitor():
             services_started += 1
 
-        # 5. Start File Watcher (dev only)
+        # 4. Start File Watcher (dev only)
         if self.mode == "dev":
-            print(f"  [5/{services_total}] File Watcher...")
+            print(f"  [4/{services_total}] File Watcher...")
             if self.start_file_watcher():
                 services_started += 1
 

@@ -5,7 +5,7 @@
 			"label": "SLATE: Auto-Start",
 			"type": "shell",
 			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
-			"args": ["${workspaceFolder}/slate_startup.py"],
+			"args": ["${workspaceFolder}/slate_startup.py", "--docker"],
 			"isBackground": true,
 			"problemMatcher": {
 				"pattern": {
@@ -14,7 +14,7 @@
 				"background": {
 					"activeOnStart": true,
 					"beginsPattern": "S.L.A.T.E. Starting",
-					"endsPattern": "SLATE Ready|Dashboard.*Running"
+					"endsPattern": "SLATE Ready|Dashboard.*Running|Container running"
 				}
 			},
 			"presentation": {
@@ -24,7 +24,40 @@
 			},
 			"runOptions": {
 				"runOn": "folderOpen"
-			}
+			},
+			"detail": "Auto-deploy SLATE to Docker when VS Code opens"
+		},
+		{
+			"label": "SLATE: Start (Docker)",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": ["${workspaceFolder}/slate_startup.py", "--docker"],
+			"isBackground": false,
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"focus": true
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "Start SLATE via Docker Compose (GPU-enabled)"
+		},
+		{
+			"label": "SLATE: Start (Local)",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
+			"args": ["${workspaceFolder}/slate_startup.py", "--local"],
+			"isBackground": false,
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"focus": true
+			},
+			"detail": "Start SLATE locally without Docker"
 		},
 		{
 			"label": "SLATE: Start",
@@ -38,10 +71,7 @@
 				"panel": "dedicated",
 				"focus": true
 			},
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			}
+			"detail": "Start SLATE (auto-detect Docker or local)"
 		},
 		{
 			"label": "SLATE: Stop",
@@ -71,7 +101,7 @@
 			"label": "SLATE: Dashboard",
 			"type": "shell",
 			"command": "${workspaceFolder}/.venv/Scripts/python.exe",
-			"args": ["${workspaceFolder}/agents/slate_dashboard_server.py"],
+			"args": ["${workspaceFolder}/agents/slate_athena_server.py"],
 			"isBackground": true,
 			"problemMatcher": [],
 			"presentation": {

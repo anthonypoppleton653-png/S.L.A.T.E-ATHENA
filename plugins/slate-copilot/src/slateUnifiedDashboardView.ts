@@ -87,81 +87,82 @@ interface SystemProfile {
 
 const PHI = 1.6180339887;
 
+// Modified: 2026-02-11T10:00:00Z | Author: COPILOT | Change: Restore unified Athena gold/blue theme as default
 const SLATE_TOKENS = {
-	// ── Surfaces — Midnight Navy foundation (ATHENA Greek) ──
-	bgRoot: '#0C1219',
-	bgSurface: '#111922',
-	bgSurfaceVariant: '#141C28',
-	bgContainer: '#141C28',
-	bgContainerHigh: '#1B2838',
-	bgContainerHighest: '#243342',
+	// ── Surfaces — Athena Dark foundation (Midnight Deep) ──
+	bgRoot: '#080B10',
+	bgSurface: '#0E1420',
+	bgSurfaceVariant: '#111827',
+	bgContainer: '#151D2B',
+	bgContainerHigh: '#1A2439',
+	bgContainerHighest: '#1E2A3D',
 
-	// ── Primary — Tyrian Purple (ATHENA accent) ──
-	primary: '#8E44AD',
-	primaryLight: '#C768A2',
-	primaryDark: '#6C3483',
-	primaryContainer: 'rgba(142,68,173,0.12)',
-	onPrimary: '#0C1219',
-	onPrimaryContainer: '#2C1549',
+	// ── Primary — Olympus Gold (Athena accent) ──
+	primary: '#C9A227',
+	primaryLight: '#E8C547',
+	primaryDark: '#9B7D1E',
+	primaryContainer: '#3D3010',
+	onPrimary: '#080B10',
+	onPrimaryContainer: '#F5E6B3',
 
-	// ── Accent — Tyrian Purple (ATHENA primary accent) ──
-	accent: '#8E44AD',
-	accentLight: '#C768A2',
-	accentDark: '#6C3483',
-	accentGlow: 'rgba(142,68,173,0.15)',
-	accentContainer: 'rgba(142,68,173,0.12)',
+	// ── Accent — Aegean Blue (Athena secondary) ──
+	accent: '#3498DB',
+	accentLight: '#5DADE2',
+	accentDark: '#2471A3',
+	accentGlow: 'rgba(52,152,219,0.2)',
+	accentContainer: '#1A3A52',
 
-	// ── Text — Parchment hierarchy (ATHENA Greek) ──
-	textPrimary: '#E8E0D0',
-	textSecondary: '#8395A7',
-	textTertiary: '#546E7A',
-	textDisabled: '#37474F',
-	onSurface: '#E8E0D0',
-	onSurfaceVariant: '#8395A7',
+	// ── Text — Athena hierarchy (Marble & White) ──
+	textPrimary: '#F8F9FA',
+	textSecondary: '#9CA3AF',
+	textTertiary: '#6B7280',
+	textDisabled: '#4B5563',
+	onSurface: '#F8F9FA',
+	onSurfaceVariant: '#9CA3AF',
 
 	// ── Borders / Outlines ──
-	border: 'rgba(46,64,83,0.3)',
-	borderVariant: 'rgba(46,64,83,0.4)',
-	borderFocus: '#8E44AD',
-	outline: '#546E7A',
-	outlineVariant: '#37474F',
+	border: 'rgba(201, 162, 39, 0.15)',
+	borderVariant: 'rgba(201, 162, 39, 0.25)',
+	borderFocus: '#C9A227',
+	outline: 'rgba(201, 162, 39, 0.3)',
+	outlineVariant: 'rgba(52, 152, 219, 0.3)',
 
-	// ── Semantic (ATHENA Greek-inspired) ──
+	// ── Semantic (Athena status colors) ──
 	success: '#27AE60',
-	successContainer: 'rgba(39,174,96,0.12)',
-	warning: '#F39C12',
-	warningContainer: 'rgba(243,156,18,0.12)',
-	error: '#C0392B',
-	errorContainer: 'rgba(192,57,43,0.12)',
-	info: '#2980B9',
-	infoContainer: 'rgba(41,128,185,0.12)',
+	successContainer: 'rgba(39, 174, 96, 0.1)',
+	warning: '#CD7F32',
+	warningContainer: 'rgba(205, 127, 50, 0.1)',
+	error: '#DC3545',
+	errorContainer: 'rgba(220, 53, 69, 0.1)',
+	info: '#3498DB',
+	infoContainer: 'rgba(52, 152, 219, 0.1)',
 
 	// ── Engineering Traces (ISO 128 / IEC 60617) ──
-	traceSignal: '#8E44AD',
-	traceData: '#2980B9',
-	tracePower: '#C0392B',
-	traceControl: '#D4AC0D',
-	traceGround: '#546E7A',
+	traceSignal: '#E8C547',
+	traceData: '#3498DB',
+	tracePower: '#DC3545',
+	traceControl: '#CD7F32',
+	traceGround: '#9CA3AF',
 
 	// ── Blueprint ──
-	blueprintBg: '#0C1219',
-	blueprintGrid: '#1B2838',
-	blueprintAccent: '#8E44AD',
-	blueprintNode: '#E8E0D0',
+	blueprintBg: '#080B10',
+	blueprintGrid: '#1A2439',
+	blueprintAccent: '#C9A227',
+	blueprintNode: '#F8F9FA',
 
-	// ── Component Fills (ATHENA deep tones) ──
-	fillService: '#1B1A28',
-	fillDatabase: '#141C28',
-	fillGpu: '#1E1528',
-	fillAi: '#141928',
-	fillExternal: '#1B1528',
+	// ── Component Fills (Athena dark tones) ──
+	fillService: '#0E1420',
+	fillDatabase: '#111827',
+	fillGpu: '#0D1117',
+	fillAi: '#151D2B',
+	fillExternal: '#0E1420',
 
 	// ── Typography — φ-derived scale (Golden Ratio) ──
 	// Base: 8px → 8, 11, 13, 16, 21, 34
-	fontDisplay: "'Inter Tight', 'Segoe UI', system-ui, sans-serif",
+	fontDisplay: "'Cinzel', 'Times New Roman', serif",
 	fontBody: "'Inter', 'Segoe UI', system-ui, sans-serif",
-	fontMono: "'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace",
-	fontSchematic: "'Consolas', 'Courier New', monospace",
+	fontMono: "'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace",
+	fontSchematic: "'JetBrains Mono', 'Consolas', monospace",
 
 	// ── Type Scale (φ-derived: each step ≈ φ ratio) ──
 	displayLarge: '55px',
@@ -240,22 +241,22 @@ const SLATE_TOKENS = {
 	radiusXl: '21px',
 	radiusFull: '9999px',
 
-	// ── Dev cycle stage colors (ATHENA Greek) ──
-	stagePlan: '#2980B9',
-	stageCode: '#8E44AD',
-	stageTest: '#F39C12',
+	// ── Dev cycle stage colors (Athena) ──
+	stagePlan: '#3498DB',
+	stageCode: '#C9A227',
+	stageTest: '#CD7F32',
 	stageDeploy: '#27AE60',
-	stageFeedback: '#D4AC0D',
+	stageFeedback: '#5DADE2',
 
-	// ── ATHENA craft (Greek-inspired accents) ──
-	gearColor: '#8E44AD',
+	// ── SLATE craft (Athena-inspired accents) ──
+	gearColor: '#C9A227',
 	jewelGreen: '#27AE60',
-	jewelAmber: '#D4AC0D',
-	jewelRed: '#C0392B',
-	jewelBlue: '#2980B9',
-	mainspring: '#C768A2',
-	polishReflection: 'linear-gradient(135deg, rgba(232,224,208,0.04) 0%, transparent 50%)',
-	caseTexture: 'linear-gradient(180deg, #0C1219 0%, #080E15 100%)',
+	jewelAmber: '#CD7F32',
+	jewelRed: '#DC3545',
+	jewelBlue: '#3498DB',
+	mainspring: '#E8C547',
+	polishReflection: 'linear-gradient(135deg, rgba(248,249,250,0.04) 0%, transparent 50%)',
+	caseTexture: 'linear-gradient(180deg, #080B10 0%, #040608 100%)',
 };
 
 // ── Guided Install Steps ────────────────────────────────────────────────────
@@ -902,7 +903,7 @@ export class SlateUnifiedDashboardViewProvider implements vscode.WebviewViewProv
 		const config = getSlateConfig();
 		const terminal = vscode.window.createTerminal('SLATE');
 		terminal.show();
-		terminal.sendText(`"${config.pythonPath}" ${command}`);
+		terminal.sendText(`& "${config.pythonPath}" ${command}`);
 	}
 
 	private async _refreshStatus(): Promise<void> {
